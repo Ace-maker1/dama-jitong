@@ -599,18 +599,30 @@
       }
     }
 
-    async function fetchLiveRates() {
+   async function fetchLiveRates() {
       try {
-        const res = await fetch('https://open.er-api.com/v6/latest/MYR');
+        const res = await fetch('https://api.frankfurter.dev/v1/latest?base=MYR&symbols=CNY,SGD');
         const json = await res.json();
-        if (json && json.rates) {
+        if (json && json.rates && json.rates.CNY && json.rates.SGD) {
           const myrToCny = json.rates.CNY.toFixed(2);
           const sgdToMyr = (1 / json.rates.SGD).toFixed(2);
           document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${myrToCny} CNY`;
           document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${sgdToMyr} MYR`;
+          return;
         }
       } catch (e) {
-        console.warn('使用默认兜底汇率:', e);
+        console.warn('主汇率接口切换至备用接口:', e);
+      }
+
+      try {
+        const res2 = await fetch('https://open.er-api.com/v6/latest/MYR');
+        const json2 = await res2.json();
+        if (json2 && json2.rates) {
+          document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${json2.rates.CNY.toFixed(2)} CNY`;
+          document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${(1 / json2.rates.SGD).toFixed(2)} MYR`;
+        }
+      } catch (e2) {
+        console.warn('使用默认兜底汇率:', e2);
       }
     }
 
