@@ -124,33 +124,44 @@
     <div id="favList" class="space-y-2.5"></div>
   </main>
 
-  <!-- “我的”与管理员后台页面 -->
+  <!-- 纯净版“我的”页面（无任何管理员入口） -->
   <main id="profileTab" class="flex-1 pb-24 hidden px-4 pt-5">
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4 flex items-center space-x-4">
       <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-2xl font-black shadow">吉</div>
       <div>
-        <h2 class="font-bold text-gray-800 text-lg">大马吉通管理员</h2>
-        <p class="text-xs text-green-600 font-medium mt-0.5">● 已接入 Supabase 云端数据库 & 图床</p>
+        <h2 class="font-bold text-gray-800 text-lg">欢迎来到大马吉通</h2>
+        <p class="text-xs text-gray-500 mt-0.5">马来西亚华人本地生活 · 免费分类信息</p>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="font-bold text-gray-800 text-sm">🛡️ 开启管理员审核模式</h3>
-          <p class="text-xs text-gray-500 mt-0.5">开启后可在首页对帖子进行“广告置顶”或“删除”</p>
+    <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 space-y-3">
+      <button onclick="openPostModal()" class="w-full flex items-center justify-between py-2 text-left">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-base">📝</span>
+          <div>
+            <div class="text-sm font-bold text-gray-800">免费发布本地信息</div>
+            <div class="text-xs text-gray-400">租房、招聘、二手交易、商家活动</div>
+          </div>
         </div>
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="adminToggle" onchange="toggleAdminMode()" class="sr-only peer">
-          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-        </label>
-      </div>
+        <span class="text-gray-300 text-lg">›</span>
+      </button>
+      <div class="border-t border-gray-100"></div>
+      <button onclick="switchTab('fav')" class="w-full flex items-center justify-between py-2 text-left">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">⭐</span>
+          <div>
+            <div class="text-sm font-bold text-gray-800">我的收藏夹</div>
+            <div class="text-xs text-gray-400">查看已保存的房源与联系方式</div>
+          </div>
+        </div>
+        <span class="text-gray-300 text-lg">›</span>
+      </button>
     </div>
 
     <div class="bg-white rounded-2xl p-4 shadow-sm text-xs text-gray-500 space-y-2">
-      <p class="font-bold text-gray-700 text-sm">平台运行状态 (V3.0 图文版)</p>
-      <p>• 图床引擎：已支持手机拍照/相册选图自动压缩直传</p>
-      <p>• 商业变现：支持首页红色“置顶”商家广告位展示</p>
+      <p class="font-bold text-gray-700 text-sm">📌 平台使用须知</p>
+      <p>• 本平台为全马华人提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。</p>
+      <p>• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。</p>
     </div>
   </main>
 
@@ -186,7 +197,7 @@
     </div>
   </div>
 
-  <!-- 发布新帖弹窗（支持选图预览 & 一键移除重选） -->
+  <!-- 发布新帖弹窗 -->
   <div id="postModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -260,7 +271,6 @@
 
     let allPosts = [];
     let currentCategory = '全部';
-    let isAdminMode = false;
     let savedIds = JSON.parse(localStorage.getItem('dama_favs') || '[]');
     let selectedFile = null;
 
@@ -377,20 +387,6 @@
             </div>
             ${rightMediaHTML}
           </div>
-
-          ${isAdminMode ? `
-            <div class="mt-3 pt-2.5 border-t border-dashed border-gray-200 flex items-center justify-between">
-              <span class="text-[10px] text-gray-400">ID: #${post.id}</span>
-              <div class="flex space-x-2">
-                <button onclick="togglePin(${post.id}, ${post.is_pinned})" class="text-xs px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-bold">
-                  ${post.is_pinned ? '取消置顶' : '⬆️ 置顶'}
-                </button>
-                <button onclick="deletePost(${post.id})" class="text-xs px-2.5 py-1 rounded-lg bg-red-100 text-red-700 font-bold">
-                  🗑️ 删除
-                </button>
-              </div>
-            </div>
-          ` : ''}
         </div>
       `;
     }
@@ -558,17 +554,6 @@
       await fetchPosts();
     }
 
-    async function togglePin(id, currentStatus) {
-      const { error } = await supabaseClient.from('posts').update({ is_pinned: !currentStatus }).eq('id', id);
-      if (!error) fetchPosts();
-    }
-
-    async function deletePost(id) {
-      if (!confirm('确定要永久删除这条帖子吗？')) return;
-      const { error } = await supabaseClient.from('posts').delete().eq('id', id);
-      if (!error) fetchPosts();
-    }
-
     function switchTab(tab) {
       ['mainTab', 'favTab', 'profileTab'].forEach(id => document.getElementById(id).classList.add('hidden'));
       ['navMain', 'navNews', 'navFav', 'navProfile'].forEach(id => {
@@ -587,11 +572,6 @@
         document.getElementById('profileTab').classList.remove('hidden');
         document.getElementById('navProfile').classList.replace('text-gray-400', 'text-red-600');
       }
-    }
-
-    function toggleAdminMode() {
-      isAdminMode = document.getElementById('adminToggle').checked;
-      renderPosts();
     }
 
     fetchPosts();
