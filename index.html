@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>大马吉通 MY - 马来西亚华人本地生活与分类信息平台</title>
+  <title>大马吉通 MY - DamaJitong Malaysia Classifieds</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -14,62 +14,67 @@
 </head>
 <body class="max-w-md mx-auto bg-gray-100 min-h-screen flex flex-col relative shadow-2xl">
 
-  <!-- 顶部红色主导航 -->
-  <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-4 py-3">
-    <div class="flex items-center justify-between gap-2">
+  <!-- 顶部红色主导航 + 三语切换器 -->
+  <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3.5 py-2.5">
+    <div class="flex items-center justify-between gap-2 mb-2">
       <!-- 左侧 Logo + 城市选择 -->
       <div class="flex items-center space-x-2 shrink-0">
-        <div class="w-9 h-9 bg-white text-red-600 rounded-xl flex items-center justify-center font-black text-xl shadow-sm">吉</div>
+        <div class="w-8 h-8 bg-white text-red-600 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">吉</div>
         <div>
           <div class="flex items-center space-x-1">
-            <span class="font-extrabold text-base tracking-tight">大马吉通</span>
-            <span class="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-bold">MY</span>
+            <span id="brandTitle" class="font-extrabold text-sm tracking-tight">大马吉通</span>
+            <span class="text-[9px] bg-white/20 px-1.5 py-0.2 rounded font-bold">MY</span>
           </div>
-          <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-xs font-medium focus:outline-none cursor-pointer -ml-1">
-            <option value="全马" class="text-gray-800">📍 全马地区</option>
-            <option value="槟城" class="text-gray-800">📍 槟城 Penang</option>
-            <option value="吉隆坡/雪兰莪" class="text-gray-800">📍 吉隆坡 / 雪兰莪</option>
-            <option value="新山" class="text-gray-800">📍 新山 JB</option>
-            <option value="马六甲" class="text-gray-800">📍 马六甲 Melaka</option>
-            <option value="怡保" class="text-gray-800">📍 怡保 Ipoh</option>
+          <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1">
+            <option value="全马" id="optCityAll" class="text-gray-800">📍 全马地区</option>
+            <option value="槟城" id="optCityPenang" class="text-gray-800">📍 槟城 Penang</option>
+            <option value="吉隆坡/雪兰莪" id="optCityKL" class="text-gray-800">📍 吉隆坡 / 雪兰莪</option>
+            <option value="新山" id="optCityJB" class="text-gray-800">📍 新山 JB</option>
+            <option value="马六甲" id="optCityMelaka" class="text-gray-800">📍 马六甲 Melaka</option>
+            <option value="怡保" id="optCityIpoh" class="text-gray-800">📍 怡保 Ipoh</option>
           </select>
         </div>
       </div>
 
-      <!-- 右侧搜索框 -->
-      <div class="flex-1 max-w-[190px]">
-        <div class="relative">
-          <input type="text" id="searchInput" oninput="renderPosts()" placeholder="搜租房、招聘、二手..." 
-                 class="w-full bg-white/95 text-gray-800 text-xs rounded-full pl-7 pr-3 py-2 focus:outline-none shadow-inner">
-          <span class="absolute left-2.5 top-2 text-gray-400 text-xs">🔍</span>
-        </div>
+      <!-- 右侧三语切换按钮 (CN / EN / BM) -->
+      <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
+        <button onclick="setLang('zh')" id="langBtn-zh" class="px-2 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
+        <button onclick="setLang('en')" id="langBtn-en" class="px-2 py-0.5 rounded-full text-white/90 hover:text-white transition">EN</button>
+        <button onclick="setLang('ms')" id="langBtn-ms" class="px-2 py-0.5 rounded-full text-white/90 hover:text-white transition">BM</button>
       </div>
+    </div>
+
+    <!-- 第二行搜索框 -->
+    <div class="relative">
+      <input type="text" id="searchInput" oninput="renderPosts()" placeholder="搜租房、招聘、二手..." 
+             class="w-full bg-white/95 text-gray-800 text-xs rounded-full pl-8 pr-3 py-1.5 focus:outline-none shadow-inner">
+      <span class="absolute left-3 top-1.5 text-gray-400 text-xs">🔍</span>
     </div>
   </header>
 
   <!-- 主页面内容 -->
   <main id="mainTab" class="flex-1 pb-24">
-    <!-- 大马今日便民速览卡片 -->
+    <!-- 大马今日便民速览卡片（实时汇率 + 云端同步油价） -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100">
       <div class="flex items-center justify-between mb-2.5">
         <div class="flex items-center space-x-1.5">
           <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          <span class="text-xs font-bold text-gray-800">大马今日便民速览</span>
+          <span id="dailyBoardTitle" class="text-xs font-bold text-gray-800">大马今日便民速览</span>
         </div>
-        <span class="text-[11px] text-gray-400">每周四更新 · 参考价</span>
+        <span id="dailyBoardSub" class="text-[11px] text-gray-400">汇率实时 · 油价每周四更新</span>
       </div>
       <div class="grid grid-cols-3 gap-2 text-center">
         <div class="bg-red-50/70 rounded-xl p-2 border border-red-100">
           <div class="text-[10px] text-gray-500 mb-0.5">RON95 / RON97</div>
-          <div class="text-xs font-extrabold text-red-600">RM 2.05 <span class="text-gray-400 font-normal">/ 3.19</span></div>
+          <div id="fuelPriceDisplay" class="text-xs font-extrabold text-red-600">RM 2.05 <span class="text-gray-400 font-normal">/ 3.19</span></div>
         </div>
         <div class="bg-amber-50/70 rounded-xl p-2 border border-amber-100">
-          <div class="text-[10px] text-gray-500 mb-0.5">马币兑人民币</div>
-          <div class="text-xs font-extrabold text-amber-600">1 MYR ≈ 1.63 CNY</div>
+          <div id="rateCnyLabel" class="text-[10px] text-gray-500 mb-0.5">马币兑人民币</div>
+          <div id="rateCnyDisplay" class="text-xs font-extrabold text-amber-600">1 MYR ≈ 1.63 CNY</div>
         </div>
         <div class="bg-blue-50/70 rounded-xl p-2 border border-blue-100">
-          <div class="text-[10px] text-gray-500 mb-0.5">新币兑马币</div>
-          <div class="text-xs font-extrabold text-blue-600">1 SGD ≈ 3.32 MYR</div>
+          <div id="rateSgdLabel" class="text-[10px] text-gray-500 mb-0.5">新币兑马币</div>
+          <div id="rateSgdDisplay" class="text-xs font-extrabold text-blue-600">1 SGD ≈ 3.32 MYR</div>
         </div>
       </div>
     </section>
@@ -79,23 +84,23 @@
       <div class="grid grid-cols-5 gap-1 text-center">
         <button onclick="selectCategory('全部')" class="cat-item flex flex-col items-center p-1.5 rounded-xl bg-red-50 text-red-600 transition" data-cat="全部">
           <div class="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center text-lg mb-1 shadow-sm">⊞</div>
-          <span class="text-[11px] font-bold">全部信息</span>
+          <span id="catTextAll" class="text-[11px] font-bold">全部信息</span>
         </button>
         <button onclick="selectCategory('找房子')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="找房子">
           <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg mb-1">🏠</div>
-          <span class="text-[11px] font-medium">找房子</span>
+          <span id="catTextHouse" class="text-[11px] font-medium">找房子</span>
         </button>
         <button onclick="selectCategory('找工作')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="找工作">
           <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg mb-1">💼</div>
-          <span class="text-[11px] font-medium">找工作</span>
+          <span id="catTextJob" class="text-[11px] font-medium">找工作</span>
         </button>
         <button onclick="selectCategory('二手闲置')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="二手闲置">
           <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg mb-1">🛍️</div>
-          <span class="text-[11px] font-medium">二手闲置</span>
+          <span id="catTextSecond" class="text-[11px] font-medium">二手闲置</span>
         </button>
         <button onclick="selectCategory('本地优惠')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="本地优惠">
           <div class="w-10 h-10 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg mb-1">🏪</div>
-          <span class="text-[11px] font-medium">本地商家</span>
+          <span id="catTextShop" class="text-[11px] font-medium">本地商家</span>
         </button>
       </div>
     </section>
@@ -105,32 +110,32 @@
       <div class="flex items-center space-x-2">
         <span class="w-1 h-4 bg-red-600 rounded-full"></span>
         <h2 class="font-extrabold text-gray-800 text-sm" id="listHeaderTitle">全马最新动态</h2>
-        <span id="postCountBadge" class="text-[11px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">0 条</span>
+        <span id="postCountBadge" class="text-[11px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">0</span>
       </div>
-      <button onclick="openPostModal()" class="text-xs text-red-600 font-bold flex items-center space-x-1 hover:underline">
-        <span>📝 免费发帖</span>
+      <button onclick="openPostModal()" id="topFreePostBtn" class="text-xs text-red-600 font-bold flex items-center space-x-1 hover:underline">
+        📝 免费发帖
       </button>
     </div>
 
     <!-- 云端实时帖子列表 -->
     <section class="px-3 space-y-2.5" id="postList">
-      <div class="text-center py-12 text-gray-400 text-sm">正在连接云端数据库加载最新动态...</div>
+      <div id="loadingText" class="text-center py-12 text-gray-400 text-sm">正在连接云端数据库加载最新动态...</div>
     </section>
   </main>
 
   <!-- 收藏页面 -->
   <main id="favTab" class="flex-1 pb-24 hidden px-3 pt-4">
-    <h2 class="font-extrabold text-gray-800 text-base mb-3 px-1">⭐ 我的本地收藏</h2>
+    <h2 id="favPageTitle" class="font-extrabold text-gray-800 text-base mb-3 px-1">⭐ 我的本地收藏</h2>
     <div id="favList" class="space-y-2.5"></div>
   </main>
 
-  <!-- 纯净版“我的”页面（无任何管理员入口） -->
+  <!-- 纯净版“我的”页面 -->
   <main id="profileTab" class="flex-1 pb-24 hidden px-4 pt-5">
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4 flex items-center space-x-4">
       <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-2xl font-black shadow">吉</div>
       <div>
-        <h2 class="font-bold text-gray-800 text-lg">欢迎来到大马吉通</h2>
-        <p class="text-xs text-gray-500 mt-0.5">马来西亚华人本地生活 · 免费分类信息</p>
+        <h2 id="profileWelcome" class="font-bold text-gray-800 text-lg">欢迎来到大马吉通</h2>
+        <p id="profileSub" class="text-xs text-gray-500 mt-0.5">马来西亚本地生活 · 免费分类信息平台</p>
       </div>
     </div>
 
@@ -139,8 +144,8 @@
         <div class="flex items-center space-x-3">
           <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-base">📝</span>
           <div>
-            <div class="text-sm font-bold text-gray-800">免费发布本地信息</div>
-            <div class="text-xs text-gray-400">租房、招聘、二手交易、商家活动</div>
+            <div id="profilePostTitle" class="text-sm font-bold text-gray-800">免费发布本地信息</div>
+            <div id="profilePostDesc" class="text-xs text-gray-400">租房、招聘、二手交易、商家活动</div>
           </div>
         </div>
         <span class="text-gray-300 text-lg">›</span>
@@ -150,8 +155,8 @@
         <div class="flex items-center space-x-3">
           <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">⭐</span>
           <div>
-            <div class="text-sm font-bold text-gray-800">我的收藏夹</div>
-            <div class="text-xs text-gray-400">查看已保存的房源与联系方式</div>
+            <div id="profileFavTitle" class="text-sm font-bold text-gray-800">我的收藏夹</div>
+            <div id="profileFavDesc" class="text-xs text-gray-400">查看已保存的房源与联系方式</div>
           </div>
         </div>
         <span class="text-gray-300 text-lg">›</span>
@@ -159,9 +164,9 @@
     </div>
 
     <div class="bg-white rounded-2xl p-4 shadow-sm text-xs text-gray-500 space-y-2">
-      <p class="font-bold text-gray-700 text-sm">📌 平台使用须知</p>
-      <p>• 本平台为全马华人提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。</p>
-      <p>• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。</p>
+      <p id="profileNoticeTitle" class="font-bold text-gray-700 text-sm">📌 平台使用须知</p>
+      <p id="profileNotice1">• 本平台为全马用户提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。</p>
+      <p id="profileNotice2">• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。</p>
     </div>
   </main>
 
@@ -169,23 +174,23 @@
   <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
     <button onclick="switchTab('main')" id="navMain" class="flex flex-col items-center text-red-600">
       <span class="text-lg">🏠</span>
-      <span class="text-[10px] font-bold mt-0.5">首页</span>
+      <span id="navHomeText" class="text-[10px] font-bold mt-0.5">首页</span>
     </button>
     <button onclick="selectCategory('本地优惠'); switchTab('main');" id="navNews" class="flex flex-col items-center text-gray-400">
       <span class="text-lg">📰</span>
-      <span class="text-[10px] font-medium mt-0.5">本地资讯</span>
+      <span id="navNewsText" class="text-[10px] font-medium mt-0.5">本地资讯</span>
     </button>
     <button onclick="openPostModal()" class="flex flex-col items-center -mt-6">
       <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-orange-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white hover:scale-105 transition">+</div>
-      <span class="text-[10px] font-bold text-gray-700 mt-0.5">发布</span>
+      <span id="navPostText" class="text-[10px] font-bold text-gray-700 mt-0.5">发布</span>
     </button>
     <button onclick="switchTab('fav')" id="navFav" class="flex flex-col items-center text-gray-400">
       <span class="text-lg">🔖</span>
-      <span class="text-[10px] font-medium mt-0.5">收藏</span>
+      <span id="navFavText" class="text-[10px] font-medium mt-0.5">收藏</span>
     </button>
     <button onclick="switchTab('profile')" id="navProfile" class="flex flex-col items-center text-gray-400">
       <span class="text-lg">👤</span>
-      <span class="text-[10px] font-medium mt-0.5">我的</span>
+      <span id="navProfileText" class="text-[10px] font-medium mt-0.5">我的</span>
     </button>
   </nav>
 
@@ -201,62 +206,62 @@
   <div id="postModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-extrabold text-lg text-gray-800">发布大马本地信息</h3>
+        <h3 id="modalPostHeader" class="font-extrabold text-lg text-gray-800">发布大马本地信息</h3>
         <button onclick="closePostModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">✕</button>
       </div>
       <form id="postForm" onsubmit="submitPost(event)" class="space-y-3">
         <!-- 实拍照片上传区 -->
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">上传实拍照片 (可选，更吸引关注)</label>
+          <label id="labelPhoto" class="block text-xs font-bold text-gray-700 mb-1">上传实拍照片 (可选，更吸引关注)</label>
           <div class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition overflow-hidden">
             <div id="imagePlaceholder" class="flex flex-col items-center justify-center text-gray-400 pointer-events-none">
               <span class="text-2xl mb-1">📷</span>
-              <span class="text-xs font-medium">点击拍照或从相册选图</span>
+              <span id="photoHintText" class="text-xs font-medium">点击拍照或从相册选图</span>
             </div>
             <img id="imagePreview" src="" class="hidden w-full h-full object-cover pointer-events-none" />
             <input type="file" id="postImageInput" accept="image/*" onchange="previewImage(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-            <button type="button" id="removeImgBtn" onclick="clearSelectedImage(event)" class="hidden absolute top-2 right-2 z-20 bg-black/70 text-white text-xs px-2.5 py-1 rounded-full font-bold shadow">✕ 移除</button>
+            <button type="button" id="removeImgBtn" onclick="clearSelectedImage(event)" class="hidden absolute top-2 right-2 z-20 bg-black/70 text-white text-xs px-2.5 py-1 rounded-full font-bold shadow">✕</button>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">信息分类 *</label>
+            <label id="labelCat" class="block text-xs font-bold text-gray-700 mb-1">信息分类 *</label>
             <select id="postCategory" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
-              <option value="找房子">🏠 找房子</option>
-              <option value="找工作">💼 找工作</option>
-              <option value="二手闲置">🛍️ 二手闲置</option>
-              <option value="本地优惠">🏪 本地商家/资讯</option>
+              <option value="找房子" id="formCatHouse">🏠 找房子</option>
+              <option value="找工作" id="formCatJob">💼 找工作</option>
+              <option value="二手闲置" id="formCatSecond">🛍️ 二手闲置</option>
+              <option value="本地优惠" id="formCatShop">🏪 本地商家/资讯</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">所在城市 *</label>
+            <label id="labelCity" class="block text-xs font-bold text-gray-700 mb-1">所在城市 *</label>
             <select id="postCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
-              <option value="槟城">槟城 Penang</option>
-              <option value="吉隆坡/雪兰莪">吉隆坡 / 雪兰莪</option>
-              <option value="新山">新山 JB</option>
-              <option value="马六甲">马六甲</option>
-              <option value="怡保">怡保</option>
-              <option value="全马">全马通用</option>
+              <option value="槟城" id="formCityPenang">槟城 Penang</option>
+              <option value="吉隆坡/雪兰莪" id="formCityKL">吉隆坡 / 雪兰莪</option>
+              <option value="新山" id="formCityJB">新山 JB</option>
+              <option value="马六甲" id="formCityMelaka">马六甲 Melaka</option>
+              <option value="怡保" id="formCityIpoh">怡保 Ipoh</option>
+              <option value="全马" id="formCityAll">全马通用</option>
             </select>
           </div>
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">信息标题 *</label>
+          <label id="labelTitle" class="block text-xs font-bold text-gray-700 mb-1">信息标题 *</label>
           <input type="text" id="postTitle" required placeholder="例如：【屋主直租】槟城 Gurney 海景套房" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
         </div>
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">价格 / 薪资 *</label>
-            <input type="text" id="postPrice" required placeholder="例如：RM 1,500/月" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+            <label id="labelPrice" class="block text-xs font-bold text-gray-700 mb-1">价格 / 薪资 *</label>
+            <input type="text" id="postPrice" required placeholder="RM 1,500/月" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">WhatsApp 号码 *</label>
+            <label id="labelWhatsapp" class="block text-xs font-bold text-gray-700 mb-1">WhatsApp 号码 *</label>
             <input type="text" id="postWhatsapp" required placeholder="60123456789" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
           </div>
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">详细描述</label>
+          <label id="labelDesc" class="block text-xs font-bold text-gray-700 mb-1">详细描述</label>
           <textarea id="postDesc" rows="3" placeholder="填写具体位置、条件要求、联系方式补充..." class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></textarea>
         </div>
         <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:opacity-95 transition">立即发布上线</button>
@@ -269,10 +274,309 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    const I18N = {
+      zh: {
+        brandTitle: '大马吉通',
+        searchPlaceholder: '搜租房、招聘、二手...',
+        dailyBoardTitle: '大马今日便民速览',
+        dailyBoardSub: '汇率实时 · 油价每周四更新',
+        rateCnyLabel: '马币兑人民币',
+        rateSgdLabel: '新币兑马币',
+        catAll: '全部信息',
+        catHouse: '找房子',
+        catJob: '找工作',
+        catSecond: '二手闲置',
+        catShop: '本地商家',
+        latestSuffix: '最新动态',
+        countUnit: '条',
+        freePostBtn: '📝 免费发帖',
+        loading: '正在连接云端数据库加载最新动态...',
+        emptyList: '当前筛选条件下暂无信息，点击底部“+”发布第一条吧！',
+        pinnedTag: '置顶',
+        pinnedPrefix: '置顶 · ',
+        publishedSuffix: '发布',
+        noDesc: '发布者未填写更多补充描述。',
+        favBtn: '☆ 收藏',
+        favedBtn: '⭐ 已收藏',
+        waBtn: '💬 一键联系 WhatsApp',
+        safetyTip: '安全提示：线下交易请核实对方身份，切勿提前转账定金。',
+        waGreeting: (title) => `你好，我在【大马吉通】看到你发布的：${title}，请问还在吗？`,
+        navHome: '首页',
+        navNews: '本地资讯',
+        navPost: '发布',
+        navFav: '收藏',
+        navProfile: '我的',
+        favPageTitle: '⭐ 我的本地收藏',
+        emptyFav: '还没有收藏任何帖子，点开帖子详情可点击收藏哦！',
+        profileWelcome: '欢迎来到大马吉通',
+        profileSub: '马来西亚本地生活 · 免费分类信息平台',
+        profilePostTitle: '免费发布本地信息',
+        profilePostDesc: '租房、招聘、二手交易、商家活动',
+        profileFavTitle: '我的收藏夹',
+        profileFavDesc: '查看已保存的房源与联系方式',
+        profileNoticeTitle: '📌 平台使用须知',
+        profileNotice1: '• 本平台为全马用户提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。',
+        profileNotice2: '• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。',
+        modalPostHeader: '发布大马本地信息',
+        labelPhoto: '上传实拍照片 (可选，更吸引关注)',
+        photoHint: '点击拍照或从相册选图',
+        labelCat: '信息分类 *',
+        labelCity: '所在城市 *',
+        labelTitle: '信息标题 *',
+        titlePlaceholder: '例如：【屋主直租】槟城 Gurney 海景套房',
+        labelPrice: '价格 / 薪资 *',
+        pricePlaceholder: 'RM 1,500/月',
+        labelWhatsapp: 'WhatsApp 号码 *',
+        labelDesc: '详细描述',
+        descPlaceholder: '填写具体位置、条件要求、联系方式补充...',
+        submitBtn: '立即发布上线',
+        uploadingImg: '正在上传实拍照片...',
+        syncingCloud: '正在同步到云端...',
+        cities: { '全马': '全马地区', '槟城': '槟城 Penang', '吉隆坡/雪兰莪': '吉隆坡 / 雪兰莪', '新山': '新山 JB', '马六甲': '马六甲 Melaka', '怡保': '怡保 Ipoh' },
+        cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' },
+        cardLabels: { '找房子': '精选房源', '找工作': '名企直聘', '二手闲置': '同城闲置', '本地优惠': '本地热点' }
+      },
+      en: {
+        brandTitle: 'DamaJitong',
+        searchPlaceholder: 'Search rent, jobs, preloved...',
+        dailyBoardTitle: 'Malaysia Daily Info',
+        dailyBoardSub: 'Live FX · Fuel Updated Thu',
+        rateCnyLabel: 'MYR to CNY',
+        rateSgdLabel: 'SGD to MYR',
+        catAll: 'All Posts',
+        catHouse: 'Property',
+        catJob: 'Jobs',
+        catSecond: 'Preloved',
+        catShop: 'Local Biz',
+        latestSuffix: ' Latest',
+        countUnit: 'posts',
+        freePostBtn: '📝 Post Free Ad',
+        loading: 'Loading latest posts from cloud...',
+        emptyList: 'No posts found here yet. Tap "+" below to post the first one!',
+        pinnedTag: 'TOP',
+        pinnedPrefix: 'Featured · ',
+        publishedSuffix: '',
+        noDesc: 'No additional description provided.',
+        favBtn: '☆ Save',
+        favedBtn: '⭐ Saved',
+        waBtn: '💬 Chat on WhatsApp',
+        safetyTip: 'Safety Tip: Meet in public & verify before making any advance payment.',
+        waGreeting: (title) => `Hi, I saw your post on DamaJitong: "${title}". Is it still available?`,
+        navHome: 'Home',
+        navNews: 'Local Deals',
+        navPost: 'Post',
+        navFav: 'Saved',
+        navProfile: 'Me',
+        favPageTitle: '⭐ My Saved Posts',
+        emptyFav: 'No saved posts yet. Open any post and tap Save!',
+        profileWelcome: 'Welcome to DamaJitong',
+        profileSub: 'Malaysia Local Community & Free Classifieds',
+        profilePostTitle: 'Post a Free Classified Ad',
+        profilePostDesc: 'Rentals, Jobs, Preloved Items, Local Deals',
+        profileFavTitle: 'My Saved Items',
+        profileFavDesc: 'Quick access to your bookmarked listings',
+        profileNoticeTitle: '📌 Community Guidelines',
+        profileNotice1: '• Free local listing platform across Malaysia. Tap any listing to contact the poster directly via WhatsApp.',
+        profileNotice2: '• Safety Reminder: Always inspect items or properties in person before transferring any deposit.',
+        modalPostHeader: 'Post a Local Listing',
+        labelPhoto: 'Upload Photo (Optional, gets more views)',
+        photoHint: 'Tap to take photo or choose from gallery',
+        labelCat: 'Category *',
+        labelCity: 'City / Area *',
+        labelTitle: 'Listing Title *',
+        titlePlaceholder: 'e.g. Gurney Seaview Condo for Rent',
+        labelPrice: 'Price / Salary *',
+        pricePlaceholder: 'RM 1,500/mo',
+        labelWhatsapp: 'WhatsApp Number *',
+        labelDesc: 'Description',
+        descPlaceholder: 'Location details, requirements, contact notes...',
+        submitBtn: 'Publish Now',
+        uploadingImg: 'Uploading photo...',
+        syncingCloud: 'Publishing to cloud...',
+        cities: { '全马': 'All Malaysia', '槟城': 'Penang', '吉隆坡/雪兰莪': 'KL / Selangor', '新山': 'Johor Bahru', '马六甲': 'Melaka', '怡保': 'Ipoh' },
+        cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' },
+        cardLabels: { '找房子': 'Property', '找工作': 'Hiring', '二手闲置': 'Preloved', '本地优惠': 'Hot Deal' }
+      },
+      ms: {
+        brandTitle: 'DamaJitong',
+        searchPlaceholder: 'Cari rumah sewa, kerja, terpakai...',
+        dailyBoardTitle: 'Info Harian Malaysia',
+        dailyBoardSub: 'Kadar Semasa · Minyak Khamis',
+        rateCnyLabel: 'MYR ke CNY',
+        rateSgdLabel: 'SGD ke MYR',
+        catAll: 'Semua',
+        catHouse: 'Rumah Sewa',
+        catJob: 'Kerja Kosong',
+        catSecond: 'Terpakai',
+        catShop: 'Perniagaan',
+        latestSuffix: ' Terkini',
+        countUnit: 'iklan',
+        freePostBtn: '📝 Iklan Percuma',
+        loading: 'Memuatkan iklan terkini...',
+        emptyList: 'Tiada iklan buat masa ini. Tekan "+" di bawah untuk muat naik!',
+        pinnedTag: 'PILIHAN',
+        pinnedPrefix: 'Taja · ',
+        publishedSuffix: '',
+        noDesc: 'Tiada maklumat tambahan dinyatakan.',
+        favBtn: '☆ Simpan',
+        favedBtn: '⭐ Disimpan',
+        waBtn: '💬 Hubungi WhatsApp',
+        safetyTip: 'Tip Keselamatan: Sahkan identiti sebelum membuat sebarang bayaran pendahuluan.',
+        waGreeting: (title) => `Salam, saya nampak iklan anda di DamaJitong: "${title}". Masih ada lagi?`,
+        navHome: 'Utama',
+        navNews: 'Info Tempatan',
+        navPost: 'Iklan',
+        navFav: 'Simpanan',
+        navProfile: 'Saya',
+        favPageTitle: '⭐ Iklan Disimpan',
+        emptyFav: 'Belum ada iklan disimpan. Buka mana-mana iklan dan tekan Simpan!',
+        profileWelcome: 'Selamat Datang ke DamaJitong',
+        profileSub: 'Platform Iklan Percuma Komuniti Malaysia',
+        profilePostTitle: 'Muat Naik Iklan Percuma',
+        profilePostDesc: 'Rumah sewa, kerja kosong, barang terpakai',
+        profileFavTitle: 'Senarai Simpanan Saya',
+        profileFavDesc: 'Lihat semula iklan yang telah disimpan',
+        profileNoticeTitle: '📌 Panduan Pengguna',
+        profileNotice1: '• Platform iklan percuma seluruh Malaysia. Tekan iklan untuk terus berhubung melalui WhatsApp.',
+        profileNotice2: '• Peringatan Keselamatan: Sila berjumpa secara bersemuka sebelum membayar sebarang deposit.',
+        modalPostHeader: 'Muat Naik Iklan Baru',
+        labelPhoto: 'Muat Naik Gambar (Pilihan)',
+        photoHint: 'Tekan untuk ambil gambar atau pilih galeri',
+        labelCat: 'Kategori *',
+        labelCity: 'Bandar / Negeri *',
+        labelTitle: 'Tajuk Iklan *',
+        titlePlaceholder: 'Cth: Bilik / Rumah Sewa di Penang',
+        labelPrice: 'Harga / Gaji *',
+        pricePlaceholder: 'RM 1,500/bln',
+        labelWhatsapp: 'Nombor WhatsApp *',
+        labelDesc: 'Keterangan Lanjut',
+        descPlaceholder: 'Lokasi tepat, syarat-syarat, maklumat tambahan...',
+        submitBtn: 'Hantar Iklan Sekarang',
+        uploadingImg: 'Memuat naik gambar...',
+        syncingCloud: 'Menyimpan iklan...',
+        cities: { '全马': 'Seluruh Malaysia', '槟城': 'Pulau Pinang', '吉隆坡/雪兰莪': 'KL / Selangor', '新山': 'Johor Bahru', '马六甲': 'Melaka', '怡保': 'Ipoh' },
+        cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' },
+        cardLabels: { '找房子': 'Hartanah', '找工作': 'Kerjaya', '二手闲置': 'Terpakai', '本地优惠': 'Promosi' }
+      }
+    };
+
+    let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let allPosts = [];
     let currentCategory = '全部';
     let savedIds = JSON.parse(localStorage.getItem('dama_favs') || '[]');
     let selectedFile = null;
+
+    // 1. 自动拉取实时汇率 (MYR -> CNY, SGD -> MYR)
+    async function fetchLiveRates() {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/MYR');
+        const json = await res.json();
+        if (json && json.rates) {
+          const myrToCny = json.rates.CNY.toFixed(2);
+          const sgdToMyr = (1 / json.rates.SGD).toFixed(2);
+          document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${myrToCny} CNY`;
+          document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${sgdToMyr} MYR`;
+        }
+      } catch (e) {
+        console.warn('使用默认兜底汇率:', e);
+      }
+    }
+
+    // 2. 从 Supabase 读取云端最新油价
+    async function fetchLiveFuel() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('settings')
+          .select('ron95, ron97')
+          .eq('id', 1)
+          .single();
+        if (!error && data) {
+          document.getElementById('fuelPriceDisplay').innerHTML = `RM ${data.ron95} <span class="text-gray-400 font-normal">/ ${data.ron97}</span>`;
+        }
+      } catch (e) {
+        console.warn('使用默认兜底油价:', e);
+      }
+    }
+
+    function setLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('dama_lang', lang);
+      const t = I18N[lang];
+
+      ['zh', 'en', 'ms'].forEach(l => {
+        const btn = document.getElementById(`langBtn-${l}`);
+        if (l === lang) {
+          btn.className = 'px-2 py-0.5 rounded-full bg-white text-red-600 transition shadow-xs';
+        } else {
+          btn.className = 'px-2 py-0.5 rounded-full text-white/90 hover:text-white transition';
+        }
+      });
+
+      document.getElementById('brandTitle').innerText = t.brandTitle;
+      document.getElementById('searchInput').placeholder = t.searchPlaceholder;
+      document.getElementById('dailyBoardTitle').innerText = t.dailyBoardTitle;
+      document.getElementById('dailyBoardSub').innerText = t.dailyBoardSub;
+      document.getElementById('rateCnyLabel').innerText = t.rateCnyLabel;
+      document.getElementById('rateSgdLabel').innerText = t.rateSgdLabel;
+
+      document.getElementById('catTextAll').innerText = t.catAll;
+      document.getElementById('catTextHouse').innerText = t.catHouse;
+      document.getElementById('catTextJob').innerText = t.catJob;
+      document.getElementById('catTextSecond').innerText = t.catSecond;
+      document.getElementById('catTextShop').innerText = t.catShop;
+      document.getElementById('topFreePostBtn').innerText = t.freePostBtn;
+
+      document.getElementById('optCityAll').innerText = `📍 ${t.cities['全马']}`;
+      document.getElementById('optCityPenang').innerText = `📍 ${t.cities['槟城']}`;
+      document.getElementById('optCityKL').innerText = `📍 ${t.cities['吉隆坡/雪兰莪']}`;
+      document.getElementById('optCityJB').innerText = `📍 ${t.cities['新山']}`;
+      document.getElementById('optCityMelaka').innerText = `📍 ${t.cities['马六甲']}`;
+      document.getElementById('optCityIpoh').innerText = `📍 ${t.cities['怡保']}`;
+
+      document.getElementById('navHomeText').innerText = t.navHome;
+      document.getElementById('navNewsText').innerText = t.navNews;
+      document.getElementById('navPostText').innerText = t.navPost;
+      document.getElementById('navFavText').innerText = t.navFav;
+      document.getElementById('navProfileText').innerText = t.navProfile;
+
+      document.getElementById('favPageTitle').innerText = t.favPageTitle;
+      document.getElementById('profileWelcome').innerText = t.profileWelcome;
+      document.getElementById('profileSub').innerText = t.profileSub;
+      document.getElementById('profilePostTitle').innerText = t.profilePostTitle;
+      document.getElementById('profilePostDesc').innerText = t.profilePostDesc;
+      document.getElementById('profileFavTitle').innerText = t.profileFavTitle;
+      document.getElementById('profileFavDesc').innerText = t.profileFavDesc;
+      document.getElementById('profileNoticeTitle').innerText = t.profileNoticeTitle;
+      document.getElementById('profileNotice1').innerText = t.profileNotice1;
+      document.getElementById('profileNotice2').innerText = t.profileNotice2;
+
+      document.getElementById('modalPostHeader').innerText = t.modalPostHeader;
+      document.getElementById('labelPhoto').innerText = t.labelPhoto;
+      document.getElementById('photoHintText').innerText = t.photoHint;
+      document.getElementById('labelCat').innerText = t.labelCat;
+      document.getElementById('formCatHouse').innerText = `🏠 ${t.catHouse}`;
+      document.getElementById('formCatJob').innerText = `💼 ${t.catJob}`;
+      document.getElementById('formCatSecond').innerText = `🛍️ ${t.catSecond}`;
+      document.getElementById('formCatShop').innerText = `🏪 ${t.catShop}`;
+      document.getElementById('labelCity').innerText = t.labelCity;
+      document.getElementById('formCityPenang').innerText = t.cities['槟城'];
+      document.getElementById('formCityKL').innerText = t.cities['吉隆坡/雪兰莪'];
+      document.getElementById('formCityJB').innerText = t.cities['新山'];
+      document.getElementById('formCityMelaka').innerText = t.cities['马六甲'];
+      document.getElementById('formCityIpoh').innerText = t.cities['怡保'];
+      document.getElementById('formCityAll').innerText = t.cities['全马'];
+      document.getElementById('labelTitle').innerText = t.labelTitle;
+      document.getElementById('postTitle').placeholder = t.titlePlaceholder;
+      document.getElementById('labelPrice').innerText = t.labelPrice;
+      document.getElementById('postPrice').placeholder = t.pricePlaceholder;
+      document.getElementById('labelWhatsapp').innerText = t.labelWhatsapp;
+      document.getElementById('labelDesc').innerText = t.labelDesc;
+      document.getElementById('postDesc').placeholder = t.descPlaceholder;
+      document.getElementById('submitBtn').innerText = t.submitBtn;
+
+      renderPosts();
+      renderFavs();
+    }
 
     function previewImage(event) {
       const file = event.target.files[0];
@@ -338,8 +642,8 @@
         console.error('Supabase Error:', error);
         document.getElementById('postList').innerHTML = `
           <div class="bg-white rounded-2xl p-6 text-center shadow-sm">
-            <p class="text-red-500 font-bold text-sm mb-1">云端数据加载失败</p>
-            <p class="text-xs text-gray-400">错误详情：${error.message}</p>
+            <p class="text-red-500 font-bold text-sm mb-1">Load Failed</p>
+            <p class="text-xs text-gray-400">${error.message}</p>
           </div>`;
         return;
       }
@@ -348,18 +652,22 @@
     }
 
     function getCategoryVisual(cat) {
+      const t = I18N[currentLang];
       const map = {
-        '找房子': { bg: 'from-blue-600 to-indigo-600', icon: '🏢', label: '精选房源' },
-        '找工作': { bg: 'from-emerald-600 to-teal-600', icon: '💼', label: '名企直聘' },
-        '二手闲置': { bg: 'from-amber-500 to-orange-600', icon: '📦', label: '同城闲置' },
-        '本地优惠': { bg: 'from-red-600 to-rose-600', icon: '🔥', label: '本地热点' }
+        '找房子': { bg: 'from-blue-600 to-indigo-600', icon: '🏢', label: t.cardLabels['找房子'] },
+        '找工作': { bg: 'from-emerald-600 to-teal-600', icon: '💼', label: t.cardLabels['找工作'] },
+        '二手闲置': { bg: 'from-amber-500 to-orange-600', icon: '📦', label: t.cardLabels['二手闲置'] },
+        '本地优惠': { bg: 'from-red-600 to-rose-600', icon: '🔥', label: t.cardLabels['本地优惠'] }
       };
-      return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: '本地信息' };
+      return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: 'Info' };
     }
 
     function createPostCardHTML(post) {
+      const t = I18N[currentLang];
       const vis = getCategoryVisual(post.category);
-      const dateStr = new Date(post.created_at).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+      const dateStr = new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' });
+      const displayCat = t.cats[post.category] || post.category;
+      const displayCity = t.cities[post.city] || post.city;
 
       const rightMediaHTML = post.image_url
         ? `<img src="${post.image_url}" alt="${post.title}" class="w-24 h-24 rounded-xl object-cover shrink-0 border border-gray-100 shadow-xs" />`
@@ -374,15 +682,15 @@
             <div class="flex-1 min-w-0 flex flex-col justify-between">
               <div>
                 <div class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
-                  ${post.is_pinned ? '<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">置顶</span>' : ''}
-                  <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">${post.category}</span>
-                  <span class="text-[11px] text-gray-400 truncate">📍 ${post.city}</span>
+                  ${post.is_pinned ? `<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">${t.pinnedTag}</span>` : ''}
+                  <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">${displayCat}</span>
+                  <span class="text-[11px] text-gray-400 truncate">📍 ${displayCity}</span>
                 </div>
                 <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${post.title}</h3>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-red-600 font-extrabold text-sm">${post.price}</span>
-                <span class="text-[11px] text-gray-400">${post.is_pinned ? '置顶 · ' : ''}${dateStr}发布</span>
+                <span class="text-[11px] text-gray-400">${post.is_pinned ? t.pinnedPrefix : ''}${dateStr}${t.publishedSuffix}</span>
               </div>
             </div>
             ${rightMediaHTML}
@@ -392,11 +700,13 @@
     }
 
     function renderPosts() {
+      const t = I18N[currentLang];
       const city = document.getElementById('cityFilter').value;
       const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
       const listEl = document.getElementById('postList');
 
-      document.getElementById('listHeaderTitle').innerText = `${city}最新动态`;
+      const displayCityHeader = t.cities[city] || city;
+      document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${t.latestSuffix}`;
 
       const filtered = allPosts.filter(p => {
         const matchCity = (city === '全马' || p.city === city || p.city === '全马');
@@ -408,10 +718,10 @@
         return matchCity && matchCat && matchKey;
       });
 
-      document.getElementById('postCountBadge').innerText = `${filtered.length} 条`;
+      document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
 
       if (filtered.length === 0) {
-        listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">当前筛选条件下暂无信息，点击底部“+”发布第一条吧！</div>`;
+        listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
         return;
       }
 
@@ -433,12 +743,15 @@
     }
 
     function openDetail(id) {
+      const t = I18N[currentLang];
       const post = allPosts.find(p => p.id === id);
       if (!post) return;
       const cleanPhone = post.whatsapp.replace(/[^0-9]/g, '');
-      const waText = encodeURIComponent(`你好，我在【大马吉通】看到你发布的：${post.title}，请问还在吗？`);
+      const waText = encodeURIComponent(t.waGreeting(post.title));
       const waLink = `https://wa.me/${cleanPhone}?text=${waText}`;
       const isFav = savedIds.includes(post.id);
+      const displayCat = t.cats[post.category] || post.category;
+      const displayCity = t.cities[post.city] || post.city;
 
       const detailImageHTML = post.image_url
         ? `<div class="mb-4 rounded-2xl overflow-hidden border border-gray-100 bg-gray-50">
@@ -449,23 +762,23 @@
       document.getElementById('detailContent').innerHTML = `
         ${detailImageHTML}
         <div class="flex items-center space-x-2 mb-2">
-          <span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-0.5 rounded-md">${post.category}</span>
-          <span class="text-xs text-gray-500">📍 ${post.city}</span>
+          <span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-0.5 rounded-md">${displayCat}</span>
+          <span class="text-xs text-gray-500">📍 ${displayCity}</span>
         </div>
         <h2 class="text-lg font-extrabold text-gray-900 mb-2 leading-snug">${post.title}</h2>
         <div class="text-xl font-black text-red-600 mb-4">${post.price}</div>
         <div class="bg-gray-50 rounded-2xl p-4 text-sm text-gray-700 leading-relaxed mb-5 whitespace-pre-line border border-gray-100">
-          ${post.description || '发布者未填写更多补充描述。'}
+          ${post.description || t.noDesc}
         </div>
         <div class="flex space-x-2.5">
           <button onclick="toggleFav(${post.id})" class="px-4 py-3.5 rounded-xl border border-gray-200 font-bold text-sm ${isFav ? 'bg-amber-50 text-amber-600 border-amber-200' : 'text-gray-600'}">
-            ${isFav ? '⭐ 已收藏' : '☆ 收藏'}
+            ${isFav ? t.favedBtn : t.favBtn}
           </button>
           <a href="${waLink}" target="_blank" class="flex-1 bg-green-600 text-white text-center font-bold py-3.5 rounded-xl shadow-md hover:bg-green-700 transition flex items-center justify-center space-x-1.5">
-            <span>💬 一键联系 WhatsApp</span>
+            <span>${t.waBtn}</span>
           </a>
         </div>
-        <p class="text-center text-[11px] text-gray-400 mt-3.5">安全提示：线下交易请核实对方身份，切勿提前转账定金。</p>
+        <p class="text-center text-[11px] text-gray-400 mt-3.5">${t.safetyTip}</p>
       `;
       document.getElementById('detailModal').classList.remove('hidden');
     }
@@ -489,10 +802,11 @@
     }
 
     function renderFavs() {
+      const t = I18N[currentLang];
       const favPosts = allPosts.filter(p => savedIds.includes(p.id));
       const favEl = document.getElementById('favList');
       if (favPosts.length === 0) {
-        favEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">还没有收藏任何帖子，点开帖子详情可点击收藏哦！</div>`;
+        favEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyFav}</div>`;
         return;
       }
       favEl.innerHTML = favPosts.map(createPostCardHTML).join('');
@@ -500,13 +814,14 @@
 
     async function submitPost(e) {
       e.preventDefault();
+      const t = I18N[currentLang];
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
 
       let uploadedImageUrl = null;
 
       if (selectedFile) {
-        btn.innerText = '正在上传实拍照片...';
+        btn.innerText = t.uploadingImg;
         try {
           const compressedBlob = await compressImage(selectedFile);
           const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
@@ -521,14 +836,14 @@
             .getPublicUrl(fileName);
           uploadedImageUrl = urlData.publicUrl;
         } catch (err) {
-          alert('图片上传失败：' + err.message);
+          alert('Upload Error: ' + err.message);
           btn.disabled = false;
-          btn.innerText = '立即发布上线';
+          btn.innerText = t.submitBtn;
           return;
         }
       }
 
-      btn.innerText = '正在同步到云端...';
+      btn.innerText = t.syncingCloud;
       const newPost = {
         category: document.getElementById('postCategory').value,
         city: document.getElementById('postCity').value,
@@ -542,10 +857,10 @@
 
       const { error } = await supabaseClient.from('posts').insert([newPost]);
       btn.disabled = false;
-      btn.innerText = '立即发布上线';
+      btn.innerText = t.submitBtn;
 
       if (error) {
-        alert('发布失败：' + error.message);
+        alert('Error: ' + error.message);
         return;
       }
 
@@ -574,6 +889,9 @@
       }
     }
 
+    setLang(currentLang);
+    fetchLiveRates();
+    fetchLiveFuel();
     fetchPosts();
   </script>
 </body>
