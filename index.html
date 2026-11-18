@@ -17,7 +17,7 @@
   <!-- 顶部红色主导航 + 三语切换器 -->
   <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3.5 py-2.5">
     <div class="flex items-center justify-between gap-2 mb-2">
-      <!-- 左侧 Logo + 城市选择 -->
+      <!-- 左侧 Logo + 全马 13 州 3 直辖区选择 -->
       <div class="flex items-center space-x-2 shrink-0">
         <div class="w-8 h-8 bg-white text-red-600 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">吉</div>
         <div>
@@ -25,13 +25,8 @@
             <span id="brandTitle" class="font-extrabold text-sm tracking-tight">大马吉通</span>
             <span class="text-[9px] bg-white/20 px-1.5 py-0.2 rounded font-bold">MY</span>
           </div>
-          <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1">
-            <option value="全马" id="optCityAll" class="text-gray-800">📍 全马地区</option>
-            <option value="槟城" id="optCityPenang" class="text-gray-800">📍 槟城 Penang</option>
-            <option value="吉隆坡/雪兰莪" id="optCityKL" class="text-gray-800">📍 吉隆坡 / 雪兰莪</option>
-            <option value="新山" id="optCityJB" class="text-gray-800">📍 新山 JB</option>
-            <option value="马六甲" id="optCityMelaka" class="text-gray-800">📍 马六甲 Melaka</option>
-            <option value="怡保" id="optCityIpoh" class="text-gray-800">📍 怡保 Ipoh</option>
+          <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1 max-w-[185px]">
+            <!-- 由 JS 根据 CN/EN/BM 自动生成全部 13 州 + 3 直辖区 -->
           </select>
         </div>
       </div>
@@ -235,14 +230,9 @@
             </select>
           </div>
           <div>
-            <label id="labelCity" class="block text-xs font-bold text-gray-700 mb-1">所在城市 *</label>
+            <label id="labelCity" class="block text-xs font-bold text-gray-700 mb-1">所在州属 / 直辖区 *</label>
             <select id="postCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
-              <option value="槟城" id="formCityPenang">槟城 Penang</option>
-              <option value="吉隆坡/雪兰莪" id="formCityKL">吉隆坡 / 雪兰莪</option>
-              <option value="新山" id="formCityJB">新山 JB</option>
-              <option value="马六甲" id="formCityMelaka">马六甲 Melaka</option>
-              <option value="怡保" id="formCityIpoh">怡保 Ipoh</option>
-              <option value="全马" id="formCityAll">全马通用</option>
+              <!-- 由 JS 自动填充全马 13 州 + 3 联邦直辖区 -->
             </select>
           </div>
         </div>
@@ -273,6 +263,36 @@
     const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 马来西亚全部 13 个州 + 3 个联邦直辖区（含三语与分组）
+    const MY_REGIONS = [
+      { value: '全马', group: 'all', zh: '全马地区', en: 'All Malaysia', ms: 'Seluruh Malaysia' },
+      // 3 个联邦直辖区
+      { value: '吉隆坡', group: 'ft', zh: '吉隆坡 (直辖区)', en: 'Kuala Lumpur (FT)', ms: 'WP Kuala Lumpur' },
+      { value: '布城', group: 'ft', zh: '布城 (直辖区)', en: 'Putrajaya (FT)', ms: 'WP Putrajaya' },
+      { value: '纳闽', group: 'ft', zh: '纳闽 (直辖区)', en: 'Labuan (FT)', ms: 'WP Labuan' },
+      // 西马 11 州
+      { value: '柔佛', group: 'west', zh: '柔佛 Johor', en: 'Johor', ms: 'Johor' },
+      { value: '吉打', group: 'west', zh: '吉打 Kedah', en: 'Kedah', ms: 'Kedah' },
+      { value: '吉兰丹', group: 'west', zh: '吉兰丹 Kelantan', en: 'Kelantan', ms: 'Kelantan' },
+      { value: '马六甲', group: 'west', zh: '马六甲 Melaka', en: 'Melaka', ms: 'Melaka' },
+      { value: '森美兰', group: 'west', zh: '森美兰 Negeri Sembilan', en: 'Negeri Sembilan', ms: 'Negeri Sembilan' },
+      { value: '彭亨', group: 'west', zh: '彭亨 Pahang', en: 'Pahang', ms: 'Pahang' },
+      { value: '槟城', group: 'west', zh: '槟城 Penang', en: 'Penang', ms: 'Pulau Pinang' },
+      { value: '霹雳', group: 'west', zh: '霹雳 Perak', en: 'Perak', ms: 'Perak' },
+      { value: '玻璃市', group: 'west', zh: '玻璃市 Perlis', en: 'Perlis', ms: 'Perlis' },
+      { value: '雪兰莪', group: 'west', zh: '雪兰莪 Selangor', en: 'Selangor', ms: 'Selangor' },
+      { value: '登嘉楼', group: 'west', zh: '登嘉楼 Terengganu', en: 'Terengganu', ms: 'Terengganu' },
+      // 东马 2 州
+      { value: '沙巴', group: 'east', zh: '沙巴 Sabah', en: 'Sabah', ms: 'Sabah' },
+      { value: '砂拉越', group: 'east', zh: '砂拉越 Sarawak', en: 'Sarawak', ms: 'Sarawak' }
+    ];
+
+    // 兼容旧数据别名映射
+    const LEGACY_CITY_MAP = {
+      '吉隆坡/雪兰莪': ['吉隆坡', '雪兰莪'],
+      '新山': ['柔佛']
+    };
 
     const I18N = {
       zh: {
@@ -325,7 +345,7 @@
         labelPhoto: '上传实拍照片 (可选，更吸引关注)',
         photoHint: '点击拍照或从相册选图',
         labelCat: '信息分类 *',
-        labelCity: '所在城市 *',
+        labelCity: '所在州属 / 直辖区 *',
         labelTitle: '信息标题 *',
         titlePlaceholder: '例如：【屋主直租】槟城 Gurney 海景套房',
         labelPrice: '价格 / 薪资 *',
@@ -336,7 +356,7 @@
         submitBtn: '立即发布上线',
         uploadingImg: '正在上传实拍照片...',
         syncingCloud: '正在同步到云端...',
-        cities: { '全马': '全马地区', '槟城': '槟城 Penang', '吉隆坡/雪兰莪': '吉隆坡 / 雪兰莪', '新山': '新山 JB', '马六甲': '马六甲 Melaka', '怡保': '怡保 Ipoh' },
+        groupLabels: { ft: '联邦直辖区 (3)', west: '西马各州 (11)', east: '东马各州 (2)', all: '通用' },
         cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' },
         cardLabels: { '找房子': '精选房源', '找工作': '名企直聘', '二手闲置': '同城闲置', '本地优惠': '本地热点' }
       },
@@ -390,7 +410,7 @@
         labelPhoto: 'Upload Photo (Optional, gets more views)',
         photoHint: 'Tap to take photo or choose from gallery',
         labelCat: 'Category *',
-        labelCity: 'City / Area *',
+        labelCity: 'State / Federal Territory *',
         labelTitle: 'Listing Title *',
         titlePlaceholder: 'e.g. Gurney Seaview Condo for Rent',
         labelPrice: 'Price / Salary *',
@@ -401,7 +421,7 @@
         submitBtn: 'Publish Now',
         uploadingImg: 'Uploading photo...',
         syncingCloud: 'Publishing to cloud...',
-        cities: { '全马': 'All Malaysia', '槟城': 'Penang', '吉隆坡/雪兰莪': 'KL / Selangor', '新山': 'Johor Bahru', '马六甲': 'Melaka', '怡保': 'Ipoh' },
+        groupLabels: { ft: 'Federal Territories (3)', west: 'Peninsular States (11)', east: 'East Malaysia (2)', all: 'General' },
         cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' },
         cardLabels: { '找房子': 'Property', '找工作': 'Hiring', '二手闲置': 'Preloved', '本地优惠': 'Hot Deal' }
       },
@@ -455,7 +475,7 @@
         labelPhoto: 'Muat Naik Gambar (Pilihan)',
         photoHint: 'Tekan untuk ambil gambar atau pilih galeri',
         labelCat: 'Kategori *',
-        labelCity: 'Bandar / Negeri *',
+        labelCity: 'Negeri / Wilayah Persekutuan *',
         labelTitle: 'Tajuk Iklan *',
         titlePlaceholder: 'Cth: Bilik / Rumah Sewa di Penang',
         labelPrice: 'Harga / Gaji *',
@@ -466,7 +486,7 @@
         submitBtn: 'Hantar Iklan Sekarang',
         uploadingImg: 'Memuat naik gambar...',
         syncingCloud: 'Menyimpan iklan...',
-        cities: { '全马': 'Seluruh Malaysia', '槟城': 'Pulau Pinang', '吉隆坡/雪兰莪': 'KL / Selangor', '新山': 'Johor Bahru', '马六甲': 'Melaka', '怡保': 'Ipoh' },
+        groupLabels: { ft: 'Wilayah Persekutuan (3)', west: 'Semenanjung (11 Negeri)', east: 'Sabah & Sarawak (2)', all: 'Umum' },
         cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' },
         cardLabels: { '找房子': 'Hartanah', '找工作': 'Kerjaya', '二手闲置': 'Terpakai', '本地优惠': 'Promosi' }
       }
@@ -477,9 +497,53 @@
     let currentCategory = '全部';
     let savedIds = JSON.parse(localStorage.getItem('dama_favs') || '[]');
     let selectedFile = null;
-    let translationCache = {}; // 缓存已翻译的内容，避免重复请求
+    let translationCache = {};
 
-    // 免费多语言自动翻译引擎
+    function getRegionDisplayName(val, lang = currentLang) {
+      if (val === '吉隆坡/雪兰莪') return lang === 'zh' ? '吉隆坡 / 雪兰莪' : 'KL / Selangor';
+      if (val === '新山') return lang === 'zh' ? '新山 Johor' : 'Johor Bahru';
+      const found = MY_REGIONS.find(r => r.value === val);
+      return found ? found[lang] : val;
+    }
+
+    // 动态填充顶部筛选框 & 发帖弹窗里的 13 州 + 3 直辖区选项
+    function populateRegionDropdowns() {
+      const t = I18N[currentLang];
+      const filterSelect = document.getElementById('cityFilter');
+      const postSelect = document.getElementById('postCity');
+
+      const prevFilterVal = filterSelect.value || '全马';
+      const prevPostVal = postSelect.value || '槟城';
+
+      const buildOptionsHTML = (includeAllFirst) => {
+        let html = '';
+        if (includeAllFirst) {
+          const allItem = MY_REGIONS.find(r => r.value === '全马');
+          html += `<option value="全马" class="text-gray-800">📍 ${allItem[currentLang]}</option>`;
+        }
+
+        ['ft', 'west', 'east'].forEach(grp => {
+          html += `<optgroup label="${t.groupLabels[grp]}" class="text-gray-500 font-bold">`;
+          MY_REGIONS.filter(r => r.group === grp).forEach(r => {
+            html += `<option value="${r.value}" class="text-gray-800 font-normal">${includeAllFirst ? '📍 ' : ''}${r[currentLang]}</option>`;
+          });
+          html += `</optgroup>`;
+        });
+
+        if (!includeAllFirst) {
+          const allItem = MY_REGIONS.find(r => r.value === '全马');
+          html += `<optgroup label="${t.groupLabels.all}"><option value="全马">${allItem[currentLang]}</option></optgroup>`;
+        }
+        return html;
+      };
+
+      filterSelect.innerHTML = buildOptionsHTML(true);
+      postSelect.innerHTML = buildOptionsHTML(false);
+
+      filterSelect.value = prevFilterVal;
+      postSelect.value = prevPostVal;
+    }
+
     async function autoTranslateText(text, targetLangCode) {
       if (!text) return '';
       const cacheKey = `${targetLangCode}_${text}`;
@@ -506,7 +570,6 @@
       const descEl = document.getElementById('detailPostDesc');
       const badgeEl = document.getElementById('detailTranslatedBadge');
 
-      // 如果当前已经是翻译状态，则一键还原原文
       if (btn.dataset.translated === 'true') {
         titleEl.innerText = post.title;
         descEl.innerText = post.description || t.noDesc;
@@ -516,7 +579,6 @@
         return;
       }
 
-      // 执行翻译
       btn.disabled = true;
       btn.innerText = t.translatingBtn;
       try {
@@ -581,6 +643,8 @@
         }
       });
 
+      populateRegionDropdowns();
+
       document.getElementById('brandTitle').innerText = t.brandTitle;
       document.getElementById('searchInput').placeholder = t.searchPlaceholder;
       document.getElementById('dailyBoardTitle').innerText = t.dailyBoardTitle;
@@ -594,13 +658,6 @@
       document.getElementById('catTextSecond').innerText = t.catSecond;
       document.getElementById('catTextShop').innerText = t.catShop;
       document.getElementById('topFreePostBtn').innerText = t.freePostBtn;
-
-      document.getElementById('optCityAll').innerText = `📍 ${t.cities['全马']}`;
-      document.getElementById('optCityPenang').innerText = `📍 ${t.cities['槟城']}`;
-      document.getElementById('optCityKL').innerText = `📍 ${t.cities['吉隆坡/雪兰莪']}`;
-      document.getElementById('optCityJB').innerText = `📍 ${t.cities['新山']}`;
-      document.getElementById('optCityMelaka').innerText = `📍 ${t.cities['马六甲']}`;
-      document.getElementById('optCityIpoh').innerText = `📍 ${t.cities['怡保']}`;
 
       document.getElementById('navHomeText').innerText = t.navHome;
       document.getElementById('navNewsText').innerText = t.navNews;
@@ -628,12 +685,6 @@
       document.getElementById('formCatSecond').innerText = `🛍️ ${t.catSecond}`;
       document.getElementById('formCatShop').innerText = `🏪 ${t.catShop}`;
       document.getElementById('labelCity').innerText = t.labelCity;
-      document.getElementById('formCityPenang').innerText = t.cities['槟城'];
-      document.getElementById('formCityKL').innerText = t.cities['吉隆坡/雪兰莪'];
-      document.getElementById('formCityJB').innerText = t.cities['新山'];
-      document.getElementById('formCityMelaka').innerText = t.cities['马六甲'];
-      document.getElementById('formCityIpoh').innerText = t.cities['怡保'];
-      document.getElementById('formCityAll').innerText = t.cities['全马'];
       document.getElementById('labelTitle').innerText = t.labelTitle;
       document.getElementById('postTitle').placeholder = t.titlePlaceholder;
       document.getElementById('labelPrice').innerText = t.labelPrice;
@@ -736,7 +787,7 @@
       const vis = getCategoryVisual(post.category);
       const dateStr = new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' });
       const displayCat = t.cats[post.category] || post.category;
-      const displayCity = t.cities[post.city] || post.city;
+      const displayCity = getRegionDisplayName(post.city, currentLang);
 
       const rightMediaHTML = post.image_url
         ? `<img src="${post.image_url}" alt="${post.title}" class="w-24 h-24 rounded-xl object-cover shrink-0 border border-gray-100 shadow-xs" />`
@@ -774,11 +825,12 @@
       const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
       const listEl = document.getElementById('postList');
 
-      const displayCityHeader = t.cities[city] || city;
+      const displayCityHeader = getRegionDisplayName(city, currentLang);
       document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${t.latestSuffix}`;
 
       const filtered = allPosts.filter(p => {
-        const matchCity = (city === '全马' || p.city === city || p.city === '全马');
+        const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
+        const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
         const matchCat = (currentCategory === '全部' || p.category === currentCategory);
         const matchKey = !keyword || 
           p.title.toLowerCase().includes(keyword) || 
@@ -820,7 +872,7 @@
       const waLink = `https://wa.me/${cleanPhone}?text=${waText}`;
       const isFav = savedIds.includes(post.id);
       const displayCat = t.cats[post.category] || post.category;
-      const displayCity = t.cities[post.city] || post.city;
+      const displayCity = getRegionDisplayName(post.city, currentLang);
 
       const detailImageHTML = post.image_url
         ? `<div class="mb-4 rounded-2xl overflow-hidden border border-gray-100 bg-gray-50">
