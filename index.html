@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>大马吉通 MY - 马来西亚华人本地生活与分类信息平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="max-w-md mx-auto bg-gray-100 min-h-screen flex flex-col relative shadow-2xl">
+
+  <!-- 顶部红色主导航 -->
+  <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-4 py-3">
+    <div class="flex items-center justify-between gap-2">
+      <!-- 左侧 Logo + 城市选择 -->
+      <div class="flex items-center space-x-2 shrink-0">
+        <div class="w-9 h-9 bg-white text-red-600 rounded-xl flex items-center justify-center font-black text-xl shadow-sm">吉</div>
+        <div>
+          <div class="flex items-center space-x-1">
+            <span class="font-extrabold text-base tracking-tight">大马吉通</span>
+            <span class="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-bold">MY</span>
+          </div>
+          <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-xs font-medium focus:outline-none cursor-pointer -ml-1">
+            <option value="全马" class="text-gray-800">📍 全马地区</option>
+            <option value="槟城" class="text-gray-800">📍 槟城 Penang</option>
+            <option value="吉隆坡/雪兰莪" class="text-gray-800">📍 吉隆坡 / 雪兰莪</option>
+            <option value="新山" class="text-gray-800">📍 新山 JB</option>
+            <option value="马六甲" class="text-gray-800">📍 马六甲 Melaka</option>
+            <option value="怡保" class="text-gray-800">📍 怡保 Ipoh</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 右侧搜索框 -->
+      <div class="flex-1 max-w-[190px]">
+        <div class="relative">
+          <input type="text" id="searchInput" oninput="renderPosts()" placeholder="搜租房、招聘、二手..." 
+                 class="w-full bg-white/95 text-gray-800 text-xs rounded-full pl-7 pr-3 py-2 focus:outline-none shadow-inner">
+          <span class="absolute left-2.5 top-2 text-gray-400 text-xs">🔍</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主页面内容 -->
+  <main id="mainTab" class="flex-1 pb-24">
+    <!-- 大马今日便民速览卡片 -->
+    <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100">
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center space-x-1.5">
+          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          <span class="text-xs font-bold text-gray-800">大马今日便民速览</span>
+        </div>
+        <span class="text-[11px] text-gray-400">每周四更新 · 参考价</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="bg-red-50/70 rounded-xl p-2 border border-red-100">
+          <div class="text-[10px] text-gray-500 mb-0.5">RON95 / RON97</div>
+          <div class="text-xs font-extrabold text-red-600">RM 2.05 <span class="text-gray-400 font-normal">/ 3.19</span></div>
+        </div>
+        <div class="bg-amber-50/70 rounded-xl p-2 border border-amber-100">
+          <div class="text-[10px] text-gray-500 mb-0.5">马币兑人民币</div>
+          <div class="text-xs font-extrabold text-amber-600">1 MYR ≈ 1.63 CNY</div>
+        </div>
+        <div class="bg-blue-50/70 rounded-xl p-2 border border-blue-100">
+          <div class="text-[10px] text-gray-500 mb-0.5">新币兑马币</div>
+          <div class="text-xs font-extrabold text-blue-600">1 SGD ≈ 3.32 MYR</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5大金刚区分类导航 -->
+    <section class="mx-3 mt-3 bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
+      <div class="grid grid-cols-5 gap-1 text-center">
+        <button onclick="selectCategory('全部')" class="cat-item flex flex-col items-center p-1.5 rounded-xl bg-red-50 text-red-600 transition" data-cat="全部">
+          <div class="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center text-lg mb-1 shadow-sm">⊞</div>
+          <span class="text-[11px] font-bold">全部信息</span>
+        </button>
+        <button onclick="selectCategory('找房子')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="找房子">
+          <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg mb-1">🏠</div>
+          <span class="text-[11px] font-medium">找房子</span>
+        </button>
+        <button onclick="selectCategory('找工作')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="找工作">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg mb-1">💼</div>
+          <span class="text-[11px] font-medium">找工作</span>
+        </button>
+        <button onclick="selectCategory('二手闲置')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="二手闲置">
+          <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg mb-1">🛍️</div>
+          <span class="text-[11px] font-medium">二手闲置</span>
+        </button>
+        <button onclick="selectCategory('本地优惠')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="本地优惠">
+          <div class="w-10 h-10 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg mb-1">🏪</div>
+          <span class="text-[11px] font-medium">本地商家</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 列表标题栏 -->
+    <div class="mx-4 mt-4 mb-2 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="w-1 h-4 bg-red-600 rounded-full"></span>
+        <h2 class="font-extrabold text-gray-800 text-sm" id="listHeaderTitle">全马最新动态</h2>
+        <span id="postCountBadge" class="text-[11px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">0 条</span>
+      </div>
+      <button onclick="openPostModal()" class="text-xs text-red-600 font-bold flex items-center space-x-1 hover:underline">
+        <span>📝 免费发帖</span>
+      </button>
+    </div>
+
+    <!-- 云端实时帖子列表 -->
+    <section class="px-3 space-y-2.5" id="postList">
+      <div class="text-center py-12 text-gray-400 text-sm">正在连接云端数据库加载最新动态...</div>
+    </section>
+  </main>
+
+  <!-- 收藏页面 -->
+  <main id="favTab" class="flex-1 pb-24 hidden px-3 pt-4">
+    <h2 class="font-extrabold text-gray-800 text-base mb-3 px-1">⭐ 我的本地收藏</h2>
+    <div id="favList" class="space-y-2.5"></div>
+  </main>
+
+  <!-- “我的”与管理员后台页面 -->
+  <main id="profileTab" class="flex-1 pb-24 hidden px-4 pt-5">
+    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4 flex items-center space-x-4">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-2xl font-black shadow">吉</div>
+      <div>
+        <h2 class="font-bold text-gray-800 text-lg">大马吉通管理员</h2>
+        <p class="text-xs text-green-600 font-medium mt-0.5">● 已接入 Supabase 云端数据库</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-gray-800 text-sm">🛡️ 开启管理员审核模式</h3>
+          <p class="text-xs text-gray-500 mt-0.5">开启后可在首页对帖子进行“广告置顶”或“删除”</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="adminToggle" onchange="toggleAdminMode()" class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+        </label>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 shadow-sm text-xs text-gray-500 space-y-2">
+      <p class="font-bold text-gray-700 text-sm">平台运行状态</p>
+      <p>• 节点位置：亚太云端节点（全马高速访问）</p>
+      <p>• 商业变现：支持首页红色“置顶”商家广告位展示</p>
+    </div>
+  </main>
+
+  <!-- 底部5键导航栏 -->
+  <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+    <button onclick="switchTab('main')" id="navMain" class="flex flex-col items-center text-red-600">
+      <span class="text-lg">🏠</span>
+      <span class="text-[10px] font-bold mt-0.5">首页</span>
+    </button>
+    <button onclick="selectCategory('本地优惠'); switchTab('main');" id="navNews" class="flex flex-col items-center text-gray-400">
+      <span class="text-lg">📰</span>
+      <span class="text-[10px] font-medium mt-0.5">本地资讯</span>
+    </button>
+    <button onclick="openPostModal()" class="flex flex-col items-center -mt-6">
+      <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-orange-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white hover:scale-105 transition">+</div>
+      <span class="text-[10px] font-bold text-gray-700 mt-0.5">发布</span>
+    </button>
+    <button onclick="switchTab('fav')" id="navFav" class="flex flex-col items-center text-gray-400">
+      <span class="text-lg">🔖</span>
+      <span class="text-[10px] font-medium mt-0.5">收藏</span>
+    </button>
+    <button onclick="switchTab('profile')" id="navProfile" class="flex flex-col items-center text-gray-400">
+      <span class="text-lg">👤</span>
+      <span class="text-[10px] font-medium mt-0.5">我的</span>
+    </button>
+  </nav>
+
+  <!-- 帖子详情弹窗 -->
+  <div id="detailModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-xs">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[85vh] overflow-y-auto relative">
+      <button onclick="closeDetailModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold">✕</button>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <!-- 发布新帖弹窗 -->
+  <div id="postModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-xs">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-extrabold text-lg text-gray-800">发布大马本地信息</h3>
+        <button onclick="closePostModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">✕</button>
+      </div>
+      <form id="postForm" onsubmit="submitPost(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">信息分类 *</label>
+            <select id="postCategory" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+              <option value="找房子">🏠 找房子</option>
+              <option value="找工作">💼 找工作</option>
+              <option value="二手闲置">🛍️ 二手闲置</option>
+              <option value="本地优惠">🏪 本地商家/资讯</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">所在城市 *</label>
+            <select id="postCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+              <option value="槟城">槟城 Penang</option>
+              <option value="吉隆坡/雪兰莪">吉隆坡 / 雪兰莪</option>
+              <option value="新山">新山 JB</option>
+              <option value="马六甲">马六甲</option>
+              <option value="怡保">怡保</option>
+              <option value="全马">全马通用</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">信息标题 *</label>
+          <input type="text" id="postTitle" required placeholder="例如：【屋主直租】槟城 Gurney 海景套房" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">价格 / 薪资 *</label>
+            <input type="text" id="postPrice" required placeholder="例如：RM 1,500/月" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">WhatsApp 号码 *</label>
+            <input type="text" id="postWhatsapp" required placeholder="60123456789" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">详细描述</label>
+          <textarea id="postDesc" rows="3" placeholder="填写具体位置、条件要求、联系方式补充..." class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></textarea>
+        </div>
+        <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:opacity-95 transition">立即发布上线</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allPosts = [];
+    let currentCategory = '全部';
+    let isAdminMode = false;
+    let savedIds = JSON.parse(localStorage.getItem('dama_favs') || '[]');
+
+    async function fetchPosts() {
+      const { data, error } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase Error:', error);
+        document.getElementById('postList').innerHTML = `
+          <div class="bg-white rounded-2xl p-6 text-center shadow-sm">
+            <p class="text-red-500 font-bold text-sm mb-1">云端数据加载失败</p>
+            <p class="text-xs text-gray-400">错误详情：${error.message}</p>
+          </div>`;
+        return;
+      }
+      allPosts = data || [];
+      renderPosts();
+    }
+
+    function getCategoryVisual(cat) {
+      const map = {
+        '找房子': { bg: 'from-blue-600 to-indigo-600', icon: '🏢', label: '精选房源' },
+        '找工作': { bg: 'from-emerald-600 to-teal-600', icon: '💼', label: '名企直聘' },
+        '二手闲置': { bg: 'from-amber-500 to-orange-600', icon: '📦', label: '同城闲置' },
+        '本地优惠': { bg: 'from-red-600 to-rose-600', icon: '🔥', label: '本地热点' }
+      };
+      return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: '本地信息' };
+    }
+
+    function createPostCardHTML(post) {
+      const vis = getCategoryVisual(post.category);
+      const dateStr = new Date(post.created_at).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+      const isFav = savedIds.includes(post.id);
+
+      return `
+        <div class="bg-white rounded-2xl p-3.5 shadow-sm border ${post.is_pinned ? 'border-red-200 bg-red-50/15' : 'border-gray-100'} transition">
+          <div onclick="openDetail(${post.id})" class="flex justify-between gap-3 cursor-pointer">
+            <!-- 左侧文字内容 -->
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
+                  ${post.is_pinned ? '<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">置顶</span>' : ''}
+                  <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">${post.category}</span>
+                  <span class="text-[11px] text-gray-400 truncate">📍 ${post.city}</span>
+                </div>
+                <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${post.title}</h3>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-red-600 font-extrabold text-sm">${post.price}</span>
+                <span class="text-[11px] text-gray-400">${post.is_pinned ? '置顶 · ' : ''}${dateStr}发布</span>
+              </div>
+            </div>
+
+            <!-- 右侧高颜值分类封面卡片（彻底替代乱码方块） -->
+            <div class="w-24 h-24 rounded-xl bg-gradient-to-br ${vis.bg} text-white shrink-0 flex flex-col items-center justify-center p-2 text-center shadow-inner">
+              <span class="text-2xl mb-1">${vis.icon}</span>
+              <span class="text-[11px] font-bold tracking-wide opacity-95">${vis.label}</span>
+            </div>
+          </div>
+
+          <!-- 管理员操作栏 -->
+          ${isAdminMode ? `
+            <div class="mt-3 pt-2.5 border-t border-dashed border-gray-200 flex items-center justify-between">
+              <span class="text-[10px] text-gray-400">ID: #${post.id}</span>
+              <div class="flex space-x-2">
+                <button onclick="togglePin(${post.id}, ${post.is_pinned})" class="text-xs px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-bold">
+                  ${post.is_pinned ? '取消置顶' : '⬆️ 置顶'}
+                </button>
+                <button onclick="deletePost(${post.id})" class="text-xs px-2.5 py-1 rounded-lg bg-red-100 text-red-700 font-bold">
+                  🗑️ 删除
+                </button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderPosts() {
+      const city = document.getElementById('cityFilter').value;
+      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      const listEl = document.getElementById('postList');
+
+      document.getElementById('listHeaderTitle').innerText = `${city}最新动态`;
+
+      const filtered = allPosts.filter(p => {
+        const matchCity = (city === '全马' || p.city === city || p.city === '全马');
+        const matchCat = (currentCategory === '全部' || p.category === currentCategory);
+        const matchKey = !keyword || 
+          p.title.toLowerCase().includes(keyword) || 
+          (p.description && p.description.toLowerCase().includes(keyword)) ||
+          p.price.toLowerCase().includes(keyword);
+        return matchCity && matchCat && matchKey;
+      });
+
+      document.getElementById('postCountBadge').innerText = `${filtered.length} 条`;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">当前筛选条件下暂无信息，点击底部“+”发布第一条吧！</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(createPostCardHTML).join('');
+    }
+
+    function selectCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-item').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.classList.add('bg-red-50', 'text-red-600');
+          btn.classList.remove('text-gray-600');
+        } else {
+          btn.classList.remove('bg-red-50', 'text-red-600');
+          btn.classList.add('text-gray-600');
+        }
+      });
+      renderPosts();
+    }
+
+    function openDetail(id) {
+      const post = allPosts.find(p => p.id === id);
+      if (!post) return;
+      const cleanPhone = post.whatsapp.replace(/[^0-9]/g, '');
+      const waText = encodeURIComponent(`你好，我在【大马吉通】看到你发布的：${post.title}，请问还在吗？`);
+      const waLink = `https://wa.me/${cleanPhone}?text=${waText}`;
+      const isFav = savedIds.includes(post.id);
+
+      document.getElementById('detailContent').innerHTML = `
+        <div class="flex items-center space-x-2 mb-2">
+          <span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-0.5 rounded-md">${post.category}</span>
+          <span class="text-xs text-gray-500">📍 ${post.city}</span>
+        </div>
+        <h2 class="text-lg font-extrabold text-gray-900 mb-2 leading-snug">${post.title}</h2>
+        <div class="text-xl font-black text-red-600 mb-4">${post.price}</div>
+        <div class="bg-gray-50 rounded-2xl p-4 text-sm text-gray-700 leading-relaxed mb-5 whitespace-pre-line border border-gray-100">
+          ${post.description || '发布者未填写更多补充描述。'}
+        </div>
+        <div class="flex space-x-2.5">
+          <button onclick="toggleFav(${post.id})" class="px-4 py-3.5 rounded-xl border border-gray-200 font-bold text-sm ${isFav ? 'bg-amber-50 text-amber-600 border-amber-200' : 'text-gray-600'}">
+            ${isFav ? '⭐ 已收藏' : '☆ 收藏'}
+          </button>
+          <a href="${waLink}" target="_blank" class="flex-1 bg-green-600 text-white text-center font-bold py-3.5 rounded-xl shadow-md hover:bg-green-700 transition flex items-center justify-center space-x-1.5">
+            <span>💬 一键联系 WhatsApp</span>
+          </a>
+        </div>
+        <p class="text-center text-[11px] text-gray-400 mt-3.5">安全提示：线下交易请核实对方身份，切勿提前转账定金。</p>
+      `;
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
+    function openPostModal() { document.getElementById('postModal').classList.remove('hidden'); }
+    function closePostModal() { document.getElementById('postModal').classList.add('hidden'); }
+
+    function toggleFav(id) {
+      if (savedIds.includes(id)) {
+        savedIds = savedIds.filter(item => item !== id);
+      } else {
+        savedIds.push(id);
+      }
+      localStorage.setItem('dama_favs', JSON.stringify(savedIds));
+      openDetail(id);
+      renderFavs();
+    }
+
+    function renderFavs() {
+      const favPosts = allPosts.filter(p => savedIds.includes(p.id));
+      const favEl = document.getElementById('favList');
+      if (favPosts.length === 0) {
+        favEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">还没有收藏任何帖子，点开帖子详情可点击收藏哦！</div>`;
+        return;
+      }
+      favEl.innerHTML = favPosts.map(createPostCardHTML).join('');
+    }
+
+    async function submitPost(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = '正在同步到云端...';
+
+      const newPost = {
+        category: document.getElementById('postCategory').value,
+        city: document.getElementById('postCity').value,
+        title: document.getElementById('postTitle').value.trim(),
+        price: document.getElementById('postPrice').value.trim(),
+        whatsapp: document.getElementById('postWhatsapp').value.trim(),
+        description: document.getElementById('postDesc').value.trim(),
+        is_pinned: false
+      };
+
+      const { error } = await supabaseClient.from('posts').insert([newPost]);
+      btn.disabled = false;
+      btn.innerText = '立即发布上线';
+
+      if (error) {
+        alert('发布失败：' + error.message);
+        return;
+      }
+
+      document.getElementById('postForm').reset();
+      closePostModal();
+      await fetchPosts();
+    }
+
+    async function togglePin(id, currentStatus) {
+      const { error } = await supabaseClient.from('posts').update({ is_pinned: !currentStatus }).eq('id', id);
+      if (!error) fetchPosts();
+    }
+
+    async function deletePost(id) {
+      if (!confirm('确定要永久删除这条帖子吗？')) return;
+      const { error } = await supabaseClient.from('posts').delete().eq('id', id);
+      if (!error) fetchPosts();
+    }
+
+    function switchTab(tab) {
+      ['mainTab', 'favTab', 'profileTab'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      ['navMain', 'navNews', 'navFav', 'navProfile'].forEach(id => {
+        document.getElementById(id).classList.remove('text-red-600');
+        document.getElementById(id).classList.add('text-gray-400');
+      });
+
+      if (tab === 'main') {
+        document.getElementById('mainTab').classList.remove('hidden');
+        document.getElementById('navMain').classList.replace('text-gray-400', 'text-red-600');
+      } else if (tab === 'fav') {
+        renderFavs();
+        document.getElementById('favTab').classList.remove('hidden');
+        document.getElementById('navFav').classList.replace('text-gray-400', 'text-red-600');
+      } else if (tab === 'profile') {
+        document.getElementById('profileTab').classList.remove('hidden');
+        document.getElementById('navProfile').classList.replace('text-gray-400', 'text-red-600');
+      }
+    }
+
+    function toggleAdminMode() {
+      isAdminMode = document.getElementById('adminToggle').checked;
+      renderPosts();
+    }
+
+    fetchPosts();
+  </script>
+</body>
+</html>
