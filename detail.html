@@ -122,7 +122,7 @@
         loading: '正在加载详细信息...', pin: '🔥 置顶推荐', transBtn: '🌐 翻译成中文', origBtn: '↩ 显示原文',
         transDone: '已自动翻译为中文', navSub: '大马吉通站内实景地图 · 语音带路', navGo: '🧭 导航去这里',
         descTitle: '详细信息说明', noDesc: '发布者未填写更多补充说明。',
-        safeTitle: '大马吉通安全交易提醒', safeBody: '线下看房、面试或二手面交请尽量选择公共场所，核实对方身份后再付款，切勿提前转账定金。',
+        safeTitle: '大马吉通安全交易提醒', safeBody: '线下看房、面试或二手面交请尽量选择公共场所，核实对方身份与物品状况后再付款，切勿提前转账定金。',
         relatedTitle: '同类热门推荐', fav: '☆ 收藏', faved: '⭐ 已收藏', bottomNav: '导航', waBtn: '联系 WhatsApp',
         waHello: (title) => `你好，我在【大马吉通】看到你发布的：${title}，请问还在吗？`,
         cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' }
@@ -153,6 +153,13 @@
     let detailTransCache = {};
     try { detailTransCache = JSON.parse(localStorage.getItem(DETAIL_TRANS_CACHE_KEY) || '{}'); } catch (e) {}
 
+    function getLocalizedField(post, baseField, lang) {
+      if (!post) return '';
+      if (lang === 'en') return post[`${baseField}_en`] || post[baseField] || '';
+      if (lang === 'ms') return post[`${baseField}_ms`] || post[baseField] || '';
+      return post[`${baseField}_zh`] || post[baseField] || '';
+    }
+
     function detectDetailTextLang(text) {
       if (!text) return 'en';
       if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN';
@@ -182,6 +189,7 @@
     }
 
     let currentPost = null;
+    let relatedPostsCache = [];
     let isTranslated = false;
 
     function changeDetailLang(lang) {
@@ -196,6 +204,7 @@
           : 'px-2 py-0.5 rounded-full text-white/90 transition';
       });
       if (currentPost) renderDetailPage();
+      if (relatedPostsCache.length > 0) renderRelated(relatedPostsCache);
     }
 
     async function initDetail() {
@@ -213,8 +222,8 @@
         currentPost = await DMJT_API.getPostById(postId);
         renderDetailPage();
 
-        const related = await DMJT_API.getRelatedPosts(currentPost.category, currentPost.id, 4);
-        renderRelated(related);
+        relatedPostsCache = await DMJT_API.getRelatedPosts(currentPost.category, currentPost.id, 4);
+        renderRelated(relatedPostsCache);
       } catch (err) {
         document.getElementById('loadingBox').innerHTML = `
           <div class="text-red-500 font-bold mb-2">该信息已下架或不存在</div>
@@ -228,7 +237,11 @@
       const t = DETAIL_I18N[lang];
       const p = currentPost;
 
-      document.title = `${p.title} - 大马吉通 MY`;
+      const localizedTitle = getLocalizedField(p, 'title', lang);
+      const localizedPrice = getLocalizedField(p, 'price', lang);
+      const localizedDesc = getLocalizedField(p, 'desc', lang) || p.description || t.noDesc;
+
+      document.title = `${localizedTitle} - 大马吉通 MY`;
       document.getElementById('txtBack').innerText = t.back;
       document.getElementById('txtHeader').innerText = t.header;
       document.getElementById('shareBtn').innerText = t.share;
@@ -251,7 +264,7 @@
       document.getElementById('catBadge').innerText = t.cats[p.category] || p.category;
       const cityLabel = DMJT_API.getRegionLabel(p.city, lang);
       document.getElementById('cityBadge').innerText = `📍 ${cityLabel}`;
-      document.getElementById('navLocationLabel').innerText = `📍 ${cityLabel} · ${p.title}`;
+      document.getElementById('navLocationLabel').innerText = `📍 ${cityLabel} · ${localizedTitle}`;
 
       const regionInfo = DMJT_API.getRegionInfo(p.city);
       const mapUrl = `/map.html?dest=${encodeURIComponent(p.title)}&lat=${regionInfo.lat}&lng=${regionInfo.lng}`;
@@ -261,9 +274,9 @@
       isTranslated = false;
       document.getElementById('transTag').classList.add('hidden');
       document.getElementById('transBtn').innerText = t.transBtn;
-      document.getElementById('postTitle').innerText = p.title;
-      document.getElementById('postPrice').innerText = p.price;
-      document.getElementById('postDesc').innerText = p.description || t.noDesc;
+      document.getElementById('postTitle').innerText = localizedTitle;
+      document.getElementById('postPrice').innerText = localizedPrice;
+      document.getElementById('postDesc').innerText = localizedDesc;
       document.getElementById('postDate').innerText = new Date(p.created_at).toLocaleDateString('en-GB');
 
       const isFav = DMJT_API.getFavIds().includes(Number(p.id));
@@ -274,16 +287,17 @@
         : 'px-3.5 py-3 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 shrink-0';
 
       const cleanPhone = (p.whatsapp || '').replace(/[^0-9]/g, '');
-      const waMsg = encodeURIComponent(t.waHello(p.title));
+      const waMsg = encodeURIComponent(t.waHello(localizedTitle));
       document.getElementById('waBtn').href = `https://wa.me/${cleanPhone}?text=${waMsg}`;
 
       document.getElementById('loadingBox').classList.add('hidden');
       document.getElementById('detailMain').classList.remove('hidden');
       document.getElementById('bottomActionBar').classList.remove('hidden');
 
-      // 如果帖子原文语言与当前所选语言不一致，点进详情页自动静默翻译
+      // 仅当数据库未存储该语言版本时，才自动兜底翻译
+      const hasPreStored = (lang === 'en' && p.title_en) || (lang === 'ms' && p.title_ms) || (lang === 'zh' && p.title_zh);
       const targetTl = lang === 'zh' ? 'zh-CN' : (lang === 'ms' ? 'ms' : 'en');
-      if (detectDetailTextLang(p.title) !== targetTl) {
+      if (!hasPreStored && detectDetailTextLang(localizedTitle) !== targetTl) {
         handleTranslate(true);
       }
     }
@@ -332,12 +346,14 @@
     }
 
     function sharePostLink() {
+      const lang = localStorage.getItem('dama_lang') || 'zh';
+      const localizedTitle = getLocalizedField(currentPost, 'title', lang);
       const shareUrl = window.location.href;
       if (navigator.share) {
-        navigator.share({ title: currentPost.title, url: shareUrl }).catch(() => {});
+        navigator.share({ title: localizedTitle, url: shareUrl }).catch(() => {});
       } else if (navigator.clipboard) {
         navigator.clipboard.writeText(shareUrl);
-        alert(DETAIL_I18N[localStorage.getItem('dama_lang') || 'zh'].sharedAlert);
+        alert(DETAIL_I18N[lang].sharedAlert);
       }
     }
 
@@ -345,17 +361,21 @@
       if (!list || list.length === 0) return;
       const lang = localStorage.getItem('dama_lang') || 'zh';
       document.getElementById('relatedSection').classList.remove('hidden');
-      document.getElementById('relatedList').innerHTML = list.map(item => `
+      document.getElementById('relatedList').innerHTML = list.map(item => {
+        const itemTitle = getLocalizedField(item, 'title', lang);
+        const itemPrice = getLocalizedField(item, 'price', lang);
+        return `
         <a href="/detail.html?id=${item.id}" class="block bg-white rounded-xl p-3 border border-gray-100 shadow-2xs card-hover">
           <div class="flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <div class="text-xs font-bold text-gray-800 truncate">${item.title}</div>
+              <div class="text-xs font-bold text-gray-800 truncate">${itemTitle}</div>
               <div class="text-[11px] text-gray-400 mt-0.5">📍 ${DMJT_API.getRegionLabel(item.city, lang)}</div>
             </div>
-            <div class="text-xs font-extrabold text-red-600 shrink-0">${item.price}</div>
+            <div class="text-xs font-extrabold text-red-600 shrink-0">${itemPrice}</div>
           </div>
         </a>
-      `).join('');
+      `;
+      }).join('');
     }
 
     initDetail();
