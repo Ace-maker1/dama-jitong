@@ -16,8 +16,9 @@
           <a href="/" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold transition">← 首页</a>
           <div>
             <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+              <span id="liveDot" class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
               <h1 id="newsPageTitle" class="font-black text-sm tracking-tight">实时新闻头条</h1>
+              <span id="syncBadge" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full">同步中...</span>
             </div>
             <p id="newsPageSub" class="text-[10px] text-white/85">大马 · 新加坡 · 投资财经 · 全球实时同步</p>
           </div>
@@ -36,9 +37,7 @@
     </header>
 
     <!-- 新闻列表主体 -->
-    <main class="flex-1 p-3 space-y-2.5" id="newsContainer">
-      <div class="text-center py-20 text-gray-400 text-sm">正在同步全网最新头条...</div>
-    </main>
+    <main class="flex-1 p-3 space-y-2.5" id="newsContainer"></main>
 
     <!-- 底部5键导航栏 -->
     <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
@@ -66,14 +65,13 @@
   </div>
 
   <script>
-    // 高可用官方媒体直连 RSS 源（按语言与频道精准匹配，100% 稳定秒出）
     const NEWS_I18N = {
       zh: {
         title: '实时新闻头条',
         sub: '大马 · 新加坡 · 投资财经 · 全球实时同步',
-        loading: '正在同步最新实时新闻...',
-        empty: '网络波动，请点击下方按钮重新拉取',
-        retry: '↻ 重新加载新闻',
+        syncing: '后台刷新中...',
+        empty: '当前网络较慢，点击下方重试',
+        retry: '↻ 立即刷新',
         readMore: '阅读全文 ↗',
         navHome: '首页', navNews: '实时新闻', navPost: '发布', navMap: '查路线', navBiz: '商家入驻',
         topics: [
@@ -81,16 +79,16 @@
             id: 'my',
             label: '🇲🇾 马来西亚',
             feeds: [
-              { name: '东方日报 Oriental Daily', url: 'https://www.orientaldaily.com.my/feed' },
-              { name: '光华日报 Kwong Wah', url: 'https://www.kwongwah.com.my/feed/' }
+              { name: '东方日报', url: 'https://www.orientaldaily.com.my/feed' },
+              { name: '光华日报', url: 'https://www.kwongwah.com.my/feed/' }
             ]
           },
           {
             id: 'sg',
             label: '🇸🇬 新加坡',
             feeds: [
-              { name: '8视界新闻网', url: 'https://www.8world.com/rss/singapore' },
-              { name: 'BBC 中文网', url: 'https://feeds.bbci.co.uk/zhongwen/simp/rss.xml' }
+              { name: '8视界新闻', url: 'https://www.8world.com/rss/singapore' },
+              { name: 'BBC 中文', url: 'https://feeds.bbci.co.uk/zhongwen/simp/rss.xml' }
             ]
           },
           {
@@ -105,15 +103,15 @@
             id: 'life',
             label: '🍜 生活娱乐',
             feeds: [
-              { name: '东方生活娱乐', url: 'https://www.orientaldaily.com.my/feed/lifestyle' },
-              { name: '光华副刊生活', url: 'https://www.kwongwah.com.my/category/%e5%89%af%e5%88%8a/feed/' }
+              { name: '东方生活', url: 'https://www.orientaldaily.com.my/feed/lifestyle' },
+              { name: '光华副刊', url: 'https://www.kwongwah.com.my/category/%e5%89%af%e5%88%8a/feed/' }
             ]
           },
           {
             id: 'world',
             label: '🌍 国际要闻',
             feeds: [
-              { name: 'BBC 国际头条', url: 'https://feeds.bbci.co.uk/zhongwen/simp/world/rss.xml' },
+              { name: 'BBC 国际', url: 'https://feeds.bbci.co.uk/zhongwen/simp/world/rss.xml' },
               { name: '东方国际', url: 'https://www.orientaldaily.com.my/feed/international' }
             ]
           }
@@ -122,10 +120,10 @@
       en: {
         title: 'Live News Feed',
         sub: 'Malaysia · Singapore · Finance · World Updates',
-        loading: 'Fetching latest headlines...',
-        empty: 'Network busy, tap below to reload',
-        retry: '↻ Reload Headlines',
-        readMore: 'Read Full Story ↗',
+        syncing: 'Updating...',
+        empty: 'Network slow, tap to retry',
+        retry: '↻ Reload',
+        readMore: 'Read Full ↗',
         navHome: 'Home', navNews: 'News', navPost: 'Post', navMap: 'Navigate', navBiz: 'Merchants',
         topics: [
           {
@@ -173,8 +171,8 @@
       ms: {
         title: 'Berita Terkini',
         sub: 'Malaysia · Singapura · Pelaburan · Dunia',
-        loading: 'Memuatkan berita terkini...',
-        empty: 'Rangkaian sibuk, tekan butang di bawah untuk cuba lagi',
+        syncing: 'Mengemas kini...',
+        empty: 'Rangkaian perlahan, tekan untuk cuba semula',
         retry: '↻ Muat Semula',
         readMore: 'Baca Penuh ↗',
         navHome: 'Utama', navNews: 'Berita', navPost: 'Iklan', navMap: 'Peta', navBiz: 'Peniaga',
@@ -191,7 +189,7 @@
             id: 'sg',
             label: '🇸🇬 Singapura',
             feeds: [
-              { name: 'BERITA Mediacorp SG', url: 'https://berita.mediacorp.sg/rss/singapura' }
+              { name: 'BERITA Mediacorp', url: 'https://berita.mediacorp.sg/rss/singapura' }
             ]
           },
           {
@@ -221,6 +219,14 @@
 
     let currentNewsLang = localStorage.getItem('dama_lang') || 'zh';
     let currentTopicId = 'my';
+    let activeRequestId = 0;
+
+    // 带 4.5 秒自动超时的 fetch，防止慢源拖死页面
+    function fetchWithTimeout(url, ms = 4500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    }
 
     function switchNewsLang(lang) {
       currentNewsLang = lang;
@@ -245,6 +251,7 @@
       const t = NEWS_I18N[currentNewsLang];
       document.getElementById('newsPageTitle').innerText = t.title;
       document.getElementById('newsPageSub').innerText = t.sub;
+      document.getElementById('syncBadge').innerText = t.syncing;
       document.getElementById('navHome').innerText = t.navHome;
       document.getElementById('navNews').innerText = t.navNews;
       document.getElementById('navPost').innerText = t.navPost;
@@ -274,66 +281,22 @@
       return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
     }
 
-    // 双通道引擎：通道1 rss2json -> 通道2 allorigins XML 直解析
-    async function fetchSingleFeed(feedObj) {
-      // 通道 1: rss2json
-      try {
-        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedObj.url)}`);
-        const json = await res.json();
-        if (json.status === 'ok' && Array.isArray(json.items) && json.items.length > 0) {
-          return json.items.map(it => ({
-            title: it.title,
-            link: it.link,
-            pubDate: it.pubDate,
-            thumbnail: it.thumbnail || (it.enclosure && it.enclosure.link) || '',
-            source: feedObj.name
-          }));
-        }
-      } catch (e) {}
-
-      // 通道 2: allorigins 代理 + 浏览器原生 DOMParser 解析 RSS XML
-      try {
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feedObj.url)}`);
-        const data = await res.json();
-        if (data && data.contents) {
-          const xml = new DOMParser().parseFromString(data.contents, 'text/xml');
-          const items = Array.from(xml.querySelectorAll('item'));
-          return items.map(node => ({
-            title: node.querySelector('title')?.textContent?.trim() || '',
-            link: node.querySelector('link')?.textContent?.trim() || '',
-            pubDate: node.querySelector('pubDate')?.textContent?.trim() || '',
-            thumbnail: node.querySelector('enclosure')?.getAttribute('url') || '',
-            source: feedObj.name
-          })).filter(x => x.title && x.link);
-        }
-      } catch (e) {}
-
-      return [];
+    // 骨架屏占位（首次无缓存时秒出轮廓）
+    function renderSkeleton() {
+      return Array(5).fill(0).map(() => `
+        <div class="bg-white rounded-2xl p-3.5 border border-gray-100 animate-pulse space-y-2.5">
+          <div class="flex gap-2">
+            <div class="h-4 w-16 bg-gray-200 rounded"></div>
+            <div class="h-4 w-12 bg-gray-100 rounded"></div>
+          </div>
+          <div class="h-4 w-full bg-gray-200 rounded"></div>
+          <div class="h-4 w-3/4 bg-gray-200 rounded"></div>
+        </div>
+      `).join('');
     }
 
-    async function loadLiveNews() {
-      const t = NEWS_I18N[currentNewsLang];
-      const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
-      const box = document.getElementById('newsContainer');
-      box.innerHTML = `<div class="text-center py-20 text-gray-400 text-sm animate-pulse">⏳ ${t.loading}</div>`;
-
-      const results = await Promise.all(topic.feeds.map(f => fetchSingleFeed(f)));
-      let allItems = results.flat();
-
-      // 按发布时间倒序排列
-      allItems.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
-
-      if (allItems.length === 0) {
-        box.innerHTML = `
-          <div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100">
-            <div class="text-gray-400 text-sm">${t.empty}</div>
-            <button onclick="loadLiveNews()" class="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs">${t.retry}</button>
-          </div>
-        `;
-        return;
-      }
-
-      box.innerHTML = allItems.slice(0, 25).map((item, idx) => `
+    function renderNewsCards(items, topicLabel, readMoreText) {
+      return items.slice(0, 25).map((item, idx) => `
         <a href="${item.link}" target="_blank" rel="noopener noreferrer"
            class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
           <div class="flex justify-between gap-3">
@@ -347,14 +310,110 @@
                 <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${item.title}</h2>
               </div>
               <div class="flex items-center justify-between text-[11px]">
-                <span class="text-gray-400">${topic.label}</span>
-                <span class="text-red-600 font-bold">${t.readMore}</span>
+                <span class="text-gray-400">${topicLabel}</span>
+                <span class="text-red-600 font-bold">${readMoreText}</span>
               </div>
             </div>
-            ${item.thumbnail ? `<img src="${item.thumbnail}" onerror="this.style.display='none'" class="w-22 h-22 rounded-xl object-cover shrink-0 border border-gray-100" />` : ''}
+            ${item.thumbnail ? `<img src="${item.thumbnail}" loading="lazy" onerror="this.style.display='none'" class="w-20 h-20 rounded-xl object-cover shrink-0 border border-gray-100" />` : ''}
           </div>
         </a>
       `).join('');
+    }
+
+    // 双通道并发竞速（Promise.any）：谁先返回用谁，绝不死等！
+    async function fetchFeedFast(feedObj) {
+      const p1 = (async () => {
+        const res = await fetchWithTimeout(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedObj.url)}`, 4500);
+        const json = await res.json();
+        if (json.status === 'ok' && Array.isArray(json.items) && json.items.length > 0) {
+          return json.items.map(it => ({
+            title: it.title,
+            link: it.link,
+            pubDate: it.pubDate,
+            thumbnail: it.thumbnail || (it.enclosure && it.enclosure.link) || '',
+            source: feedObj.name
+          }));
+        }
+        throw new Error('empty');
+      })();
+
+      const p2 = (async () => {
+        const res = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(feedObj.url)}`, 4500);
+        const data = await res.json();
+        if (data && data.contents) {
+          const xml = new DOMParser().parseFromString(data.contents, 'text/xml');
+          const items = Array.from(xml.querySelectorAll('item')).map(node => ({
+            title: node.querySelector('title')?.textContent?.trim() || '',
+            link: node.querySelector('link')?.textContent?.trim() || '',
+            pubDate: node.querySelector('pubDate')?.textContent?.trim() || '',
+            thumbnail: node.querySelector('enclosure')?.getAttribute('url') || '',
+            source: feedObj.name
+          })).filter(x => x.title && x.link);
+          if (items.length > 0) return items;
+        }
+        throw new Error('empty');
+      })();
+
+      try {
+        return await Promise.any([p1, p2]);
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function loadLiveNews() {
+      const reqId = ++activeRequestId;
+      const t = NEWS_I18N[currentNewsLang];
+      const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
+      const box = document.getElementById('newsContainer');
+      const syncBadge = document.getElementById('syncBadge');
+      const cacheKey = `dmjt_news_${currentNewsLang}_${topic.id}`;
+
+      // 1. 先检查本地缓存，若有则 0 秒瞬开渲染
+      let hasCache = false;
+      try {
+        const cachedRaw = localStorage.getItem(cacheKey);
+        if (cachedRaw) {
+          const cachedItems = JSON.parse(cachedRaw);
+          if (Array.isArray(cachedItems) && cachedItems.length > 0) {
+            box.innerHTML = renderNewsCards(cachedItems, topic.label, t.readMore);
+            hasCache = true;
+          }
+        }
+      } catch (e) {}
+
+      if (!hasCache) {
+        box.innerHTML = renderSkeleton();
+      }
+      syncBadge.classList.remove('hidden');
+
+      // 2. 并发拉取所有数据源（谁先回来先上屏）
+      let collected = [];
+      await Promise.all(topic.feeds.map(async (feed) => {
+        const list = await fetchFeedFast(feed);
+        if (reqId !== activeRequestId || list.length === 0) return;
+
+        collected = collected.concat(list);
+        collected.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+
+        // 只要第一个源回来立刻渲染，不用等第二个慢源
+        box.innerHTML = renderNewsCards(collected, topic.label, t.readMore);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify(collected.slice(0, 25)));
+        } catch (e) {}
+      }));
+
+      if (reqId !== activeRequestId) return;
+      syncBadge.classList.add('hidden');
+
+      if (collected.length === 0 && !hasCache) {
+        box.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100">
+            <div class="text-gray-400 text-sm">${t.empty}</div>
+            <button onclick="loadLiveNews()" class="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs">${t.retry}</button>
+          </div>
+        `;
+      }
     }
 
     switchNewsLang(currentNewsLang);
