@@ -130,7 +130,7 @@
       en: {
         back: 'Home', header: 'Listing Details', share: '🔗 Share', sharedAlert: 'Link copied! You can paste and share it on WhatsApp now.',
         loading: 'Loading details...', pin: '🔥 Featured', transBtn: '🌐 Translate to English', origBtn: '↩ Original',
-        transDone: 'Translated to English', navSub: 'In-App Navigation & Voice Guidance', navGo: '🧭 Navigate',
+        transDone: 'Auto-translated to English', navSub: 'In-App Navigation & Voice Guidance', navGo: '🧭 Navigate',
         descTitle: 'Description', noDesc: 'No additional description provided.',
         safeTitle: 'Safety Reminder', safeBody: 'Meet in public places and verify details before making any advance payment or deposit.',
         relatedTitle: 'Similar Listings', fav: '☆ Save', faved: '⭐ Saved', bottomNav: 'Map', waBtn: 'WhatsApp Now',
@@ -149,11 +149,46 @@
       }
     };
 
+    const DETAIL_TRANS_CACHE_KEY = 'dama_trans_cache_v1';
+    let detailTransCache = {};
+    try { detailTransCache = JSON.parse(localStorage.getItem(DETAIL_TRANS_CACHE_KEY) || '{}'); } catch (e) {}
+
+    function detectDetailTextLang(text) {
+      if (!text) return 'en';
+      if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN';
+      if (/\b(dan|yang|untuk|dengan|di|ke|dari|ini|itu|bilik|sewa|kerja|murah|jual|beli|rumah|kereta)\b/i.test(text)) return 'ms';
+      return 'en';
+    }
+
+    async function translateDetailText(text, targetLang) {
+      if (!text || !text.trim()) return text;
+      const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
+      if (detectDetailTextLang(text) === tl) return text;
+
+      const cacheKey = `${tl}::${text.slice(0, 120)}`;
+      if (detailTransCache[cacheKey]) return detailTransCache[cacheKey];
+
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text.slice(0, 2000))}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      const translated = (json[0] || []).map(item => item[0]).join('');
+      if (translated) {
+        detailTransCache[cacheKey] = translated;
+        try { localStorage.setItem(DETAIL_TRANS_CACHE_KEY, JSON.stringify(detailTransCache)); } catch (e) {}
+        return translated;
+      }
+      return text;
+    }
+
     let currentPost = null;
     let isTranslated = false;
 
     function changeDetailLang(lang) {
-      DMJT_API.setLang(lang);
+      localStorage.setItem('dama_lang', lang);
+      if (typeof DMJT_API !== 'undefined' && DMJT_API.setLang) {
+        DMJT_API.setLang(lang);
+      }
       ['zh', 'en', 'ms'].forEach(l => {
         const b = document.getElementById(`dLang-${l}`);
         b.className = l === lang
@@ -166,7 +201,8 @@
     async function initDetail() {
       const params = new URLSearchParams(window.location.search);
       const postId = params.get('id');
-      changeDetailLang(DMJT_API.getLang());
+      const savedLang = localStorage.getItem('dama_lang') || (typeof DMJT_API !== 'undefined' ? DMJT_API.getLang() : 'zh');
+      changeDetailLang(savedLang);
 
       if (!postId) {
         window.location.href = '/';
@@ -188,7 +224,7 @@
     }
 
     function renderDetailPage() {
-      const lang = DMJT_API.getLang();
+      const lang = localStorage.getItem('dama_lang') || 'zh';
       const t = DETAIL_I18N[lang];
       const p = currentPost;
 
@@ -217,7 +253,6 @@
       document.getElementById('cityBadge').innerText = `📍 ${cityLabel}`;
       document.getElementById('navLocationLabel').innerText = `📍 ${cityLabel} · ${p.title}`;
 
-      // 绑定站内导航链接（携带城市坐标与标题参数前往 map.html）
       const regionInfo = DMJT_API.getRegionInfo(p.city);
       const mapUrl = `/map.html?dest=${encodeURIComponent(p.title)}&lat=${regionInfo.lat}&lng=${regionInfo.lng}`;
       document.getElementById('goMapBtn').href = mapUrl;
@@ -231,7 +266,6 @@
       document.getElementById('postDesc').innerText = p.description || t.noDesc;
       document.getElementById('postDate').innerText = new Date(p.created_at).toLocaleDateString('en-GB');
 
-      // 收藏按钮状态
       const isFav = DMJT_API.getFavIds().includes(Number(p.id));
       const favBtn = document.getElementById('favBtn');
       favBtn.innerHTML = `<span>${isFav ? t.faved : t.fav}</span>`;
@@ -239,7 +273,6 @@
         ? 'px-3.5 py-3 rounded-xl border border-amber-300 bg-amber-50 font-bold text-xs text-amber-700 shrink-0'
         : 'px-3.5 py-3 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 shrink-0';
 
-      // WhatsApp 联系链接
       const cleanPhone = (p.whatsapp || '').replace(/[^0-9]/g, '');
       const waMsg = encodeURIComponent(t.waHello(p.title));
       document.getElementById('waBtn').href = `https://wa.me/${cleanPhone}?text=${waMsg}`;
@@ -247,15 +280,21 @@
       document.getElementById('loadingBox').classList.add('hidden');
       document.getElementById('detailMain').classList.remove('hidden');
       document.getElementById('bottomActionBar').classList.remove('hidden');
+
+      // 如果帖子原文语言与当前所选语言不一致，点进详情页自动静默翻译
+      const targetTl = lang === 'zh' ? 'zh-CN' : (lang === 'ms' ? 'ms' : 'en');
+      if (detectDetailTextLang(p.title) !== targetTl) {
+        handleTranslate(true);
+      }
     }
 
-    async function handleTranslate() {
+    async function handleTranslate(isAuto = false) {
       if (!currentPost) return;
-      const lang = DMJT_API.getLang();
+      const lang = localStorage.getItem('dama_lang') || 'zh';
       const t = DETAIL_I18N[lang];
       const btn = document.getElementById('transBtn');
 
-      if (isTranslated) {
+      if (!isAuto && isTranslated) {
         document.getElementById('postTitle').innerText = currentPost.title;
         document.getElementById('postDesc').innerText = currentPost.description || t.noDesc;
         document.getElementById('transTag').classList.add('hidden');
@@ -268,8 +307,8 @@
       btn.innerText = '⏳...';
       try {
         const [newTitle, newDesc] = await Promise.all([
-          DMJT_API.translateText(currentPost.title, lang),
-          currentPost.description ? DMJT_API.translateText(currentPost.description, lang) : Promise.resolve(t.noDesc)
+          translateDetailText(currentPost.title, lang),
+          currentPost.description ? translateDetailText(currentPost.description, lang) : Promise.resolve(t.noDesc)
         ]);
         document.getElementById('postTitle').innerText = newTitle;
         document.getElementById('postDesc').innerText = newDesc;
@@ -279,7 +318,7 @@
         btn.innerText = t.origBtn;
         isTranslated = true;
       } catch (e) {
-        alert('Translation failed, please try again.');
+        if (!isAuto) alert('Translation failed, please try again.');
         btn.innerText = t.transBtn;
       } finally {
         btn.disabled = false;
@@ -298,13 +337,13 @@
         navigator.share({ title: currentPost.title, url: shareUrl }).catch(() => {});
       } else if (navigator.clipboard) {
         navigator.clipboard.writeText(shareUrl);
-        alert(DETAIL_I18N[DMJT_API.getLang()].sharedAlert);
+        alert(DETAIL_I18N[localStorage.getItem('dama_lang') || 'zh'].sharedAlert);
       }
     }
 
     function renderRelated(list) {
       if (!list || list.length === 0) return;
-      const lang = DMJT_API.getLang();
+      const lang = localStorage.getItem('dama_lang') || 'zh';
       document.getElementById('relatedSection').classList.remove('hidden');
       document.getElementById('relatedList').innerHTML = list.map(item => `
         <a href="/detail.html?id=${item.id}" class="block bg-white rounded-xl p-3 border border-gray-100 shadow-2xs card-hover">
