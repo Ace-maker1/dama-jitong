@@ -1,6 +1,6 @@
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', 'no-store');
 
   const { url } = req.query;
   if (!url) {
@@ -26,18 +26,16 @@ module.exports = async function handler(req, res) {
 
     let xml = await response.text();
 
-    // 统一补齐封面图：有原生图用原生图；Google News 无图源自动通过 Bing 新闻图库匹配真实新闻配图
     xml = xml.replace(/<item>([\s\S]*?)<\/item>/gi, (match, inner) => {
       if (/<enclosure\s/i.test(inner)) return match;
 
       const mediaMatch = inner.match(/<media:(?:thumbnail|content)[^>]+url=["']([^"']+)["']/i)
                       || inner.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
       if (mediaMatch && mediaMatch[1] && !mediaMatch[1].includes('google.com')) {
-        const cleanImg = mediaMatch[1].replace(/\/240\//, '/640/');
+        const cleanImg = mediaMatch[1].replace(/\/240\//, '/640/').replace(/&/g, '&');
         return `<item>${inner}<enclosure url="${cleanImg}" type="image/jpeg" /></item>`;
       }
 
-      // 提取标题，为纯文字新闻自动匹配对应真实新闻缩略图
       const titleMatch = inner.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
       const rawTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').split(' - ')[0].trim() : '';
       if (rawTitle) {
