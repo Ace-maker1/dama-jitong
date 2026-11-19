@@ -123,11 +123,21 @@
         <button onclick="locateMe(true)" id="gpsBtn" class="text-xs text-emerald-600 font-semibold shrink-0 px-2 py-0.5 bg-emerald-50 rounded">📍 重新定位</button>
       </div>
 
-      <!-- 目的地 / 搜附近门店输入 -->
-      <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-rose-500 focus-within:bg-white">
-        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-        <input id="endInput" type="text" onkeydown="if(event.key==='Enter') planRoute()" placeholder="输入任何大马地名、门牌地址、门店或机场..." class="bg-transparent w-full text-sm focus:outline-none" />
-        <button onclick="swapLocations()" id="swapBtn" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-0.5 bg-white rounded border shrink-0">⇅ 互换</button>
+      <!-- 目的地 / 搜附近门店输入 + 实时智能联想下拉框 -->
+      <div class="relative">
+        <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-rose-500 focus-within:bg-white">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+          <input id="endInput" type="text" autocomplete="off"
+                 oninput="handleEndInput(this.value)"
+                 onfocus="handleEndInput(this.value)"
+                 onkeydown="if(event.key==='Enter'){ hideSuggestions(); planRoute(); }"
+                 placeholder="输入任何大马地名、门牌地址、门店或机场..." class="bg-transparent w-full text-sm focus:outline-none" />
+          <button onclick="clearEndInput()" id="clearEndBtn" class="hidden text-xs text-slate-400 hover:text-slate-600 px-1">✕</button>
+          <button onclick="swapLocations()" id="swapBtn" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-0.5 bg-white rounded border shrink-0">⇅ 互换</button>
+        </div>
+
+        <!-- 实时智能联想下拉菜单 -->
+        <div id="autoSuggestDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-64 overflow-y-auto divide-y divide-slate-100"></div>
       </div>
 
       <!-- 搜附近常用连锁店 & 机场快捷栏（三语自动联动） -->
@@ -449,6 +459,46 @@
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
 
+    // 马来西亚全场景高频联想词库（支持中文、英文、马来文前缀 0ms 秒弹）
+    const AUTOCOMPLETE_DICT = [
+      { icon: '✈️', zh: '飞机场 (最近国际机场)', en: 'Nearest Airport', ms: 'Lapangan Terbang Terdekat', query: '机场', keys: ['飞', '机场', '飞机场', 'air', 'airport', 'lapangan', 'terbang'] },
+      { icon: '✈️', zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang', query: '槟城机场', keys: ['槟城机', 'penang air', 'pen', 'bayan lepas'] },
+      { icon: '✈️', zh: '吉隆坡国际机场 (KLIA 1)', en: 'Kuala Lumpur International Airport (KLIA)', ms: 'Lapangan Terbang Antarabangsa KLIA', query: 'klia', keys: ['吉隆坡机', 'klia', 'sepang'] },
+      { icon: '✈️', zh: '吉隆坡第二国际机场 (KLIA 2)', en: 'KLIA Terminal 2 (klia2)', ms: 'Terminal KLIA 2', query: 'klia2', keys: ['klia2', '亚航机场'] },
+      { icon: '✈️', zh: '新山士乃国际机场 (JHB)', en: 'Senai International Airport (JHB)', ms: 'Lapangan Terbang Senai', query: '新山机场', keys: ['新山机', '士乃', 'senai', 'jhb'] },
+      { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Kota Kinabalu', query: '亚庇机场', keys: ['亚庇机', 'kkia', 'bki', 'kota kinabalu air'] },
+      { icon: '✈️', zh: '古晋国际机场 (KCH)', en: 'Kuching International Airport (KCH)', ms: 'Lapangan Terbang Kuching', query: '古晋机场', keys: ['古晋机', 'kuching air', 'kch'] },
+      { icon: '✈️', zh: '浮罗交怡/兰卡威机场 (LGK)', en: 'Langkawi International Airport (LGK)', ms: 'Lapangan Terbang Langkawi', query: '浮罗交怡机场', keys: ['浮罗交怡', '兰卡威', 'langkawi', 'lgk'] },
+      { icon: '✈️', zh: '怡保机场 (IPH)', en: 'Sultan Azlan Shah Airport Ipoh (IPH)', ms: 'Lapangan Terbang Ipoh', query: '怡保机场', keys: ['怡保机', 'ipoh air', 'iph'] },
+      { icon: '🍗', zh: 'KFC 肯德基 (最近分店)', en: 'KFC (Nearest Outlet)', ms: 'KFC (Cawangan Terdekat)', query: 'KFC', keys: ['k', 'kf', 'kfc', '肯', '肯德基'] },
+      { icon: '🍔', zh: "McDonald's 麦当劳 (最近分店)", en: "McDonald's (Nearest Outlet)", ms: "McDonald's (Terdekat)", query: "McDonald's", keys: ['m', 'mc', 'mcd', '麦', '麦当劳'] },
+      { icon: '☕', zh: 'Starbucks 星巴克', en: 'Starbucks Coffee', ms: 'Starbucks Coffee', query: 'Starbucks', keys: ['st', 'star', '星', '星巴克'] },
+      { icon: '🧋', zh: 'CHAGEE 霸王茶姬', en: 'CHAGEE Milk Tea', ms: 'CHAGEE', query: 'CHAGEE', keys: ['ch', 'cha', 'chagee', '霸', '霸王茶姬'] },
+      { icon: '🧋', zh: 'Tealive 奶茶', en: 'Tealive', ms: 'Tealive', query: 'Tealive', keys: ['te', 'tea', 'tealive', '奶', '奶茶'] },
+      { icon: '☕', zh: 'ZUS Coffee 咖啡', en: 'ZUS Coffee', ms: 'ZUS Coffee', query: 'ZUS Coffee', keys: ['z', 'zu', 'zus', '咖', '咖啡'] },
+      { icon: '🍦', zh: 'MIXUE 蜜雪冰城', en: 'MIXUE Ice Cream & Tea', ms: 'MIXUE', query: 'Mixue', keys: ['mi', 'mix', 'mixue', '蜜', '蜜雪'] },
+      { icon: '🏪', zh: '7-Eleven 24小时便利店', en: '7-Eleven (24 Hours)', ms: '7-Eleven (24 Jam)', query: '7-Eleven', keys: ['7', '7-', '711', '7e', '便', '便利店'] },
+      { icon: '🏪', zh: 'KK Super Mart 24小时超市', en: 'KK Super Mart', ms: 'KK Super Mart', query: 'KK Super Mart', keys: ['kk', '超', '超市'] },
+      { icon: '🛒', zh: '99 Speedmart 迷你市场', en: '99 Speedmart', ms: '99 Speedmart', query: '99 Speedmart', keys: ['9', '99', 'speedmart'] },
+      { icon: '⛽', zh: 'Petronas 国油加油站', en: 'Petronas Petrol Station', ms: 'Stesen Minyak Petronas', query: 'Petronas', keys: ['p', 'pe', 'pet', 'petronas', '加', '加油站', '油', '油站', 'stesen'] },
+      { icon: '⛽', zh: 'Shell 蚬壳加油站', en: 'Shell Petrol Station', ms: 'Stesen Minyak Shell', query: 'Shell', keys: ['sh', 'she', 'shell', '加油站', '油站'] },
+      { icon: '💊', zh: 'Watsons 屈臣氏药妆', en: 'Watsons Pharmacy', ms: 'Farmasi Watsons', query: 'Watsons', keys: ['w', 'wa', 'wat', 'watsons', '屈', '屈臣氏', '药'] },
+      { icon: '💊', zh: 'Guardian 佳宁药妆', en: 'Guardian Pharmacy', ms: 'Farmasi Guardian', query: 'Guardian', keys: ['g', 'gu', 'gua', 'guardian', '佳', '药'] },
+      { icon: '🛠️', zh: 'MR.DIY 五金家居店', en: 'MR.DIY Hardware Store', ms: 'Kedai MR.DIY', query: 'MR DIY', keys: ['mr', 'diy', 'mrdiy', '五', '五金'] },
+      { icon: '🏥', zh: 'Hospital 医院 / 急诊', en: 'Nearest Hospital', ms: 'Hospital Terdekat', query: 'Hospital', keys: ['h', 'ho', 'hos', 'hospital', '医', '医院'] },
+      { icon: '🩺', zh: 'Klinik 诊所', en: 'Nearest Clinic (Klinik)', ms: 'Klinik Terdekat', query: 'Klinik', keys: ['kl', 'kli', 'klinik', '诊', '诊所'] },
+      { icon: '🏦', zh: 'Maybank 马来亚银行', en: 'Maybank Branch / ATM', ms: 'Cawangan Maybank', query: 'Maybank', keys: ['ma', 'may', 'maybank', '银', '银行', 'atm'] },
+      { icon: '🏦', zh: 'CIMB Bank 联昌银行', en: 'CIMB Bank Branch / ATM', ms: 'Cawangan CIMB', query: 'CIMB', keys: ['c', 'ci', 'cimb', '银', '银行'] },
+      { icon: '🏦', zh: 'Public Bank 大众银行', en: 'Public Bank Branch / ATM', ms: 'Cawangan Public Bank', query: 'Public Bank', keys: ['pu', 'pub', 'public', '大', '大众银行', '银行'] },
+      { icon: '🏙️', zh: 'KLCC 吉隆坡双子塔', en: 'Petronas Twin Towers (KLCC)', ms: 'Menara Berkembar Petronas (KLCC)', query: 'Petronas Twin Towers Kuala Lumpur', keys: ['klcc', '双', '双子塔', '吉隆坡'] },
+      { icon: '🛍️', zh: 'Pavilion KL 柏威年广场', en: 'Pavilion Kuala Lumpur', ms: 'Pavilion Kuala Lumpur', query: 'Pavilion Kuala Lumpur', keys: ['pa', 'pav', 'pavilion', '柏', '柏威年'] },
+      { icon: '🛍️', zh: 'Gurney Plaza 槟城合您广场', en: 'Gurney Plaza Penang', ms: 'Gurney Plaza Pulau Pinang', query: 'Gurney Plaza Penang', keys: ['gur', 'gurney', '合', '合您'] },
+      { icon: '🛍️', zh: 'Queensbay Mall 槟城皇后湾广场', en: 'Queensbay Mall Penang', ms: 'Queensbay Mall Pulau Pinang', query: 'Queensbay Mall Penang', keys: ['qu', 'que', 'queensbay', '皇', '皇后湾'] },
+      { icon: '🚉', zh: 'JB Sentral / 新山关卡 CIQ', en: 'JB Sentral / CIQ Checkpoint', ms: 'JB Sentral / Kompleks CIQ', query: 'JB Sentral CIQ Johor Bahru', keys: ['jb', 'ciq', '新', '新山', '关卡'] }
+    ];
+
+    let suggestTimer = null;
+
     // 马来西亚主要机场航站楼出发层精准 road-snapped 坐标库
     const MY_AIRPORTS = [
       { keywords: ['槟城机场', 'penang airport', 'penang international', 'bayan lepas airport', 'pen'], name: 'Penang International Airport (PEN) · 槟城国际机场', fullAddr: 'Jalan Sultan Azlan Shah, 11900 Bayan Lepas, Pulau Pinang', lat: 5.2932, lng: 100.2658, phone: '+604-6434411' },
@@ -730,8 +780,158 @@
       }
     }
 
+    // ==================== 实时联想下拉框逻辑 ====================
+    function hideSuggestions() {
+      const box = document.getElementById('autoSuggestDropdown');
+      if (box) box.classList.add('hidden');
+    }
+
+    function clearEndInput() {
+      document.getElementById('endInput').value = '';
+      document.getElementById('clearEndBtn').classList.add('hidden');
+      hideSuggestions();
+      document.getElementById('endInput').focus();
+    }
+
+    function pickSuggestion(queryOrName, lat = null, lng = null) {
+      hideSuggestions();
+      document.getElementById('clearEndBtn').classList.remove('hidden');
+      if (lat !== null && lng !== null) {
+        selectNearbyCandidate(lat, lng, queryOrName, '');
+      } else {
+        document.getElementById('endInput').value = queryOrName;
+        planRoute();
+      }
+    }
+
+    function handleEndInput(val) {
+      const q = (val || '').trim();
+      const clearBtn = document.getElementById('clearEndBtn');
+      if (clearBtn) {
+        if (q.length > 0) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+
+      const box = document.getElementById('autoSuggestDropdown');
+      if (!q) {
+        hideSuggestions();
+        return;
+      }
+
+      const lower = q.toLowerCase();
+
+      // 1. 匹配收藏夹和历史记录
+      const favs = getSavedList(STORAGE_FAV_KEY).filter(f => f.label.toLowerCase().includes(lower) || f.name.toLowerCase().includes(lower));
+      const hist = getSavedList(STORAGE_HIST_KEY).filter(h => h.name.toLowerCase().includes(lower));
+
+      // 2. 匹配高频词典（前缀或包含匹配，0 毫秒秒弹）
+      const dictMatches = AUTOCOMPLETE_DICT.filter(item =>
+        item.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower)) ||
+        item.zh.toLowerCase().includes(lower) ||
+        item.en.toLowerCase().includes(lower) ||
+        item.ms.toLowerCase().includes(lower)
+      ).slice(0, 6);
+
+      let html = '';
+
+      favs.slice(0, 2).forEach(f => {
+        html += `
+          <div onclick="pickSuggestion('${f.name.replace(/'/g, "\\'")}', ${f.lat}, ${f.lng})"
+               class="px-3 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm shrink-0">⭐</span>
+              <span class="text-xs font-bold text-amber-800 truncate">${f.label} · ${f.name}</span>
+            </div>
+            <span class="text-[10px] text-amber-600 shrink-0">${currentLang === 'zh' ? '已收藏' : 'Saved'}</span>
+          </div>`;
+      });
+
+      dictMatches.forEach(item => {
+        const label = item[currentLang] || item.zh;
+        html += `
+          <div onclick="pickSuggestion('${item.query.replace(/'/g, "\\'")}')"
+               class="px-3 py-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm shrink-0">${item.icon}</span>
+              <span class="text-xs font-bold text-slate-800 truncate">${label}</span>
+            </div>
+            <span class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded shrink-0">${currentLang === 'zh' ? '直达' : 'Go'}</span>
+          </div>`;
+      });
+
+      hist.slice(0, 2).forEach(h => {
+        html += `
+          <div onclick="pickSuggestion('${h.name.replace(/'/g, "\\'")}', ${h.lat}, ${h.lng})"
+               class="px-3 py-2.5 hover:bg-slate-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm shrink-0">🕒</span>
+              <span class="text-xs text-slate-700 truncate">${h.name}</span>
+            </div>
+            <span class="text-[10px] text-slate-400 shrink-0">${currentLang === 'zh' ? '历史' : 'Recent'}</span>
+          </div>`;
+      });
+
+      if (html) {
+        box.innerHTML = html;
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+      }
+
+      // 3. 停顿 380ms 后异步请求全马真实地名联想补全（专治具体路名/商场/住宅区）
+      clearTimeout(suggestTimer);
+      if (q.length >= 2) {
+        suggestTimer = setTimeout(async () => {
+          try {
+            const normQ = await normalizeSearchQuery(q);
+            const c = startCoords ? { lat: startCoords.lat, lng: startCoords.lng } : map.getCenter();
+            const deg = 0.45;
+            const vb = `${c.lng - deg},${c.lat + deg},${c.lng + deg},${c.lat - deg}`;
+            const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=my&limit=5&viewbox=${vb}&bounded=0&q=${encodeURIComponent(normQ)}`;
+            const res = await fetch(url);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data || data.length === 0) return;
+
+            if (document.getElementById('endInput').value.trim() !== q) return;
+
+            const remoteHtml = data.map(item => {
+              const parts = item.display_name.split(',').map(s => s.trim());
+              const title = parts[0];
+              const sub = parts.slice(1, 3).join(', ');
+              const lat = parseFloat(item.lat);
+              const lng = parseFloat(item.lon);
+              const km = (map.distance([c.lat, c.lng], [lat, lng]) / 1000).toFixed(1);
+              return `
+                <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng})"
+                     class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <div class="text-xs font-bold text-slate-800 truncate">📍 ${title}</div>
+                    <div class="text-[10px] text-slate-400 truncate">${sub}</div>
+                  </div>
+                  <span class="text-[10px] font-bold text-slate-500 shrink-0">${km} km</span>
+                </div>`;
+            }).join('');
+
+            box.innerHTML = html + remoteHtml;
+            box.classList.remove('hidden');
+          } catch (e) {}
+        }, 380);
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const endEl = document.getElementById('endInput');
+      const dropEl = document.getElementById('autoSuggestDropdown');
+      if (endEl && dropEl && !endEl.contains(e.target) && !dropEl.contains(e.target)) {
+        hideSuggestions();
+      }
+    });
+
     function quickNearby(brandName) {
+      hideSuggestions();
       document.getElementById('endInput').value = brandName;
+      document.getElementById('clearEndBtn').classList.remove('hidden');
       planRoute();
     }
 
@@ -747,6 +947,7 @@
 
     map.on('click', function(e) {
       if (isNavigating) return;
+      hideSuggestions();
       document.getElementById('fallbackSuggestBox').classList.add('hidden');
       endCoords = {
         lat: e.latlng.lat,
@@ -761,7 +962,6 @@
       if (startCoords) planRoute();
     });
 
-    // 辅助函数：按指定半径（公里）向 Nominatim 发起有界检索
     async function queryNominatimRadius(query, refLat, refLng, radiusKm) {
       const degLat = radiusKm / 111.0;
       const degLng = radiusKm / (111.0 * Math.cos(refLat * Math.PI / 180));
@@ -785,13 +985,11 @@
       }).filter(item => radiusKm >= 1000 || item.straightKm <= radiusKm * 1.15);
     }
 
-    // 终极五级梯度扩张雷达：8km -> 60km -> 150km -> 400km -> 1000km 全马覆盖 + 智能拆词模糊兜底
     async function searchPlacesNear(rawQuery, refLat, refLng, onProgressRadius = null) {
       const rawLower = rawQuery.trim().toLowerCase();
       let candidates = [];
       let matchedRadiusKm = 8;
 
-      // 0. 专项机场库精准匹配
       const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(rawQuery.trim());
       const matchedAirports = MY_AIRPORTS.filter(ap =>
         isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw))
@@ -815,7 +1013,6 @@
 
       const query = await normalizeSearchQuery(rawQuery);
 
-      // 1. 第一级（8km）：Overpass API 周边门店实时扫描
       if (candidates.length === 0) {
         if (onProgressRadius) onProgressRadius(8);
         try {
@@ -847,7 +1044,6 @@
         } catch (e) {}
       }
 
-      // 2. 第 2 ~ 5 级梯次扩圈搜索：60km -> 150km -> 400km -> 1000km（全马覆盖）
       const radiusTiers = [60, 150, 400, 1000];
       for (const rKm of radiusTiers) {
         if (candidates.length > 0) break;
@@ -856,7 +1052,6 @@
         candidates = await queryNominatimRadius(query, refLat, refLng, rKm);
       }
 
-      // 3. 如果 1000km 全马仍未命中完整词，尝试自动拆词模糊搜索（例如把长地址拆出最后两个核心词）
       if (candidates.length === 0) {
         const tokens = query.split(/[\s,，、-]+/).filter(w => w.length >= 2);
         if (tokens.length > 1) {
@@ -868,7 +1063,6 @@
 
       if (candidates.length === 0) return { list: [], radiusKm: 1000 };
 
-      // 去重并按直线距离取最近的 8 个候选
       const deduped = [];
       candidates.sort((a, b) => a.straightKm - b.straightKm).forEach(item => {
         const exists = deduped.some(d => map.distance([d.lat, d.lng], [item.lat, item.lng]) < 80);
@@ -876,7 +1070,6 @@
       });
       const preSorted = deduped.slice(0, 8);
 
-      // 4. 调用 OSRM 计算实际道路距离与时间
       try {
         const coordsStr = [`${refLng},${refLat}`, ...preSorted.map(p => `${p.lng},${p.lat}`)].join(';');
         const profile = currentMode === 'walking' ? 'foot' : 'driving';
@@ -1006,6 +1199,7 @@
       const endText = document.getElementById('endInput').value.trim();
       const t = i18n[currentLang];
 
+      hideSuggestions();
       document.getElementById('fallbackSuggestBox').classList.add('hidden');
 
       if (!endText && !endCoords) {
