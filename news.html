@@ -355,7 +355,10 @@
               media = imgMatch[1];
             }
           }
-
+// 3. 若仍无图片（如 Google News 纯文字聚合源），自动按新闻标题匹配缩略图
+        if (!media && cleanTitle) {
+          media = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(cleanTitle.slice(0, 28))}&w=240&h=240&c=7&rs=1&p=0`;
+        }
           return {
             title: cleanTitle,
             link: node.querySelector('link')?.textContent?.trim() || '',
