@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>大马·新加坡·国际实时头条 · 大马吉通 MY</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 顶部红色新闻渐变导航栏 -->
+    <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3.5 py-3">
+      <div class="flex items-center justify-between gap-2 mb-2.5">
+        <div class="flex items-center gap-2">
+          <a href="/" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold transition">← 首页</a>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+              <h1 id="newsPageTitle" class="font-black text-sm tracking-tight">实时新闻头条</h1>
+            </div>
+            <p id="newsPageSub" class="text-[10px] text-white/85">大马 · 新加坡 · 投资财经 · 全球实时同步</p>
+          </div>
+        </div>
+
+        <!-- 三语切换器 -->
+        <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
+          <button onclick="switchNewsLang('zh')" id="nLang-zh" class="px-2 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
+          <button onclick="switchNewsLang('en')" id="nLang-en" class="px-2 py-0.5 rounded-full text-white/90 transition">EN</button>
+          <button onclick="switchNewsLang('ms')" id="nLang-ms" class="px-2 py-0.5 rounded-full text-white/90 transition">BM</button>
+        </div>
+      </div>
+
+      <!-- 新闻频道横向滑动标签栏 -->
+      <div id="topicTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+    </header>
+
+    <!-- 新闻列表主体 -->
+    <main class="flex-1 p-3 space-y-2.5" id="newsContainer">
+      <div class="text-center py-20 text-gray-400 text-sm">正在同步全网最新头条...</div>
+    </main>
+
+    <!-- 底部5键导航栏（保持全站统一体验） -->
+    <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+      <a href="/" class="flex flex-col items-center text-gray-400 hover:text-red-600">
+        <span class="text-lg">🏠</span>
+        <span id="navHome" class="text-[10px] font-medium mt-0.5">首页</span>
+      </a>
+      <a href="/news.html" class="flex flex-col items-center text-red-600">
+        <span class="text-lg">📰</span>
+        <span id="navNews" class="text-[10px] font-bold mt-0.5">实时新闻</span>
+      </a>
+      <a href="/" class="flex flex-col items-center -mt-6">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-orange-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white">+</div>
+        <span id="navPost" class="text-[10px] font-bold text-gray-700 mt-0.5">发布</span>
+      </a>
+      <a href="/map.html" class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+        <span class="text-lg">🧭</span>
+        <span id="navMap" class="text-[10px] font-medium mt-0.5">查路线</span>
+      </a>
+      <a href="/merchant.html" class="flex flex-col items-center text-gray-400 hover:text-amber-600">
+        <span class="text-lg">🏪</span>
+        <span id="navBiz" class="text-[10px] font-medium mt-0.5">商家入驻</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const NEWS_I18N = {
+      zh: {
+        title: '实时新闻头条',
+        sub: '大马 · 新加坡 · 投资财经 · 全球实时同步',
+        loading: '正在同步最新实时新闻...',
+        empty: '暂时未获取到新闻，请点击右上角切换频道或刷新重试',
+        readMore: '阅读全文 ↗',
+        navHome: '首页', navNews: '实时新闻', navPost: '发布', navMap: '查路线', navBiz: '商家入驻',
+        topics: [
+          { id: 'my', label: '🇲🇾 马来西亚', query: '马来西亚 新闻', gl: 'MY', hl: 'zh-CN', ceid: 'MY:zh-Hans' },
+          { id: 'sg', label: '🇸🇬 新加坡', query: '新加坡 新马 新闻', gl: 'SG', hl: 'zh-CN', ceid: 'SG:zh-Hans' },
+          { id: 'finance', label: '📈 投资财经', query: '马来西亚 投资 股市 汇率 财经', gl: 'MY', hl: 'zh-CN', ceid: 'MY:zh-Hans' },
+          { id: 'life', label: '🍜 生活美食', query: '马来西亚 美食 旅游 生活', gl: 'MY', hl: 'zh-CN', ceid: 'MY:zh-Hans' },
+          { id: 'world', label: '🌍 国际要闻', query: '国际 重大 新闻', gl: 'SG', hl: 'zh-CN', ceid: 'SG:zh-Hans' }
+        ]
+      },
+      en: {
+        title: 'Live News Feed',
+        sub: 'Malaysia · Singapore · Finance · World Updates',
+        loading: 'Fetching latest headlines...',
+        empty: 'No articles loaded right now. Try another topic.',
+        readMore: 'Read Full Story ↗',
+        navHome: 'Home', navNews: 'News', navPost: 'Post', navMap: 'Navigate', navBiz: 'Merchants',
+        topics: [
+          { id: 'my', label: '🇲🇾 Malaysia', query: 'Malaysia latest news', gl: 'MY', hl: 'en-MY', ceid: 'MY:en' },
+          { id: 'sg', label: '🇸🇬 Singapore', query: 'Singapore Malaysia news', gl: 'SG', hl: 'en-SG', ceid: 'SG:en' },
+          { id: 'finance', label: '📈 Finance & Invest', query: 'Malaysia economy ringgit stock investment', gl: 'MY', hl: 'en-MY', ceid: 'MY:en' },
+          { id: 'life', label: '🍜 Lifestyle', query: 'Malaysia food travel lifestyle', gl: 'MY', hl: 'en-MY', ceid: 'MY:en' },
+          { id: 'world', label: '🌍 World', query: 'World breaking news today', gl: 'SG', hl: 'en-SG', ceid: 'SG:en' }
+        ]
+      },
+      ms: {
+        title: 'Berita Terkini',
+        sub: 'Malaysia · Singapura · Pelaburan · Dunia',
+        loading: 'Memuatkan berita terkini...',
+        empty: 'Tiada berita ditemui buat masa ini.',
+        readMore: 'Baca Penuh ↗',
+        navHome: 'Utama', navNews: 'Berita', navPost: 'Iklan', navMap: 'Peta', navBiz: 'Peniaga',
+        topics: [
+          { id: 'my', label: '🇲🇾 Malaysia', query: 'Berita terkini Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
+          { id: 'sg', label: '🇸🇬 Singapura', query: 'Berita Singapura Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
+          { id: 'finance', label: '📈 Ekonomi & Pelaburan', query: 'Ekonomi ringgit pelaburan Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
+          { id: 'life', label: '🍜 Gaya Hidup', query: 'Makanan pelancongan gaya hidup Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
+          { id: 'world', label: '🌍 Dunia', query: 'Berita antarabangsa dunia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' }
+        ]
+      }
+    };
+
+    let currentNewsLang = localStorage.getItem('dama_lang') || 'zh';
+    let currentTopicId = 'my';
+
+    function switchNewsLang(lang) {
+      currentNewsLang = lang;
+      localStorage.setItem('dama_lang', lang);
+      ['zh', 'en', 'ms'].forEach(l => {
+        const btn = document.getElementById(`nLang-${l}`);
+        btn.className = l === lang
+          ? 'px-2 py-0.5 rounded-full bg-white text-red-600 transition'
+          : 'px-2 py-0.5 rounded-full text-white/90 transition';
+      });
+      renderTopics();
+      loadLiveNews();
+    }
+
+    function selectTopic(topicId) {
+      currentTopicId = topicId;
+      renderTopics();
+      loadLiveNews();
+    }
+
+    function renderTopics() {
+      const t = NEWS_I18N[currentNewsLang];
+      document.getElementById('newsPageTitle').innerText = t.title;
+      document.getElementById('newsPageSub').innerText = t.sub;
+      document.getElementById('navHome').innerText = t.navHome;
+      document.getElementById('navNews').innerText = t.navNews;
+      document.getElementById('navPost').innerText = t.navPost;
+      document.getElementById('navMap').innerText = t.navMap;
+      document.getElementById('navBiz').innerText = t.navBiz;
+
+      const tabsEl = document.getElementById('topicTabs');
+      tabsEl.innerHTML = t.topics.map(tp => {
+        const active = tp.id === currentTopicId;
+        return `
+          <button onclick="selectTopic('${tp.id}')"
+                  class="px-3 py-1 rounded-full text-xs font-bold shrink-0 transition ${active ? 'bg-white text-red-600 shadow-xs' : 'bg-black/20 text-white/90 hover:bg-black/30'}">
+            ${tp.label}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function timeAgo(dateStr, lang) {
+      const diffMins = Math.max(1, Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000));
+      if (diffMins < 60) return lang === 'zh' ? `${diffMins}分钟前` : `${diffMins}m ago`;
+      const hrs = Math.floor(diffMins / 60);
+      if (hrs < 24) return lang === 'zh' ? `${hrs}小时前` : `${hrs}h ago`;
+      return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    async function loadLiveNews() {
+      const t = NEWS_I18N[currentNewsLang];
+      const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
+      const box = document.getElementById('newsContainer');
+      box.innerHTML = `<div class="text-center py-20 text-gray-400 text-sm animate-pulse">⏳ ${t.loading}</div>`;
+
+      try {
+        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(topic.query)}&hl=${topic.hl}&gl=${topic.gl}&ceid=${topic.ceid}`;
+        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (!data.items || data.items.length === 0) {
+          box.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm">${t.empty}</div>`;
+          return;
+        }
+
+        box.innerHTML = data.items.slice(0, 20).map((item, idx) => {
+          // 拆分 Google News 标题中的 "文章标题 - 媒体来源"
+          const parts = item.title.split(' - ');
+          const source = parts.length > 1 ? parts.pop() : (item.author || 'News');
+          const cleanTitle = parts.join(' - ');
+
+          return `
+            <a href="${item.link}" target="_blank" rel="noopener noreferrer"
+               class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <div class="flex items-center gap-1.5">
+                  ${idx < 3 ? `<span class="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded">HOT ${idx + 1}</span>` : ''}
+                  <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded truncate max-w-[160px]">${source}</span>
+                </div>
+                <span class="text-[11px] text-gray-400 shrink-0">${timeAgo(item.pubDate, currentNewsLang)}</span>
+              </div>
+              <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${cleanTitle}</h2>
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-gray-400">${topic.label}</span>
+                <span class="text-red-600 font-bold">${t.readMore}</span>
+              </div>
+            </a>
+          `;
+        }).join('');
+      } catch (err) {
+        box.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm">${t.empty}</div>`;
+      }
+    }
+
+    switchNewsLang(currentNewsLang);
+  </script>
+</body>
+</html>
