@@ -44,6 +44,9 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
+        <a href="seed.html" target="_blank" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold px-3.5 py-2 rounded-xl transition">
+          ⚡ 商户填充器
+        </a>
         <a href="index.html" target="_blank" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3.5 py-2 rounded-xl transition">
           ↗ 查看前台网页
         </a>
@@ -211,7 +214,7 @@
 
       const filtered = postsData.filter(p => {
         const matchCat = cat === '全部' || p.category === cat;
-        const matchKw = !kw || p.title.toLowerCase().includes(kw) || p.city.toLowerCase().includes(kw) || (p.whatsapp && p.whatsapp.includes(kw));
+        const matchKw = !kw || p.title.toLowerCase().includes(kw) || (p.title_en && p.title_en.toLowerCase().includes(kw)) || p.city.toLowerCase().includes(kw) || (p.whatsapp && p.whatsapp.includes(kw));
         return matchCat && matchKw;
       });
 
@@ -222,6 +225,7 @@
 
       container.innerHTML = filtered.map(p => {
         const timeStr = new Date(p.created_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const hasTrilingual = Boolean(p.title_en && p.title_ms);
         return `
           <div class="bg-white rounded-2xl p-4 shadow-sm border ${p.is_pinned ? 'border-red-300 bg-red-50/15' : 'border-gray-100'} flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-start space-x-3 min-w-0">
@@ -234,6 +238,7 @@
                   <span class="text-[11px] text-gray-400 font-mono">#${p.id}</span>
                   ${p.is_pinned ? '<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">置顶广告</span>' : ''}
                   <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">${p.category}</span>
+                  ${hasTrilingual ? '<span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded">三语已就绪</span>' : ''}
                   <span class="text-xs text-gray-500">📍 ${p.city}</span>
                   <span class="text-xs text-gray-400">· ${timeStr}</span>
                 </div>
@@ -244,6 +249,9 @@
               </div>
             </div>
             <div class="flex items-center space-x-2 shrink-0 self-end sm:self-center">
+              <button onclick="renewPost(${p.id})" class="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition">
+                🔄 续期7天
+              </button>
               <button onclick="togglePin(${p.id}, ${p.is_pinned})" class="px-3 py-2 rounded-xl text-xs font-bold transition ${p.is_pinned ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'}">
                 ${p.is_pinned ? '取消置顶' : '⬆️ 设为置顶'}
               </button>
@@ -254,6 +262,14 @@
           </div>
         `;
       }).join('');
+    }
+
+    async function renewPost(id) {
+      const { error } = await supabaseClient.from('posts').update({ created_at: new Date().toISOString() }).eq('id', id);
+      if (!error) {
+        alert('✅ 已刷新帖子时间，首页展示有效期重新计算 7 天！');
+        loadAdminPosts();
+      }
     }
 
     async function togglePin(id, current) {
