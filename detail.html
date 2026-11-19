@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>信息详情 · 大马吉通 MY</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/api.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 顶部商业渐变导航栏 -->
+    <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3.5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <a href="/" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1">
+          <span>←</span><span id="txtBack">返回首页</span>
+        </a>
+        <span id="txtHeader" class="font-extrabold text-sm">信息详情</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- 三语切换 -->
+        <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold">
+          <button onclick="changeDetailLang('zh')" id="dLang-zh" class="px-2 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
+          <button onclick="changeDetailLang('en')" id="dLang-en" class="px-2 py-0.5 rounded-full text-white/90 transition">EN</button>
+          <button onclick="changeDetailLang('ms')" id="dLang-ms" class="px-2 py-0.5 rounded-full text-white/90 transition">BM</button>
+        </div>
+        <!-- 一键复制分享链接 -->
+        <button onclick="sharePostLink()" id="shareBtn" class="bg-white text-red-600 px-2.5 py-1 rounded-full text-xs font-extrabold shadow-xs active:scale-95 transition">
+          🔗 分享
+        </button>
+      </div>
+    </header>
+
+    <!-- 加载骨架屏 -->
+    <div id="loadingBox" class="p-6 text-center text-gray-400 text-sm py-20">
+      <div class="text-3xl mb-2 animate-bounce">⏳</div>
+      <div id="txtLoading">正在加载详细信息...</div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main id="detailMain" class="hidden flex-1">
+      <!-- 大图展示区 -->
+      <div id="heroImageBox" class="bg-slate-900 relative hidden">
+        <img id="heroImg" src="" alt="" class="w-full max-h-80 object-contain mx-auto" />
+      </div>
+
+      <!-- 核心标题与价格卡片 -->
+      <section class="bg-white p-4 shadow-xs border-b border-gray-100">
+        <div class="flex items-center justify-between gap-2 mb-2.5">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span id="pinBadge" class="hidden vip-badge text-[10px] px-2 py-0.5 rounded-md">🔥 置顶推荐</span>
+            <span id="catBadge" class="bg-red-50 text-red-600 text-xs font-bold px-2.5 py-0.5 rounded-md">--</span>
+            <span id="cityBadge" class="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-0.5 rounded-md">📍 --</span>
+          </div>
+          <button id="transBtn" onclick="handleTranslate()" class="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-2.5 py-1 rounded-full transition shrink-0">
+            🌐 翻译
+          </button>
+        </div>
+
+        <div id="transTag" class="hidden text-[11px] text-blue-600 font-semibold mb-1"></div>
+        <h1 id="postTitle" class="text-lg font-black text-gray-900 leading-snug mb-2">--</h1>
+        <div class="flex items-baseline justify-between">
+          <div id="postPrice" class="text-2xl font-black text-red-600">--</div>
+          <div id="postDate" class="text-xs text-gray-400">--</div>
+        </div>
+      </section>
+
+      <!-- 一键到店站内导航卡片（无缝联动你的 map.html） -->
+      <section class="mx-3 mt-3 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-3.5 text-white shadow-md flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-[11px] text-emerald-100 font-semibold" id="txtNavSub">大马吉通站内实景地图 · 语音带路</div>
+          <div id="navLocationLabel" class="font-extrabold text-sm truncate mt-0.5">📍 前往该区域查看周边与路线</div>
+        </div>
+        <a id="goMapBtn" href="/map.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-3.5 py-2 rounded-xl text-xs font-black shadow shrink-0 active:scale-95 transition">
+          🧭 导航去这里
+        </a>
+      </section>
+
+      <!-- 详细描述卡片 -->
+      <section class="mx-3 mt-3 bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
+        <h2 id="txtDescTitle" class="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-2">详细信息说明</h2>
+        <div id="postDesc" class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">--</div>
+      </section>
+
+      <!-- 平台安全交易提示 -->
+      <section class="mx-3 mt-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl p-3.5 text-xs text-amber-800 space-y-1">
+        <div class="font-bold flex items-center gap-1"><span>🛡️</span><span id="txtSafeTitle">大马吉通安全交易提醒</span></div>
+        <p id="txtSafeBody" class="text-[11px] leading-relaxed text-amber-700">线下看房、面试或二手面交请尽量选择公共场所，核实对方身份与物品状况后再付款，切勿提前转账定金。</p>
+      </section>
+
+      <!-- 同类推荐列表 -->
+      <section id="relatedSection" class="mx-3 mt-4 hidden">
+        <div class="flex items-center gap-2 mb-2.5 px-1">
+          <span class="w-1 h-4 bg-red-600 rounded-full"></span>
+          <h3 id="txtRelatedTitle" class="font-extrabold text-sm text-gray-800">同类热门推荐</h3>
+        </div>
+        <div id="relatedList" class="space-y-2"></div>
+      </section>
+    </main>
+
+    <!-- 底部固定操作栏（收藏 + 站内导航 + 一键 WhatsApp 联系） -->
+    <div id="bottomActionBar" class="hidden fixed bottom-0 max-w-md w-full bg-white/95 backdrop-blur border-t border-gray-200 px-3 pt-2.5 bottom-safe-bar z-40 flex items-center gap-2 shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+      <button onclick="toggleDetailFav()" id="favBtn" class="px-3.5 py-3 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 flex flex-col items-center justify-center shrink-0">
+        <span>☆ 收藏</span>
+      </button>
+      <a id="bottomMapBtn" href="/map.html" class="px-3.5 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs flex items-center justify-center gap-1 shrink-0">
+        <span>🧭</span><span id="txtBottomNav">导航</span>
+      </a>
+      <a id="waBtn" href="#" target="_blank" class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-extrabold text-sm py-3 rounded-xl shadow-md hover:opacity-95 transition flex items-center justify-center gap-1.5">
+        <span>💬</span><span id="txtWaBtn">联系 WhatsApp</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const DETAIL_I18N = {
+      zh: {
+        back: '返回首页', header: '信息详情', share: '🔗 分享', sharedAlert: '已复制分享链接！可直接粘贴发给好友或 WhatsApp 群聊。',
+        loading: '正在加载详细信息...', pin: '🔥 置顶推荐', transBtn: '🌐 翻译成中文', origBtn: '↩ 显示原文',
+        transDone: '已自动翻译为中文', navSub: '大马吉通站内实景地图 · 语音带路', navGo: '🧭 导航去这里',
+        descTitle: '详细信息说明', noDesc: '发布者未填写更多补充说明。',
+        safeTitle: '大马吉通安全交易提醒', safeBody: '线下看房、面试或二手面交请尽量选择公共场所，核实对方身份后再付款，切勿提前转账定金。',
+        relatedTitle: '同类热门推荐', fav: '☆ 收藏', faved: '⭐ 已收藏', bottomNav: '导航', waBtn: '联系 WhatsApp',
+        waHello: (title) => `你好，我在【大马吉通】看到你发布的：${title}，请问还在吗？`,
+        cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' }
+      },
+      en: {
+        back: 'Home', header: 'Listing Details', share: '🔗 Share', sharedAlert: 'Link copied! You can paste and share it on WhatsApp now.',
+        loading: 'Loading details...', pin: '🔥 Featured', transBtn: '🌐 Translate to English', origBtn: '↩ Original',
+        transDone: 'Translated to English', navSub: 'In-App Navigation & Voice Guidance', navGo: '🧭 Navigate',
+        descTitle: 'Description', noDesc: 'No additional description provided.',
+        safeTitle: 'Safety Reminder', safeBody: 'Meet in public places and verify details before making any advance payment or deposit.',
+        relatedTitle: 'Similar Listings', fav: '☆ Save', faved: '⭐ Saved', bottomNav: 'Map', waBtn: 'WhatsApp Now',
+        waHello: (title) => `Hi, I saw your listing on DamaJitong: "${title}". Is it still available?`,
+        cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' }
+      },
+      ms: {
+        back: 'Utama', header: 'Butiran Iklan', share: '🔗 Kongsi', sharedAlert: 'Pautan disalin! Sedia untuk dikongsi ke WhatsApp.',
+        loading: 'Memuatkan butiran...', pin: '🔥 Pilihan', transBtn: '🌐 Terjemah ke BM', origBtn: '↩ Teks Asal',
+        transDone: 'Diterjemah ke Bahasa Melayu', navSub: 'Navigasi Terus & Panduan Suara', navGo: '🧭 Navigasi',
+        descTitle: 'Keterangan Lanjut', noDesc: 'Tiada maklumat tambahan dinyatakan.',
+        safeTitle: 'Tip Keselamatan', safeBody: 'Sila berjumpa di tempat awam dan sahkan maklumat sebelum membuat sebarang bayaran pendahuluan.',
+        relatedTitle: 'Iklan Berkaitan', fav: '☆ Simpan', faved: '⭐ Disimpan', bottomNav: 'Peta', waBtn: 'Hubungi WhatsApp',
+        waHello: (title) => `Salam, saya nampak iklan anda di DamaJitong: "${title}". Masih ada lagi?`,
+        cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' }
+      }
+    };
+
+    let currentPost = null;
+    let isTranslated = false;
+
+    function changeDetailLang(lang) {
+      DMJT_API.setLang(lang);
+      ['zh', 'en', 'ms'].forEach(l => {
+        const b = document.getElementById(`dLang-${l}`);
+        b.className = l === lang
+          ? 'px-2 py-0.5 rounded-full bg-white text-red-600 transition'
+          : 'px-2 py-0.5 rounded-full text-white/90 transition';
+      });
+      if (currentPost) renderDetailPage();
+    }
+
+    async function initDetail() {
+      const params = new URLSearchParams(window.location.search);
+      const postId = params.get('id');
+      changeDetailLang(DMJT_API.getLang());
+
+      if (!postId) {
+        window.location.href = '/';
+        return;
+      }
+
+      try {
+        currentPost = await DMJT_API.getPostById(postId);
+        renderDetailPage();
+
+        const related = await DMJT_API.getRelatedPosts(currentPost.category, currentPost.id, 4);
+        renderRelated(related);
+      } catch (err) {
+        document.getElementById('loadingBox').innerHTML = `
+          <div class="text-red-500 font-bold mb-2">该信息已下架或不存在</div>
+          <a href="/" class="inline-block bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold">返回首页浏览其他信息</a>
+        `;
+      }
+    }
+
+    function renderDetailPage() {
+      const lang = DMJT_API.getLang();
+      const t = DETAIL_I18N[lang];
+      const p = currentPost;
+
+      document.title = `${p.title} - 大马吉通 MY`;
+      document.getElementById('txtBack').innerText = t.back;
+      document.getElementById('txtHeader').innerText = t.header;
+      document.getElementById('shareBtn').innerText = t.share;
+      document.getElementById('pinBadge').innerText = t.pin;
+      document.getElementById('txtNavSub').innerText = t.navSub;
+      document.getElementById('goMapBtn').innerText = t.navGo;
+      document.getElementById('txtDescTitle').innerText = t.descTitle;
+      document.getElementById('txtSafeTitle').innerText = t.safeTitle;
+      document.getElementById('txtSafeBody').innerText = t.safeBody;
+      document.getElementById('txtRelatedTitle').innerText = t.relatedTitle;
+      document.getElementById('txtBottomNav').innerText = t.bottomNav;
+      document.getElementById('txtWaBtn').innerText = t.waBtn;
+
+      if (p.image_url) {
+        document.getElementById('heroImageBox').classList.remove('hidden');
+        document.getElementById('heroImg').src = p.image_url;
+      }
+
+      if (p.is_pinned) document.getElementById('pinBadge').classList.remove('hidden');
+      document.getElementById('catBadge').innerText = t.cats[p.category] || p.category;
+      const cityLabel = DMJT_API.getRegionLabel(p.city, lang);
+      document.getElementById('cityBadge').innerText = `📍 ${cityLabel}`;
+      document.getElementById('navLocationLabel').innerText = `📍 ${cityLabel} · ${p.title}`;
+
+      // 绑定站内导航链接（携带城市坐标与标题参数前往 map.html）
+      const regionInfo = DMJT_API.getRegionInfo(p.city);
+      const mapUrl = `/map.html?dest=${encodeURIComponent(p.title)}&lat=${regionInfo.lat}&lng=${regionInfo.lng}`;
+      document.getElementById('goMapBtn').href = mapUrl;
+      document.getElementById('bottomMapBtn').href = mapUrl;
+
+      isTranslated = false;
+      document.getElementById('transTag').classList.add('hidden');
+      document.getElementById('transBtn').innerText = t.transBtn;
+      document.getElementById('postTitle').innerText = p.title;
+      document.getElementById('postPrice').innerText = p.price;
+      document.getElementById('postDesc').innerText = p.description || t.noDesc;
+      document.getElementById('postDate').innerText = new Date(p.created_at).toLocaleDateString('en-GB');
+
+      // 收藏按钮状态
+      const isFav = DMJT_API.getFavIds().includes(Number(p.id));
+      const favBtn = document.getElementById('favBtn');
+      favBtn.innerHTML = `<span>${isFav ? t.faved : t.fav}</span>`;
+      favBtn.className = isFav
+        ? 'px-3.5 py-3 rounded-xl border border-amber-300 bg-amber-50 font-bold text-xs text-amber-700 shrink-0'
+        : 'px-3.5 py-3 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 shrink-0';
+
+      // WhatsApp 联系链接
+      const cleanPhone = (p.whatsapp || '').replace(/[^0-9]/g, '');
+      const waMsg = encodeURIComponent(t.waHello(p.title));
+      document.getElementById('waBtn').href = `https://wa.me/${cleanPhone}?text=${waMsg}`;
+
+      document.getElementById('loadingBox').classList.add('hidden');
+      document.getElementById('detailMain').classList.remove('hidden');
+      document.getElementById('bottomActionBar').classList.remove('hidden');
+    }
+
+    async function handleTranslate() {
+      if (!currentPost) return;
+      const lang = DMJT_API.getLang();
+      const t = DETAIL_I18N[lang];
+      const btn = document.getElementById('transBtn');
+
+      if (isTranslated) {
+        document.getElementById('postTitle').innerText = currentPost.title;
+        document.getElementById('postDesc').innerText = currentPost.description || t.noDesc;
+        document.getElementById('transTag').classList.add('hidden');
+        btn.innerText = t.transBtn;
+        isTranslated = false;
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = '⏳...';
+      try {
+        const [newTitle, newDesc] = await Promise.all([
+          DMJT_API.translateText(currentPost.title, lang),
+          currentPost.description ? DMJT_API.translateText(currentPost.description, lang) : Promise.resolve(t.noDesc)
+        ]);
+        document.getElementById('postTitle').innerText = newTitle;
+        document.getElementById('postDesc').innerText = newDesc;
+        const tag = document.getElementById('transTag');
+        tag.innerText = t.transDone;
+        tag.classList.remove('hidden');
+        btn.innerText = t.origBtn;
+        isTranslated = true;
+      } catch (e) {
+        alert('Translation failed, please try again.');
+        btn.innerText = t.transBtn;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function toggleDetailFav() {
+      if (!currentPost) return;
+      DMJT_API.toggleFavId(currentPost.id);
+      renderDetailPage();
+    }
+
+    function sharePostLink() {
+      const shareUrl = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: currentPost.title, url: shareUrl }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl);
+        alert(DETAIL_I18N[DMJT_API.getLang()].sharedAlert);
+      }
+    }
+
+    function renderRelated(list) {
+      if (!list || list.length === 0) return;
+      const lang = DMJT_API.getLang();
+      document.getElementById('relatedSection').classList.remove('hidden');
+      document.getElementById('relatedList').innerHTML = list.map(item => `
+        <a href="/detail.html?id=${item.id}" class="block bg-white rounded-xl p-3 border border-gray-100 shadow-2xs card-hover">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-gray-800 truncate">${item.title}</div>
+              <div class="text-[11px] text-gray-400 mt-0.5">📍 ${DMJT_API.getRegionLabel(item.city, lang)}</div>
+            </div>
+            <div class="text-xs font-extrabold text-red-600 shrink-0">${item.price}</div>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    initDetail();
+  </script>
+</body>
+</html>

@@ -810,7 +810,7 @@
 
       return `
         <div class="bg-white rounded-2xl p-3.5 shadow-sm border ${post.is_pinned ? 'border-red-200 bg-red-50/15' : 'border-gray-100'} transition">
-          <div onclick="openDetail(${post.id})" class="flex justify-between gap-3 cursor-pointer">
+          <div onclick="window.location.href='/detail.html?id=${post.id}'" class="flex justify-between gap-3 cursor-pointer">
             <div class="flex-1 min-w-0 flex flex-col justify-between">
               <div>
                 <div class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
