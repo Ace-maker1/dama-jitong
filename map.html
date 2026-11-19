@@ -3,179 +3,185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>大马全能出行导航 · 查路线/公交/Waze/Grab | 大马吉通</title>
+  <title>大马吉通 · 站内原生导航 (中/EN/BM) | 路线·语音·公交·Grab·Waze</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 免费开源高清地图库 Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    #map { height: 42vh; min-height: 280px; width: 100%; z-index: 1; }
+    #map { height: 44vh; min-height: 290px; width: 100%; z-index: 1; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .gps-pulse {
+      width: 16px; height: 16px; background: #2563eb; border: 3px solid #fff;
+      border-radius: 50%; box-shadow: 0 0 8px rgba(37,99,235,0.8); position: relative;
+    }
+    .gps-pulse::after {
+      content: ''; position: absolute; inset: -6px; border-radius: 50%;
+      background: rgba(37,99,235,0.4); animation: pulse-ring 1.6s infinite;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 pb-20">
+<body class="bg-slate-50 text-slate-800 pb-24">
 
-  <!-- 顶部导航栏 -->
-  <header class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-4 py-3 shadow-md sticky top-0 z-30 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <a href="/" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-xs font-medium transition">← 返回首页</a>
-      <div>
-        <h1 class="font-bold text-base leading-tight">大马全能出行助手</h1>
-        <p class="text-[11px] text-emerald-100">Citymapper + Waze + Grab 聚合导航</p>
+  <!-- 顶部导航栏（含三语切换按钮） -->
+  <header class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-3 py-2.5 shadow-md sticky top-0 z-30">
+    <div class="max-w-2xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-xs font-medium transition shrink-0">← 首页</a>
+        <div>
+          <h1 id="headerTitle" class="font-bold text-sm sm:text-base leading-tight">大马吉通 · 站内原生导航</h1>
+          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">站内实时导航 · 语音指引 · Grab & Waze</p>
+        </div>
+      </div>
+
+      <!-- 中 / EN / BM 三语切换器 -->
+      <div class="flex items-center gap-1 bg-black/20 p-1 rounded-full text-[11px] font-bold shrink-0">
+        <button onclick="switchLang('zh')" id="lang-zh" class="lang-btn bg-white text-emerald-700 px-2 py-0.5 rounded-full transition">中</button>
+        <button onclick="switchLang('en')" id="lang-en" class="lang-btn text-white/90 px-2 py-0.5 rounded-full transition">EN</button>
+        <button onclick="switchLang('ms')" id="lang-ms" class="lang-btn text-white/90 px-2 py-0.5 rounded-full transition">BM</button>
       </div>
     </div>
-    <button onclick="locateMe()" class="bg-white text-emerald-700 px-3 py-1.5 rounded-full text-xs font-bold shadow active:scale-95 transition flex items-center gap-1">
-      <span>📍</span> 定位我
-    </button>
   </header>
 
-  <!-- 城市快捷切换 + 热门地标 -->
-  <div class="bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-    <span class="text-xs text-slate-400 shrink-0 font-medium">切换城市：</span>
-    <button onclick="switchCity(3.1390, 101.6869, '吉隆坡 KL')" class="city-btn px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">吉隆坡 KL</button>
-    <button onclick="switchCity(5.4141, 100.3288, '槟城 Penang')" class="city-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">槟城 Penang</button>
-    <button onclick="switchCity(1.4927, 103.7414, '新山 JB')" class="city-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">新山 JB</button>
-    <button onclick="switchCity(2.1896, 102.2501, '马六甲 Melaka')" class="city-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">马六甲</button>
-    <button onclick="switchCity(4.5975, 101.0901, '怡保 Ipoh')" class="city-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">怡保</button>
-    <button onclick="switchCity(5.9804, 116.0735, '亚庇 KK')" class="city-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">沙巴亚庇</button>
+  <!-- 导航中顶部实时路口指引横幅（点击“开始站内导航”后自动出现） -->
+  <div id="liveNavBanner" class="hidden sticky top-[54px] z-30 bg-slate-900 text-white px-4 py-3 shadow-xl border-b border-slate-700">
+    <div class="max-w-2xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div id="liveTurnIcon" class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl font-black shrink-0 shadow">
+          ⬆️
+        </div>
+        <div>
+          <div id="liveStepDist" class="text-xs font-bold text-emerald-400">--</div>
+          <div id="liveStepText" class="text-sm font-bold leading-snug mt-0.5">--</div>
+        </div>
+      </div>
+      <div class="flex flex-col items-end gap-1.5 shrink-0">
+        <button onclick="stopLiveNav()" id="stopNavBtn" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+          结束导航
+        </button>
+        <button id="voiceToggleBtn" onclick="toggleVoice()" class="text-[11px] text-emerald-300 underline">
+          🔊 语音已开启
+        </button>
+      </div>
+    </div>
   </div>
 
-  <!-- 起终点输入卡片 -->
-  <div class="p-3 bg-white shadow-sm border-b border-slate-200">
+  <!-- 城市快捷切换 -->
+  <div id="cityBar" class="bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+    <span id="cityLabel" class="text-xs text-slate-400 shrink-0 font-medium">城市：</span>
+    <button onclick="switchCity(3.1390, 101.6869, 'Kuala Lumpur')" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">吉隆坡 KL</button>
+    <button onclick="switchCity(5.4141, 100.3288, 'Penang')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">槟城 Penang</button>
+    <button onclick="switchCity(1.4927, 103.7414, 'Johor Bahru')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">新山 JB</button>
+    <button onclick="switchCity(2.1896, 102.2501, 'Melaka')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">马六甲 Melaka</button>
+    <button onclick="switchCity(4.5975, 101.0901, 'Ipoh')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">怡保 Ipoh</button>
+    <button onclick="switchCity(5.9804, 116.0735, 'Kota Kinabalu')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">亚庇 KK</button>
+  </div>
+
+  <!-- 起终点与出行方式选择面板 -->
+  <div id="searchBox" class="p-3 bg-white shadow-sm border-b border-slate-200">
     <div class="max-w-2xl mx-auto space-y-2">
+      <!-- 出行模式切换 Tab -->
+      <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+        <button id="mode-driving" onclick="setTravelMode('driving')" class="mode-tab bg-white text-emerald-700 py-1.5 rounded-lg shadow-sm transition">
+          🚗 驾车 / Drive
+        </button>
+        <button id="mode-transit" onclick="setTravelMode('transit')" class="mode-tab text-slate-600 py-1.5 rounded-lg transition">
+          🚇 公交 / Transit
+        </button>
+        <button id="mode-walking" onclick="setTravelMode('walking')" class="mode-tab text-slate-600 py-1.5 rounded-lg transition">
+          🚶 步行 / Walk
+        </button>
+      </div>
+
       <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:bg-white">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-        <input id="startInput" type="text" placeholder="输入起点（如：KL Sentral / 槟城机场 / 我的位置）" class="bg-transparent w-full text-sm focus:outline-none" />
-        <button onclick="useCurrentAsStart()" class="text-xs text-emerald-600 font-semibold shrink-0 px-2 py-0.5 bg-emerald-50 rounded">用当前定位</button>
+        <input id="startInput" type="text" placeholder="输入起点 / Origin / Lokasi Mula" class="bg-transparent w-full text-sm focus:outline-none" />
+        <button onclick="locateMe(true)" id="gpsBtn" class="text-xs text-emerald-600 font-semibold shrink-0 px-2 py-0.5 bg-emerald-50 rounded">📍 当前定位</button>
       </div>
 
       <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-rose-500 focus-within:bg-white">
         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-        <input id="endInput" type="text" placeholder="输入目的地（如：KLCC / 升旗山 / 新山关卡 CIQ）" class="bg-transparent w-full text-sm focus:outline-none" />
-        <button onclick="swapLocations()" title="互换起终点" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-0.5 bg-white rounded border">⇅ 互换</button>
+        <input id="endInput" type="text" placeholder="输入目的地 / Destination / Destinasi" class="bg-transparent w-full text-sm focus:outline-none" />
+        <button onclick="swapLocations()" id="swapBtn" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-0.5 bg-white rounded border shrink-0">⇅ 互换</button>
       </div>
 
       <!-- 热门一键目的地 -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-        <span class="text-[11px] text-slate-400 shrink-0">热门直达：</span>
+        <span id="hotLabel" class="text-[11px] text-slate-400 shrink-0">热门：</span>
         <button onclick="quickDest('KLCC Petronas Twin Towers')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">双子塔 KLCC</button>
-        <button onclick="quickDest('KLIA Terminal 1')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">吉隆坡机场 KLIA</button>
-        <button onclick="quickDest('KOMTAR Penang')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">槟城光大 KOMTAR</button>
-        <button onclick="quickDest('Penang Hill Lower Station')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">槟城升旗山</button>
-        <button onclick="quickDest('JB Sentral CIQ')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">新山关卡 CIQ</button>
+        <button onclick="quickDest('Petaling Street')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">茨厂街</button>
+        <button onclick="quickDest('KLIA Terminal 1')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">KLIA 机场</button>
+        <button onclick="quickDest('KOMTAR Penang')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">槟城光大</button>
+        <button onclick="quickDest('JB Sentral CIQ')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">新山关卡</button>
       </div>
 
       <button id="searchRouteBtn" onclick="planRoute()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow transition">
-        🔍 智能规划全马最佳路线（对比公交 / Grab / Waze）
+        🧭 生成站内导航路线（含语音 + Grab/Waze）
       </button>
     </div>
   </div>
 
-  <!-- 交互式高清地图 -->
+  <!-- 站内交互式高清地图 -->
   <div class="relative">
     <div id="map"></div>
-    <div id="mapBadge" class="absolute bottom-2 left-2 z-20 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[11px] text-slate-600 shadow border border-slate-200">
-      💡 提示：可直接点击地图任意位置设为目的地
+    <div id="mapBadge" class="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg text-[11px] text-slate-700 shadow border border-slate-200">
+      💡 点击地图任意位置可直接设为目的地
     </div>
   </div>
 
-  <!-- 多模式路线方案结果区（仿 Citymapper 核心面板） -->
+  <!-- 站内原生导航详情 + 保留 Grab / Waze 聚合栏 -->
   <div id="resultPanel" class="max-w-2xl mx-auto p-3 space-y-3 hidden">
-    <div class="flex items-center justify-between px-1">
-      <h2 class="font-bold text-sm text-slate-800">📊 为您匹配的最佳出行方案</h2>
-      <span id="routeSummary" class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200"></span>
-    </div>
-
-    <!-- 方案 1：公共交通（LRT / MRT / Rapid 巴士 / KTMB） -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-      <div class="flex items-start justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">🚇</div>
-          <div>
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-sm text-slate-900">轨道交通 / Rapid 巴士</span>
-              <span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-semibold">最省钱</span>
-            </div>
-            <p id="transitDesc" class="text-xs text-slate-500 mt-0.5">支持 Rapid KL / Rapid Penang / MRT / KTMB 换乘</p>
+    <!-- 1. 大马吉通站内原生导航主卡片 -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-500">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <span id="nativeTag" class="inline-block text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded mb-1">⭐ 大马吉通站内导航（无需跳出网页）</span>
+          <div class="flex items-center gap-2">
+            <span id="routeDistBadge" class="text-lg font-black text-slate-900">-- km</span>
+            <span id="routeTimeBadge" class="text-xs font-bold bg-slate-100 text-slate-800 px-2.5 py-0.5 rounded-full">-- min</span>
           </div>
+          <p id="routeSubInfo" class="text-xs text-slate-500 mt-1">--</p>
         </div>
-        <div class="text-right">
-          <div id="transitPrice" class="font-bold text-sm text-blue-600">RM 1.40 - 4.80</div>
-          <div id="transitTime" class="text-[11px] text-slate-400">约 -- 分钟</div>
-        </div>
+        <button onclick="startLiveNav()" id="startNavBtn" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-4 py-3 rounded-xl shadow-md flex items-center gap-1.5 shrink-0">
+          <span>▶️</span> <span>开始站内导航</span>
+        </button>
       </div>
-      <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-        <span class="text-[11px] text-slate-500">💡 建议准备 Touch 'n Go 卡或 Visa/Master 拍卡进站</span>
-        <a id="googleTransitLink" href="#" target="_blank" class="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
-          查看公交站台明细 →
-        </a>
+
+      <!-- 2. 保留的外部 App 快捷调用（Grab 打车 / Waze 导航 / Google 公交） -->
+      <div class="mt-3 pt-3 border-t border-slate-100">
+        <div id="extAppsLabel" class="text-[11px] text-slate-400 mb-2">其他常用大马出行工具一键直达：</div>
+        <div class="grid grid-cols-3 gap-2">
+          <a id="grabDeepLink" href="https://grab.onelink.me/2695613898" target="_blank" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold py-2 px-2 rounded-xl text-center transition">
+            🚕 Grab 叫车<br><span id="grabPriceTag" class="text-[10px] font-normal text-emerald-600">RM --</span>
+          </a>
+          <a id="wazeDeepLink" href="#" target="_blank" class="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 text-xs font-bold py-2 px-2 rounded-xl text-center transition">
+            🧭 Waze 导航<br><span class="text-[10px] font-normal text-sky-600">实时避堵</span>
+          </a>
+          <a id="googleTransitLink" href="#" target="_blank" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-xs font-bold py-2 px-2 rounded-xl text-center transition">
+            🚇 公交时刻<br><span class="text-[10px] font-normal text-blue-600">LRT/MRT/Bus</span>
+          </a>
+        </div>
       </div>
     </div>
 
-    <!-- 方案 2：网约车（Grab / inDrive 预估与呼叫） -->
+    <!-- 公共交通 / 本地防迷路贴士卡片 -->
+    <div id="transitGuideBox" class="hidden bg-blue-50 rounded-2xl p-4 border border-blue-200 space-y-1.5">
+      <div class="font-bold text-sm text-blue-900" id="transitBoxTitle">🚇 本地公交 / 轨道交通乘车贴士</div>
+      <div id="transitAdviceBody" class="text-xs text-blue-800 leading-relaxed space-y-1"></div>
+    </div>
+
+    <!-- 站内逐向转弯步骤列表（Turn-by-Turn Steps） -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-      <div class="flex items-start justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">🚕</div>
-          <div>
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-sm text-slate-900">网约车 (Grab / inDrive)</span>
-              <span class="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-semibold">门到门推荐</span>
-            </div>
-            <p class="text-xs text-slate-500 mt-0.5">游客首选，无需换乘步行，直达门口</p>
-          </div>
-        </div>
-        <div class="text-right">
-          <div id="grabPrice" class="font-bold text-sm text-emerald-600">预估 RM --</div>
-          <div id="driveTime" class="text-[11px] text-slate-400">车程约 -- 分钟</div>
-        </div>
+      <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-slate-100">
+        <h3 id="stepsHeader" class="font-bold text-sm text-slate-800">📋 站内逐步路线明细</h3>
+        <span id="stepCountBadge" class="text-[11px] text-slate-400">0 steps</span>
       </div>
-      <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
-        <a id="grabDeepLink" href="https://grab.onelink.me/2695613898" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition">
-          打开 Grab 叫车
-        </a>
-      </div>
-    </div>
-
-    <!-- 方案 3：自驾导航（Waze 实时避堵 + 油费估算） -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-      <div class="flex items-start justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl font-bold">🧭</div>
-          <div>
-            <div class="flex items-center gap-1.5">
-              <span class="font-bold text-sm text-slate-900">自驾导航 (Waze 实时路况)</span>
-              <span class="text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-semibold">全马司机首选</span>
-            </div>
-            <p id="fuelCostText" class="text-xs text-slate-500 mt-0.5">按 RON95 RM 2.05/L 估算油费约 RM --</p>
-          </div>
-        </div>
-        <div class="text-right">
-          <div id="driveDist" class="font-bold text-sm text-slate-800">-- km</div>
-          <div class="text-[11px] text-slate-400">含实时路况躲避</div>
-        </div>
-      </div>
-      <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
-        <a id="googleDriveLink" href="#" target="_blank" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
-          Google 导航
-        </a>
-        <a id="wazeDeepLink" href="#" target="_blank" class="bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm transition">
-          🚀 一键用 Waze 导航
-        </a>
-      </div>
-    </div>
-
-    <!-- 方案 4：大马吉通本地增值服务导流 -->
-    <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-3.5 border border-amber-200 flex items-center justify-between gap-3">
-      <div>
-        <div class="text-xs font-bold text-amber-900">🚐 人多行李多 / 跨州包车 / 机场接送？</div>
-        <div class="text-[11px] text-amber-700 mt-0.5">在大马吉通查看认证华人司机包车与本地吃喝玩乐优惠</div>
-      </div>
-      <a href="/" class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-sm transition">
-        找包车/看攻略
-      </a>
+      <div id="stepsList" class="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1"></div>
     </div>
   </div>
 
@@ -183,66 +189,240 @@
   <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 py-2 px-6 flex justify-around items-center z-30 text-xs">
     <a href="/" class="flex flex-col items-center text-slate-500 hover:text-emerald-600">
       <span class="text-lg">🏠</span>
-      <span>分类首页</span>
+      <span id="navHome">分类首页</span>
     </a>
     <a href="/map.html" class="flex flex-col items-center text-emerald-600 font-bold">
-      <span class="text-lg">🗺️</span>
-      <span>出行导航</span>
+      <span class="text-lg">🧭</span>
+      <span id="navMap">站内导航</span>
     </a>
     <a href="/" class="flex flex-col items-center text-slate-500 hover:text-emerald-600">
       <span class="text-lg">➕</span>
-      <span>发布信息</span>
+      <span id="navPost">发布信息</span>
     </a>
   </nav>
 
   <script>
-    // 初始化地图（默认中心：吉隆坡）
-    const map = L.map('map').setView([3.1390, 101.6869], 12);
+    // 三语界面文本字典（中文 / English / Bahasa Melayu）
+    const i18n = {
+      zh: {
+        backHome: '← 首页',
+        headerTitle: '大马吉通 · 站内原生导航',
+        headerSub: '站内实时导航 · 语音指引 · Grab & Waze',
+        cityLabel: '城市：',
+        modeDriving: '🚗 驾车',
+        modeTransit: '🚇 公交',
+        modeWalking: '🚶 步行',
+        startPh: '输入起点（如：KL Sentral / 槟城机场）',
+        endPh: '输入目的地（如：双子塔 / 茨厂街 / 新山关卡）',
+        gpsBtn: '📍 当前定位',
+        swapBtn: '⇅ 互换',
+        hotLabel: '热门：',
+        searchBtn: '🧭 生成站内导航路线（含语音 + Grab/Waze）',
+        searchingBtn: '⏳ 正在规划全马最佳路线...',
+        mapBadge: '💡 提示：直接点击地图任意位置即可设为目的地',
+        nativeTag: '⭐ 大马吉通站内导航（无需跳出网页）',
+        startNav: '▶️ 开始站内导航',
+        stopNav: '结束导航',
+        voiceOn: '🔊 语音已开启',
+        voiceOff: '🔇 语音已静音',
+        extApps: '其他常用大马出行工具一键直达：',
+        stepsHeader: '📋 站内逐步路线明细',
+        navHome: '分类首页',
+        navMap: '站内导航',
+        navPost: '发布信息',
+        speechLang: 'zh-CN',
+        startVoiceMsg: '开始站内导航。'
+      },
+      en: {
+        backHome: '← Home',
+        headerTitle: 'DaMaJiTong · In-App Navigation',
+        headerSub: 'Turn-by-Turn Voice Nav · Grab & Waze',
+        cityLabel: 'City:',
+        modeDriving: '🚗 Drive',
+        modeTransit: '🚇 Transit',
+        modeWalking: '🚶 Walk',
+        startPh: 'Start point (e.g. KL Sentral / Penang Airport)',
+        endPh: 'Destination (e.g. KLCC / Petaling Street / CIQ)',
+        gpsBtn: '📍 My GPS',
+        swapBtn: '⇅ Swap',
+        hotLabel: 'Hot:',
+        searchBtn: '🧭 Get Route (In-App Nav + Grab & Waze)',
+        searchingBtn: '⏳ Calculating best route...',
+        mapBadge: '💡 Tip: Tap anywhere on the map to set destination',
+        nativeTag: '⭐ DaMaJiTong In-App Nav (Stay on page)',
+        startNav: '▶️ Start Nav',
+        stopNav: 'Stop Nav',
+        voiceOn: '🔊 Voice On',
+        voiceOff: '🔇 Muted',
+        extApps: 'Quick launch external Malaysia travel apps:',
+        stepsHeader: '📋 Turn-by-Turn Directions',
+        navHome: 'Home',
+        navMap: 'Navigation',
+        navPost: 'Post Ad',
+        speechLang: 'en-US',
+        startVoiceMsg: 'Starting navigation. '
+      },
+      ms: {
+        backHome: '← Utama',
+        headerTitle: 'DaMaJiTong · Navigasi Terus',
+        headerSub: 'Panduan Suara Terus · Grab & Waze',
+        cityLabel: 'Bandar:',
+        modeDriving: '🚗 Pandu',
+        modeTransit: '🚇 Bas/MRT',
+        modeWalking: '🚶 Jalan',
+        startPh: 'Lokasi mula (cth: KL Sentral / Lapangan Terbang)',
+        endPh: 'Destinasi (cth: KLCC / KOMTAR / JB Sentral)',
+        gpsBtn: '📍 Lokasi Saya',
+        swapBtn: '⇅ Tukar',
+        hotLabel: 'Popular:',
+        searchBtn: '🧭 Cari Laluan (Navigasi + Grab & Waze)',
+        searchingBtn: '⏳ Mengira laluan terbaik...',
+        mapBadge: '💡 Tip: Tekan mana-mana lokasi di peta sebagai destinasi',
+        nativeTag: '⭐ Navigasi Terus DaMaJiTong (Tanpa keluar web)',
+        startNav: '▶️ Mula Navigasi',
+        stopNav: 'Tamat',
+        voiceOn: '🔊 Suara Aktif',
+        voiceOff: '🔇 Senyap',
+        extApps: 'Buka aplikasi pengangkutan lain di Malaysia:',
+        stepsHeader: '📋 Langkah Panduan Arah',
+        navHome: 'Utama',
+        navMap: 'Navigasi',
+        navPost: 'Iklan',
+        speechLang: 'ms-MY',
+        startVoiceMsg: 'Memulakan navigasi. '
+      }
+    };
+
+    let currentLang = 'zh';
+    let currentMode = 'driving';
+    let startCoords = null;
+    let endCoords = null;
+    let startMarker = null;
+    let endMarker = null;
+    let userLiveMarker = null;
+    let routeLine = null;
+    let currentSteps = [];
+    let watchId = null;
+    let voiceEnabled = true;
+    let lastSpokenStepIdx = -1;
+
+    function switchLang(lang) {
+      currentLang = lang;
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        b.classList.remove('bg-white', 'text-emerald-700');
+        b.classList.add('text-white/90');
+      });
+      const activeBtn = document.getElementById(`lang-${lang}`);
+      activeBtn.classList.add('bg-white', 'text-emerald-700');
+      activeBtn.classList.remove('text-white/90');
+
+      const t = i18n[lang];
+      document.getElementById('backHomeBtn').innerText = t.backHome;
+      document.getElementById('headerTitle').innerText = t.headerTitle;
+      document.getElementById('headerSub').innerText = t.headerSub;
+      document.getElementById('cityLabel').innerText = t.cityLabel;
+      document.getElementById('mode-driving').innerText = t.modeDriving;
+      document.getElementById('mode-transit').innerText = t.modeTransit;
+      document.getElementById('mode-walking').innerText = t.modeWalking;
+      document.getElementById('startInput').placeholder = t.startPh;
+      document.getElementById('endInput').placeholder = t.endPh;
+      document.getElementById('gpsBtn').innerText = t.gpsBtn;
+      document.getElementById('swapBtn').innerText = t.swapBtn;
+      document.getElementById('hotLabel').innerText = t.hotLabel;
+      document.getElementById('searchRouteBtn').innerText = t.searchBtn;
+      document.getElementById('mapBadge').innerText = t.mapBadge;
+      document.getElementById('nativeTag').innerText = t.nativeTag;
+      document.getElementById('startNavBtn').innerHTML = `<span>▶️</span> <span>${t.startNav.replace('▶️ ', '')}</span>`;
+      document.getElementById('stopNavBtn').innerText = t.stopNav;
+      document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? t.voiceOn : t.voiceOff;
+      document.getElementById('extAppsLabel').innerText = t.extApps;
+      document.getElementById('stepsHeader').innerText = t.stepsHeader;
+      document.getElementById('navHome').innerText = t.navHome;
+      document.getElementById('navMap').innerText = t.navMap;
+      document.getElementById('navPost').innerText = t.navPost;
+
+      if (startCoords && endCoords) planRoute();
+    }
+
+    // 初始化无水印 Esri 高清街道地图
+    const map = L.map('map').setView([3.1390, 101.6869], 13);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       attribution: '© Esri © OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
 
-    let startCoords = null;
-    let endCoords = null;
-    let startMarker = null;
-    let endMarker = null;
-    let routeLine = null;
+    const cnAliasMap = {
+      '双子塔': 'Petronas Twin Towers Kuala Lumpur',
+      '吉隆坡双子塔': 'Petronas Twin Towers Kuala Lumpur',
+      '茨厂街': 'Petaling Street Kuala Lumpur',
+      '武吉免登': 'Bukit Bintang Kuala Lumpur',
+      '柏威年': 'Pavilion Kuala Lumpur',
+      '亚罗街': 'Jalan Alor Kuala Lumpur',
+      '黑风洞': 'Batu Caves Selangor',
+      '云顶': 'Genting Highlands',
+      '吉隆坡机场': 'Kuala Lumpur International Airport',
+      '吉隆坡国际机场': 'Kuala Lumpur International Airport',
+      '槟城光大': 'KOMTAR George Town Penang',
+      '光大': 'KOMTAR George Town Penang',
+      '升旗山': 'Penang Hill Lower Station',
+      '极乐寺': 'Kek Lok Si Temple Penang',
+      '姓氏桥': 'Clan Jetties of Penang',
+      '槟城机场': 'Penang International Airport',
+      '新山关卡': 'JB Sentral CIQ Johor Bahru',
+      '鸡场街': 'Jonker Street Melaka',
+      '马六甲红屋': 'Dutch Square Melaka'
+    };
 
-    // 切换城市视角
-    function switchCity(lat, lng, label) {
-      map.setView([lat, lng], 13);
-      document.getElementById('mapBadge').innerText = `📍 当前浏览：${label}（点击地图可直接设为目的地）`;
+    function setTravelMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-tab').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-emerald-700', 'shadow-sm');
+        btn.classList.add('text-slate-600');
+      });
+      const active = document.getElementById(`mode-${mode}`);
+      active.classList.add('bg-white', 'text-emerald-700', 'shadow-sm');
+      active.classList.remove('text-slate-600');
+      if (startCoords && endCoords) planRoute();
     }
 
-    // 获取用户 GPS 定位
-    function locateMe() {
+    function switchCity(lat, lng, label) {
+      map.setView([lat, lng], 13);
+      document.getElementById('mapBadge').innerText = `📍 ${label}`;
+    }
+
+    function locateMe(setAsStart = false) {
       if (!navigator.geolocation) {
-        alert('您的浏览器不支持定位功能，请手动输入起点。');
+        alert('Browser does not support GPS / 浏览器不支持定位');
         return;
       }
-      document.getElementById('mapBadge').innerText = '📡 正在获取您的 GPS 位置...';
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          startCoords = { lat, lng, name: '我的当前位置' };
-          document.getElementById('startInput').value = '我的当前位置 (GPS)';
+          updateLiveUserDot(lat, lng);
+          if (setAsStart) {
+            const label = currentLang === 'en' ? 'My Current Location (GPS)' : (currentLang === 'ms' ? 'Lokasi Semasa Saya (GPS)' : '我的当前位置 (GPS)');
+            startCoords = { lat, lng, name: label };
+            document.getElementById('startInput').value = label;
+            if (startMarker) map.removeLayer(startMarker);
+            startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
+          }
           map.setView([lat, lng], 15);
-          if (startMarker) map.removeLayer(startMarker);
-          startMarker = L.marker([lat, lng]).addTo(map).bindPopup('🟢 您的当前位置').openPopup();
-          document.getElementById('mapBadge').innerText = '✅ 已定位到您的当前位置';
         },
         () => {
-          alert('无法获取定位，请检查手机是否开启定位权限，或直接输入起点名称。');
-          document.getElementById('mapBadge').innerText = '💡 提示：可直接输入起点或点击地图选点';
+          alert(currentLang === 'zh' ? '请允许浏览器获取定位权限，或手动输入起点。' : 'Please allow location permission or enter start point manually.');
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     }
 
-    function useCurrentAsStart() {
-      locateMe();
+    function updateLiveUserDot(lat, lng) {
+      const icon = L.divIcon({ className: '', html: '<div class="gps-pulse"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+      if (userLiveMarker) {
+        userLiveMarker.setLatLng([lat, lng]);
+      } else {
+        userLiveMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+      }
     }
 
     function quickDest(placeName) {
@@ -260,125 +440,290 @@
       endCoords = temp;
     }
 
-    // 点击地图直接选终点
     map.on('click', function(e) {
-      endCoords = { lat: e.latlng.lat, lng: e.latlng.lng, name: '地图自选目的地' };
-      document.getElementById('endInput').value = `地图选点 (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`;
+      endCoords = { lat: e.latlng.lat, lng: e.latlng.lng, name: 'Map Pin' };
+      document.getElementById('endInput').value = `Pin (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`;
       if (endMarker) map.removeLayer(endMarker);
-      endMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('🔴 目的地').openPopup();
+      endMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('🔴 Destination').openPopup();
       if (startCoords) planRoute();
     });
 
-    // 地址转经纬度（限定马来西亚境内搜索）
-    async function geocodeAddress(query) {
+    async function geocodeAddress(rawQuery) {
+      let query = rawQuery.trim();
+      for (const [cn, en] of Object.entries(cnAliasMap)) {
+        if (query.includes(cn)) {
+          query = en;
+          break;
+        }
+      }
       const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=my&limit=1&q=${encodeURIComponent(query)}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data && data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: rawQuery };
       }
       return null;
     }
 
-    // 主路线规划引擎（OSRM 真实道路距离 + 耗时 + 费用对比）
+    // 三语路口转向指令生成器（支持中文 / English / Bahasa Melayu）
+    function translateStep(step) {
+      const type = step.maneuver?.type || '';
+      const mod = step.maneuver?.modifier || '';
+      const road = step.name || (currentLang === 'zh' ? '前方道路' : (currentLang === 'ms' ? 'jalan hadapan' : 'road ahead'));
+      const dist = step.distance >= 1000
+        ? `${(step.distance / 1000).toFixed(1)} km`
+        : `${Math.max(10, Math.round(step.distance))} m`;
+
+      let icon = '⬆️';
+      if (type === 'depart') icon = '🚀';
+      else if (type === 'arrive') icon = '🏁';
+      else if (type === 'roundabout' || type === 'rotary') icon = '🔄';
+      else if (mod.includes('left')) icon = mod.includes('slight') ? '↖️' : '⬅️';
+      else if (mod.includes('right')) icon = mod.includes('slight') ? '↗️' : '➡️';
+      else if (mod.includes('uturn')) icon = '↩️';
+
+      if (currentLang === 'en') {
+        if (type === 'depart') return { icon, text: `Start on ${road}`, dist };
+        if (type === 'arrive') return { icon, text: `Arrive at destination (${road})`, dist: 'Arrived' };
+        if (type === 'roundabout' || type === 'rotary') return { icon, text: `Enter roundabout and exit onto ${road}`, dist };
+        if (mod.includes('left')) return { icon, text: `${mod.includes('slight') ? 'Keep left' : 'Turn left'} onto ${road}`, dist };
+        if (mod.includes('right')) return { icon, text: `${mod.includes('slight') ? 'Keep right' : 'Turn right'} onto ${road}`, dist };
+        if (mod.includes('uturn')) return { icon, text: `Make a U-turn onto ${road}`, dist };
+        return { icon, text: `Continue straight on ${road}`, dist };
+      }
+
+      if (currentLang === 'ms') {
+        if (type === 'depart') return { icon, text: `Mula perjalanan di ${road}`, dist };
+        if (type === 'arrive') return { icon, text: `Tiba di destinasi (${road})`, dist: 'Tiba' };
+        if (type === 'roundabout' || type === 'rotary') return { icon, text: `Masuk bulatan dan keluar ke ${road}`, dist };
+        if (mod.includes('left')) return { icon, text: `${mod.includes('slight') ? 'Ikut kiri' : 'Belok kiri'} ke ${road}`, dist };
+        if (mod.includes('right')) return { icon, text: `${mod.includes('slight') ? 'Ikut kanan' : 'Belok kanan'} ke ${road}`, dist };
+        if (mod.includes('uturn')) return { icon, text: `Pusingan U ke ${road}`, dist };
+        return { icon, text: `Terus ke hadapan di ${road}`, dist };
+      }
+
+      // 默认中文
+      if (type === 'depart') return { icon, text: `从起点出发，沿「${road}」前行`, dist };
+      if (type === 'arrive') return { icon, text: `抵达目的地「${road}」`, dist: '已到达' };
+      if (type === 'roundabout' || type === 'rotary') return { icon, text: `进入环岛，驶出进入「${road}」`, dist };
+      if (mod.includes('left')) return { icon, text: `${mod.includes('slight') ? '靠左前方行驶' : '左转'}进入「${road}」`, dist };
+      if (mod.includes('right')) return { icon, text: `${mod.includes('slight') ? '靠右前方行驶' : '右转'}进入「${road}」`, dist };
+      if (mod.includes('uturn')) return { icon, text: `前方掉头进入「${road}」`, dist };
+      return { icon, text: `继续直行沿「${road}」前进`, dist };
+    }
+
     async function planRoute() {
       const btn = document.getElementById('searchRouteBtn');
       const startText = document.getElementById('startInput').value.trim();
       const endText = document.getElementById('endInput').value.trim();
 
       if (!endText && !endCoords) {
-        alert('请先输入目的地，或直接点击地图上的位置！');
+        alert(currentLang === 'zh' ? '请先输入目的地，或直接点击地图！' : 'Please enter destination or tap on the map!');
         return;
       }
 
-      btn.innerText = '⏳ 正在计算全马最佳路线...';
+      btn.innerText = i18n[currentLang].searchingBtn;
       btn.disabled = true;
 
       try {
-        // 解析起点
         if (!startText) {
-          // 默认用当前地图中心作为起点
           const c = map.getCenter();
-          startCoords = { lat: c.lat, lng: c.lng, name: '当前地图中心' };
-          document.getElementById('startInput').value = '当前地图中心位置';
-        } else if (!startText.includes('当前定位') && !startText.includes('地图中心')) {
+          startCoords = { lat: c.lat, lng: c.lng, name: 'Map Center' };
+          document.getElementById('startInput').value = currentLang === 'zh' ? '当前地图中心' : 'Map Center';
+        } else if (!startText.includes('(GPS)') && !startText.includes('Map Center') && !startText.includes('地图中心')) {
           const geoStart = await geocodeAddress(startText);
           if (geoStart) startCoords = geoStart;
         }
 
-        // 解析终点
-        if (!endText.startsWith('地图选点')) {
+        if (!endText.startsWith('Pin (')) {
           const geoEnd = await geocodeAddress(endText);
           if (geoEnd) {
             endCoords = geoEnd;
           } else {
-            alert('未找到该目的地，建议输入英文或马来文地名（如 KLCC、Mid Valley、Gurney Plaza）再试！');
-            btn.innerText = '🔍 智能规划全马最佳路线（对比公交 / Grab / Waze）';
+            alert(currentLang === 'zh' ? '未找到该地点，建议输入英文地标（如 KLCC、Mid Valley）再试！' : 'Location not found, please try another landmark!');
+            btn.innerText = i18n[currentLang].searchBtn;
             btn.disabled = false;
             return;
           }
         }
 
-        // 标记起终点
         if (startMarker) map.removeLayer(startMarker);
         if (endMarker) map.removeLayer(endMarker);
-        startMarker = L.marker([startCoords.lat, startCoords.lng]).addTo(map).bindPopup(`🟢 起点：${startCoords.name}`);
-        endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup(`🔴 终点：${endCoords.name}`);
+        startMarker = L.marker([startCoords.lat, startCoords.lng]).addTo(map).bindPopup(`🟢 ${startCoords.name}`);
+        endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup(`🔴 ${endCoords.name}`);
 
-        // 调用 OSRM 获取真实驾车路径与耗时
-        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson`;
+        const profile = currentMode === 'walking' ? 'foot' : 'driving';
+        const osrmUrl = `https://router.project-osrm.org/route/v1/${profile}/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`;
         const routeRes = await fetch(osrmUrl);
         const routeData = await routeRes.json();
 
-        let distKm = 0;
-        let durationMin = 0;
-
-        if (routeData && routeData.routes && routeData.routes.length > 0) {
-          const r = routeData.routes[0];
-          distKm = (r.distance / 1000).toFixed(1);
-          durationMin = Math.max(3, Math.round(r.duration / 60));
-
-          if (routeLine) map.removeLayer(routeLine);
-          routeLine = L.geoJSON(r.geometry, {
-            style: { color: '#059669', weight: 5, opacity: 0.85 }
-          }).addTo(map);
-          map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
-        } else {
-          // 直线兜底估算
-          distKm = (map.distance([startCoords.lat, startCoords.lng], [endCoords.lat, endCoords.lng]) / 1000 * 1.3).toFixed(1);
-          durationMin = Math.max(5, Math.round(distKm * 2.2));
+        if (!routeData || !routeData.routes || routeData.routes.length === 0) {
+          alert('Route not found / 暂未匹配到路线');
+          return;
         }
 
-        // 计算各项出行对比数据
-        const grabLow = Math.max(5, Math.round(4 + distKm * 1.35));
-        const grabHigh = Math.round(grabLow * 1.35);
+        const route = routeData.routes[0];
+        const distKm = (route.distance / 1000).toFixed(1);
+        let durationMin = Math.max(2, Math.round(route.duration / 60));
+        if (currentMode === 'walking') durationMin = Math.max(3, Math.round(distKm * 13));
+        if (currentMode === 'transit') durationMin = Math.max(8, Math.round(durationMin * 1.45 + 10));
+
+        if (routeLine) map.removeLayer(routeLine);
+        const lineColor = currentMode === 'walking' ? '#2563eb' : (currentMode === 'transit' ? '#7c3aed' : '#059669');
+        routeLine = L.geoJSON(route.geometry, {
+          style: { color: lineColor, weight: 6, opacity: 0.88, dashArray: currentMode === 'walking' ? '8, 8' : null }
+        }).addTo(map);
+        map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
+
         const fuelCost = (distKm * 0.08 * 2.05).toFixed(2);
-        const transitMin = Math.round(durationMin * 1.5 + 10);
+        const grabEst = Math.max(5, Math.round(4 + distKm * 1.35));
+        document.getElementById('routeDistBadge').innerText = `${distKm} km`;
+        document.getElementById('routeTimeBadge').innerText = `${durationMin} min`;
+        document.getElementById('grabPriceTag').innerText = `~RM ${grabEst}`;
 
-        document.getElementById('routeSummary').innerText = `全程 ${distKm} 公里 · 驾车约 ${durationMin} 分钟`;
-        document.getElementById('driveDist').innerText = `${distKm} km`;
-        document.getElementById('driveTime').innerText = `车程约 ${durationMin} 分钟`;
-        document.getElementById('transitTime').innerText = `含步行约 ${transitMin} 分钟`;
-        document.getElementById('grabPrice').innerText = `预估 RM ${grabLow} - ${grabHigh}`;
-        document.getElementById('fuelCostText').innerText = `按 RON95 RM 2.05/L 估算油费约 RM ${fuelCost}`;
+        if (currentLang === 'en') {
+          document.getElementById('routeSubInfo').innerText = `Est. Petrol RM ${fuelCost} · Grab Ref ~RM ${grabEst}`;
+        } else if (currentLang === 'ms') {
+          document.getElementById('routeSubInfo').innerText = `Anggaran Petrol RM ${fuelCost} · Grab ~RM ${grabEst}`;
+        } else {
+          document.getElementById('routeSubInfo').innerText = `自驾预估油费 RM ${fuelCost} · Grab 参考约 RM ${grabEst}`;
+        }
 
-        // 生成一键跳转 Waze & Google Maps 真实坐标导航链接
+        // 保留并更新 Waze 与 Google 公交深度跳转链接
         document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
-        document.getElementById('googleDriveLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=driving`;
         document.getElementById('googleTransitLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=transit`;
 
-        // 展示结果面板并平滑滚动
+        // 公交本地防迷路指引（三语适配）
+        const transitBox = document.getElementById('transitGuideBox');
+        if (currentMode === 'transit') {
+          transitBox.classList.remove('hidden');
+          if (currentLang === 'en') {
+            document.getElementById('transitBoxTitle').innerText = '🚇 Malaysia Public Transit Guide';
+            document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Use LRT/MRT/Monorail or Rapid KL bus (Touch 'n Go or Visa/Master PayWave accepted).</p><p>• <b>Penang:</b> Rapid Penang bus requires exact cash fare (no change given).</p>`;
+          } else if (currentLang === 'ms') {
+            document.getElementById('transitBoxTitle').innerText = '🚇 Panduan Pengangkutan Awam Malaysia';
+            document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Gunakan LRT/MRT/Monorel atau bas Rapid KL (Kad Touch 'n Go / PayWave diterima).</p><p>• <b>Pulau Pinang:</b> Bas Rapid Penang memerlukan wang tunai secukupnya.</p>`;
+          } else {
+            document.getElementById('transitBoxTitle').innerText = '🚇 大马本地公交 / 轨道交通乘车贴士';
+            document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>吉隆坡/雪兰莪：</b>优先搭乘 LRT / MRT / Monorail 或 Rapid KL 巴士，进站支持 <b>Touch 'n Go 卡</b> 或 Visa/Master 拍卡。</p><p>• <b>槟城地区：</b>搭乘 Rapid Penang 巴士需自备零钱投币（不设找零），乔治市老城区可坐免费 CAT 巴士。</p>`;
+          }
+        } else {
+          transitBox.classList.add('hidden');
+        }
+
+        const rawSteps = route.legs[0]?.steps || [];
+        currentSteps = rawSteps.map((s, idx) => {
+          const t = translateStep(s);
+          return {
+            index: idx,
+            icon: t.icon,
+            text: t.text,
+            dist: t.dist,
+            location: s.maneuver?.location
+          };
+        });
+
+        document.getElementById('stepCountBadge').innerText = `${currentSteps.length} steps`;
+        const stepsContainer = document.getElementById('stepsList');
+        stepsContainer.innerHTML = currentSteps.map((st, i) => `
+          <div onclick="focusStep(${i})" class="py-2.5 px-2 hover:bg-slate-50 rounded-xl cursor-pointer flex items-center justify-between gap-3 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-base shrink-0">${st.icon}</span>
+              <div>
+                <div class="text-xs font-bold text-slate-800">${st.text}</div>
+                <div class="text-[11px] text-slate-400">#${i + 1}</div>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded shrink-0">${st.dist}</span>
+          </div>
+        `).join('');
+
         const panel = document.getElementById('resultPanel');
         panel.classList.remove('hidden');
         panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
       } catch (err) {
         console.error(err);
-        alert('路线计算稍有延迟，请重试一次！');
+        alert('Error calculating route, please try again!');
       } finally {
-        btn.innerText = '🔍 智能规划全马最佳路线（对比公交 / Grab / Waze）';
+        btn.innerText = i18n[currentLang].searchBtn;
         btn.disabled = false;
       }
+    }
+
+    function focusStep(idx) {
+      const st = currentSteps[idx];
+      if (st && st.location) {
+        map.setView([st.location[1], st.location[0]], 17);
+        L.popup().setLatLng([st.location[1], st.location[0]]).setContent(`<b>${st.icon} ${st.text}</b><br><span style="color:#666;font-size:12px;">${st.dist}</span>`).openOn(map);
+      }
+    }
+
+    function speakText(msg) {
+      if (!voiceEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(msg);
+      utter.lang = i18n[currentLang].speechLang;
+      utter.rate = 1.05;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? i18n[currentLang].voiceOn : i18n[currentLang].voiceOff;
+    }
+
+    function startLiveNav() {
+      if (!currentSteps.length) return;
+      document.getElementById('liveNavBanner').classList.remove('hidden');
+      document.getElementById('searchBox').classList.add('hidden');
+      document.getElementById('cityBar').classList.add('hidden');
+
+      lastSpokenStepIdx = 0;
+      updateBannerStep(currentSteps[0]);
+      speakText(`${i18n[currentLang].startVoiceMsg}${currentSteps[0].text}`);
+
+      if (navigator.geolocation) {
+        watchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            updateLiveUserDot(lat, lng);
+            map.setView([lat, lng], 17);
+
+            for (let i = lastSpokenStepIdx + 1; i < currentSteps.length; i++) {
+              const loc = currentSteps[i].location;
+              if (!loc) continue;
+              const d = map.distance([lat, lng], [loc[1], loc[0]]);
+              if (d < 65) {
+                lastSpokenStepIdx = i;
+                updateBannerStep(currentSteps[i]);
+                speakText(currentSteps[i].text);
+                break;
+              }
+            }
+          },
+          (err) => console.warn('GPS tracking:', err),
+          { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+        );
+      }
+    }
+
+    function updateBannerStep(step) {
+      document.getElementById('liveTurnIcon').innerText = step.icon;
+      document.getElementById('liveStepDist').innerText = step.dist;
+      document.getElementById('liveStepText').innerText = step.text;
+    }
+
+    function stopLiveNav() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      document.getElementById('liveNavBanner').classList.add('hidden');
+      document.getElementById('searchBox').classList.remove('hidden');
+      document.getElementById('cityBar').classList.remove('hidden');
     }
   </script>
 </body>
