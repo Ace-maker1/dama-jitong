@@ -12,7 +12,7 @@
     <div class="flex items-center justify-between border-b border-slate-700 pb-3">
       <div>
         <h1 class="font-black text-base text-amber-400">🚀 大马吉通 · 合法公开商户一键填充</h1>
-        <p class="text-xs text-slate-400 mt-0.5">自动拉取公开商业黄页 · 写入首页并开启 7 天保鲜倒计时</p>
+        <p class="text-xs text-slate-400 mt-0.5">多节点自动切换拉取 · 写入首页并开启 7 天保鲜倒计时</p>
       </div>
       <a href="/" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-xl font-bold">返回首页 →</a>
     </div>
@@ -21,15 +21,15 @@
       <div>
         <label class="block font-bold text-slate-300 mb-1">1. 选择目标地区</label>
         <select id="seedArea" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-sm text-white">
-          <option value="槟城|5.4141|100.3288|12000">槟城 · 槟岛 (George Town)</option>
-          <option value="槟城|5.3630|100.4667|12000">槟城 · 威省 (Butterworth / BM)</option>
-          <option value="吉隆坡|3.1390|101.6869|12000">吉隆坡 (Kuala Lumpur)</option>
-          <option value="雪兰莪|3.0733|101.5185|15000">雪兰莪 (PJ / Subang / Shah Alam)</option>
-          <option value="柔佛|1.4927|103.7414|15000">柔佛 · 新山 (Johor Bahru)</option>
-          <option value="霹雳|4.5975|101.0901|12000">霹雳 · 怡保 (Ipoh)</option>
-          <option value="马六甲|2.1896|102.2501|12000">马六甲 (Melaka)</option>
-          <option value="沙巴|5.9804|116.0735|12000">沙巴 · 亚庇 (Kota Kinabalu)</option>
-          <option value="砂拉越|1.5533|110.3592|12000">砂拉越 · 古晋 (Kuching)</option>
+          <option value="槟城|5.4141|100.3288|6000">槟城 · 槟岛 (George Town)</option>
+          <option value="槟城|5.3630|100.4667|6000">槟城 · 威省 (Butterworth / BM)</option>
+          <option value="吉隆坡|3.1390|101.6869|6000">吉隆坡 (Kuala Lumpur)</option>
+          <option value="雪兰莪|3.0733|101.5185|7000">雪兰莪 (PJ / Subang / Shah Alam)</option>
+          <option value="柔佛|1.4927|103.7414|7000">柔佛 · 新山 (Johor Bahru)</option>
+          <option value="霹雳|4.5975|101.0901|6000">霹雳 · 怡保 (Ipoh)</option>
+          <option value="马六甲|2.1896|102.2501|6000">马六甲 (Melaka)</option>
+          <option value="沙巴|5.9804|116.0735|6000">沙巴 · 亚庇 (Kota Kinabalu)</option>
+          <option value="砂拉越|1.5533|110.3592|6000">砂拉越 · 古晋 (Kuching)</option>
         </select>
       </div>
 
@@ -71,6 +71,12 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    const OVERPASS_MIRRORS = [
+      'https://overpass-api.de/api/interpreter',
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+    ];
+
     function logMsg(msg, isErr = false) {
       const box = document.getElementById('seedLog');
       const line = document.createElement('div');
@@ -107,6 +113,29 @@
       }
     };
 
+    async function fetchFromOverpassMirrors(overpassSql) {
+      for (let i = 0; i < OVERPASS_MIRRORS.length; i++) {
+        const mirror = OVERPASS_MIRRORS[i];
+        try {
+          logMsg(`尝试节点 ${i + 1}/${OVERPASS_MIRRORS.length} (${new URL(mirror).hostname})...`);
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 8000);
+          const res = await fetch(mirror, {
+            method: 'POST',
+            body: 'data=' + encodeURIComponent(overpassSql),
+            signal: controller.signal
+          });
+          clearTimeout(timer);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data && Array.isArray(data.elements)) return data;
+        } catch (err) {
+          logMsg(`节点 ${i + 1} 响应较慢或繁忙，切换下一个节点...`, true);
+        }
+      }
+      throw new Error('所有公开地理节点当前均繁忙，请 1 分钟后再试');
+    }
+
     async function runSeedImport() {
       const btn = document.getElementById('runSeedBtn');
       btn.disabled = true;
@@ -119,16 +148,10 @@
         const cfg = TYPE_CONFIG[typeKey];
 
         const queryBody = cfg.osmFilter.replace('{R}', radius).replace('{LAT}', lat).replace('{LNG}', lng);
-        const overpassSql = `[out:json][timeout:12];(${queryBody});out body ${limit * 3};`;
+        const overpassSql = `[out:json][timeout:10];(${queryBody});out body ${limit * 3};`;
 
         logMsg(`正在检索 ${cityVal} 半径 ${radius / 1000}km 内的公开商户...`);
-        const res = await fetch('https://overpass-api.de/api/interpreter', {
-          method: 'POST',
-          body: 'data=' + encodeURIComponent(overpassSql)
-        });
-        if (!res.ok) throw new Error('地理数据接口繁忙，请稍后再试');
-
-        const data = await res.json();
+        const data = await fetchFromOverpassMirrors(overpassSql);
         const elements = (data.elements || []).filter(el => el.tags && el.tags.name);
 
         if (elements.length === 0) {
@@ -136,7 +159,6 @@
           return;
         }
 
-        // 查询现有标题防重复导入
         const { data: existingPosts } = await supabaseClient
           .from('posts')
           .select('title')
