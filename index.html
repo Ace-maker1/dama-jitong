@@ -682,12 +682,11 @@
       document.getElementById('catTextShop').innerText = t.catShop;
       document.getElementById('topFreePostBtn').innerText = t.freePostBtn;
 
-      document.getElementById('navHomeText').innerText = t.navHome;
-      document.getElementById('navNewsText').innerText = t.navNews;
-      document.getElementById('navPostText').innerText = t.navPost;
-      document.getElementById('navFavText').innerText = t.navFav;
-      document.getElementById('navProfileText').innerText = t.navProfile;
-
+      if (document.getElementById('navHomeText')) document.getElementById('navHomeText').innerText = t.navHome;
+      if (document.getElementById('navNewsText')) document.getElementById('navNewsText').innerText = t.navNews;
+      if (document.getElementById('navPostText')) document.getElementById('navPostText').innerText = t.navPost;
+      if (document.getElementById('navFavText')) document.getElementById('navFavText').innerText = t.navFav;
+      if (document.getElementById('navProfileText')) document.getElementById('navProfileText').innerText = t.navProfile;
       document.getElementById('favPageTitle').innerText = t.favPageTitle;
       document.getElementById('profileWelcome').innerText = t.profileWelcome;
       document.getElementById('profileSub').innerText = t.profileSub;
