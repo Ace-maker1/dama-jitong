@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>大马吉通 · 站内原生导航 (CN/EN/BM) | 全马极速检索·营业状态·语音带路</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -165,7 +166,7 @@
       <!-- 冷门词未直接命中时的智能推荐 & 手动点选引导框 -->
       <div id="fallbackSuggestBox" class="hidden bg-rose-50/90 border border-rose-200 rounded-xl p-3 space-y-2">
         <div class="flex items-center justify-between">
-          <span id="fallbackTitle" class="text-xs font-bold text-rose-800">💡 未直接匹配到精准门牌，请选择以下相近地点或直接点击地图：</span>
+          <span id="fallbackTitle" class="text-xs font-bold text-rose-800">💡 未直接匹配到精准门牌，请选择下方相近地点或直接点击地图：</span>
           <button onclick="document.getElementById('fallbackSuggestBox').classList.add('hidden')" class="text-[11px] text-slate-400">✕</button>
         </div>
         <p id="fallbackHint" class="text-[11px] text-rose-700 leading-relaxed"></p>
@@ -460,6 +461,7 @@
 
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let currentMode = 'driving';
+    let currentRon95 = 2.05;
     let startCoords = null;
     let endCoords = null;
     let startMarker = null;
@@ -478,7 +480,22 @@
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
 
-    // 马来西亚主要城市/州属中心坐标库
+    (async function syncLiveFuelPrice() {
+      try {
+        if (window.supabase) {
+          const client = window.supabase.createClient(
+            'https://uhgukdqggvyaepkvlugg.supabase.co',
+            'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
+          );
+          const { data } = await client.from('settings').select('ron95').eq('id', 1).single();
+          if (data && parseFloat(data.ron95) > 0) {
+            currentRon95 = parseFloat(data.ron95);
+            if (startCoords && endCoords) calculateAndRenderRoute();
+          }
+        }
+      } catch (e) {}
+    })();
+
     const MY_CITIES_DB = [
       { keys: ['ipoh', '怡保', 'perak'], zh: '怡保 Ipoh (霹雳州)', en: 'Ipoh, Perak', ms: 'Ipoh, Perak', lat: 4.5975, lng: 101.0901 },
       { keys: ['kuala lumpur', 'kl', '吉隆坡'], zh: '吉隆坡 Kuala Lumpur', en: 'Kuala Lumpur', ms: 'Kuala Lumpur', lat: 3.1390, lng: 101.6869 },
@@ -527,7 +544,7 @@
       { icon: '✈️', zh: '吉隆坡国际机场 (KLIA 1)', en: 'Kuala Lumpur International Airport (KLIA)', ms: 'Lapangan Terbang Antarabangsa KLIA', query: 'klia', keys: ['吉隆坡机', 'klia', 'sepang'] },
       { icon: '✈️', zh: '吉隆坡第二国际机场 (KLIA 2)', en: 'KLIA Terminal 2 (klia2)', ms: 'Terminal KLIA 2', query: 'klia2', keys: ['klia2', '亚航机场'] },
       { icon: '✈️', zh: '新山士乃国际机场 (JHB)', en: 'Senai International Airport (JHB)', ms: 'Lapangan Terbang Senai', query: '新山机场', keys: ['新山机', '士乃', 'senai', 'jhb'] },
-      { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Kota Kinabalu', query: '亚庇机场', keys: ['亚庇机', 'kkia', 'bki'] },
+      { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Antarabangsa Kota Kinabalu', query: '亚庇机场', keys: ['亚庇机', 'kkia', 'bki'] },
       { icon: '🍗', zh: 'KFC 肯德基 (最近分店)', en: 'KFC (Nearest Outlet)', ms: 'KFC (Cawangan Terdekat)', query: 'KFC', keys: ['k', 'kf', 'kfc', '肯', '肯德基'] },
       { icon: '🍔', zh: "McDonald's 麦当劳 (最近分店)", en: "McDonald's (Nearest Outlet)", ms: "McDonald's (Terdekat)", query: "McDonald's", keys: ['m', 'mc', 'mcd', '麦', '麦当劳'] },
       { icon: '☕', zh: 'Starbucks 星巴克', en: 'Starbucks Coffee', ms: 'Starbucks Coffee', query: 'Starbucks', keys: ['st', 'star', '星', '星巴克'] },
@@ -636,7 +653,6 @@
       return { state: 'unknown', text: t.statusCheck, badgeClass: 'bg-slate-100 text-slate-600' };
     }
 
-    // 实时转换历史缓存/已选地名里的中文名称
     function localizeKnownPlaceName(raw, lang) {
       if (!raw || lang === 'zh') return raw;
       if (raw.includes('槟城国际机场')) return lang === 'ms' ? 'Lapangan Terbang Antarabangsa Pulau Pinang (PEN)' : 'Penang International Airport (PEN)';
@@ -717,7 +733,6 @@
       document.getElementById('navMap').innerText = t.navMap;
       document.getElementById('navPost').innerText = t.navPost;
 
-      // 同步刷新当前已选目的地的机场名与营业状态标签
       if (endCoords) {
         const matchedAp = MY_AIRPORTS.find(ap =>
           Math.abs(ap.lat - endCoords.lat) < 0.01 && Math.abs(ap.lng - endCoords.lng) < 0.01
@@ -848,7 +863,8 @@
             if (startMarker) map.removeLayer(startMarker);
             startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
           }
-          map.setView([lat, lng], 15);
+          if (!endCoords) map.setView([lat, lng], 15);
+          if (startCoords && endCoords) calculateAndRenderRoute();
         },
         () => {
           if (!silent) {
@@ -870,7 +886,6 @@
       }
     }
 
-    // ==================== 0ms 毫秒级实时联想下拉框 ====================
     function hideSuggestions() {
       const box = document.getElementById('autoSuggestDropdown');
       if (box) box.classList.add('hidden');
@@ -1441,7 +1456,7 @@
       }).addTo(map);
       map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
 
-      const fuelCost = (distKm * 0.08 * 2.05).toFixed(2);
+      const fuelCost = (distKm * 0.08 * currentRon95).toFixed(2);
       const grabEst = Math.max(5, Math.round(4 + distKm * 1.35));
       document.getElementById('destDisplayTitle').innerText = `📍 ${endCoords.name}`;
       document.getElementById('routeDistBadge').innerText = `${distKm} km`;
@@ -1634,6 +1649,24 @@
 
     renderSavedAndHistory();
     switchLang(currentLang);
+
+    // 若从 detail.html 带参数 ?dest=...&lat=...&lng=... 跳转过来，自动填充并规划路线
+    (function applyUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const dest = params.get('dest');
+      const lat = parseFloat(params.get('lat'));
+      const lng = parseFloat(params.get('lng'));
+      if (dest && !Number.isNaN(lat) && !Number.isNaN(lng)) {
+        endCoords = { lat, lng, name: dest, status: null, phone: '' };
+        document.getElementById('endInput').value = dest;
+        document.getElementById('clearEndBtn').classList.remove('hidden');
+        if (!startCoords) {
+          startCoords = { lat: 5.4141, lng: 100.3288, name: 'George Town, Penang' };
+          document.getElementById('startInput').value = startCoords.name;
+        }
+        calculateAndRenderRoute();
+      }
+    })();
 
     function focusStep(idx) {
       const st = currentSteps[idx];
