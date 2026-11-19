@@ -188,7 +188,7 @@
     </button>
     <a href="/news.html" id="navNews" class="flex flex-col items-center text-gray-400 hover:text-red-600">
       <span class="text-lg">📰</span>
-      <span class="text-[10px] font-medium mt-0.5">实时新闻</span>
+     <span id="navNewsText" class="text-[10px] font-medium mt-0.5">实时新闻</span>
     </a>
     <button onclick="openPostModal()" class="flex flex-col items-center -mt-6">
       <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-orange-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white hover:scale-105 transition">+</div>
@@ -671,6 +671,17 @@
       });
 
       populateRegionDropdowns();
+      const navNewsEl = document.getElementById('navNewsText');
+  if (navNewsEl) {
+    navNewsEl.textContent = lang === 'en' ? 'News' : (lang === 'ms' ? 'Berita' : '实时新闻');
+  }
+  const fabMapEl = document.getElementById('fabMapText');
+  if (fabMapEl) {
+    fabMapEl.textContent = lang === 'en' ? 'Routes' : (lang === 'ms' ? 'Laluan' : '查路线');
+  }
+  if (typeof renderPosts === 'function') {
+    renderPosts();
+  }
 
       document.getElementById('brandTitle').innerText = t.brandTitle;
       document.getElementById('searchInput').placeholder = t.searchPlaceholder;
@@ -845,36 +856,106 @@
       `;
     }
 
-    function renderPosts() {
-      const t = I18N[currentLang];
-      const city = document.getElementById('cityFilter').value;
-      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
-      const listEl = document.getElementById('postList');
+    const TRANS_CACHE_KEY = 'dama_trans_cache_v1';
+let transCache = {};
+try { transCache = JSON.parse(localStorage.getItem(TRANS_CACHE_KEY) || '{}'); } catch (e) {}
 
-      const displayCityHeader = getRegionDisplayName(city, currentLang);
-      document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${t.latestSuffix}`;
+function detectTextLang(text) {
+  if (!text) return 'en';
+  if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN';
+  if (/\b(dan|yang|untuk|dengan|di|ke|dari|ini|itu|bilik|sewa|kerja|murah|jual|beli|rumah|kereta)\b/i.test(text)) return 'ms';
+  return 'en';
+}
 
-      const filtered = allPosts.filter(p => {
-        const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
-        const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
-        const matchCat = (currentCategory === '全部' || p.category === currentCategory);
-        const matchKey = !keyword || 
-          p.title.toLowerCase().includes(keyword) || 
-          (p.description && p.description.toLowerCase().includes(keyword)) ||
-          p.price.toLowerCase().includes(keyword);
-        return matchCity && matchCat && matchKey;
-      });
+async function translateSnippet(text, targetLang) {
+  if (!text || !text.trim()) return text;
+  const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
+  if (detectTextLang(text) === tl) return text;
 
-      document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
+  const cacheKey = `${tl}::${text.slice(0, 120)}`;
+  if (transCache[cacheKey]) return transCache[cacheKey];
 
-      if (filtered.length === 0) {
-        listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
-        return;
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text.slice(0, 300))}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    const translated = (json[0] || []).map(item => item[0]).join('');
+    if (translated) {
+      transCache[cacheKey] = translated;
+      try { localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(transCache)); } catch (e) {}
+      return translated;
+    }
+  } catch (e) {}
+  return text;
+}
+
+async function autoTranslateRenderedCards(posts, lang) {
+  const cards = document.querySelectorAll('#postList > *');
+  for (let i = 0; i < posts.length; i++) {
+    const p = posts[i];
+    const card = cards[i];
+    if (!card || !p) continue;
+
+    if (p.title) {
+      const newTitle = await translateSnippet(p.title, lang);
+      if (newTitle && newTitle !== p.title && currentLang === lang) {
+        const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          if (node.nodeValue && node.nodeValue.trim() === p.title.trim()) {
+            node.nodeValue = node.nodeValue.replace(p.title.trim(), newTitle);
+            break;
+          }
+        }
       }
-
-      listEl.innerHTML = filtered.map(createPostCardHTML).join('');
     }
 
+    if (p.description) {
+      const newDesc = await translateSnippet(p.description, lang);
+      if (newDesc && newDesc !== p.description && currentLang === lang) {
+        const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          if (node.nodeValue && node.nodeValue.includes(p.description.trim().slice(0, 20))) {
+            node.nodeValue = newDesc;
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+function renderPosts() {
+  const t = I18N[currentLang];
+  const city = document.getElementById('cityFilter').value;
+  const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+  const listEl = document.getElementById('postList');
+
+  const displayCityHeader = getRegionDisplayName(city, currentLang);
+  document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${t.latestSuffix}`;
+
+  const filtered = allPosts.filter(p => {
+    const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
+    const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
+    const matchCat = (currentCategory === '全部' || p.category === currentCategory);
+    const matchKey = !keyword ||
+      p.title.toLowerCase().includes(keyword) ||
+      (p.description && p.description.toLowerCase().includes(keyword)) ||
+      p.price.toLowerCase().includes(keyword);
+    return matchCity && matchCat && matchKey;
+  });
+
+  document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(createPostCardHTML).join('');
+  autoTranslateRenderedCards(filtered, currentLang);
+}
     function selectCategory(cat) {
       currentCategory = cat;
       document.querySelectorAll('.cat-item').forEach(btn => {
@@ -1051,7 +1132,7 @@
  <!-- 大马全能出行导航悬浮入口按钮 -->
 <a href="/map.html" style="position:fixed;right:14px;bottom:84px;z-index:40;display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#059669,#0d9488);color:#ffffff;padding:8px 13px;border-radius:999px;font-size:12px;font-weight:bold;text-decoration:none;box-shadow:0 4px 12px rgba(5,150,105,0.35);border:1.5px solid #ffffff;">
   <span style="font-size:15px;">🗺️</span>
-  <span>查路线</span>
+<span id="fabMapText">查路线</span>
 </a>
 </body>
 </html>
