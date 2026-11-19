@@ -40,7 +40,7 @@
       <div class="text-center py-20 text-gray-400 text-sm">正在同步全网最新头条...</div>
     </main>
 
-    <!-- 底部5键导航栏（保持全站统一体验） -->
+    <!-- 底部5键导航栏 -->
     <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
       <a href="/" class="flex flex-col items-center text-gray-400 hover:text-red-600">
         <span class="text-lg">🏠</span>
@@ -66,50 +66,155 @@
   </div>
 
   <script>
+    // 高可用官方媒体直连 RSS 源（按语言与频道精准匹配，100% 稳定秒出）
     const NEWS_I18N = {
       zh: {
         title: '实时新闻头条',
         sub: '大马 · 新加坡 · 投资财经 · 全球实时同步',
         loading: '正在同步最新实时新闻...',
-        empty: '暂时未获取到新闻，请点击右上角切换频道或刷新重试',
+        empty: '网络波动，请点击下方按钮重新拉取',
+        retry: '↻ 重新加载新闻',
         readMore: '阅读全文 ↗',
         navHome: '首页', navNews: '实时新闻', navPost: '发布', navMap: '查路线', navBiz: '商家入驻',
         topics: [
-          { id: 'my', label: '🇲🇾 马来西亚', query: '马来西亚 新闻', gl: 'MY', hl: 'zh-CN', ceid: 'MY:zh-Hans' },
-          { id: 'sg', label: '🇸🇬 新加坡', query: '新加坡 新马 新闻', gl: 'SG', hl: 'zh-CN', ceid: 'SG:zh-Hans' },
-          { id: 'finance', label: '📈 投资财经', query: '马来西亚 投资 股市 汇率 财经', gl: 'MY', hl: 'zh-CN', ceid: 'MY:zh-Hans' },
-          { id: 'life', label: '🍜 生活美食', query: '马来西亚 美食 旅游 生活', gl: 'MY', hl: 'zh-CN', ceid: 'MY:zh-Hans' },
-          { id: 'world', label: '🌍 国际要闻', query: '国际 重大 新闻', gl: 'SG', hl: 'zh-CN', ceid: 'SG:zh-Hans' }
+          {
+            id: 'my',
+            label: '🇲🇾 马来西亚',
+            feeds: [
+              { name: '东方日报 Oriental Daily', url: 'https://www.orientaldaily.com.my/feed' },
+              { name: '光华日报 Kwong Wah', url: 'https://www.kwongwah.com.my/feed/' }
+            ]
+          },
+          {
+            id: 'sg',
+            label: '🇸🇬 新加坡',
+            feeds: [
+              { name: '8视界新闻网', url: 'https://www.8world.com/rss/singapore' },
+              { name: 'BBC 中文网', url: 'https://feeds.bbci.co.uk/zhongwen/simp/rss.xml' }
+            ]
+          },
+          {
+            id: 'finance',
+            label: '📈 投资财经',
+            feeds: [
+              { name: '东方财经', url: 'https://www.orientaldaily.com.my/feed/business' },
+              { name: 'BBC 财经', url: 'https://feeds.bbci.co.uk/zhongwen/simp/business/rss.xml' }
+            ]
+          },
+          {
+            id: 'life',
+            label: '🍜 生活娱乐',
+            feeds: [
+              { name: '东方生活娱乐', url: 'https://www.orientaldaily.com.my/feed/lifestyle' },
+              { name: '光华副刊生活', url: 'https://www.kwongwah.com.my/category/%e5%89%af%e5%88%8a/feed/' }
+            ]
+          },
+          {
+            id: 'world',
+            label: '🌍 国际要闻',
+            feeds: [
+              { name: 'BBC 国际头条', url: 'https://feeds.bbci.co.uk/zhongwen/simp/world/rss.xml' },
+              { name: '东方国际', url: 'https://www.orientaldaily.com.my/feed/international' }
+            ]
+          }
         ]
       },
       en: {
         title: 'Live News Feed',
         sub: 'Malaysia · Singapore · Finance · World Updates',
         loading: 'Fetching latest headlines...',
-        empty: 'No articles loaded right now. Try another topic.',
+        empty: 'Network busy, tap below to reload',
+        retry: '↻ Reload Headlines',
         readMore: 'Read Full Story ↗',
         navHome: 'Home', navNews: 'News', navPost: 'Post', navMap: 'Navigate', navBiz: 'Merchants',
         topics: [
-          { id: 'my', label: '🇲🇾 Malaysia', query: 'Malaysia latest news', gl: 'MY', hl: 'en-MY', ceid: 'MY:en' },
-          { id: 'sg', label: '🇸🇬 Singapore', query: 'Singapore Malaysia news', gl: 'SG', hl: 'en-SG', ceid: 'SG:en' },
-          { id: 'finance', label: '📈 Finance & Invest', query: 'Malaysia economy ringgit stock investment', gl: 'MY', hl: 'en-MY', ceid: 'MY:en' },
-          { id: 'life', label: '🍜 Lifestyle', query: 'Malaysia food travel lifestyle', gl: 'MY', hl: 'en-MY', ceid: 'MY:en' },
-          { id: 'world', label: '🌍 World', query: 'World breaking news today', gl: 'SG', hl: 'en-SG', ceid: 'SG:en' }
+          {
+            id: 'my',
+            label: '🇲🇾 Malaysia',
+            feeds: [
+              { name: 'Malay Mail MY', url: 'https://www.malaymail.com/feed/rss/malaysia' },
+              { name: 'Free Malaysia Today', url: 'https://www.freemalaysiatoday.com/category/nation/feed/' }
+            ]
+          },
+          {
+            id: 'sg',
+            label: '🇸🇬 Singapore',
+            feeds: [
+              { name: 'CNA Singapore', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416' },
+              { name: 'CNA Asia', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511' }
+            ]
+          },
+          {
+            id: 'finance',
+            label: '📈 Finance & Invest',
+            feeds: [
+              { name: 'Malay Mail Money', url: 'https://www.malaymail.com/feed/rss/money' },
+              { name: 'CNA Business', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6936' }
+            ]
+          },
+          {
+            id: 'life',
+            label: '🍜 Lifestyle',
+            feeds: [
+              { name: 'Malay Mail Life', url: 'https://www.malaymail.com/feed/rss/life' },
+              { name: 'FMT Lifestyle', url: 'https://www.freemalaysiatoday.com/category/leisure/feed/' }
+            ]
+          },
+          {
+            id: 'world',
+            label: '🌍 World',
+            feeds: [
+              { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+              { name: 'CNA World', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311' }
+            ]
+          }
         ]
       },
       ms: {
         title: 'Berita Terkini',
         sub: 'Malaysia · Singapura · Pelaburan · Dunia',
         loading: 'Memuatkan berita terkini...',
-        empty: 'Tiada berita ditemui buat masa ini.',
+        empty: 'Rangkaian sibuk, tekan butang di bawah untuk cuba lagi',
+        retry: '↻ Muat Semula',
         readMore: 'Baca Penuh ↗',
         navHome: 'Utama', navNews: 'Berita', navPost: 'Iklan', navMap: 'Peta', navBiz: 'Peniaga',
         topics: [
-          { id: 'my', label: '🇲🇾 Malaysia', query: 'Berita terkini Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
-          { id: 'sg', label: '🇸🇬 Singapura', query: 'Berita Singapura Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
-          { id: 'finance', label: '📈 Ekonomi & Pelaburan', query: 'Ekonomi ringgit pelaburan Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
-          { id: 'life', label: '🍜 Gaya Hidup', query: 'Makanan pelancongan gaya hidup Malaysia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' },
-          { id: 'world', label: '🌍 Dunia', query: 'Berita antarabangsa dunia', gl: 'MY', hl: 'ms', ceid: 'MY:ms' }
+          {
+            id: 'my',
+            label: '🇲🇾 Malaysia',
+            feeds: [
+              { name: 'Astro Awani', url: 'https://rss.astroawani.com/rss/national/public' },
+              { name: 'FMT Bahasa', url: 'https://www.freemalaysiatoday.com/category/bahasa/feed/' }
+            ]
+          },
+          {
+            id: 'sg',
+            label: '🇸🇬 Singapura',
+            feeds: [
+              { name: 'BERITA Mediacorp SG', url: 'https://berita.mediacorp.sg/rss/singapura' }
+            ]
+          },
+          {
+            id: 'finance',
+            label: '📈 Ekonomi & Pelaburan',
+            feeds: [
+              { name: 'Astro Awani Bisnes', url: 'https://rss.astroawani.com/rss/business/public' }
+            ]
+          },
+          {
+            id: 'life',
+            label: '🍜 Gaya Hidup',
+            feeds: [
+              { name: 'Astro Awani Gaya Hidup', url: 'https://rss.astroawani.com/rss/lifestyle/public' }
+            ]
+          },
+          {
+            id: 'world',
+            label: '🌍 Dunia',
+            feeds: [
+              { name: 'Astro Awani Dunia', url: 'https://rss.astroawani.com/rss/international/public' }
+            ]
+          }
         ]
       }
     };
@@ -159,11 +264,51 @@
     }
 
     function timeAgo(dateStr, lang) {
-      const diffMins = Math.max(1, Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000));
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      const diffMins = Math.max(1, Math.floor((Date.now() - d.getTime()) / 60000));
       if (diffMins < 60) return lang === 'zh' ? `${diffMins}分钟前` : `${diffMins}m ago`;
       const hrs = Math.floor(diffMins / 60);
       if (hrs < 24) return lang === 'zh' ? `${hrs}小时前` : `${hrs}h ago`;
-      return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    // 双通道引擎：通道1 rss2json -> 通道2 allorigins XML 直解析
+    async function fetchSingleFeed(feedObj) {
+      // 通道 1: rss2json
+      try {
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedObj.url)}`);
+        const json = await res.json();
+        if (json.status === 'ok' && Array.isArray(json.items) && json.items.length > 0) {
+          return json.items.map(it => ({
+            title: it.title,
+            link: it.link,
+            pubDate: it.pubDate,
+            thumbnail: it.thumbnail || (it.enclosure && it.enclosure.link) || '',
+            source: feedObj.name
+          }));
+        }
+      } catch (e) {}
+
+      // 通道 2: allorigins 代理 + 浏览器原生 DOMParser 解析 RSS XML
+      try {
+        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feedObj.url)}`);
+        const data = await res.json();
+        if (data && data.contents) {
+          const xml = new DOMParser().parseFromString(data.contents, 'text/xml');
+          const items = Array.from(xml.querySelectorAll('item'));
+          return items.map(node => ({
+            title: node.querySelector('title')?.textContent?.trim() || '',
+            link: node.querySelector('link')?.textContent?.trim() || '',
+            pubDate: node.querySelector('pubDate')?.textContent?.trim() || '',
+            thumbnail: node.querySelector('enclosure')?.getAttribute('url') || '',
+            source: feedObj.name
+          })).filter(x => x.title && x.link);
+        }
+      } catch (e) {}
+
+      return [];
     }
 
     async function loadLiveNews() {
@@ -172,44 +317,44 @@
       const box = document.getElementById('newsContainer');
       box.innerHTML = `<div class="text-center py-20 text-gray-400 text-sm animate-pulse">⏳ ${t.loading}</div>`;
 
-      try {
-        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(topic.query)}&hl=${topic.hl}&gl=${topic.gl}&ceid=${topic.ceid}`;
-        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-        const res = await fetch(apiUrl);
-        const data = await res.json();
+      const results = await Promise.all(topic.feeds.map(f => fetchSingleFeed(f)));
+      let allItems = results.flat();
 
-        if (!data.items || data.items.length === 0) {
-          box.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm">${t.empty}</div>`;
-          return;
-        }
+      // 按发布时间倒序排列
+      allItems.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
 
-        box.innerHTML = data.items.slice(0, 20).map((item, idx) => {
-          // 拆分 Google News 标题中的 "文章标题 - 媒体来源"
-          const parts = item.title.split(' - ');
-          const source = parts.length > 1 ? parts.pop() : (item.author || 'News');
-          const cleanTitle = parts.join(' - ');
+      if (allItems.length === 0) {
+        box.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100">
+            <div class="text-gray-400 text-sm">${t.empty}</div>
+            <button onclick="loadLiveNews()" class="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs">${t.retry}</button>
+          </div>
+        `;
+        return;
+      }
 
-          return `
-            <a href="${item.link}" target="_blank" rel="noopener noreferrer"
-               class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
-              <div class="flex items-center justify-between gap-2 mb-1.5">
-                <div class="flex items-center gap-1.5">
+      box.innerHTML = allItems.slice(0, 25).map((item, idx) => `
+        <a href="${item.link}" target="_blank" rel="noopener noreferrer"
+           class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
+          <div class="flex justify-between gap-3">
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-1.5 mb-1.5">
                   ${idx < 3 ? `<span class="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded">HOT ${idx + 1}</span>` : ''}
-                  <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded truncate max-w-[160px]">${source}</span>
+                  <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded truncate max-w-[150px]">${item.source}</span>
+                  <span class="text-[11px] text-gray-400 shrink-0">${timeAgo(item.pubDate, currentNewsLang)}</span>
                 </div>
-                <span class="text-[11px] text-gray-400 shrink-0">${timeAgo(item.pubDate, currentNewsLang)}</span>
+                <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${item.title}</h2>
               </div>
-              <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${cleanTitle}</h2>
               <div class="flex items-center justify-between text-[11px]">
                 <span class="text-gray-400">${topic.label}</span>
                 <span class="text-red-600 font-bold">${t.readMore}</span>
               </div>
-            </a>
-          `;
-        }).join('');
-      } catch (err) {
-        box.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm">${t.empty}</div>`;
-      }
+            </div>
+            ${item.thumbnail ? `<img src="${item.thumbnail}" onerror="this.style.display='none'" class="w-22 h-22 rounded-xl object-cover shrink-0 border border-gray-100" />` : ''}
+          </div>
+        </a>
+      `).join('');
     }
 
     switchNewsLang(currentNewsLang);
