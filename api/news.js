@@ -26,15 +26,25 @@ module.exports = async function handler(req, res) {
 
     let xml = await response.text();
 
-    // 统一将 <media:thumbnail url="..."> 与 <media:content url="..."> 补写一份标准 <enclosure>，彻底消除浏览器 XML 命名空间解析兼容问题
+    // 统一补齐封面图：有原生图用原生图；Google News 无图源自动通过 Bing 新闻图库匹配真实新闻配图
     xml = xml.replace(/<item>([\s\S]*?)<\/item>/gi, (match, inner) => {
       if (/<enclosure\s/i.test(inner)) return match;
+
       const mediaMatch = inner.match(/<media:(?:thumbnail|content)[^>]+url=["']([^"']+)["']/i)
                       || inner.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
       if (mediaMatch && mediaMatch[1] && !mediaMatch[1].includes('google.com')) {
-        const cleanImg = mediaMatch[1].replace(/\/240\//, '/640/'); // BBC 缩略图自动升级高清大图
+        const cleanImg = mediaMatch[1].replace(/\/240\//, '/640/');
         return `<item>${inner}<enclosure url="${cleanImg}" type="image/jpeg" /></item>`;
       }
+
+      // 提取标题，为纯文字新闻自动匹配对应真实新闻缩略图
+      const titleMatch = inner.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+      const rawTitle = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').split(' - ')[0].trim() : '';
+      if (rawTitle) {
+        const thumbUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(rawTitle.slice(0, 28))}&w=240&h=240&c=7&rs=1&p=0`;
+        return `<item>${inner}<enclosure url="${thumbUrl}" type="image/jpeg" /></item>`;
+      }
+
       return match;
     });
 
