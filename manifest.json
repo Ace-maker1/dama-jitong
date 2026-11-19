@@ -1,7 +1,7 @@
 {
-  "name": "大马吉通 - 马来西亚本地生活与实时资讯",
-  "short_name": "大马吉通",
-  "description": "大马吉通：马来西亚三语实时新闻、本地分类信息、商家导航与生活助手",
+  "name": "DamaJitong 大马吉通 - Malaysia Local Info & News",
+  "short_name": "DamaJitong",
+  "description": "Malaysia trilingual real-time news, classifieds, and local business directory",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon.png?v=3",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
