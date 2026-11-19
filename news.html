@@ -328,7 +328,7 @@
       `).join('');
     }
 
-    async function fetchFeedFast(feedObj) {
+  async function fetchFeedFast(feedObj) {
       try {
         const res = await fetchWithTimeout(`/api/news?url=${encodeURIComponent(feedObj.url)}`, 7000);
         if (!res.ok) return [];
@@ -337,11 +337,24 @@
         return Array.from(xml.querySelectorAll('item')).map(node => {
           const rawTitle = node.querySelector('title')?.textContent?.trim() || '';
           const parts = rawTitle.split(' - ');
-          // 提取真实媒体名称（例如星洲网、中国报、南洋商报等）
           const realMedia = parts.length > 1 ? parts[parts.length - 1].trim() : '';
           const cleanTitle = parts.length > 1 ? parts.slice(0, -1).join(' - ') : rawTitle;
-          const media = node.getElementsByTagName('media:content')[0]?.getAttribute('url')
-                     || node.querySelector('enclosure')?.getAttribute('url') || '';
+
+          // 1. 优先读取标准媒体标签与缩略图
+          let media = node.getElementsByTagName('media:content')[0]?.getAttribute('url')
+                   || node.getElementsByTagName('media:thumbnail')[0]?.getAttribute('url')
+                   || node.querySelector('enclosure')?.getAttribute('url') || '';
+
+          // 2. 若无标准标签，从 description / content 正文 HTML 中提取第一张 <img>（光华日报等适用）
+          if (!media) {
+            const descHtml = node.querySelector('description')?.textContent
+                          || node.getElementsByTagName('content:encoded')[0]?.textContent || '';
+            const imgMatch = descHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+            if (imgMatch && imgMatch[1] && !imgMatch[1].includes('google.com')) {
+              media = imgMatch[1];
+            }
+          }
+
           return {
             title: cleanTitle,
             link: node.querySelector('link')?.textContent?.trim() || '',
