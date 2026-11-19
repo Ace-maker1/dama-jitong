@@ -416,6 +416,7 @@
         pinnedPrefix: '置顶 · ',
         publishedSuffix: '发布',
         reportBtn: '🚨 举报',
+        daysLeft: (d) => `剩${d}天`,
         noDesc: '发布者未填写更多补充描述。',
         translateBtn: '🌐 翻译成中文',
         translatingBtn: '⏳ 正在翻译...',
@@ -486,6 +487,7 @@
         pinnedPrefix: 'Featured · ',
         publishedSuffix: '',
         reportBtn: '🚨 Report',
+        daysLeft: (d) => `${d}d left`,
         noDesc: 'No additional description provided.',
         translateBtn: '🌐 Translate to English',
         translatingBtn: '⏳ Translating...',
@@ -556,6 +558,7 @@
         pinnedPrefix: 'Taja · ',
         publishedSuffix: '',
         reportBtn: '🚨 Lapor',
+        daysLeft: (d) => `${d}h lagi`,
         noDesc: 'Tiada maklumat tambahan dinyatakan.',
         translateBtn: '🌐 Terjemah ke Bahasa Melayu',
         translatingBtn: '⏳ Menterjemah...',
@@ -924,6 +927,12 @@
       const displayCat = t.cats[post.category] || post.category;
       const displayCity = getRegionDisplayName(post.city, currentLang);
 
+      const ageDays = Math.floor((Date.now() - new Date(post.created_at).getTime()) / 86400000);
+      const remainDays = Math.max(1, 7 - ageDays);
+      const expireBadgeHTML = !post.is_pinned
+        ? `<span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-medium">${t.daysLeft(remainDays)}</span>`
+        : '';
+
       const rightMediaHTML = post.image_url
         ? `<img src="${post.image_url}" alt="${post.title}" class="w-24 h-24 rounded-xl object-cover shrink-0 border border-gray-100 shadow-xs" />`
         : `<div class="w-24 h-24 rounded-xl bg-gradient-to-br ${vis.bg} text-white shrink-0 flex flex-col items-center justify-center p-2 text-center shadow-inner">
@@ -940,6 +949,7 @@
                   ${post.is_pinned ? `<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">${t.pinnedTag}</span>` : ''}
                   <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">${displayCat}</span>
                   <span class="text-[11px] text-gray-400 truncate">📍 ${displayCity}</span>
+                  ${expireBadgeHTML}
                 </div>
                 <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${post.title}</h3>
               </div>
@@ -1030,6 +1040,10 @@
         if (hiddenIds.includes(p.id) || (reportCounts[p.id] || 0) >= 3) return false;
         if (containsSpamContent(p.title) || containsSpamContent(p.description)) return false;
 
+        // 普通免费帖满 7 天自动下架隐藏（VIP 置顶帖不受限制）
+        const ageMs = Date.now() - new Date(p.created_at).getTime();
+        if (!p.is_pinned && ageMs > 7 * 86400000) return false;
+
         const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
         const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
         const matchCat = (currentCategory === '全部' || p.category === currentCategory);
@@ -1103,19 +1117,16 @@
       const rawPrice = document.getElementById('postPrice').value.trim();
       const normalizedWa = normalizeMalaysiaWhatsapp(document.getElementById('postWhatsapp').value.trim());
 
-      // 1. 敏感词与博彩/假贷防垃圾拦截
       if (containsSpamContent(rawTitle) || containsSpamContent(rawDesc)) {
         alert(t.spamAlert);
         return;
       }
 
-      // 2. 马来西亚 WhatsApp 号码合法性校验
       if (normalizedWa.length < 10 || normalizedWa.length > 13 || !normalizedWa.startsWith('601')) {
         alert(t.phoneAlert);
         return;
       }
 
-      // 3. 单台设备每日发帖上限校验（防刷屏）
       const todayKey = new Date().toISOString().slice(0, 10);
       let dailyLog = {};
       try { dailyLog = JSON.parse(localStorage.getItem(DAILY_POST_LOG_KEY) || '{}'); } catch (err) {}
