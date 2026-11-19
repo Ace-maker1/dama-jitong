@@ -553,6 +553,7 @@
     });
 
     // 智能周边优先搜索：以参考坐标（起点或地图中心）为中心优先匹配，返回最多 8 个候选并按距离从近到远排序
+    // 智能周边优先搜索 + 调用 OSRM 真实道路网计算每家分店的实际驾车距离与分钟数
     async function searchPlacesNear(rawQuery, refLat, refLng) {
       let query = rawQuery.trim();
       for (const [cn, en] of Object.entries(cnAliasMap)) {
@@ -562,7 +563,6 @@
         }
       }
 
-      // 构建参考点周边约 35km 优先视野框（viewbox），让 KFC / 7-11 等连锁店优先返回离用户最近的门店
       const delta = 0.32;
       const viewbox = `${refLng - delta},${refLat + delta},${refLng + delta},${refLat - delta}`;
       const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=my&limit=10&viewbox=${viewbox}&bounded=0&q=${encodeURIComponent(query)}`;
@@ -571,24 +571,48 @@
 
       if (!data || data.length === 0) return [];
 
-      // 计算每个候选地点到参考点的直线距离（km）并按从近到远排序
-      const mapped = data.map(item => {
+      const preSorted = data.map(item => {
         const lat = parseFloat(item.lat);
         const lng = parseFloat(item.lon);
-        const distKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
+        const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
         const parts = item.display_name.split(',').map(s => s.trim());
         const shortName = parts[0];
         const subAddr = parts.slice(1, 4).join(', ');
-        return { lat, lng, name: shortName, fullAddr: subAddr, distKm };
-      });
+        return { lat, lng, name: shortName, fullAddr: subAddr, straightKm };
+      }).sort((a, b) => a.straightKm - b.straightKm).slice(0, 6);
 
-      mapped.sort((a, b) => a.distKm - b.distKm);
-      return mapped;
+      try {
+        const coordsStr = [`${refLng},${refLat}`, ...preSorted.map(p => `${p.lng},${p.lat}`)].join(';');
+        const profile = currentMode === 'walking' ? 'foot' : 'driving';
+        const tableUrl = `https://router.project-osrm.org/table/v1/${profile}/${coordsStr}?sources=0&annotations=distance,duration`;
+        const tableRes = await fetch(tableUrl);
+        const tableData = await tableRes.json();
+
+        if (tableData && tableData.distances && tableData.distances[0]) {
+          const dists = tableData.distances[0];
+          const durs = tableData.durations[0];
+          preSorted.forEach((item, idx) => {
+            const dMeters = dists[idx + 1];
+            const dSecs = durs[idx + 1];
+            item.distKm = dMeters != null ? (dMeters / 1000) : item.straightKm;
+            item.durationMin = dSecs != null ? Math.max(2, Math.round(dSecs / 60)) : Math.max(3, Math.round(item.distKm * 2));
+          });
+          preSorted.sort((a, b) => a.distKm - b.distKm);
+          return preSorted;
+        }
+      } catch (e) {
+        console.warn('Table API fallback:', e);
+      }
+
+      preSorted.forEach(item => {
+        item.distKm = item.straightKm;
+        item.durationMin = Math.max(3, Math.round(item.straightKm * 2));
+      });
+      return preSorted;
     }
 
-    // 选择附近列表中的某一家分店作为目的地并立即计算路线
     function selectNearbyCandidate(lat, lng, name, fullAddr) {
-      endCoords = { lat, lng, name: `${name}${fullAddr ? ' (' + fullAddr.split(',')[0] + ')' : ''}` };
+      endCoords = { lat, lng, name: `${name}${fullAddr ? ' · ' + fullAddr.split(',')[0] : ''}` };
       document.getElementById('endInput').value = endCoords.name;
       calculateAndRenderRoute();
     }
@@ -688,16 +712,19 @@
           const nearbyList = document.getElementById('nearbyResultsList');
           if (matches.length > 1) {
             nearbyBox.classList.remove('hidden');
-            nearbyList.innerHTML = matches.slice(0, 6).map((m, idx) => `
+            nearbyList.innerHTML = matches.map((m, idx) => `
               <div onclick="selectNearbyCandidate(${m.lat}, ${m.lng}, '${m.name.replace(/'/g, "\\'")}', '${m.fullAddr.replace(/'/g, "\\'")}')"
                    class="py-2 px-1.5 hover:bg-amber-100/70 rounded-lg cursor-pointer flex items-center justify-between gap-2 transition">
                 <div class="min-w-0">
                   <div class="text-xs font-bold text-slate-800 truncate">
-                    ${idx === 0 ? '<span class="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded mr-1">最近</span>' : ''}${m.name}
+                    ${idx === 0 ? '<span class="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded mr-1">实际最近</span>' : ''}${m.name}
                   </div>
                   <div class="text-[10px] text-slate-500 truncate">${m.fullAddr || 'Malaysia'}</div>
                 </div>
-                <span class="text-xs font-black text-amber-700 shrink-0">${m.distKm.toFixed(1)} km</span>
+                <div class="text-right shrink-0">
+                  <div class="text-xs font-black text-amber-700">${m.distKm.toFixed(1)} km</div>
+                  <div class="text-[10px] text-slate-400">约 ${m.durationMin} 分钟</div>
+                </div>
               </div>
             `).join('');
           } else {
