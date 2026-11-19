@@ -1004,25 +1004,31 @@
 
     async function autoTranslateRenderedCards(posts, lang) {
       const cards = document.querySelectorAll('#postList > *');
-      for (let i = 0; i < posts.length; i++) {
-        const p = posts[i];
+      const tasks = posts.map(async (p, i) => {
         const card = cards[i];
-        if (!card || !p) continue;
+        if (!card || !p) return;
 
+        // 1. 并发翻译标题（替换全角中括号避免接口拒翻）
         if (p.title) {
-          const newTitle = await translateSnippet(p.title, lang);
-          if (newTitle && newTitle !== p.title && currentLang === lang) {
-            const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
-            let node;
-            while ((node = walker.nextNode())) {
-              if (node.nodeValue && node.nodeValue.trim() === p.title.trim()) {
-                node.nodeValue = node.nodeValue.replace(p.title.trim(), newTitle);
-                break;
-              }
-            }
+          const cleanTitleForTrans = p.title.replace(/【/g, '[').replace(/】/g, '] ');
+          const newTitle = await translateSnippet(cleanTitleForTrans, lang);
+          if (newTitle && newTitle !== cleanTitleForTrans && currentLang === lang) {
+            const h3 = card.querySelector('h3');
+            if (h3) h3.innerText = newTitle;
           }
         }
-      }
+
+        // 2. 同步翻译价格/薪资标签（如 “人均 RM 12 - 22”）
+        if (p.price && /[\u4e00-\u9fa5]/.test(p.price) && lang !== 'zh') {
+          const newPrice = await translateSnippet(p.price, lang);
+          if (newPrice && newPrice !== p.price && currentLang === lang) {
+            const priceEl = card.querySelector('.text-red-600.font-extrabold');
+            if (priceEl) priceEl.innerText = newPrice;
+          }
+        }
+      });
+
+      await Promise.allSettled(tasks);
     }
 
     function renderPosts() {
