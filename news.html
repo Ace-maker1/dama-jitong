@@ -376,7 +376,7 @@
       const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
       const box = document.getElementById('newsContainer');
       const syncBadge = document.getElementById('syncBadge');
-      const cacheKey = `dmjt_v3_news_${currentNewsLang}_${topic.id}`;
+      const cacheKey = `dmjt_v4_news_${currentNewsLang}_${topic.id}`;
 
       let hasCache = false;
       try {
@@ -401,7 +401,12 @@
         if (reqId !== activeRequestId || list.length === 0) return;
 
         collected = collected.concat(list);
-        collected.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+        collected.sort((a, b) => {
+          const hasImgA = a.thumbnail ? 1 : 0;
+          const hasImgB = b.thumbnail ? 1 : 0;
+          if (hasImgB !== hasImgA) return hasImgB - hasImgA;
+          return new Date(b.pubDate || 0) - new Date(a.pubDate || 0);
+        });
 
         box.innerHTML = renderNewsCards(collected, topic.label, t.readMore);
         try {
