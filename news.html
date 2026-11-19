@@ -16,7 +16,7 @@
           <a href="/" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold transition">← 首页</a>
           <div>
             <div class="flex items-center gap-1.5">
-              <span id="liveDot" class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+              <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
               <h1 id="newsPageTitle" class="font-black text-sm tracking-tight">实时新闻头条</h1>
               <span id="syncBadge" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full">同步中...</span>
             </div>
@@ -70,7 +70,7 @@
         title: '实时新闻头条',
         sub: '大马 · 新加坡 · 投资财经 · 全球实时同步',
         syncing: '后台刷新中...',
-        empty: '当前网络较慢，点击下方重试',
+        empty: '暂时未拉取到最新内容，点击下方重试',
         retry: '↻ 立即刷新',
         readMore: '阅读全文 ↗',
         navHome: '首页', navNews: '实时新闻', navPost: '发布', navMap: '查路线', navBiz: '商家入驻',
@@ -80,15 +80,16 @@
             label: '🇲🇾 马来西亚',
             feeds: [
               { name: '东方日报', url: 'https://www.orientaldaily.com.my/feed' },
-              { name: '光华日报', url: 'https://www.kwongwah.com.my/feed/' }
+              { name: '星洲网', url: 'https://www.sinchew.com.my/feed/' },
+              { name: 'Google MY', url: 'https://news.google.com/rss/search?q=%E9%A9%AC%E6%9D%A5%E8%A5%BF%E4%BA%9A&hl=zh-CN&gl=MY&ceid=MY:zh-Hans' }
             ]
           },
           {
             id: 'sg',
             label: '🇸🇬 新加坡',
             feeds: [
-              { name: '8视界新闻', url: 'https://www.8world.com/rss/singapore' },
-              { name: 'BBC 中文', url: 'https://feeds.bbci.co.uk/zhongwen/simp/rss.xml' }
+              { name: '8视界新加坡', url: 'https://www.8world.com/rss/singapore' },
+              { name: 'Google SG', url: 'https://news.google.com/rss/search?q=%E6%96%B0%E5%8A%A0%E5%9D%A1&hl=zh-CN&gl=SG&ceid=SG:zh-Hans' }
             ]
           },
           {
@@ -104,7 +105,7 @@
             label: '🍜 生活娱乐',
             feeds: [
               { name: '东方生活', url: 'https://www.orientaldaily.com.my/feed/lifestyle' },
-              { name: '光华副刊', url: 'https://www.kwongwah.com.my/category/%e5%89%af%e5%88%8a/feed/' }
+              { name: 'Google 生活', url: 'https://news.google.com/rss/search?q=%E9%A9%AC%E6%9D%A5%E8%A5%BF%E4%BA%9A+%E7%BE%8E%E9%A3%9F+%E6%97%85%E6%B8%B8&hl=zh-CN&gl=MY&ceid=MY:zh-Hans' }
             ]
           },
           {
@@ -121,7 +122,7 @@
         title: 'Live News Feed',
         sub: 'Malaysia · Singapore · Finance · World Updates',
         syncing: 'Updating...',
-        empty: 'Network slow, tap to retry',
+        empty: 'No headlines loaded right now, tap to retry',
         retry: '↻ Reload',
         readMore: 'Read Full ↗',
         navHome: 'Home', navNews: 'News', navPost: 'Post', navMap: 'Navigate', navBiz: 'Merchants',
@@ -172,7 +173,7 @@
         title: 'Berita Terkini',
         sub: 'Malaysia · Singapura · Pelaburan · Dunia',
         syncing: 'Mengemas kini...',
-        empty: 'Rangkaian perlahan, tekan untuk cuba semula',
+        empty: 'Tiada berita ditemui, tekan untuk cuba semula',
         retry: '↻ Muat Semula',
         readMore: 'Baca Penuh ↗',
         navHome: 'Utama', navNews: 'Berita', navPost: 'Iklan', navMap: 'Peta', navBiz: 'Peniaga',
@@ -221,8 +222,7 @@
     let currentTopicId = 'my';
     let activeRequestId = 0;
 
-    // 带 4.5 秒自动超时的 fetch，防止慢源拖死页面
-    function fetchWithTimeout(url, ms = 4500) {
+    function fetchWithTimeout(url, ms = 6500) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), ms);
       return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
@@ -281,7 +281,6 @@
       return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
     }
 
-    // 骨架屏占位（首次无缓存时秒出轮廓）
     function renderSkeleton() {
       return Array(5).fill(0).map(() => `
         <div class="bg-white rounded-2xl p-3.5 border border-gray-100 animate-pulse space-y-2.5">
@@ -320,42 +319,27 @@
       `).join('');
     }
 
-    // 双通道并发竞速（Promise.any）：谁先返回用谁，绝不死等！
+    // 直连自己的 Vercel 同源云函数 /api/news，彻底告别第三方 422 拦截
     async function fetchFeedFast(feedObj) {
-      const p1 = (async () => {
-        const res = await fetchWithTimeout(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedObj.url)}`, 4500);
-        const json = await res.json();
-        if (json.status === 'ok' && Array.isArray(json.items) && json.items.length > 0) {
-          return json.items.map(it => ({
-            title: it.title,
-            link: it.link,
-            pubDate: it.pubDate,
-            thumbnail: it.thumbnail || (it.enclosure && it.enclosure.link) || '',
-            source: feedObj.name
-          }));
-        }
-        throw new Error('empty');
-      })();
-
-      const p2 = (async () => {
-        const res = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(feedObj.url)}`, 4500);
-        const data = await res.json();
-        if (data && data.contents) {
-          const xml = new DOMParser().parseFromString(data.contents, 'text/xml');
-          const items = Array.from(xml.querySelectorAll('item')).map(node => ({
-            title: node.querySelector('title')?.textContent?.trim() || '',
+      try {
+        const res = await fetchWithTimeout(`/api/news?url=${encodeURIComponent(feedObj.url)}`, 6500);
+        if (!res.ok) return [];
+        const text = await res.text();
+        const xml = new DOMParser().parseFromString(text, 'text/xml');
+        return Array.from(xml.querySelectorAll('item')).map(node => {
+          const rawTitle = node.querySelector('title')?.textContent?.trim() || '';
+          const parts = rawTitle.split(' - ');
+          const cleanTitle = parts.length > 1 ? parts.slice(0, -1).join(' - ') : rawTitle;
+          const media = node.getElementsByTagName('media:content')[0]?.getAttribute('url')
+                     || node.querySelector('enclosure')?.getAttribute('url') || '';
+          return {
+            title: cleanTitle,
             link: node.querySelector('link')?.textContent?.trim() || '',
             pubDate: node.querySelector('pubDate')?.textContent?.trim() || '',
-            thumbnail: node.querySelector('enclosure')?.getAttribute('url') || '',
+            thumbnail: media,
             source: feedObj.name
-          })).filter(x => x.title && x.link);
-          if (items.length > 0) return items;
-        }
-        throw new Error('empty');
-      })();
-
-      try {
-        return await Promise.any([p1, p2]);
+          };
+        }).filter(x => x.title && x.link);
       } catch (e) {
         return [];
       }
@@ -367,9 +351,8 @@
       const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
       const box = document.getElementById('newsContainer');
       const syncBadge = document.getElementById('syncBadge');
-      const cacheKey = `dmjt_news_${currentNewsLang}_${topic.id}`;
+      const cacheKey = `dmjt_v2_news_${currentNewsLang}_${topic.id}`;
 
-      // 1. 先检查本地缓存，若有则 0 秒瞬开渲染
       let hasCache = false;
       try {
         const cachedRaw = localStorage.getItem(cacheKey);
@@ -387,7 +370,6 @@
       }
       syncBadge.classList.remove('hidden');
 
-      // 2. 并发拉取所有数据源（谁先回来先上屏）
       let collected = [];
       await Promise.all(topic.feeds.map(async (feed) => {
         const list = await fetchFeedFast(feed);
@@ -396,7 +378,6 @@
         collected = collected.concat(list);
         collected.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
 
-        // 只要第一个源回来立刻渲染，不用等第二个慢源
         box.innerHTML = renderNewsCards(collected, topic.label, t.readMore);
         try {
           localStorage.setItem(cacheKey, JSON.stringify(collected.slice(0, 25)));
