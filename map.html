@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>大马吉通 · 站内原生导航 (中/EN/BM) | 自动放大带路·语音播报</title>
+  <title>大马吉通 · 站内原生导航 (中/EN/BM) | 搜附近门店·收藏·历史记录</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    #map { height: 46vh; min-height: 310px; width: 100%; z-index: 1; transition: height 0.3s ease; }
+    #map { height: 44vh; min-height: 290px; width: 100%; z-index: 1; transition: height 0.3s ease; }
     body.nav-active #map { height: 64vh; min-height: 400px; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -37,7 +37,7 @@
         <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-xs font-medium transition shrink-0">← 首页</a>
         <div>
           <h1 id="headerTitle" class="font-bold text-sm sm:text-base leading-tight">大马吉通 · 站内原生导航</h1>
-          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">自动放大带路 · 语音播报 · Grab & Waze</p>
+          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">搜附近门店 · 收藏夹 · 语音带路</p>
         </div>
       </div>
 
@@ -50,7 +50,7 @@
     </div>
   </header>
 
-  <!-- 导航中顶部实时路口指引横幅（点击“开始站内导航”后自动出现） -->
+  <!-- 导航中顶部实时路口指引横幅 -->
   <div id="liveNavBanner" class="hidden sticky top-[52px] z-30 bg-slate-900 text-white px-3 py-3 shadow-2xl border-b border-slate-700">
     <div class="max-w-2xl mx-auto space-y-2">
       <div class="flex items-center justify-between gap-3">
@@ -71,7 +71,6 @@
         </button>
       </div>
 
-      <!-- 导航中底部快捷控制栏（语音开关 + 视角回正 + 手动切换上下路口） -->
       <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
         <div class="flex items-center gap-2">
           <button id="voiceToggleBtn" onclick="toggleVoice()" class="bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2.5 py-1 rounded-lg font-semibold">
@@ -100,7 +99,7 @@
     <button onclick="switchCity(5.9804, 116.0735, 'Kota Kinabalu')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">亚庇 KK</button>
   </div>
 
-  <!-- 起终点与出行方式选择面板 -->
+  <!-- 起终点、附近连锁搜索、收藏夹与历史记录面板 -->
   <div id="searchBox" class="p-3 bg-white shadow-sm border-b border-slate-200">
     <div class="max-w-2xl mx-auto space-y-2">
       <!-- 出行模式切换 Tab -->
@@ -116,31 +115,60 @@
         </button>
       </div>
 
+      <!-- 起点输入 -->
       <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:bg-white">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
         <input id="startInput" type="text" placeholder="输入起点（如：KL Sentral / 槟城机场）" class="bg-transparent w-full text-sm focus:outline-none" />
         <button onclick="locateMe(true)" id="gpsBtn" class="text-xs text-emerald-600 font-semibold shrink-0 px-2 py-0.5 bg-emerald-50 rounded">📍 当前定位</button>
       </div>
 
+      <!-- 目的地 / 搜附近门店输入 -->
       <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-rose-500 focus-within:bg-white">
         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-        <input id="endInput" type="text" placeholder="输入目的地（如：双子塔 / 茨厂街 / 新山关卡）" class="bg-transparent w-full text-sm focus:outline-none" />
+        <input id="endInput" type="text" placeholder="搜目的地或附近店（如：KFC / 7-11 / 油站 / 双子塔）" class="bg-transparent w-full text-sm focus:outline-none" />
         <button onclick="swapLocations()" id="swapBtn" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-0.5 bg-white rounded border shrink-0">⇅ 互换</button>
       </div>
 
-      <!-- 热门一键目的地 -->
+      <!-- 搜附近常用连锁店快捷栏 -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-        <span id="hotLabel" class="text-[11px] text-slate-400 shrink-0">热门：</span>
-        <button onclick="quickDest('KLCC Petronas Twin Towers')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">双子塔 KLCC</button>
-        <button onclick="quickDest('Petaling Street')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">茨厂街</button>
-        <button onclick="quickDest('KLIA Terminal 1')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">KLIA 机场</button>
-        <button onclick="quickDest('KOMTAR Penang')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">槟城光大</button>
-        <button onclick="quickDest('JB Sentral CIQ')" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-slate-600 px-2 py-0.5 rounded shrink-0">新山关卡</button>
+        <span id="nearbyLabel" class="text-[11px] text-amber-600 font-bold shrink-0">🔍 搜最近：</span>
+        <button onclick="quickNearby('KFC')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍗 KFC</button>
+        <button onclick="quickNearby('McDonald\'s')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍔 麦当劳</button>
+        <button onclick="quickNearby('7-Eleven')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🏪 7-11</button>
+        <button onclick="quickNearby('Petronas')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">⛽ 加油站</button>
+        <button onclick="quickNearby('Watsons')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">💊 屈臣氏</button>
+        <button onclick="quickNearby('MR DIY')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🛠️ MR.DIY</button>
       </div>
 
+      <!-- 附近多门店匹配结果列表（例如搜索 KFC 时列出最近的 5 家店按距离排序） -->
+      <div id="nearbyResultsBox" class="hidden bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span id="nearbyResultsTitle" class="text-xs font-bold text-amber-900">📍 附近匹配的门店（按距离从近到远）：</span>
+          <button onclick="document.getElementById('nearbyResultsBox').classList.add('hidden')" class="text-[11px] text-slate-400 hover:text-slate-600">关闭 ✕</button>
+        </div>
+        <div id="nearbyResultsList" class="divide-y divide-amber-200/60 max-h-44 overflow-y-auto"></div>
+      </div>
+
+      <!-- 主搜索按钮 -->
       <button id="searchRouteBtn" onclick="planRoute()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow transition">
-        🧭 生成站内导航路线（含语音 + Grab/Waze）
+        🧭 搜索最近位置并规划路线
       </button>
+
+      <!-- 我的收藏夹 & 最近搜索历史（自动保存在本地浏览器） -->
+      <div id="savedAndHistoryWrap" class="pt-1 space-y-1.5">
+        <!-- 收藏地址栏 -->
+        <div id="favoritesBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span id="favTitleLabel" class="text-[11px] text-amber-600 font-bold shrink-0">⭐ 已收藏：</span>
+          <div id="favoritesList" class="flex items-center gap-1.5"></div>
+        </div>
+
+        <!-- 搜索历史栏 -->
+        <div id="historyBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span id="histTitleLabel" class="text-[11px] text-slate-400 font-medium shrink-0">🕒 最近搜索：</span>
+          <div id="historyList" class="flex items-center gap-1.5"></div>
+          <button onclick="clearHistory()" id="clearHistBtn" class="text-[10px] text-rose-400 hover:text-rose-600 shrink-0 px-1.5">清空</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -152,13 +180,18 @@
     </div>
   </div>
 
-  <!-- 站内原生导航详情 + 保留 Grab / Waze 聚合栏 -->
+  <!-- 站内原生导航详情 + 收藏按钮 + 保留 Grab / Waze 聚合栏 -->
   <div id="resultPanel" class="max-w-2xl mx-auto p-3 space-y-3 hidden">
-    <!-- 1. 大马吉通站内原生导航主卡片 -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-500">
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex items-start justify-between gap-2">
         <div>
-          <span id="nativeTag" class="inline-block text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded mb-1">⭐ 大马吉通站内导航（自动放大带路）</span>
+          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+            <span id="nativeTag" class="inline-block text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">⭐ 大马吉通站内导航</span>
+            <button onclick="saveCurrentToFavorites()" id="saveFavBtn" class="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-800 px-2 py-0.5 rounded transition">
+              <span>⭐</span> <span>收藏此地址</span>
+            </button>
+          </div>
+          <div id="destDisplayTitle" class="text-xs font-bold text-slate-700 mb-0.5 truncate max-w-[210px] sm:max-w-xs">--</div>
           <div class="flex items-center gap-2">
             <span id="routeDistBadge" class="text-lg font-black text-slate-900">-- km</span>
             <span id="routeTimeBadge" class="text-xs font-bold bg-slate-100 text-slate-800 px-2.5 py-0.5 rounded-full">-- min</span>
@@ -170,7 +203,7 @@
         </button>
       </div>
 
-      <!-- 2. 保留的外部 App 快捷调用（Grab 打车 / Waze 导航 / Google 公交） -->
+      <!-- 保留的外部 App 快捷调用（Grab 打车 / Waze 导航 / Google 公交） -->
       <div class="mt-3 pt-3 border-t border-slate-100">
         <div id="extAppsLabel" class="text-[11px] text-slate-400 mb-2">其他常用大马出行工具一键直达：</div>
         <div class="grid grid-cols-3 gap-2">
@@ -224,20 +257,25 @@
       zh: {
         backHome: '← 首页',
         headerTitle: '大马吉通 · 站内原生导航',
-        headerSub: '自动放大带路 · 语音播报 · Grab & Waze',
+        headerSub: '搜附近门店 · 收藏夹 · 语音带路',
         cityLabel: '城市：',
         modeDriving: '🚗 驾车',
         modeTransit: '🚇 公交',
         modeWalking: '🚶 步行',
         startPh: '输入起点（如：KL Sentral / 槟城机场）',
-        endPh: '输入目的地（如：双子塔 / 茨厂街 / 新山关卡）',
+        endPh: '搜目的地或附近店（如：KFC / 7-11 / 油站 / 双子塔）',
         gpsBtn: '📍 当前定位',
         swapBtn: '⇅ 互换',
-        hotLabel: '热门：',
-        searchBtn: '🧭 生成站内导航路线（含语音 + Grab/Waze）',
-        searchingBtn: '⏳ 正在规划全马最佳路线...',
+        nearbyLabel: '🔍 搜最近：',
+        searchBtn: '🧭 搜索最近位置并规划路线',
+        searchingBtn: '⏳ 正在搜索最近地点并规划路线...',
+        favTitle: '⭐ 已收藏：',
+        histTitle: '🕒 最近搜索：',
+        clearHist: '清空',
+        saveFavBtn: '收藏此地址',
+        savedFavDone: '已收藏 ✓',
         mapBadge: '💡 提示：直接点击地图任意位置即可设为目的地',
-        nativeTag: '⭐ 大马吉通站内导航（自动放大带路）',
+        nativeTag: '⭐ 大马吉通站内导航',
         startNav: '开始站内导航',
         stopNav: '结束导航',
         voiceOn: '🔊 语音已开启',
@@ -255,20 +293,25 @@
       en: {
         backHome: '← Home',
         headerTitle: 'DaMaJiTong · In-App Navigation',
-        headerSub: 'Auto-Zoom Guidance · Voice · Grab & Waze',
+        headerSub: 'Nearest Stores · Saved Places · Voice Nav',
         cityLabel: 'City:',
         modeDriving: '🚗 Drive',
         modeTransit: '🚇 Transit',
         modeWalking: '🚶 Walk',
         startPh: 'Start point (e.g. KL Sentral / Penang Airport)',
-        endPh: 'Destination (e.g. KLCC / Petaling Street / CIQ)',
+        endPh: 'Search place or nearby store (e.g. KFC / Petrol / KLCC)',
         gpsBtn: '📍 My GPS',
         swapBtn: '⇅ Swap',
-        hotLabel: 'Hot:',
-        searchBtn: '🧭 Get Route (In-App Nav + Grab & Waze)',
-        searchingBtn: '⏳ Calculating best route...',
+        nearbyLabel: '🔍 Nearest:',
+        searchBtn: '🧭 Find Nearest & Get Route',
+        searchingBtn: '⏳ Finding nearest places & route...',
+        favTitle: '⭐ Saved:',
+        histTitle: '🕒 Recent:',
+        clearHist: 'Clear',
+        saveFavBtn: 'Save Place',
+        savedFavDone: 'Saved ✓',
         mapBadge: '💡 Tip: Tap anywhere on the map to set destination',
-        nativeTag: '⭐ DaMaJiTong In-App Nav (Auto-Zoom)',
+        nativeTag: '⭐ DaMaJiTong In-App Nav',
         startNav: 'Start Nav',
         stopNav: 'Stop Nav',
         voiceOn: '🔊 Voice On',
@@ -286,20 +329,25 @@
       ms: {
         backHome: '← Utama',
         headerTitle: 'DaMaJiTong · Navigasi Terus',
-        headerSub: 'Zum Auto Pandu Arah · Suara · Grab & Waze',
+        headerSub: 'Kedai Terdekat · Kegemaran · Suara',
         cityLabel: 'Bandar:',
         modeDriving: '🚗 Pandu',
         modeTransit: '🚇 Bas/MRT',
         modeWalking: '🚶 Jalan',
         startPh: 'Lokasi mula (cth: KL Sentral / Lapangan Terbang)',
-        endPh: 'Destinasi (cth: KLCC / KOMTAR / JB Sentral)',
+        endPh: 'Cari destinasi / kedai terdekat (cth: KFC / Petronas)',
         gpsBtn: '📍 Lokasi Saya',
         swapBtn: '⇅ Tukar',
-        hotLabel: 'Popular:',
-        searchBtn: '🧭 Cari Laluan (Navigasi + Grab & Waze)',
-        searchingBtn: '⏳ Mengira laluan terbaik...',
+        nearbyLabel: '🔍 Terdekat:',
+        searchBtn: '🧭 Cari Lokasi Terdekat & Laluan',
+        searchingBtn: '⏳ Mencari lokasi terdekat...',
+        favTitle: '⭐ Disimpan:',
+        histTitle: '🕒 Sejarah:',
+        clearHist: 'Padam',
+        saveFavBtn: 'Simpan Lokasi',
+        savedFavDone: 'Disimpan ✓',
         mapBadge: '💡 Tip: Tekan mana-mana lokasi di peta sebagai destinasi',
-        nativeTag: '⭐ Navigasi Terus DaMaJiTong (Zum Auto)',
+        nativeTag: '⭐ Navigasi Terus DaMaJiTong',
         startNav: 'Mula Navigasi',
         stopNav: 'Tamat',
         voiceOn: '🔊 Suara Aktif',
@@ -332,7 +380,10 @@
     let cameraLocked = true;
     let wakeLock = null;
 
-    // 预加载手机语音引擎列表
+    // 本地存储 Key（搜索历史 + 收藏夹）
+    const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
+    const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
+
     if ('speechSynthesis' in window) {
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
@@ -360,8 +411,11 @@
       document.getElementById('endInput').placeholder = t.endPh;
       document.getElementById('gpsBtn').innerText = t.gpsBtn;
       document.getElementById('swapBtn').innerText = t.swapBtn;
-      document.getElementById('hotLabel').innerText = t.hotLabel;
+      document.getElementById('nearbyLabel').innerText = t.nearbyLabel;
       document.getElementById('searchRouteBtn').innerText = t.searchBtn;
+      document.getElementById('favTitleLabel').innerText = t.favTitle;
+      document.getElementById('histTitleLabel').innerText = t.histTitle;
+      document.getElementById('clearHistBtn').innerText = t.clearHist;
       document.getElementById('mapBadge').innerText = t.mapBadge;
       document.getElementById('nativeTag').innerText = t.nativeTag;
       document.getElementById('startNavBtn').innerHTML = `<span>▶️</span> <span>${t.startNav}</span>`;
@@ -383,7 +437,6 @@
       maxZoom: 19
     }).addTo(map);
 
-    // 用户手动拖动地图时解除视角自动锁定，方便查看前方路况
     map.on('dragstart', function() {
       if (isNavigating) {
         cameraLocked = false;
@@ -392,7 +445,16 @@
       }
     });
 
+    // 中文高频地点/品牌别名映射词典
     const cnAliasMap = {
+      '麦当劳': "McDonald's",
+      '肯德基': 'KFC',
+      '星巴克': 'Starbucks',
+      '蜜雪冰城': 'Mixue',
+      '屈臣氏': 'Watsons',
+      '加油站': 'Petronas',
+      '油站': 'Petronas',
+      '便利店': '7-Eleven',
       '双子塔': 'Petronas Twin Towers Kuala Lumpur',
       '吉隆坡双子塔': 'Petronas Twin Towers Kuala Lumpur',
       '茨厂街': 'Petaling Street Kuala Lumpur',
@@ -448,7 +510,7 @@
             if (startMarker) map.removeLayer(startMarker);
             startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
           }
-          map.setView([lat, lng], 16);
+          map.setView([lat, lng], 15);
         },
         () => {
           alert(currentLang === 'zh' ? '请允许浏览器获取定位权限，或手动输入起点。' : 'Please allow location permission or enter start point manually.');
@@ -466,8 +528,8 @@
       }
     }
 
-    function quickDest(placeName) {
-      document.getElementById('endInput').value = placeName;
+    function quickNearby(brandName) {
+      document.getElementById('endInput').value = brandName;
       planRoute();
     }
 
@@ -483,28 +545,52 @@
 
     map.on('click', function(e) {
       if (isNavigating) return;
-      endCoords = { lat: e.latlng.lat, lng: e.latlng.lng, name: 'Map Pin' };
-      document.getElementById('endInput').value = `Pin (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`;
+      endCoords = { lat: e.latlng.lat, lng: e.latlng.lng, name: `Pin (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})` };
+      document.getElementById('endInput').value = endCoords.name;
       if (endMarker) map.removeLayer(endMarker);
       endMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('🔴 Destination').openPopup();
       if (startCoords) planRoute();
     });
 
-    async function geocodeAddress(rawQuery) {
+    // 智能周边优先搜索：以参考坐标（起点或地图中心）为中心优先匹配，返回最多 8 个候选并按距离从近到远排序
+    async function searchPlacesNear(rawQuery, refLat, refLng) {
       let query = rawQuery.trim();
       for (const [cn, en] of Object.entries(cnAliasMap)) {
-        if (query.includes(cn)) {
-          query = en;
+        if (query === cn || query.includes(cn)) {
+          query = query.replace(cn, en);
           break;
         }
       }
-      const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=my&limit=1&q=${encodeURIComponent(query)}`;
+
+      // 构建参考点周边约 35km 优先视野框（viewbox），让 KFC / 7-11 等连锁店优先返回离用户最近的门店
+      const delta = 0.32;
+      const viewbox = `${refLng - delta},${refLat + delta},${refLng + delta},${refLat - delta}`;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=my&limit=10&viewbox=${viewbox}&bounded=0&q=${encodeURIComponent(query)}`;
       const res = await fetch(url);
       const data = await res.json();
-      if (data && data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: rawQuery };
-      }
-      return null;
+
+      if (!data || data.length === 0) return [];
+
+      // 计算每个候选地点到参考点的直线距离（km）并按从近到远排序
+      const mapped = data.map(item => {
+        const lat = parseFloat(item.lat);
+        const lng = parseFloat(item.lon);
+        const distKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
+        const parts = item.display_name.split(',').map(s => s.trim());
+        const shortName = parts[0];
+        const subAddr = parts.slice(1, 4).join(', ');
+        return { lat, lng, name: shortName, fullAddr: subAddr, distKm };
+      });
+
+      mapped.sort((a, b) => a.distKm - b.distKm);
+      return mapped;
+    }
+
+    // 选择附近列表中的某一家分店作为目的地并立即计算路线
+    function selectNearbyCandidate(lat, lng, name, fullAddr) {
+      endCoords = { lat, lng, name: `${name}${fullAddr ? ' (' + fullAddr.split(',')[0] + ')' : ''}` };
+      document.getElementById('endInput').value = endCoords.name;
+      calculateAndRenderRoute();
     }
 
     function translateStep(step) {
@@ -558,7 +644,7 @@
       const endText = document.getElementById('endInput').value.trim();
 
       if (!endText && !endCoords) {
-        alert(currentLang === 'zh' ? '请先输入目的地，或直接点击地图！' : 'Please enter destination or tap on the map!');
+        alert(currentLang === 'zh' ? '请先输入目的地或连锁店名（如 KFC），或直接点击地图！' : 'Please enter destination or store name (e.g. KFC)!');
         return;
       }
 
@@ -566,120 +652,63 @@
       btn.disabled = true;
 
       try {
+        const mapCenter = map.getCenter();
+        // 1. 解析起点
         if (!startText) {
-          const c = map.getCenter();
-          startCoords = { lat: c.lat, lng: c.lng, name: 'Map Center' };
+          startCoords = { lat: mapCenter.lat, lng: mapCenter.lng, name: 'Map Center' };
           document.getElementById('startInput').value = currentLang === 'zh' ? '当前地图中心' : 'Map Center';
         } else if (!startText.includes('(GPS)') && !startText.includes('Map Center') && !startText.includes('地图中心')) {
-          const geoStart = await geocodeAddress(startText);
-          if (geoStart) startCoords = geoStart;
+          const startMatches = await searchPlacesNear(startText, mapCenter.lat, mapCenter.lng);
+          if (startMatches.length > 0) startCoords = startMatches[0];
         }
 
+        const refLat = startCoords ? startCoords.lat : mapCenter.lat;
+        const refLng = startCoords ? startCoords.lng : mapCenter.lng;
+
+        // 2. 解析终点（支持多门店周边排序）
         if (!endText.startsWith('Pin (')) {
-          const geoEnd = await geocodeAddress(endText);
-          if (geoEnd) {
-            endCoords = geoEnd;
-          } else {
-            alert(currentLang === 'zh' ? '未找到该地点，建议输入英文地标（如 KLCC、Mid Valley）再试！' : 'Location not found, please try another landmark!');
+          const matches = await searchPlacesNear(endText, refLat, refLng);
+          if (matches.length === 0) {
+            alert(currentLang === 'zh' ? '未找到该地点，建议换个关键词（如 KFC、KLCC）再试！' : 'Location not found, please try another keyword!');
             btn.innerText = i18n[currentLang].searchBtn;
             btn.disabled = false;
             return;
           }
-        }
 
-        if (startMarker) map.removeLayer(startMarker);
-        if (endMarker) map.removeLayer(endMarker);
-        startMarker = L.marker([startCoords.lat, startCoords.lng]).addTo(map).bindPopup(`🟢 ${startCoords.name}`);
-        endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup(`🔴 ${endCoords.name}`);
-
-        const profile = currentMode === 'walking' ? 'foot' : 'driving';
-        const osrmUrl = `https://router.project-osrm.org/route/v1/${profile}/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`;
-        const routeRes = await fetch(osrmUrl);
-        const routeData = await routeRes.json();
-
-        if (!routeData || !routeData.routes || routeData.routes.length === 0) {
-          alert('Route not found / 暂未匹配到路线');
-          return;
-        }
-
-        const route = routeData.routes[0];
-        const distKm = (route.distance / 1000).toFixed(1);
-        let durationMin = Math.max(2, Math.round(route.duration / 60));
-        if (currentMode === 'walking') durationMin = Math.max(3, Math.round(distKm * 13));
-        if (currentMode === 'transit') durationMin = Math.max(8, Math.round(durationMin * 1.45 + 10));
-
-        if (routeLine) map.removeLayer(routeLine);
-        const lineColor = currentMode === 'walking' ? '#2563eb' : (currentMode === 'transit' ? '#7c3aed' : '#059669');
-        routeLine = L.geoJSON(route.geometry, {
-          style: { color: lineColor, weight: 7, opacity: 0.9, dashArray: currentMode === 'walking' ? '8, 8' : null }
-        }).addTo(map);
-        map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
-
-        const fuelCost = (distKm * 0.08 * 2.05).toFixed(2);
-        const grabEst = Math.max(5, Math.round(4 + distKm * 1.35));
-        document.getElementById('routeDistBadge').innerText = `${distKm} km`;
-        document.getElementById('routeTimeBadge').innerText = `${durationMin} min`;
-        document.getElementById('grabPriceTag').innerText = `~RM ${grabEst}`;
-
-        if (currentLang === 'en') {
-          document.getElementById('routeSubInfo').innerText = `Est. Petrol RM ${fuelCost} · Grab Ref ~RM ${grabEst}`;
-        } else if (currentLang === 'ms') {
-          document.getElementById('routeSubInfo').innerText = `Anggaran Petrol RM ${fuelCost} · Grab ~RM ${grabEst}`;
-        } else {
-          document.getElementById('routeSubInfo').innerText = `自驾预估油费 RM ${fuelCost} · Grab 参考约 RM ${grabEst}`;
-        }
-
-        document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
-        document.getElementById('googleTransitLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=transit`;
-
-        const transitBox = document.getElementById('transitGuideBox');
-        if (currentMode === 'transit') {
-          transitBox.classList.remove('hidden');
-          if (currentLang === 'en') {
-            document.getElementById('transitBoxTitle').innerText = '🚇 Malaysia Public Transit Guide';
-            document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Use LRT/MRT/Monorail or Rapid KL bus (Touch 'n Go or Visa/Master PayWave accepted).</p><p>• <b>Penang:</b> Rapid Penang bus requires exact cash fare (no change given).</p>`;
-          } else if (currentLang === 'ms') {
-            document.getElementById('transitBoxTitle').innerText = '🚇 Panduan Pengangkutan Awam Malaysia';
-            document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Gunakan LRT/MRT/Monorel atau bas Rapid KL (Kad Touch 'n Go / PayWave diterima).</p><p>• <b>Pulau Pinang:</b> Bas Rapid Penang memerlukan wang tunai secukupnya.</p>`;
-          } else {
-            document.getElementById('transitBoxTitle').innerText = '🚇 大马本地公交 / 轨道交通乘车贴士';
-            document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>吉隆坡/雪兰莪：</b>优先搭乘 LRT / MRT / Monorail 或 Rapid KL 巴士，进站支持 <b>Touch 'n Go 卡</b> 或 Visa/Master 拍卡。</p><p>• <b>槟城地区：</b>搭乘 Rapid Penang 巴士需自备零钱投币（不设找零），乔治市老城区可坐免费 CAT 巴士。</p>`;
-          }
-        } else {
-          transitBox.classList.add('hidden');
-        }
-
-        const rawSteps = route.legs[0]?.steps || [];
-        currentSteps = rawSteps.map((s, idx) => {
-          const t = translateStep(s);
-          return {
-            index: idx,
-            icon: t.icon,
-            text: t.text,
-            dist: t.dist,
-            location: s.maneuver?.location
+          // 自动选中距离最近的第 1 家店
+          const nearest = matches[0];
+          endCoords = {
+            lat: nearest.lat,
+            lng: nearest.lng,
+            name: `${nearest.name}${nearest.fullAddr ? ' · ' + nearest.fullAddr.split(',')[0] : ''}`
           };
-        });
 
-        document.getElementById('stepCountBadge').innerText = `${currentSteps.length} steps`;
-        const stepsContainer = document.getElementById('stepsList');
-        stepsContainer.innerHTML = currentSteps.map((st, i) => `
-          <div onclick="focusStep(${i})" class="py-2.5 px-2 hover:bg-slate-50 rounded-xl cursor-pointer flex items-center justify-between gap-3 transition">
-            <div class="flex items-center gap-3">
-              <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-base shrink-0">${st.icon}</span>
-              <div>
-                <div class="text-xs font-bold text-slate-800">${st.text}</div>
-                <div class="text-[11px] text-slate-400">#${i + 1}</div>
+          // 如果匹配到多家分店（如搜索 KFC / 7-11 / 加油站），展开“附近分店列表”供用户自由切换
+          const nearbyBox = document.getElementById('nearbyResultsBox');
+          const nearbyList = document.getElementById('nearbyResultsList');
+          if (matches.length > 1) {
+            nearbyBox.classList.remove('hidden');
+            nearbyList.innerHTML = matches.slice(0, 6).map((m, idx) => `
+              <div onclick="selectNearbyCandidate(${m.lat}, ${m.lng}, '${m.name.replace(/'/g, "\\'")}', '${m.fullAddr.replace(/'/g, "\\'")}')"
+                   class="py-2 px-1.5 hover:bg-amber-100/70 rounded-lg cursor-pointer flex items-center justify-between gap-2 transition">
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-slate-800 truncate">
+                    ${idx === 0 ? '<span class="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded mr-1">最近</span>' : ''}${m.name}
+                  </div>
+                  <div class="text-[10px] text-slate-500 truncate">${m.fullAddr || 'Malaysia'}</div>
+                </div>
+                <span class="text-xs font-black text-amber-700 shrink-0">${m.distKm.toFixed(1)} km</span>
               </div>
-            </div>
-            <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded shrink-0">${st.dist}</span>
-          </div>
-        `).join('');
+            `).join('');
+          } else {
+            nearbyBox.classList.add('hidden');
+          }
+        }
 
-        const panel = document.getElementById('resultPanel');
-        panel.classList.remove('hidden');
-        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // 记录到最近搜索历史
+        addToHistory(endCoords);
 
+        await calculateAndRenderRoute();
       } catch (err) {
         console.error(err);
         alert('Error calculating route, please try again!');
@@ -689,6 +718,215 @@
       }
     }
 
+    async function calculateAndRenderRoute() {
+      if (!startCoords || !endCoords) return;
+
+      if (startMarker) map.removeLayer(startMarker);
+      if (endMarker) map.removeLayer(endMarker);
+      startMarker = L.marker([startCoords.lat, startCoords.lng]).addTo(map).bindPopup(`🟢 ${startCoords.name}`);
+      endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup(`🔴 ${endCoords.name}`).openPopup();
+
+      const profile = currentMode === 'walking' ? 'foot' : 'driving';
+      const osrmUrl = `https://router.project-osrm.org/route/v1/${profile}/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`;
+      const routeRes = await fetch(osrmUrl);
+      const routeData = await routeRes.json();
+
+      if (!routeData || !routeData.routes || routeData.routes.length === 0) {
+        alert('Route not found / 暂未匹配到路线');
+        return;
+      }
+
+      const route = routeData.routes[0];
+      const distKm = (route.distance / 1000).toFixed(1);
+      let durationMin = Math.max(2, Math.round(route.duration / 60));
+      if (currentMode === 'walking') durationMin = Math.max(3, Math.round(distKm * 13));
+      if (currentMode === 'transit') durationMin = Math.max(8, Math.round(durationMin * 1.45 + 10));
+
+      if (routeLine) map.removeLayer(routeLine);
+      const lineColor = currentMode === 'walking' ? '#2563eb' : (currentMode === 'transit' ? '#7c3aed' : '#059669');
+      routeLine = L.geoJSON(route.geometry, {
+        style: { color: lineColor, weight: 7, opacity: 0.9, dashArray: currentMode === 'walking' ? '8, 8' : null }
+      }).addTo(map);
+      map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
+
+      const fuelCost = (distKm * 0.08 * 2.05).toFixed(2);
+      const grabEst = Math.max(5, Math.round(4 + distKm * 1.35));
+      document.getElementById('destDisplayTitle').innerText = `📍 ${endCoords.name}`;
+      document.getElementById('routeDistBadge').innerText = `${distKm} km`;
+      document.getElementById('routeTimeBadge').innerText = `${durationMin} min`;
+      document.getElementById('grabPriceTag').innerText = `~RM ${grabEst}`;
+
+      // 重置收藏按钮状态
+      const saveBtn = document.getElementById('saveFavBtn');
+      saveBtn.innerHTML = `<span>⭐</span> <span>${i18n[currentLang].saveFavBtn}</span>`;
+
+      if (currentLang === 'en') {
+        document.getElementById('routeSubInfo').innerText = `Est. Petrol RM ${fuelCost} · Grab Ref ~RM ${grabEst}`;
+      } else if (currentLang === 'ms') {
+        document.getElementById('routeSubInfo').innerText = `Anggaran Petrol RM ${fuelCost} · Grab ~RM ${grabEst}`;
+      } else {
+        document.getElementById('routeSubInfo').innerText = `自驾预估油费 RM ${fuelCost} · Grab 参考约 RM ${grabEst}`;
+      }
+
+      document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
+      document.getElementById('googleTransitLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=transit`;
+
+      const transitBox = document.getElementById('transitGuideBox');
+      if (currentMode === 'transit') {
+        transitBox.classList.remove('hidden');
+        if (currentLang === 'en') {
+          document.getElementById('transitBoxTitle').innerText = '🚇 Malaysia Public Transit Guide';
+          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Use LRT/MRT/Monorail or Rapid KL bus (Touch 'n Go or Visa/Master PayWave accepted).</p><p>• <b>Penang:</b> Rapid Penang bus requires exact cash fare (no change given).</p>`;
+        } else if (currentLang === 'ms') {
+          document.getElementById('transitBoxTitle').innerText = '🚇 Panduan Pengangkutan Awam Malaysia';
+          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Gunakan LRT/MRT/Monorel atau bas Rapid KL (Kad Touch 'n Go / PayWave diterima).</p><p>• <b>Pulau Pinang:</b> Bas Rapid Penang memerlukan wang tunai secukupnya.</p>`;
+        } else {
+          document.getElementById('transitBoxTitle').innerText = '🚇 大马本地公交 / 轨道交通乘车贴士';
+          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>吉隆坡/雪兰莪：</b>优先搭乘 LRT / MRT / Monorail 或 Rapid KL 巴士，进站支持 <b>Touch 'n Go 卡</b> 或 Visa/Master 拍卡。</p><p>• <b>槟城地区：</b>搭乘 Rapid Penang 巴士需自备零钱投币（不设找零），乔治市老城区可坐免费 CAT 巴士。</p>`;
+        }
+      } else {
+        transitBox.classList.add('hidden');
+      }
+
+      const rawSteps = route.legs[0]?.steps || [];
+      currentSteps = rawSteps.map((s, idx) => {
+        const t = translateStep(s);
+        return {
+          index: idx,
+          icon: t.icon,
+          text: t.text,
+          dist: t.dist,
+          location: s.maneuver?.location
+        };
+      });
+
+      document.getElementById('stepCountBadge').innerText = `${currentSteps.length} steps`;
+      const stepsContainer = document.getElementById('stepsList');
+      stepsContainer.innerHTML = currentSteps.map((st, i) => `
+        <div onclick="focusStep(${i})" class="py-2.5 px-2 hover:bg-slate-50 rounded-xl cursor-pointer flex items-center justify-between gap-3 transition">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-base shrink-0">${st.icon}</span>
+            <div>
+              <div class="text-xs font-bold text-slate-800">${st.text}</div>
+              <div class="text-[11px] text-slate-400">#${i + 1}</div>
+            </div>
+          </div>
+          <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded shrink-0">${st.dist}</span>
+        </div>
+      `).join('');
+
+      const panel = document.getElementById('resultPanel');
+      panel.classList.remove('hidden');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ==================== 收藏夹 & 搜索历史功能 ====================
+    function getSavedList(key) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function setSavedList(key, list) {
+      try {
+        localStorage.setItem(key, JSON.stringify(list));
+      } catch (e) {}
+    }
+
+    function addToHistory(place) {
+      if (!place || !place.name) return;
+      let hist = getSavedList(STORAGE_HIST_KEY);
+      hist = hist.filter(item => item.name !== place.name);
+      hist.unshift({ name: place.name, lat: place.lat, lng: place.lng });
+      if (hist.length > 8) hist = hist.slice(0, 8);
+      setSavedList(STORAGE_HIST_KEY, hist);
+      renderSavedAndHistory();
+    }
+
+    function clearHistory() {
+      setSavedList(STORAGE_HIST_KEY, []);
+      renderSavedAndHistory();
+    }
+
+    function saveCurrentToFavorites() {
+      if (!endCoords) return;
+      const customLabel = prompt(
+        currentLang === 'zh' ? '请给这个收藏地点起个名字（例如：家、公司、酒店）：' : 'Enter a label for this saved place (e.g. Home, Office):',
+        endCoords.name.split('·')[0].trim()
+      );
+      if (customLabel === null) return;
+      const label = customLabel.trim() || endCoords.name;
+
+      let favs = getSavedList(STORAGE_FAV_KEY);
+      favs = favs.filter(item => item.label !== label);
+      favs.unshift({ label, name: endCoords.name, lat: endCoords.lat, lng: endCoords.lng });
+      if (favs.length > 12) favs = favs.slice(0, 12);
+      setSavedList(STORAGE_FAV_KEY, favs);
+
+      document.getElementById('saveFavBtn').innerHTML = `<span>✅</span> <span>${i18n[currentLang].savedFavDone}</span>`;
+      renderSavedAndHistory();
+    }
+
+    function removeFavorite(idx, event) {
+      event.stopPropagation();
+      let favs = getSavedList(STORAGE_FAV_KEY);
+      favs.splice(idx, 1);
+      setSavedList(STORAGE_FAV_KEY, favs);
+      renderSavedAndHistory();
+    }
+
+    function useSavedPlace(lat, lng, name) {
+      endCoords = { lat, lng, name };
+      document.getElementById('endInput').value = name;
+      if (!startCoords) {
+        const c = map.getCenter();
+        startCoords = { lat: c.lat, lng: c.lng, name: currentLang === 'zh' ? '当前地图中心' : 'Map Center' };
+        document.getElementById('startInput').value = startCoords.name;
+      }
+      calculateAndRenderRoute();
+    }
+
+    function renderSavedAndHistory() {
+      const favs = getSavedList(STORAGE_FAV_KEY);
+      const favBar = document.getElementById('favoritesBar');
+      const favList = document.getElementById('favoritesList');
+
+      if (favs.length > 0) {
+        favBar.classList.remove('hidden');
+        favList.innerHTML = favs.map((f, idx) => `
+          <div onclick="useSavedPlace(${f.lat}, ${f.lng}, '${f.name.replace(/'/g, "\\'")}')"
+               class="inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-semibold px-2 py-0.5 rounded-full cursor-pointer shrink-0">
+            <span>📌 ${f.label}</span>
+            <button onclick="removeFavorite(${idx}, event)" class="text-amber-500 hover:text-rose-600 ml-0.5">×</button>
+          </div>
+        `).join('');
+      } else {
+        favBar.classList.add('hidden');
+      }
+
+      const hist = getSavedList(STORAGE_HIST_KEY);
+      const histBar = document.getElementById('historyBar');
+      const histList = document.getElementById('historyList');
+
+      if (hist.length > 0) {
+        histBar.classList.remove('hidden');
+        histList.innerHTML = hist.map(h => `
+          <button onclick="useSavedPlace(${h.lat}, ${h.lng}, '${h.name.replace(/'/g, "\\'")}')"
+                  class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] px-2 py-0.5 rounded-full shrink-0 max-w-[140px] truncate">
+            ${h.name}
+          </button>
+        `).join('');
+      } else {
+        histBar.classList.add('hidden');
+      }
+    }
+
+    // 页面加载时自动渲染已保存的收藏夹和历史记录
+    renderSavedAndHistory();
+
+    // ==================== 站内实时放大带路 & 语音播报 ====================
     function focusStep(idx) {
       const st = currentSteps[idx];
       if (st && st.location) {
@@ -697,7 +935,6 @@
       }
     }
 
-    // 强化版手机浏览器兼容语音播报（带语言包自动降级兜底，确保100%出声）
     function speakText(msg) {
       if (!voiceEnabled || !('speechSynthesis' in window)) return;
       try {
@@ -705,8 +942,6 @@
         const utter = new SpeechSynthesisUtterance(msg);
         const voices = window.speechSynthesis.getVoices();
         const targetLang = i18n[currentLang].speechLang;
-
-        // 检查手机是否有对应语音包，若没有马来文语音包则自动降级用英文读出，防止手机静音跳过
         const hasTargetVoice = voices.some(v => v.lang.toLowerCase().includes(targetLang.slice(0, 2).toLowerCase()));
         utter.lang = hasTargetVoice ? targetLang : 'en-US';
         utter.volume = 1.0;
@@ -755,7 +990,6 @@
       }
     }
 
-    // 开启站内自动放大带路导航（18倍街道特写 + 实时GPS跟随 + 防黑屏 + 语音播报）
     async function startLiveNav() {
       if (!currentSteps.length) return;
 
@@ -763,18 +997,15 @@
       cameraLocked = true;
       currentStepIdx = 0;
 
-      // 1. 界面进入沉浸式大地图导航模式
       document.body.classList.add('nav-active');
       document.getElementById('liveNavBanner').classList.remove('hidden');
       document.getElementById('searchBox').classList.add('hidden');
       document.getElementById('cityBar').classList.add('hidden');
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // 2. 立即更新顶部路口指引并同步触发用户点击事件内的首次语音播报（解锁手机音频限制）
       updateBannerStep(currentSteps[0]);
       speakText(`${i18n[currentLang].startVoiceMsg}${currentSteps[0].text}`);
 
-      // 3. 刷新地图尺寸并自动放大到 18 级街道特写视角带路
       setTimeout(() => {
         map.invalidateSize();
         if (startCoords) {
@@ -783,12 +1014,10 @@
         }
       }, 150);
 
-      // 4. 申请手机防自动熄屏锁（开车导航不断屏）
       if ('wakeLock' in navigator) {
         try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
       }
 
-      // 5. 启动高频实时 GPS 跟踪带路
       if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
@@ -796,12 +1025,10 @@
             const lng = pos.coords.longitude;
             updateLiveUserDot(lat, lng);
 
-            // 只要视角处于锁定状态，自动放大到 18 级紧跟车辆/行人位置移动
             if (cameraLocked) {
               map.setView([lat, lng], 18, { animate: true });
             }
 
-            // 距离下一个转弯路口小于 65 米时自动切换路口指令并语音播报
             for (let i = currentStepIdx + 1; i < currentSteps.length; i++) {
               const loc = currentSteps[i].location;
               if (!loc) continue;
