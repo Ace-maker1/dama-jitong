@@ -160,7 +160,11 @@
 
           <div>
             <label id="payLabelReceipt" class="block font-bold text-gray-700 mb-1">4. 上传 TNG / Bank 转账截图凭证 *</label>
-            <input type="file" id="receiptFileInput" accept="image/*" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2 text-xs" />
+            <div class="relative flex items-center gap-2.5 w-full border border-gray-200 bg-gray-50 rounded-xl p-2 text-xs overflow-hidden">
+              <span id="receiptChooseBtn" class="bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-lg shrink-0">📎 选择截图</span>
+              <span id="receiptFileName" class="text-gray-400 truncate">未选择文件</span>
+              <input type="file" id="receiptFileInput" accept="image/*" required onchange="updateReceiptFileName(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            </div>
           </div>
 
           <button type="submit" id="paySubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow">
@@ -209,6 +213,8 @@
         payLabelPhone: '3. 您的 WhatsApp 联系方式 *',
         payReceiverTitle: '💳 官方收款方式：',
         payLabelReceipt: '4. 上传 TNG / Bank 转账截图凭证 *',
+        receiptBtn: '📎 选择截图',
+        receiptNone: '未选择文件',
         paySubmitBtn: '✅ 提交付款凭证（审核后秒置顶）',
         paySubmittingBtn: '⏳ 正在上传凭证并提交订单...',
         paySuccessAlert: '✅ 付款凭证已提交！核实后将立即为您开启首页黄金置顶。',
@@ -250,6 +256,8 @@
         payLabelPhone: '3. Your WhatsApp Number *',
         payReceiverTitle: '💳 Official Payment Details:',
         payLabelReceipt: '4. Upload TNG / Bank Transfer Receipt *',
+        receiptBtn: '📎 Choose Image',
+        receiptNone: 'No file chosen',
         paySubmitBtn: '✅ Submit Receipt (Fast Approval)',
         paySubmittingBtn: '⏳ Uploading receipt & submitting...',
         paySuccessAlert: '✅ Receipt submitted! Your listing will be pinned shortly after verification.',
@@ -291,6 +299,8 @@
         payLabelPhone: '3. Nombor WhatsApp Anda *',
         payReceiverTitle: '💳 Maklumat Pembayaran Rasmi:',
         payLabelReceipt: '4. Muat Naik Resit TNG / Pindahan Bank *',
+        receiptBtn: '📎 Pilih Gambar',
+        receiptNone: 'Tiada fail dipilih',
         paySubmitBtn: '✅ Hantar Resit Pembayaran',
         paySubmittingBtn: '⏳ Memuat naik resit...',
         paySuccessAlert: '✅ Resit dihantar! Iklan anda akan dipin sejurus selepas pengesahan.',
@@ -385,6 +395,11 @@
       document.getElementById('payLabelPhone').innerText = t.payLabelPhone;
       document.getElementById('payReceiverTitle').innerText = t.payReceiverTitle;
       document.getElementById('payLabelReceipt').innerText = t.payLabelReceipt;
+      document.getElementById('receiptChooseBtn').innerText = t.receiptBtn;
+      const rInput = document.getElementById('receiptFileInput');
+      if (!rInput.files || rInput.files.length === 0) {
+        document.getElementById('receiptFileName').innerText = t.receiptNone;
+      }
       document.getElementById('paySubmitBtn').innerText = t.paySubmitBtn;
 
       populateCities(lang);
@@ -406,6 +421,21 @@
         <div>Account No: <b>${localizedAcc}</b></div>
       `;
     }
+
+    function updateReceiptFileName(input) {
+      const t = M_I18N[currentMLang];
+      const nameEl = document.getElementById('receiptFileName');
+      if (input.files && input.files[0]) {
+        nameEl.innerText = input.files[0].name;
+        nameEl.classList.remove('text-gray-400');
+        nameEl.classList.add('text-gray-800', 'font-semibold');
+      } else {
+        nameEl.innerText = t.receiptNone;
+        nameEl.classList.add('text-gray-400');
+        nameEl.classList.remove('text-gray-800', 'font-semibold');
+      }
+    }
+
     function previewMerchantImg(e) {
       const file = e.target.files[0];
       if (!file) return;
