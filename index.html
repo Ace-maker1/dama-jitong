@@ -154,8 +154,8 @@
         <div class="flex items-center space-x-3">
           <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base">🏪</span>
           <div>
-            <div class="text-sm font-extrabold text-amber-800">商家入驻 · 首页黄金置顶</div>
-            <div class="text-xs text-gray-400">全马商户免费入驻 · 地图导流曝光</div>
+           <div id="profileMerchantTitle" class="text-sm font-extrabold text-amber-800">商家入驻 · 首页黄金置顶</div>
+<div id="profileMerchantDesc" class="text-xs text-gray-400">全马商户免费入驻 · 地图导流曝光</div>
           </div>
         </div>
         <span class="text-amber-500 font-bold text-lg">›</span>
@@ -678,6 +678,14 @@
   const fabMapEl = document.getElementById('fabMapText');
   if (fabMapEl) {
     fabMapEl.textContent = lang === 'en' ? 'Routes' : (lang === 'ms' ? 'Laluan' : '查路线');
+  }
+      const merchTitleEl = document.getElementById('profileMerchantTitle');
+  if (merchTitleEl) {
+    merchTitleEl.textContent = lang === 'en' ? 'Merchant Listing · Prime Pin' : (lang === 'ms' ? 'Daftar Peniaga · Pin Utama' : '商家入驻 · 首页黄金置顶');
+  }
+  const merchDescEl = document.getElementById('profileMerchantDesc');
+  if (merchDescEl) {
+    merchDescEl.textContent = lang === 'en' ? 'Free MY Listing · Map Traffic Boost' : (lang === 'ms' ? 'Daftar Percuma · Trafik Peta' : '全马商户免费入驻 · 地图导流曝光');
   }
   if (typeof renderPosts === 'function') {
     renderPosts();
