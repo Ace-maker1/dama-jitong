@@ -3,26 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>大马吉通 · 站内原生导航 (中/EN/BM) | 路线·语音·公交·Grab·Waze</title>
+  <title>大马吉通 · 站内原生导航 (中/EN/BM) | 自动放大带路·语音播报</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    #map { height: 44vh; min-height: 290px; width: 100%; z-index: 1; }
+    #map { height: 46vh; min-height: 310px; width: 100%; z-index: 1; transition: height 0.3s ease; }
+    body.nav-active #map { height: 64vh; min-height: 400px; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @keyframes pulse-ring {
       0% { transform: scale(0.8); opacity: 0.9; }
-      100% { transform: scale(2.2); opacity: 0; }
+      100% { transform: scale(2.4); opacity: 0; }
     }
-    .gps-pulse {
-      width: 16px; height: 16px; background: #2563eb; border: 3px solid #fff;
-      border-radius: 50%; box-shadow: 0 0 8px rgba(37,99,235,0.8); position: relative;
+    .nav-car-dot {
+      width: 22px; height: 22px; background: #059669; border: 3px solid #fff;
+      border-radius: 50%; box-shadow: 0 0 12px rgba(5,150,105,0.9); position: relative;
+      display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;
     }
-    .gps-pulse::after {
-      content: ''; position: absolute; inset: -6px; border-radius: 50%;
-      background: rgba(37,99,235,0.4); animation: pulse-ring 1.6s infinite;
+    .nav-car-dot::after {
+      content: ''; position: absolute; inset: -8px; border-radius: 50%;
+      background: rgba(5,150,105,0.35); animation: pulse-ring 1.5s infinite;
     }
   </style>
 </head>
@@ -35,7 +37,7 @@
         <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-xs font-medium transition shrink-0">← 首页</a>
         <div>
           <h1 id="headerTitle" class="font-bold text-sm sm:text-base leading-tight">大马吉通 · 站内原生导航</h1>
-          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">站内实时导航 · 语音指引 · Grab & Waze</p>
+          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">自动放大带路 · 语音播报 · Grab & Waze</p>
         </div>
       </div>
 
@@ -49,24 +51,40 @@
   </header>
 
   <!-- 导航中顶部实时路口指引横幅（点击“开始站内导航”后自动出现） -->
-  <div id="liveNavBanner" class="hidden sticky top-[54px] z-30 bg-slate-900 text-white px-4 py-3 shadow-xl border-b border-slate-700">
-    <div class="max-w-2xl mx-auto flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div id="liveTurnIcon" class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl font-black shrink-0 shadow">
-          ⬆️
+  <div id="liveNavBanner" class="hidden sticky top-[52px] z-30 bg-slate-900 text-white px-3 py-3 shadow-2xl border-b border-slate-700">
+    <div class="max-w-2xl mx-auto space-y-2">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div id="liveTurnIcon" class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl font-black shrink-0 shadow">
+            ⬆️
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="liveStepDist" class="text-xs font-black text-emerald-400">--</span>
+              <span id="liveStepProgress" class="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">1 / 1</span>
+            </div>
+            <div id="liveStepText" class="text-sm font-bold leading-snug mt-0.5">--</div>
+          </div>
         </div>
-        <div>
-          <div id="liveStepDist" class="text-xs font-bold text-emerald-400">--</div>
-          <div id="liveStepText" class="text-sm font-bold leading-snug mt-0.5">--</div>
-        </div>
-      </div>
-      <div class="flex flex-col items-end gap-1.5 shrink-0">
-        <button onclick="stopLiveNav()" id="stopNavBtn" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+        <button onclick="stopLiveNav()" id="stopNavBtn" class="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0">
           结束导航
         </button>
-        <button id="voiceToggleBtn" onclick="toggleVoice()" class="text-[11px] text-emerald-300 underline">
-          🔊 语音已开启
-        </button>
+      </div>
+
+      <!-- 导航中底部快捷控制栏（语音开关 + 视角回正 + 手动切换上下路口） -->
+      <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
+        <div class="flex items-center gap-2">
+          <button id="voiceToggleBtn" onclick="toggleVoice()" class="bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2.5 py-1 rounded-lg font-semibold">
+            🔊 语音已开启
+          </button>
+          <button id="recenterBtn" onclick="recenterCamera()" class="bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 px-2.5 py-1 rounded-lg font-semibold">
+            🎯 视角锁定中 (18x)
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="manualStep(-1)" class="bg-slate-800 px-2 py-1 rounded text-slate-300">◀ 上一步</button>
+          <button onclick="manualStep(1)" class="bg-slate-800 px-2 py-1 rounded text-emerald-300 font-bold">下一步 ▶</button>
+        </div>
       </div>
     </div>
   </div>
@@ -88,25 +106,25 @@
       <!-- 出行模式切换 Tab -->
       <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold">
         <button id="mode-driving" onclick="setTravelMode('driving')" class="mode-tab bg-white text-emerald-700 py-1.5 rounded-lg shadow-sm transition">
-          🚗 驾车 / Drive
+          🚗 驾车
         </button>
         <button id="mode-transit" onclick="setTravelMode('transit')" class="mode-tab text-slate-600 py-1.5 rounded-lg transition">
-          🚇 公交 / Transit
+          🚇 公交
         </button>
         <button id="mode-walking" onclick="setTravelMode('walking')" class="mode-tab text-slate-600 py-1.5 rounded-lg transition">
-          🚶 步行 / Walk
+          🚶 步行
         </button>
       </div>
 
       <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:bg-white">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-        <input id="startInput" type="text" placeholder="输入起点 / Origin / Lokasi Mula" class="bg-transparent w-full text-sm focus:outline-none" />
+        <input id="startInput" type="text" placeholder="输入起点（如：KL Sentral / 槟城机场）" class="bg-transparent w-full text-sm focus:outline-none" />
         <button onclick="locateMe(true)" id="gpsBtn" class="text-xs text-emerald-600 font-semibold shrink-0 px-2 py-0.5 bg-emerald-50 rounded">📍 当前定位</button>
       </div>
 
       <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-rose-500 focus-within:bg-white">
         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-        <input id="endInput" type="text" placeholder="输入目的地 / Destination / Destinasi" class="bg-transparent w-full text-sm focus:outline-none" />
+        <input id="endInput" type="text" placeholder="输入目的地（如：双子塔 / 茨厂街 / 新山关卡）" class="bg-transparent w-full text-sm focus:outline-none" />
         <button onclick="swapLocations()" id="swapBtn" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-0.5 bg-white rounded border shrink-0">⇅ 互换</button>
       </div>
 
@@ -130,7 +148,7 @@
   <div class="relative">
     <div id="map"></div>
     <div id="mapBadge" class="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg text-[11px] text-slate-700 shadow border border-slate-200">
-      💡 点击地图任意位置可直接设为目的地
+      💡 提示：直接点击地图任意位置即可设为目的地
     </div>
   </div>
 
@@ -140,14 +158,14 @@
     <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-500">
       <div class="flex items-center justify-between gap-2">
         <div>
-          <span id="nativeTag" class="inline-block text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded mb-1">⭐ 大马吉通站内导航（无需跳出网页）</span>
+          <span id="nativeTag" class="inline-block text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded mb-1">⭐ 大马吉通站内导航（自动放大带路）</span>
           <div class="flex items-center gap-2">
             <span id="routeDistBadge" class="text-lg font-black text-slate-900">-- km</span>
             <span id="routeTimeBadge" class="text-xs font-bold bg-slate-100 text-slate-800 px-2.5 py-0.5 rounded-full">-- min</span>
           </div>
           <p id="routeSubInfo" class="text-xs text-slate-500 mt-1">--</p>
         </div>
-        <button onclick="startLiveNav()" id="startNavBtn" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-4 py-3 rounded-xl shadow-md flex items-center gap-1.5 shrink-0">
+        <button onclick="startLiveNav()" id="startNavBtn" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-4 py-3.5 rounded-xl shadow-lg flex items-center gap-1.5 shrink-0">
           <span>▶️</span> <span>开始站内导航</span>
         </button>
       </div>
@@ -175,7 +193,7 @@
       <div id="transitAdviceBody" class="text-xs text-blue-800 leading-relaxed space-y-1"></div>
     </div>
 
-    <!-- 站内逐向转弯步骤列表（Turn-by-Turn Steps） -->
+    <!-- 站内逐向转弯步骤列表 -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
       <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-slate-100">
         <h3 id="stepsHeader" class="font-bold text-sm text-slate-800">📋 站内逐步路线明细</h3>
@@ -202,12 +220,11 @@
   </nav>
 
   <script>
-    // 三语界面文本字典（中文 / English / Bahasa Melayu）
     const i18n = {
       zh: {
         backHome: '← 首页',
         headerTitle: '大马吉通 · 站内原生导航',
-        headerSub: '站内实时导航 · 语音指引 · Grab & Waze',
+        headerSub: '自动放大带路 · 语音播报 · Grab & Waze',
         cityLabel: '城市：',
         modeDriving: '🚗 驾车',
         modeTransit: '🚇 公交',
@@ -220,23 +237,25 @@
         searchBtn: '🧭 生成站内导航路线（含语音 + Grab/Waze）',
         searchingBtn: '⏳ 正在规划全马最佳路线...',
         mapBadge: '💡 提示：直接点击地图任意位置即可设为目的地',
-        nativeTag: '⭐ 大马吉通站内导航（无需跳出网页）',
-        startNav: '▶️ 开始站内导航',
+        nativeTag: '⭐ 大马吉通站内导航（自动放大带路）',
+        startNav: '开始站内导航',
         stopNav: '结束导航',
         voiceOn: '🔊 语音已开启',
         voiceOff: '🔇 语音已静音',
+        lockedText: '🎯 视角锁定中 (18x)',
+        freeText: '🔓 自由拖动 (点此回正)',
         extApps: '其他常用大马出行工具一键直达：',
         stepsHeader: '📋 站内逐步路线明细',
         navHome: '分类首页',
         navMap: '站内导航',
         navPost: '发布信息',
         speechLang: 'zh-CN',
-        startVoiceMsg: '开始站内导航。'
+        startVoiceMsg: '开始导航。'
       },
       en: {
         backHome: '← Home',
         headerTitle: 'DaMaJiTong · In-App Navigation',
-        headerSub: 'Turn-by-Turn Voice Nav · Grab & Waze',
+        headerSub: 'Auto-Zoom Guidance · Voice · Grab & Waze',
         cityLabel: 'City:',
         modeDriving: '🚗 Drive',
         modeTransit: '🚇 Transit',
@@ -249,11 +268,13 @@
         searchBtn: '🧭 Get Route (In-App Nav + Grab & Waze)',
         searchingBtn: '⏳ Calculating best route...',
         mapBadge: '💡 Tip: Tap anywhere on the map to set destination',
-        nativeTag: '⭐ DaMaJiTong In-App Nav (Stay on page)',
-        startNav: '▶️ Start Nav',
+        nativeTag: '⭐ DaMaJiTong In-App Nav (Auto-Zoom)',
+        startNav: 'Start Nav',
         stopNav: 'Stop Nav',
         voiceOn: '🔊 Voice On',
         voiceOff: '🔇 Muted',
+        lockedText: '🎯 Locked (18x)',
+        freeText: '🔓 Free Pan (Recenter)',
         extApps: 'Quick launch external Malaysia travel apps:',
         stepsHeader: '📋 Turn-by-Turn Directions',
         navHome: 'Home',
@@ -265,7 +286,7 @@
       ms: {
         backHome: '← Utama',
         headerTitle: 'DaMaJiTong · Navigasi Terus',
-        headerSub: 'Panduan Suara Terus · Grab & Waze',
+        headerSub: 'Zum Auto Pandu Arah · Suara · Grab & Waze',
         cityLabel: 'Bandar:',
         modeDriving: '🚗 Pandu',
         modeTransit: '🚇 Bas/MRT',
@@ -278,11 +299,13 @@
         searchBtn: '🧭 Cari Laluan (Navigasi + Grab & Waze)',
         searchingBtn: '⏳ Mengira laluan terbaik...',
         mapBadge: '💡 Tip: Tekan mana-mana lokasi di peta sebagai destinasi',
-        nativeTag: '⭐ Navigasi Terus DaMaJiTong (Tanpa keluar web)',
-        startNav: '▶️ Mula Navigasi',
+        nativeTag: '⭐ Navigasi Terus DaMaJiTong (Zum Auto)',
+        startNav: 'Mula Navigasi',
         stopNav: 'Tamat',
         voiceOn: '🔊 Suara Aktif',
         voiceOff: '🔇 Senyap',
+        lockedText: '🎯 Dikunci (18x)',
+        freeText: '🔓 Bebas (Pusatkan)',
         extApps: 'Buka aplikasi pengangkutan lain di Malaysia:',
         stepsHeader: '📋 Langkah Panduan Arah',
         navHome: 'Utama',
@@ -302,9 +325,18 @@
     let userLiveMarker = null;
     let routeLine = null;
     let currentSteps = [];
+    let currentStepIdx = 0;
     let watchId = null;
     let voiceEnabled = true;
-    let lastSpokenStepIdx = -1;
+    let isNavigating = false;
+    let cameraLocked = true;
+    let wakeLock = null;
+
+    // 预加载手机语音引擎列表
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
 
     function switchLang(lang) {
       currentLang = lang;
@@ -332,9 +364,10 @@
       document.getElementById('searchRouteBtn').innerText = t.searchBtn;
       document.getElementById('mapBadge').innerText = t.mapBadge;
       document.getElementById('nativeTag').innerText = t.nativeTag;
-      document.getElementById('startNavBtn').innerHTML = `<span>▶️</span> <span>${t.startNav.replace('▶️ ', '')}</span>`;
+      document.getElementById('startNavBtn').innerHTML = `<span>▶️</span> <span>${t.startNav}</span>`;
       document.getElementById('stopNavBtn').innerText = t.stopNav;
       document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? t.voiceOn : t.voiceOff;
+      document.getElementById('recenterBtn').innerText = cameraLocked ? t.lockedText : t.freeText;
       document.getElementById('extAppsLabel').innerText = t.extApps;
       document.getElementById('stepsHeader').innerText = t.stepsHeader;
       document.getElementById('navHome').innerText = t.navHome;
@@ -344,12 +377,20 @@
       if (startCoords && endCoords) planRoute();
     }
 
-    // 初始化无水印 Esri 高清街道地图
     const map = L.map('map').setView([3.1390, 101.6869], 13);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       attribution: '© Esri © OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
+
+    // 用户手动拖动地图时解除视角自动锁定，方便查看前方路况
+    map.on('dragstart', function() {
+      if (isNavigating) {
+        cameraLocked = false;
+        document.getElementById('recenterBtn').innerText = i18n[currentLang].freeText;
+        document.getElementById('recenterBtn').className = 'bg-amber-500/30 border border-amber-400 text-amber-200 px-2.5 py-1 rounded-lg font-semibold';
+      }
+    });
 
     const cnAliasMap = {
       '双子塔': 'Petronas Twin Towers Kuala Lumpur',
@@ -407,7 +448,7 @@
             if (startMarker) map.removeLayer(startMarker);
             startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
           }
-          map.setView([lat, lng], 15);
+          map.setView([lat, lng], 16);
         },
         () => {
           alert(currentLang === 'zh' ? '请允许浏览器获取定位权限，或手动输入起点。' : 'Please allow location permission or enter start point manually.');
@@ -417,7 +458,7 @@
     }
 
     function updateLiveUserDot(lat, lng) {
-      const icon = L.divIcon({ className: '', html: '<div class="gps-pulse"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+      const icon = L.divIcon({ className: '', html: '<div class="nav-car-dot">▲</div>', iconSize: [22, 22], iconAnchor: [11, 11] });
       if (userLiveMarker) {
         userLiveMarker.setLatLng([lat, lng]);
       } else {
@@ -441,6 +482,7 @@
     }
 
     map.on('click', function(e) {
+      if (isNavigating) return;
       endCoords = { lat: e.latlng.lat, lng: e.latlng.lng, name: 'Map Pin' };
       document.getElementById('endInput').value = `Pin (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`;
       if (endMarker) map.removeLayer(endMarker);
@@ -465,7 +507,6 @@
       return null;
     }
 
-    // 三语路口转向指令生成器（支持中文 / English / Bahasa Melayu）
     function translateStep(step) {
       const type = step.maneuver?.type || '';
       const mod = step.maneuver?.modifier || '';
@@ -502,7 +543,6 @@
         return { icon, text: `Terus ke hadapan di ${road}`, dist };
       }
 
-      // 默认中文
       if (type === 'depart') return { icon, text: `从起点出发，沿「${road}」前行`, dist };
       if (type === 'arrive') return { icon, text: `抵达目的地「${road}」`, dist: '已到达' };
       if (type === 'roundabout' || type === 'rotary') return { icon, text: `进入环岛，驶出进入「${road}」`, dist };
@@ -571,7 +611,7 @@
         if (routeLine) map.removeLayer(routeLine);
         const lineColor = currentMode === 'walking' ? '#2563eb' : (currentMode === 'transit' ? '#7c3aed' : '#059669');
         routeLine = L.geoJSON(route.geometry, {
-          style: { color: lineColor, weight: 6, opacity: 0.88, dashArray: currentMode === 'walking' ? '8, 8' : null }
+          style: { color: lineColor, weight: 7, opacity: 0.9, dashArray: currentMode === 'walking' ? '8, 8' : null }
         }).addTo(map);
         map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
 
@@ -589,11 +629,9 @@
           document.getElementById('routeSubInfo').innerText = `自驾预估油费 RM ${fuelCost} · Grab 参考约 RM ${grabEst}`;
         }
 
-        // 保留并更新 Waze 与 Google 公交深度跳转链接
         document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
         document.getElementById('googleTransitLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=transit`;
 
-        // 公交本地防迷路指引（三语适配）
         const transitBox = document.getElementById('transitGuideBox');
         if (currentMode === 'transit') {
           transitBox.classList.remove('hidden');
@@ -654,49 +692,122 @@
     function focusStep(idx) {
       const st = currentSteps[idx];
       if (st && st.location) {
-        map.setView([st.location[1], st.location[0]], 17);
+        map.setView([st.location[1], st.location[0]], 18);
         L.popup().setLatLng([st.location[1], st.location[0]]).setContent(`<b>${st.icon} ${st.text}</b><br><span style="color:#666;font-size:12px;">${st.dist}</span>`).openOn(map);
       }
     }
 
+    // 强化版手机浏览器兼容语音播报（带语言包自动降级兜底，确保100%出声）
     function speakText(msg) {
       if (!voiceEnabled || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(msg);
-      utter.lang = i18n[currentLang].speechLang;
-      utter.rate = 1.05;
-      window.speechSynthesis.speak(utter);
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(msg);
+        const voices = window.speechSynthesis.getVoices();
+        const targetLang = i18n[currentLang].speechLang;
+
+        // 检查手机是否有对应语音包，若没有马来文语音包则自动降级用英文读出，防止手机静音跳过
+        const hasTargetVoice = voices.some(v => v.lang.toLowerCase().includes(targetLang.slice(0, 2).toLowerCase()));
+        utter.lang = hasTargetVoice ? targetLang : 'en-US';
+        utter.volume = 1.0;
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        console.warn('Speech error:', e);
+      }
     }
 
     function toggleVoice() {
       voiceEnabled = !voiceEnabled;
       document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? i18n[currentLang].voiceOn : i18n[currentLang].voiceOff;
+      if (voiceEnabled && currentSteps[currentStepIdx]) {
+        speakText(currentSteps[currentStepIdx].text);
+      }
     }
 
-    function startLiveNav() {
+    function recenterCamera() {
+      cameraLocked = true;
+      document.getElementById('recenterBtn').innerText = i18n[currentLang].lockedText;
+      document.getElementById('recenterBtn').className = 'bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 px-2.5 py-1 rounded-lg font-semibold';
+
+      if (userLiveMarker) {
+        map.flyTo(userLiveMarker.getLatLng(), 18, { duration: 0.6 });
+      } else if (currentSteps[currentStepIdx]?.location) {
+        const loc = currentSteps[currentStepIdx].location;
+        map.flyTo([loc[1], loc[0]], 18, { duration: 0.6 });
+      } else if (startCoords) {
+        map.flyTo([startCoords.lat, startCoords.lng], 18, { duration: 0.6 });
+      }
+    }
+
+    function manualStep(delta) {
+      const next = currentStepIdx + delta;
+      if (next >= 0 && next < currentSteps.length) {
+        currentStepIdx = next;
+        updateBannerStep(currentSteps[currentStepIdx]);
+        speakText(currentSteps[currentStepIdx].text);
+        const loc = currentSteps[currentStepIdx].location;
+        if (loc) {
+          cameraLocked = true;
+          map.flyTo([loc[1], loc[0]], 18, { duration: 0.6 });
+        }
+      }
+    }
+
+    // 开启站内自动放大带路导航（18倍街道特写 + 实时GPS跟随 + 防黑屏 + 语音播报）
+    async function startLiveNav() {
       if (!currentSteps.length) return;
+
+      isNavigating = true;
+      cameraLocked = true;
+      currentStepIdx = 0;
+
+      // 1. 界面进入沉浸式大地图导航模式
+      document.body.classList.add('nav-active');
       document.getElementById('liveNavBanner').classList.remove('hidden');
       document.getElementById('searchBox').classList.add('hidden');
       document.getElementById('cityBar').classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      lastSpokenStepIdx = 0;
+      // 2. 立即更新顶部路口指引并同步触发用户点击事件内的首次语音播报（解锁手机音频限制）
       updateBannerStep(currentSteps[0]);
       speakText(`${i18n[currentLang].startVoiceMsg}${currentSteps[0].text}`);
 
+      // 3. 刷新地图尺寸并自动放大到 18 级街道特写视角带路
+      setTimeout(() => {
+        map.invalidateSize();
+        if (startCoords) {
+          updateLiveUserDot(startCoords.lat, startCoords.lng);
+          map.flyTo([startCoords.lat, startCoords.lng], 18, { duration: 0.8 });
+        }
+      }, 150);
+
+      // 4. 申请手机防自动熄屏锁（开车导航不断屏）
+      if ('wakeLock' in navigator) {
+        try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+      }
+
+      // 5. 启动高频实时 GPS 跟踪带路
       if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             updateLiveUserDot(lat, lng);
-            map.setView([lat, lng], 17);
 
-            for (let i = lastSpokenStepIdx + 1; i < currentSteps.length; i++) {
+            // 只要视角处于锁定状态，自动放大到 18 级紧跟车辆/行人位置移动
+            if (cameraLocked) {
+              map.setView([lat, lng], 18, { animate: true });
+            }
+
+            // 距离下一个转弯路口小于 65 米时自动切换路口指令并语音播报
+            for (let i = currentStepIdx + 1; i < currentSteps.length; i++) {
               const loc = currentSteps[i].location;
               if (!loc) continue;
               const d = map.distance([lat, lng], [loc[1], loc[0]]);
               if (d < 65) {
-                lastSpokenStepIdx = i;
+                currentStepIdx = i;
                 updateBannerStep(currentSteps[i]);
                 speakText(currentSteps[i].text);
                 break;
@@ -704,7 +815,7 @@
             }
           },
           (err) => console.warn('GPS tracking:', err),
-          { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+          { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
         );
       }
     }
@@ -713,17 +824,29 @@
       document.getElementById('liveTurnIcon').innerText = step.icon;
       document.getElementById('liveStepDist').innerText = step.dist;
       document.getElementById('liveStepText').innerText = step.text;
+      document.getElementById('liveStepProgress').innerText = `${currentStepIdx + 1} / ${currentSteps.length}`;
     }
 
     function stopLiveNav() {
+      isNavigating = false;
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
+      if (wakeLock !== null) {
+        try { wakeLock.release(); wakeLock = null; } catch (e) {}
+      }
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      document.body.classList.remove('nav-active');
       document.getElementById('liveNavBanner').classList.add('hidden');
       document.getElementById('searchBox').classList.remove('hidden');
       document.getElementById('cityBar').classList.remove('hidden');
+
+      setTimeout(() => {
+        map.invalidateSize();
+        if (routeLine) map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
+      }, 150);
     }
   </script>
 </body>
