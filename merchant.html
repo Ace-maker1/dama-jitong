@@ -389,14 +389,23 @@
 
       populateCities(lang);
       renderPlans(lang);
+      updateReceiverInfo(lang);
     }
 
-    document.getElementById('receiverInfo').innerHTML = `
-      <div>Bank / E-Wallet: <b>${DMJT_PAY.RECEIVER.bankName}</b></div>
-      <div>Name: <b>${DMJT_PAY.RECEIVER.accountName}</b></div>
-      <div>Account No: <b>${DMJT_PAY.RECEIVER.accountNo}</b></div>
-    `;
-
+    function updateReceiverInfo(lang) {
+      const rawAcc = DMJT_PAY.RECEIVER.accountNo || '';
+      const localizedAcc = rawAcc.replace(
+        '请联系客服或扫描 DuitNow QR',
+        lang === 'en'
+          ? 'Contact Admin / Scan DuitNow QR'
+          : (lang === 'ms' ? 'Hubungi Admin / Imbas DuitNow QR' : '请联系客服或扫描 DuitNow QR')
+      );
+      document.getElementById('receiverInfo').innerHTML = `
+        <div>Bank / E-Wallet: <b>${DMJT_PAY.RECEIVER.bankName}</b></div>
+        <div>Name: <b>${DMJT_PAY.RECEIVER.accountName}</b></div>
+        <div>Account No: <b>${localizedAcc}</b></div>
+      `;
+    }
     function previewMerchantImg(e) {
       const file = e.target.files[0];
       if (!file) return;
