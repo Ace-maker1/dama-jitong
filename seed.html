@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>大马吉通 · 站长一键冷启动商户填充器</title>
+  <title>大马吉通 · 站长三语商户填充与升级器</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -11,8 +11,8 @@
   <div class="max-w-lg mx-auto bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-2xl space-y-4">
     <div class="flex items-center justify-between border-b border-slate-700 pb-3">
       <div>
-        <h1 class="font-black text-base text-amber-400">🚀 大马吉通 · 本地商户一键填充</h1>
-        <p class="text-xs text-slate-400 mt-0.5">内置精选本地商户库 · 0 延迟秒入库 · 开启 7 天保鲜倒计时</p>
+        <h1 class="font-black text-base text-amber-400">🚀 大马吉通 · 三语商户填充与升级中心</h1>
+        <p class="text-xs text-slate-400 mt-0.5">写入 CN / EN / BM 三语字段 · 0 延迟秒切语言 · 7 天保鲜</p>
       </div>
       <a href="/" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-xl font-bold">返回首页 →</a>
     </div>
@@ -34,7 +34,7 @@
 
       <div>
         <label class="block font-bold text-slate-300 mb-1">2. 选择行业类型</label>
-        <select id="seedType" onchange="updateAvailableCount()" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-sm text-white">
+        <select id="seedType" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-sm text-white">
           <option value="all">🌟 全部行业精选</option>
           <option value="food">🍜 餐饮美食 / 茶室</option>
           <option value="auto">🚗 汽车维修 / 冷气 / 保养</option>
@@ -54,14 +54,20 @@
       </select>
     </div>
 
-    <button id="runSeedBtn" onclick="runSeedImport()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-slate-950 font-black py-3.5 rounded-xl text-sm shadow-lg transition">
-      ⚡ 一键写入首页（7天有效期）
-    </button>
+    <div class="space-y-2.5">
+      <button id="runSeedBtn" onclick="runSeedImport()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-slate-950 font-black py-3.5 rounded-xl text-sm shadow-lg transition">
+        ⚡ 一键写入三语商户到首页（7天有效期）
+      </button>
+
+      <button id="upgradeOldBtn" onclick="upgradeExistingPosts()" class="w-full bg-slate-700 hover:bg-slate-600 text-amber-300 font-bold py-2.5 rounded-xl text-xs border border-slate-600 transition">
+        🔄 一键把现有老帖子补全三语字段（修复历史中文残留）
+      </button>
+    </div>
 
     <div class="bg-slate-950 rounded-xl p-3 border border-slate-800">
       <div class="text-[11px] text-slate-400 mb-1 font-bold">执行日志：</div>
       <div id="seedLog" class="text-xs text-emerald-400 font-mono space-y-1 max-h-60 overflow-y-auto">
-        准备就绪，点击上方橙色按钮即可秒级写入...
+        准备就绪...
       </div>
     </div>
   </div>
@@ -79,80 +85,74 @@
       box.prepend(line);
     }
 
-    // 内置全马多州属精选商户库（稳定、零网络报错、秒级入库）
     const SEED_MERCHANTS_DB = {
       '槟城': [
-        { type: 'food', tag: '本地美食', name: 'Gurney Drive 传统虾面与炒粿条', price: '人均 RM 12 - 22', addr: 'Persiaran Gurney, 10250 George Town, Penang', hours: '08:00 - 22:00', phone: '60124501101' },
-        { type: 'food', tag: '本地美食', name: 'Pulau Tikus 经典港式点心与烧腊', price: '人均 RM 15 - 30', addr: 'Jalan Burmah, Pulau Tikus, 10350 George Town, Penang', hours: '07:30 - 21:30', phone: '60124501102' },
-        { type: 'food', tag: '本地美食', name: 'Queensbay 商圈人气椰浆饭与娘惹餐', price: '人均 RM 14 - 28', addr: 'Persiaran Bayan Indah, 11900 Bayan Lepas, Penang', hours: '10:00 - 22:00', phone: '60124501103' },
-        { type: 'food', tag: '本地美食', name: 'Butterworth 北海老字号云吞面', price: '人均 RM 8 - 15', addr: 'Jalan Raja Uda, 12300 Butterworth, Penang', hours: '07:00 - 15:00', phone: '60124501104' },
-        { type: 'food', tag: '本地美食', name: 'Bukit Mertajam 大山脚特色猪脚醋与咖啡', price: '人均 RM 12 - 25', addr: 'Jalan Aston, 14000 Bukit Mertajam, Penang', hours: '08:00 - 20:00', phone: '60124501105' },
-        { type: 'auto', tag: '汽车服务', name: '槟岛专业汽车冷气与电系维修中心', price: '冷气检测 RM 30 起', addr: 'Jalan Jelutong, 11600 George Town, Penang', hours: '09:00 - 18:30', phone: '60124501201' },
-        { type: 'auto', tag: '汽车服务', name: '威省全车保养、黑油更换与四轮定位', price: '保养套餐 RM 138 起', addr: 'Jalan Song Ban Kheng, 14000 Bukit Mertajam, Penang', hours: '09:00 - 19:00', phone: '60124501202' },
-        { type: 'auto', tag: '汽车服务', name: 'Bayan Lepas 专业洗车镀膜与内饰护理', price: '洗车打蜡 RM 25 起', addr: 'Jalan Mahsuri, 11950 Bayan Lepas, Penang', hours: '09:30 - 20:00', phone: '60124501203' },
-        { type: 'medical', tag: '医疗药房', name: '乔治市 24 小时综合诊所 Klinik', price: '门诊挂号 / 急诊', addr: 'Jalan Macalister, 10400 George Town, Penang', hours: '24 Hours 24小时营业', phone: '60124501301' },
-        { type: 'medical', tag: '医疗药房', name: '北海社区西药房与健康检测中心', price: '血压血糖检测 / 常用药', addr: 'Jalan Bagan Luar, 12000 Butterworth, Penang', hours: '08:30 - 21:00', phone: '60124501302' },
-        { type: 'retail', tag: '百货五金', name: '槟城居家五金、水电配件与灯饰门市', price: '水电维修配件齐全', addr: 'Jalan Perak, 10150 George Town, Penang', hours: '09:00 - 19:00', phone: '60124501401' },
-        { type: 'retail', tag: '百货五金', name: '威省日用百货与批发门市', price: '满 RM 50 享会员价', addr: 'Jalan Permatang Pauh, 13500 Permatang Pauh, Penang', hours: '09:00 - 21:00', phone: '60124501402' },
-        { type: 'hotel', tag: '酒店民宿', name: 'George Town 乔治市文青精品民宿', price: 'RM 118 / 晚起', addr: 'Lebuh Chulia, 10200 George Town, Penang', hours: '全天入住接待', phone: '60124501501' },
-        { type: 'hotel', tag: '酒店民宿', name: 'Batu Ferringhi 海边度假公寓短租', price: 'RM 188 / 晚起', addr: 'Jalan Batu Ferringhi, 11100 Penang', hours: '全天入住接待', phone: '60124501502' },
-        { type: 'food', tag: '本地美食', name: 'Air Itam 亚依淡传统叻沙与凉茶铺', price: '人均 RM 7 - 14', addr: 'Jalan Pasar, Air Itam, 11500 Penang', hours: '09:00 - 18:00', phone: '60124501106' }
+        { type: 'food', tag: '本地美食', name: 'Gurney Drive 传统虾面与炒粿条', enName: 'Gurney Drive Traditional Prawn Mee & Char Koay Teow', msName: 'Mi Udang & Char Koay Teow Tradisional Gurney Drive', price: '人均 RM 12 - 22', enPrice: 'Avg RM 12 - 22', msPrice: 'Purata RM 12 - 22', addr: 'Persiaran Gurney, 10250 George Town, Penang', hours: '08:00 - 22:00', phone: '60124501101' },
+        { type: 'food', tag: '本地美食', name: 'Pulau Tikus 经典港式点心与烧腊', enName: 'Pulau Tikus Dim Sum & Roast Meat', msName: 'Dim Sum & Daging Panggang Pulau Tikus', price: '人均 RM 15 - 30', enPrice: 'Avg RM 15 - 30', msPrice: 'Purata RM 15 - 30', addr: 'Jalan Burmah, Pulau Tikus, 10350 George Town, Penang', hours: '07:30 - 21:30', phone: '60124501102' },
+        { type: 'food', tag: '本地美食', name: 'Queensbay 商圈人气椰浆饭与娘惹餐', enName: 'Queensbay Nasi Lemak & Nyonya Cuisine', msName: 'Nasi Lemak & Masakan Nyonya Queensbay', price: '人均 RM 14 - 28', enPrice: 'Avg RM 14 - 28', msPrice: 'Purata RM 14 - 28', addr: 'Persiaran Bayan Indah, 11900 Bayan Lepas, Penang', hours: '10:00 - 22:00', phone: '60124501103' },
+        { type: 'food', tag: '本地美食', name: 'Butterworth 北海老字号云吞面', enName: 'Butterworth Classic Wantan Mee', msName: 'Mi Wantan Tradisional Butterworth', price: '人均 RM 8 - 15', enPrice: 'Avg RM 8 - 15', msPrice: 'Purata RM 8 - 15', addr: 'Jalan Raja Uda, 12300 Butterworth, Penang', hours: '07:00 - 15:00', phone: '60124501104' },
+        { type: 'food', tag: '本地美食', name: 'Bukit Mertajam 大山脚特色猪脚醋与咖啡', enName: 'Bukit Mertajam Pork Trotter Vinegar & Kopi', msName: 'Kaki Babi Cuka & Kopi Bukit Mertajam', price: '人均 RM 12 - 25', enPrice: 'Avg RM 12 - 25', msPrice: 'Purata RM 12 - 25', addr: 'Jalan Aston, 14000 Bukit Mertajam, Penang', hours: '08:00 - 20:00', phone: '60124501105' },
+        { type: 'auto', tag: '汽车服务', name: '槟岛专业汽车冷气与电系维修中心', enName: 'Penang Island Car Aircond & Electrical Workshop', msName: 'Bengkel Aircond & Elektrik Kereta Pulau Pinang', price: '冷气检测 RM 30 起', enPrice: 'Aircond Check from RM 30', msPrice: 'Servis Aircond dari RM 30', addr: 'Jalan Jelutong, 11600 George Town, Penang', hours: '09:00 - 18:30', phone: '60124501201' },
+        { type: 'auto', tag: '汽车服务', name: '威省全车保养、黑油更换与四轮定位', enName: 'Seberang Perai Auto Service, Oil & Alignment', msName: 'Servis Kereta, Minyak Hitam & Alignment Seberang Perai', price: '保养套餐 RM 138 起', enPrice: 'Service from RM 138', msPrice: 'Pakej Servis dari RM 138', addr: 'Jalan Song Ban Kheng, 14000 Bukit Mertajam, Penang', hours: '09:00 - 19:00', phone: '60124501202' },
+        { type: 'auto', tag: '汽车服务', name: 'Bayan Lepas 专业洗车镀膜与内饰护理', enName: 'Bayan Lepas Car Wash, Coating & Detailing', msName: 'Cuci Kereta, Coating & Detailing Bayan Lepas', price: '洗车打蜡 RM 25 起', enPrice: 'Wash & Wax from RM 25', msPrice: 'Cuci & Wax dari RM 25', addr: 'Jalan Mahsuri, 11950 Bayan Lepas, Penang', hours: '09:30 - 20:00', phone: '60124501203' },
+        { type: 'medical', tag: '医疗药房', name: '乔治市 24 小时综合诊所 Klinik', enName: 'George Town 24-Hour Polyclinic', msName: 'Klinik 24 Jam George Town', price: '门诊挂号 / 急诊', enPrice: 'Outpatient / Urgent Care', msPrice: 'Pesakit Luar / Kecemasan', addr: 'Jalan Macalister, 10400 George Town, Penang', hours: '24 Hours', phone: '60124501301' },
+        { type: 'medical', tag: '医疗药房', name: '北海社区西药房与健康检测中心', enName: 'Butterworth Pharmacy & Health Screening', msName: 'Farmasi & Pemeriksaan Kesihatan Butterworth', price: '血压血糖检测 / 常用药', enPrice: 'BP & Glucose Check / Meds', msPrice: 'Ujian Tekanan Darah & Ubat', addr: 'Jalan Bagan Luar, 12000 Butterworth, Penang', hours: '08:30 - 21:00', phone: '60124501302' },
+        { type: 'retail', tag: '百货五金', name: '槟城居家五金、水电配件与灯饰门市', enName: 'Penang Hardware, Plumbing & Lighting Store', msName: 'Kedai Perkakasan, Paip & Lampu Pulau Pinang', price: '水电维修配件齐全', enPrice: 'Plumbing & Electrical Parts', msPrice: 'Alat Ganti Paip & Elektrik', addr: 'Jalan Perak, 10150 George Town, Penang', hours: '09:00 - 19:00', phone: '60124501401' },
+        { type: 'retail', tag: '百货五金', name: '威省日用百货与批发门市', enName: 'Seberang Perai Household & Wholesale Store', msName: 'Kedai Barangan Harian & Borong Seberang Perai', price: '满 RM 50 享会员价', enPrice: 'Member Rate from RM 50', msPrice: 'Harga Ahli Belian RM 50+', addr: 'Jalan Permatang Pauh, 13500 Permatang Pauh, Penang', hours: '09:00 - 21:00', phone: '60124501402' },
+        { type: 'hotel', tag: '酒店民宿', name: 'George Town 乔治市文青精品民宿', enName: 'George Town Heritage Boutique Homestay', msName: 'Homestay Butik Warisan George Town', price: 'RM 118 / 晚起', enPrice: 'From RM 118 / night', msPrice: 'Dari RM 118 / malam', addr: 'Lebuh Chulia, 10200 George Town, Penang', hours: '24 Hours Check-in', phone: '60124501501' },
+        { type: 'hotel', tag: '酒店民宿', name: 'Batu Ferringhi 海边度假公寓短租', enName: 'Batu Ferringhi Beach Resort Suite', msName: 'Suite Percutian Pantai Batu Ferringhi', price: 'RM 188 / 晚起', enPrice: 'From RM 188 / night', msPrice: 'Dari RM 188 / malam', addr: 'Jalan Batu Ferringhi, 11100 Penang', hours: '24 Hours Check-in', phone: '60124501502' },
+        { type: 'food', tag: '本地美食', name: 'Air Itam 亚依淡传统叻沙与凉茶铺', enName: 'Air Itam Asam Laksa & Herbal Tea', msName: 'Asam Laksa & Teh Herba Air Itam', price: '人均 RM 7 - 14', enPrice: 'Avg RM 7 - 14', msPrice: 'Purata RM 7 - 14', addr: 'Jalan Pasar, Air Itam, 11500 Penang', hours: '09:00 - 18:00', phone: '60124501106' }
       ],
       '吉隆坡': [
-        { type: 'food', tag: '本地美食', name: 'Bukit Bintang 亚罗街地道镬气大炒', price: '人均 RM 16 - 35', addr: 'Jalan Alor, Bukit Bintang, 50200 Kuala Lumpur', hours: '16:00 - 02:00', phone: '60123502101' },
-        { type: 'food', tag: '本地美食', name: '茨厂街百年老字号猪肠粉与罗汉果', price: '人均 RM 8 - 18', addr: 'Jalan Petaling, City Centre, 50000 Kuala Lumpur', hours: '08:00 - 20:00', phone: '60123502102' },
-        { type: 'food', tag: '本地美食', name: 'Sri Petaling 大城堡人气茶餐室与点心', price: '人均 RM 12 - 25', addr: 'Jalan Radin Bagus, Sri Petaling, 57000 KL', hours: '07:30 - 22:00', phone: '60123502103' },
-        { type: 'auto', tag: '汽车服务', name: '吉隆坡专业汽车维修、冷气与电脑检测', price: '电脑诊断 RM 40 起', addr: 'Jalan Kuchai Lama, 58200 Kuala Lumpur', hours: '09:00 - 18:30', phone: '60123502201' },
-        { type: 'auto', tag: '汽车服务', name: 'Kepong 甲洞轮胎定位与全合成保养中心', price: '4条轮胎定位优惠中', addr: 'Jalan Metro Perdana, Kepong, 52100 KL', hours: '09:00 - 19:00', phone: '60123502202' },
-        { type: 'medical', tag: '医疗药房', name: 'KL 市区 24 小时全科诊所 Klinik', price: '门诊 / 体检 / 疫苗', addr: 'Jalan Imbi, 55100 Kuala Lumpur', hours: '24 Hours 24小时营业', phone: '60123502301' },
-        { type: 'retail', tag: '百货五金', name: 'Cheras 蕉赖五金水电与装修材料门市', price: '门市现货供应', addr: 'Taman Connaught, Cheras, 56000 KL', hours: '08:30 - 19:00', phone: '60123502401' },
-        { type: 'hotel', tag: '酒店民宿', name: 'KLCC / Bukit Bintang 商务公寓短租', price: 'RM 158 / 晚起', addr: 'Jalan Sultan Ismail, 50250 Kuala Lumpur', hours: '全天入住接待', phone: '60123502501' }
+        { type: 'food', tag: '本地美食', name: 'Bukit Bintang 亚罗街地道镬气大炒', enName: 'Jalan Alor Bukit Bintang Wok Cuisine', msName: 'Masakan Panas Jalan Alor Bukit Bintang', price: '人均 RM 16 - 35', enPrice: 'Avg RM 16 - 35', msPrice: 'Purata RM 16 - 35', addr: 'Jalan Alor, Bukit Bintang, 50200 Kuala Lumpur', hours: '16:00 - 02:00', phone: '60123502101' },
+        { type: 'food', tag: '本地美食', name: '茨厂街百年老字号猪肠粉与罗汉果', enName: 'Petaling Street Chee Cheong Fun & Luo Han Guo', msName: 'Chee Cheong Fun & Luo Han Guo Petaling Street', price: '人均 RM 8 - 18', enPrice: 'Avg RM 8 - 18', msPrice: 'Purata RM 8 - 18', addr: 'Jalan Petaling, City Centre, 50000 Kuala Lumpur', hours: '08:00 - 20:00', phone: '60123502102' },
+        { type: 'auto', tag: '汽车服务', name: '吉隆坡专业汽车维修、冷气与电脑检测', enName: 'KL Auto Repair, Aircond & Diagnostic', msName: 'Servis Kereta, Aircond & Diagnostik KL', price: '电脑诊断 RM 40 起', enPrice: 'Diagnostic from RM 40', msPrice: 'Imbasan dari RM 40', addr: 'Jalan Kuchai Lama, 58200 Kuala Lumpur', hours: '09:00 - 18:30', phone: '60123502201' },
+        { type: 'medical', tag: '医疗药房', name: 'KL 市区 24 小时全科诊所 Klinik', enName: 'KL City 24-Hour Clinic', msName: 'Klinik 24 Jam Pusat Bandar KL', price: '门诊 / 体检 / 疫苗', enPrice: 'Clinic / Checkup / Vaccine', msPrice: 'Klinik / Pemeriksaan / Vaksin', addr: 'Jalan Imbi, 55100 Kuala Lumpur', hours: '24 Hours', phone: '60123502301' },
+        { type: 'hotel', tag: '酒店民宿', name: 'KLCC / Bukit Bintang 商务公寓短租', enName: 'KLCC / Bukit Bintang Suite Stay', msName: 'Penginapan Suite KLCC / Bukit Bintang', price: 'RM 158 / 晚起', enPrice: 'From RM 158 / night', msPrice: 'Dari RM 158 / malam', addr: 'Jalan Sultan Ismail, 50250 Kuala Lumpur', hours: '24 Hours Check-in', phone: '60123502501' }
       ],
       '雪兰莪': [
-        { type: 'food', tag: '本地美食', name: 'SS15 梳邦人气美食与奶茶咖啡一条街', price: '人均 RM 12 - 26', addr: 'SS15, 47500 Subang Jaya, Selangor', hours: '09:00 - 23:00', phone: '60123503101' },
-        { type: 'food', tag: '本地美食', name: 'PJ SS2 榴莲与本地经典家常菜馆', price: '人均 RM 15 - 32', addr: 'SS2, 47300 Petaling Jaya, Selangor', hours: '11:00 - 22:30', phone: '60123503102' },
-        { type: 'auto', tag: '汽车服务', name: 'Puchong 蒲种一站式修车、冷气与喷漆中心', price: '全车检查免费评估', addr: 'Bandar Puteri Puchong, 47100 Selangor', hours: '09:00 - 18:30', phone: '60123503201' },
-        { type: 'medical', tag: '医疗药房', name: 'Shah Alam 莎阿南连锁药房与家庭诊所', price: '营业中 · 欢迎咨询', addr: 'Seksyen 13, 40100 Shah Alam, Selangor', hours: '08:30 - 21:30', phone: '60123503301' },
-        { type: 'retail', tag: '百货五金', name: 'Klang 巴生五金机电与家居用品门市', price: '门市零售 / 批发', addr: 'Bandar Botanic, 41200 Klang, Selangor', hours: '09:00 - 19:00', phone: '60123503401' },
-        { type: 'hotel', tag: '酒店民宿', name: 'Sunway 双威商圈舒适套房民宿', price: 'RM 138 / 晚起', addr: 'Bandar Sunway, 47500 Subang Jaya, Selangor', hours: '全天入住接待', phone: '60123503501' }
+        { type: 'food', tag: '本地美食', name: 'SS15 梳邦人气美食与奶茶咖啡一条街', enName: 'SS15 Subang Food & Beverage Hub', msName: 'Pusat Makanan & Minuman SS15 Subang', price: '人均 RM 12 - 26', enPrice: 'Avg RM 12 - 26', msPrice: 'Purata RM 12 - 26', addr: 'SS15, 47500 Subang Jaya, Selangor', hours: '09:00 - 23:00', phone: '60123503101' },
+        { type: 'food', tag: '本地美食', name: 'PJ SS2 榴莲与本地经典家常菜馆', enName: 'PJ SS2 Durian & Local Homestyle Dishes', msName: 'Durian & Masakan Tempatan PJ SS2', price: '人均 RM 15 - 32', enPrice: 'Avg RM 15 - 32', msPrice: 'Purata RM 15 - 32', addr: 'SS2, 47300 Petaling Jaya, Selangor', hours: '11:00 - 22:30', phone: '60123503102' },
+        { type: 'auto', tag: '汽车服务', name: 'Puchong 蒲种一站式修车、冷气与喷漆中心', enName: 'Puchong One-Stop Auto Repair & Paint', msName: 'Pusat Servis & Cat Kereta Puchong', price: '全车检查免费评估', enPrice: 'Free Inspection Quote', msPrice: 'Pemeriksaan Percuma', addr: 'Bandar Puteri Puchong, 47100 Selangor', hours: '09:00 - 18:30', phone: '60123503201' },
+        { type: 'medical', tag: '医疗药房', name: 'Shah Alam 莎阿南连锁药房与家庭诊所', enName: 'Shah Alam Pharmacy & Family Clinic', msName: 'Farmasi & Klinik Keluarga Shah Alam', price: '营业中 · 欢迎咨询', enPrice: 'Open Now · Inquiry Welcome', msPrice: 'Dibuka · Pertanyaan Dialu-alukan', addr: 'Seksyen 13, 40100 Shah Alam, Selangor', hours: '08:30 - 21:30', phone: '60123503301' },
+        { type: 'retail', tag: '百货五金', name: 'Klang 巴生五金机电与家居用品门市', enName: 'Klang Hardware & Home Supplies', msName: 'Perkakasan & Kelengkapan Rumah Klang', price: '门市零售 / 批发', enPrice: 'Retail & Wholesale', msPrice: 'Runcit & Borong', addr: 'Bandar Botanic, 41200 Klang, Selangor', hours: '09:00 - 19:00', phone: '60123503401' },
+        { type: 'hotel', tag: '酒店民宿', name: 'Sunway 双威商圈舒适套房民宿', enName: 'Sunway Comfortable Suite Homestay', msName: 'Homestay Suite Selesa Sunway', price: 'RM 138 / 晚起', enPrice: 'From RM 138 / night', msPrice: 'Dari RM 138 / malam', addr: 'Bandar Sunway, 47500 Subang Jaya, Selangor', hours: '24 Hours Check-in', phone: '60123503501' }
       ],
       '柔佛': [
-        { type: 'food', tag: '本地美食', name: 'Mount Austin 奥斯汀人气美食与宵夜茶室', price: '人均 RM 13 - 28', addr: 'Taman Mount Austin, 81100 Johor Bahru, Johor', hours: '08:00 - 01:00', phone: '60127504101' },
-        { type: 'food', tag: '本地美食', name: 'JB 旧街场传统咖喱面与海南茶室', price: '人均 RM 10 - 20', addr: 'Jalan Dhoby, 80000 Johor Bahru, Johor', hours: '07:30 - 18:00', phone: '60127504102' },
-        { type: 'auto', tag: '汽车服务', name: '新山 Permas Jaya 汽车冷气、底盘与保养', price: '保养套餐 RM 128 起', addr: 'Permas Jaya, 81750 Johor Bahru, Johor', hours: '09:00 - 18:30', phone: '60127504201' },
-        { type: 'medical', tag: '医疗药房', name: 'Tebrau 新山连锁西药房与健康咨询', price: '营业中 · 欢迎咨询', addr: 'Taman Molek, 81100 Johor Bahru, Johor', hours: '09:00 - 21:00', phone: '60127504301' },
-        { type: 'hotel', tag: '酒店民宿', name: '新山 CIQ / Mid Valley 附近家庭式民宿', price: 'RM 145 / 晚起', addr: 'Tebrau, 81100 Johor Bahru, Johor', hours: '全天入住接待', phone: '60127504501' }
+        { type: 'food', tag: '本地美食', name: 'Mount Austin 奥斯汀人气美食与宵夜茶室', enName: 'Mount Austin JB Food & Supper Hub', msName: 'Pusat Makanan & Supper Mount Austin JB', price: '人均 RM 13 - 28', enPrice: 'Avg RM 13 - 28', msPrice: 'Purata RM 13 - 28', addr: 'Taman Mount Austin, 81100 Johor Bahru, Johor', hours: '08:00 - 01:00', phone: '60127504101' },
+        { type: 'auto', tag: '汽车服务', name: '新山 Permas Jaya 汽车冷气、底盘与保养', enName: 'Permas Jaya JB Car Aircond & Service', msName: 'Servis & Aircond Kereta Permas Jaya JB', price: '保养套餐 RM 128 起', enPrice: 'Service from RM 128', msPrice: 'Pakej Servis dari RM 128', addr: 'Permas Jaya, 81750 Johor Bahru, Johor', hours: '09:00 - 18:30', phone: '60127504201' },
+        { type: 'hotel', tag: '酒店民宿', name: '新山 CIQ / Mid Valley 附近家庭式民宿', enName: 'JB CIQ / Mid Valley Family Homestay', msName: 'Homestay Keluarga Berhampiran CIQ JB', price: 'RM 145 / 晚起', enPrice: 'From RM 145 / night', msPrice: 'Dari RM 145 / malam', addr: 'Tebrau, 81100 Johor Bahru, Johor', hours: '24 Hours Check-in', phone: '60127504501' }
       ],
       '霹雳': [
-        { type: 'food', tag: '本地美食', name: 'Ipoh 怡保芽菜鸡沙河粉与白咖啡老店', price: '人均 RM 10 - 22', addr: 'Jalan Yang Kalsom, 30250 Ipoh, Perak', hours: '08:00 - 20:00', phone: '60125505101' },
-        { type: 'auto', tag: '汽车服务', name: '怡保 Bercham 汽车维修与冷气服务', price: '到店检测优惠', addr: 'Bercham, 31400 Ipoh, Perak', hours: '09:00 - 18:30', phone: '60125505201' },
-        { type: 'hotel', tag: '酒店民宿', name: '怡保旧街场特色老屋民宿', price: 'RM 115 / 晚起', addr: 'Jalan Panglima, 30000 Ipoh, Perak', hours: '全天入住接待', phone: '60125505501' }
+        { type: 'food', tag: '本地美食', name: 'Ipoh 怡保芽菜鸡沙河粉与白咖啡老店', enName: 'Ipoh Bean Sprouts Chicken & White Coffee', msName: 'Tauge Ayam & Kopi Putih Ipoh', price: '人均 RM 10 - 22', enPrice: 'Avg RM 10 - 22', msPrice: 'Purata RM 10 - 22', addr: 'Jalan Yang Kalsom, 30250 Ipoh, Perak', hours: '08:00 - 20:00', phone: '60125505101' },
+        { type: 'hotel', tag: '酒店民宿', name: '怡保旧街场特色老屋民宿', enName: 'Ipoh Old Town Heritage Homestay', msName: 'Homestay Warisan Pekan Lama Ipoh', price: 'RM 115 / 晚起', enPrice: 'From RM 115 / night', msPrice: 'Dari RM 115 / malam', addr: 'Jalan Panglima, 30000 Ipoh, Perak', hours: '24 Hours Check-in', phone: '60125505501' }
       ],
       '马六甲': [
-        { type: 'food', tag: '本地美食', name: '鸡场街 Jonker 娘惹晶露与鸡饭粒老店', price: '人均 RM 10 - 24', addr: 'Jalan Hang Jebat, 75200 Melaka', hours: '09:00 - 21:00', phone: '60126506101' },
-        { type: 'hotel', tag: '酒店民宿', name: '马六甲河畔休闲民宿与停车位', price: 'RM 128 / 晚起', addr: 'Taman Kota Laksamana, 75200 Melaka', hours: '全天入住接待', phone: '60126506501' }
+        { type: 'food', tag: '本地美食', name: '鸡场街 Jonker 娘惹晶露与鸡饭粒老店', enName: 'Jonker Street Nyonya Cendol & Chicken Rice Ball', msName: 'Cendol Nyonya & Nasi Ayam Bebola Jonker', price: '人均 RM 10 - 24', enPrice: 'Avg RM 10 - 24', msPrice: 'Purata RM 10 - 24', addr: 'Jalan Hang Jebat, 75200 Melaka', hours: '09:00 - 21:00', phone: '60126506101' },
+        { type: 'hotel', tag: '酒店民宿', name: '马六甲河畔休闲民宿与停车位', enName: 'Melaka River Homestay with Parking', msName: 'Homestay Sungai Melaka & Parkir', price: 'RM 128 / 晚起', enPrice: 'From RM 128 / night', msPrice: 'Dari RM 128 / malam', addr: 'Taman Kota Laksamana, 75200 Melaka', hours: '24 Hours Check-in', phone: '60126506501' }
       ],
       '沙巴': [
-        { type: 'food', tag: '本地美食', name: '亚庇 Gaya Street 海鲜肉骨茶与斗亚兰面', price: '人均 RM 15 - 38', addr: 'Gaya Street, 88000 Kota Kinabalu, Sabah', hours: '08:00 - 22:00', phone: '60128507101' },
-        { type: 'hotel', tag: '酒店民宿', name: '亚庇海景公寓与机场接送咨询', price: 'RM 150 / 晚起', addr: 'Jalan Coastal, 88000 Kota Kinabalu, Sabah', hours: '全天入住接待', phone: '60128507501' }
+        { type: 'food', tag: '本地美食', name: '亚庇 Gaya Street 海鲜肉骨茶与斗亚兰面', enName: 'KK Gaya Street Seafood Bak Kut Teh & Tuaran Mee', msName: 'Bak Kut Teh Makanan Laut & Mi Tuaran KK', price: '人均 RM 15 - 38', enPrice: 'Avg RM 15 - 38', msPrice: 'Purata RM 15 - 38', addr: 'Gaya Street, 88000 Kota Kinabalu, Sabah', hours: '08:00 - 22:00', phone: '60128507101' },
+        { type: 'hotel', tag: '酒店民宿', name: '亚庇海景公寓与机场接送咨询', enName: 'KK Sea View Suite & Airport Transfer', msName: 'Suite Pemandangan Laut & Transfer KK', price: 'RM 150 / 晚起', enPrice: 'From RM 150 / night', msPrice: 'Dari RM 150 / malam', addr: 'Jalan Coastal, 88000 Kota Kinabalu, Sabah', hours: '24 Hours Check-in', phone: '60128507501' }
       ],
       '砂拉越': [
-        { type: 'food', tag: '本地美食', name: '古晋砂拉越叻沙与哥罗面老店', price: '人均 RM 9 - 18', addr: 'Padungan, 93100 Kuching, Sarawak', hours: '07:00 - 18:00', phone: '60128508101' },
-        { type: 'hotel', tag: '酒店民宿', name: '古晋河滨老街舒适精品酒店', price: 'RM 120 / 晚起', addr: 'Main Bazaar, 93000 Kuching, Sarawak', hours: '全天入住接待', phone: '60128508501' }
+        { type: 'food', tag: '本地美食', name: '古晋砂拉越叻沙与哥罗面老店', enName: 'Kuching Sarawak Laksa & Kolo Mee', msName: 'Laksa Sarawak & Mi Kolo Kuching', price: '人均 RM 9 - 18', enPrice: 'Avg RM 9 - 18', msPrice: 'Purata RM 9 - 18', addr: 'Padungan, 93100 Kuching, Sarawak', hours: '07:00 - 18:00', phone: '60128508101' },
+        { type: 'hotel', tag: '酒店民宿', name: '古晋河滨老街舒适精品酒店', enName: 'Kuching Waterfront Boutique Hotel', msName: 'Hotel Butik Waterfront Kuching', price: 'RM 120 / 晚起', enPrice: 'From RM 120 / night', msPrice: 'Dari RM 120 / malam', addr: 'Main Bazaar, 93000 Kuching, Sarawak', hours: '24 Hours Check-in', phone: '60128508501' }
       ]
     };
 
-    function updateAvailableCount() {
-      const cityVal = document.getElementById('seedArea').value;
-      const typeVal = document.getElementById('seedType').value;
-      const pool = (SEED_MERCHANTS_DB[cityVal] || []).filter(m => typeVal === 'all' || m.type === typeVal);
-      logMsg(`${cityVal} 当前可选 [${typeVal === 'all' ? '全部行业' : typeVal}] 精选商户共 ${pool.length} 条。`);
-    }
+    const TAG_TRILINGUAL = {
+      '本地美食': { en: 'Local Food', ms: 'Makanan Tempatan' },
+      '汽车服务': { en: 'Auto Service', ms: 'Servis Kereta' },
+      '医疗药房': { en: 'Clinic & Pharmacy', ms: 'Klinik & Farmasi' },
+      '百货五金': { en: 'Hardware & Retail', ms: 'Perkakasan & Runcit' },
+      '酒店民宿': { en: 'Hotel & Homestay', ms: 'Hotel & Homestay' }
+    };
 
     async function runSeedImport() {
       const btn = document.getElementById('runSeedBtn');
       btn.disabled = true;
-      btn.innerText = '⏳ 正在写入云端...';
+      btn.innerText = '⏳ 正在写入三语云端...';
 
       try {
         const cityVal = document.getElementById('seedArea').value;
@@ -161,7 +161,7 @@
 
         const pool = (SEED_MERCHANTS_DB[cityVal] || []).filter(m => typeVal === 'all' || m.type === typeVal);
         if (pool.length === 0) {
-          logMsg('该地区该行业暂无内置样本，请切换为“全部行业精选”或其他地区。', true);
+          logMsg('该地区该行业暂无内置样本，请切换其他地区或“全部行业精选”。', true);
           return;
         }
 
@@ -175,17 +175,30 @@
         const rowsToInsert = [];
         for (const item of pool) {
           if (rowsToInsert.length >= limit) break;
-          const title = `【收录商户·${item.tag}】${item.name}`;
-          if (existingTitles.has(title)) continue;
-          existingTitles.add(title);
+          const titleZh = `【收录商户·${item.tag}】${item.name}`;
+          if (existingTitles.has(titleZh)) continue;
+          existingTitles.add(titleZh);
+
+          const tagMap = TAG_TRILINGUAL[item.tag] || { en: 'Local Biz', ms: 'Perniagaan' };
+          const titleEn = `[Verified · ${tagMap.en}] ${item.enName}`;
+          const titleMs = `[Berdaftar · ${tagMap.ms}] ${item.msName}`;
 
           rowsToInsert.push({
             category: '本地优惠',
             city: cityVal,
-            title,
+            title: titleZh,
+            title_zh: titleZh,
+            title_en: titleEn,
+            title_ms: titleMs,
             price: item.price,
+            price_zh: item.price,
+            price_en: item.enPrice,
+            price_ms: item.msPrice,
             whatsapp: item.phone,
-            description: `📍 门店地址：${item.addr}\n🕒 营业时间：${item.hours}\n💡 本信息为全马本地黄页收录展示（7天有效），如您是店主欢迎前往「我的 -> 商家入驻」免费认领并上传门头照！`,
+            description: `📍 门店地址：${item.addr}\n🕒 营业时间：${item.hours}`,
+            desc_zh: `📍 门店地址：${item.addr}\n🕒 营业时间：${item.hours}`,
+            desc_en: `📍 Address: ${item.addr}\n🕒 Hours: ${item.hours}`,
+            desc_ms: `📍 Alamat: ${item.addr}\n🕒 Waktu Operasi: ${item.hours}`,
             image_url: null,
             is_pinned: false
           });
@@ -199,12 +212,83 @@
         const { error } = await supabaseClient.from('posts').insert(rowsToInsert);
         if (error) throw error;
 
-        logMsg(`🎉 成功写入 ${rowsToInsert.length} 条 ${cityVal} 真实商户到首页（7天有效倒计时已生效）！`);
+        logMsg(`🎉 成功写入 ${rowsToInsert.length} 条 ${cityVal} 完整三语商户（CN/EN/BM 秒切）！`);
       } catch (err) {
         logMsg('写入出错：' + err.message, true);
       } finally {
         btn.disabled = false;
-        btn.innerText = '⚡ 一键写入首页（7天有效期）';
+        btn.innerText = '⚡ 一键写入三语商户到首页（7天有效期）';
+      }
+    }
+
+    async function upgradeExistingPosts() {
+      const btn = document.getElementById('upgradeOldBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ 正在为现有帖子补全三语字段...';
+
+      try {
+        const { data: posts, error } = await supabaseClient.from('posts').select('*').limit(100);
+        if (error) throw error;
+        if (!posts || posts.length === 0) {
+          logMsg('数据库暂无帖子需要升级。');
+          return;
+        }
+
+        let updatedCount = 0;
+        for (const p of posts) {
+          if (p.title_en && p.title_ms) continue;
+
+          // 先尝试从内置库精准匹配
+          let matched = null;
+          for (const list of Object.values(SEED_MERCHANTS_DB)) {
+            matched = list.find(m => p.title && p.title.includes(m.name));
+            if (matched) break;
+          }
+
+          let titleEn = p.title_en;
+          let titleMs = p.title_ms;
+          let priceEn = p.price_en || p.price;
+          let priceMs = p.price_ms || p.price;
+
+          if (matched) {
+            const tagMap = TAG_TRILINGUAL[matched.tag] || { en: 'Local Biz', ms: 'Perniagaan' };
+            titleEn = `[Verified · ${tagMap.en}] ${matched.enName}`;
+            titleMs = `[Berdaftar · ${tagMap.ms}] ${matched.msName}`;
+            priceEn = matched.enPrice;
+            priceMs = matched.msPrice;
+          } else {
+            try {
+              const rEn = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent((p.title || '').replace(/【/g, '[').replace(/】/g, '] '))}`);
+              const jEn = await rEn.json();
+              titleEn = (jEn[0] || []).map(x => x[0]).join('').trim() || p.title;
+
+              const rMs = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ms&dt=t&q=${encodeURIComponent((p.title || '').replace(/【/g, '[').replace(/】/g, '] '))}`);
+              const jMs = await rMs.json();
+              titleMs = (jMs[0] || []).map(x => x[0]).join('').trim() || p.title;
+            } catch (e) {}
+          }
+
+          const { error: upErr } = await supabaseClient
+            .from('posts')
+            .update({
+              title_zh: p.title_zh || p.title,
+              title_en: titleEn || p.title,
+              title_ms: titleMs || p.title,
+              price_zh: p.price_zh || p.price,
+              price_en: priceEn || p.price,
+              price_ms: priceMs || p.price
+            })
+            .eq('id', p.id);
+
+          if (!upErr) updatedCount++;
+        }
+
+        logMsg(`✅ 升级完成！共为 ${updatedCount} 条历史帖子补全了 EN / BM 三语字段。`);
+      } catch (err) {
+        logMsg('升级出错：' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🔄 一键把现有老帖子补全三语字段（修复历史中文残留）';
       }
     }
   </script>
