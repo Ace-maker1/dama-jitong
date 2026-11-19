@@ -65,7 +65,6 @@
   </div>
 
   <script>
-    // 严格按语言匹配高可用直出 RSS 源，杜绝跨语言混杂与空频道
     const NEWS_I18N = {
       zh: {
         title: '实时新闻头条',
@@ -223,6 +222,10 @@
     let currentTopicId = 'my';
     let activeRequestId = 0;
 
+    function isSafeExternalUrl(url) {
+      return /^https?:\/\//i.test((url || '').trim());
+    }
+
     function fetchWithTimeout(url, ms = 7000) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), ms);
@@ -296,9 +299,9 @@
     }
 
     function renderNewsCards(items, topicLabel, readMoreText) {
-      // 按标题去重，防止多个源抓取到同一条快讯
       const seen = new Set();
       const uniqueItems = items.filter(it => {
+        if (!isSafeExternalUrl(it.link)) return false;
         const key = it.title.slice(0, 18);
         if (seen.has(key)) return false;
         seen.add(key);
@@ -329,7 +332,7 @@
       `).join('');
     }
 
-  async function fetchFeedFast(feedObj) {
+    async function fetchFeedFast(feedObj) {
       try {
         const res = await fetchWithTimeout(`/api/news?url=${encodeURIComponent(feedObj.url)}`, 7000);
         if (!res.ok) return [];
@@ -341,12 +344,10 @@
           const realMedia = parts.length > 1 ? parts[parts.length - 1].trim() : '';
           const cleanTitle = parts.length > 1 ? parts.slice(0, -1).join(' - ') : rawTitle;
 
-          // 1. 优先读取标准媒体标签与缩略图
           let media = node.getElementsByTagName('media:content')[0]?.getAttribute('url')
                    || node.getElementsByTagName('media:thumbnail')[0]?.getAttribute('url')
                    || node.querySelector('enclosure')?.getAttribute('url') || '';
 
-          // 2. 若无标准标签，从 description / content 正文 HTML 中提取第一张 <img>（光华日报等适用）
           if (!media) {
             const descHtml = node.querySelector('description')?.textContent
                           || node.getElementsByTagName('content:encoded')[0]?.textContent || '';
@@ -355,10 +356,11 @@
               media = imgMatch[1];
             }
           }
-// 3. 若仍无图片（如 Google News 纯文字聚合源），自动按新闻标题匹配缩略图
-        if (!media && cleanTitle) {
-          media = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(cleanTitle.slice(0, 28))}&w=240&h=240&c=7&rs=1&p=0`;
-        }
+
+          if (!media && cleanTitle) {
+            media = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(cleanTitle.slice(0, 28))}&w=240&h=240&c=7&rs=1&p=0`;
+          }
+
           return {
             title: cleanTitle,
             link: node.querySelector('link')?.textContent?.trim() || '',
