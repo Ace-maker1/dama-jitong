@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大马吉通 · 站长一键冷启动商户填充器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4">
+  <div class="max-w-lg mx-auto bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+      <div>
+        <h1 class="font-black text-base text-amber-400">🚀 大马吉通 · 合法公开商户一键填充</h1>
+        <p class="text-xs text-slate-400 mt-0.5">自动拉取公开商业黄页 · 写入首页并开启 7 天保鲜倒计时</p>
+      </div>
+      <a href="/" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-xl font-bold">返回首页 →</a>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">1. 选择目标地区</label>
+        <select id="seedArea" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-sm text-white">
+          <option value="槟城|5.4141|100.3288|12000">槟城 · 槟岛 (George Town)</option>
+          <option value="槟城|5.3630|100.4667|12000">槟城 · 威省 (Butterworth / BM)</option>
+          <option value="吉隆坡|3.1390|101.6869|12000">吉隆坡 (Kuala Lumpur)</option>
+          <option value="雪兰莪|3.0733|101.5185|15000">雪兰莪 (PJ / Subang / Shah Alam)</option>
+          <option value="柔佛|1.4927|103.7414|15000">柔佛 · 新山 (Johor Bahru)</option>
+          <option value="霹雳|4.5975|101.0901|12000">霹雳 · 怡保 (Ipoh)</option>
+          <option value="马六甲|2.1896|102.2501|12000">马六甲 (Melaka)</option>
+          <option value="沙巴|5.9804|116.0735|12000">沙巴 · 亚庇 (Kota Kinabalu)</option>
+          <option value="砂拉越|1.5533|110.3592|12000">砂拉越 · 古晋 (Kuching)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">2. 选择行业类型</label>
+        <select id="seedType" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-sm text-white">
+          <option value="food">🍜 餐饮美食 / 咖啡茶室</option>
+          <option value="auto">🚗 汽车维修 / 洗车 / 轮胎</option>
+          <option value="medical">🏥 诊所 Klinik / 西药房</option>
+          <option value="retail">🛍️ 连锁百货 / 五金 / 便利店</option>
+          <option value="hotel">🏨 酒店 / 民宿住宿</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-slate-300 mb-1">3. 每次导入数量上限</label>
+      <select id="seedLimit" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-sm text-white">
+        <option value="15">导入 15 条真实商户（推荐）</option>
+        <option value="30">导入 30 条真实商户</option>
+        <option value="50">导入 50 条真实商户</option>
+      </select>
+    </div>
+
+    <button id="runSeedBtn" onclick="runSeedImport()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-95 text-slate-950 font-black py-3.5 rounded-xl text-sm shadow-lg transition">
+      ⚡ 一键拉取公开商户并发布到首页
+    </button>
+
+    <div class="bg-slate-950 rounded-xl p-3 border border-slate-800">
+      <div class="text-[11px] text-slate-400 mb-1 font-bold">执行日志：</div>
+      <div id="seedLog" class="text-xs text-emerald-400 font-mono space-y-1 max-h-60 overflow-y-auto">
+        准备就绪，请选择地区和行业后点击上方按钮...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function logMsg(msg, isErr = false) {
+      const box = document.getElementById('seedLog');
+      const line = document.createElement('div');
+      line.className = isErr ? 'text-rose-400' : 'text-emerald-400';
+      line.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      box.prepend(line);
+    }
+
+    const TYPE_CONFIG = {
+      food: {
+        tag: '本地美食',
+        priceHint: '人均 RM 12 - RM 35',
+        osmFilter: 'node["amenity"~"restaurant|cafe|fast_food"](around:{R},{LAT},{LNG});'
+      },
+      auto: {
+        tag: '汽车服务',
+        priceHint: '到店检测 / 保养优惠',
+        osmFilter: 'node["shop"~"car_repair|car|tyres"](around:{R},{LAT},{LNG});'
+      },
+      medical: {
+        tag: '医疗药房',
+        priceHint: '门诊 / 医药咨询',
+        osmFilter: 'node["amenity"~"clinic|pharmacy|doctors"](around:{R},{LAT},{LNG});'
+      },
+      retail: {
+        tag: '百货五金',
+        priceHint: '门店营业中 · 欢迎选购',
+        osmFilter: 'node["shop"~"supermarket|hardware|convenience|doityourself"](around:{R},{LAT},{LNG});'
+      },
+      hotel: {
+        tag: '酒店民宿',
+        priceHint: 'RM 98 / 晚起',
+        osmFilter: 'node["tourism"~"hotel|guest_house|hostel"](around:{R},{LAT},{LNG});'
+      }
+    };
+
+    async function runSeedImport() {
+      const btn = document.getElementById('runSeedBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ 正在向开源地理库拉取数据...';
+
+      try {
+        const [cityVal, lat, lng, radius] = document.getElementById('seedArea').value.split('|');
+        const typeKey = document.getElementById('seedType').value;
+        const limit = parseInt(document.getElementById('seedLimit').value, 10);
+        const cfg = TYPE_CONFIG[typeKey];
+
+        const queryBody = cfg.osmFilter.replace('{R}', radius).replace('{LAT}', lat).replace('{LNG}', lng);
+        const overpassSql = `[out:json][timeout:12];(${queryBody});out body ${limit * 3};`;
+
+        logMsg(`正在检索 ${cityVal} 半径 ${radius / 1000}km 内的公开商户...`);
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: 'data=' + encodeURIComponent(overpassSql)
+        });
+        if (!res.ok) throw new Error('地理数据接口繁忙，请稍后再试');
+
+        const data = await res.json();
+        const elements = (data.elements || []).filter(el => el.tags && el.tags.name);
+
+        if (elements.length === 0) {
+          logMsg('该区域暂未匹配到足够商户，请换个地区或行业重试。', true);
+          return;
+        }
+
+        // 查询现有标题防重复导入
+        const { data: existingPosts } = await supabaseClient
+          .from('posts')
+          .select('title')
+          .eq('city', cityVal)
+          .limit(200);
+        const existingTitles = new Set((existingPosts || []).map(p => p.title));
+
+        const rowsToInsert = [];
+        for (const el of elements) {
+          if (rowsToInsert.length >= limit) break;
+          const tags = el.tags;
+          const shopName = tags.name.trim();
+          const title = `【收录商户·${cfg.tag}】${shopName}`;
+          if (existingTitles.has(title)) continue;
+          existingTitles.add(title);
+
+          const street = [tags['addr:housenumber'], tags['addr:street'], tags['addr:suburb'], tags['addr:postcode'], tags['addr:city']]
+            .filter(Boolean).join(', ');
+          const rawPhone = (tags.phone || tags['contact:phone'] || '').replace(/[^0-9]/g, '');
+          const waPhone = rawPhone.startsWith('0') ? '6' + rawPhone : (rawPhone || '60120000000');
+          const hours = tags.opening_hours ? `营业时间：${tags.opening_hours}` : '营业时间：建议出发前电话或站内导航确认';
+
+          rowsToInsert.push({
+            category: '本地优惠',
+            city: cityVal,
+            title,
+            price: cfg.priceHint,
+            whatsapp: waPhone,
+            description: `📍 门店地址：${street || cityVal + '本地商圈'}\n🕒 ${hours}\n💡 提示：本信息为全马本地黄页收录展示（7天有效），如您是店主欢迎前往「我的 -> 商家入驻」免费认领并上传门头照！`,
+            image_url: null,
+            is_pinned: false
+          });
+        }
+
+        if (rowsToInsert.length === 0) {
+          logMsg('检索到的商户均已存在数据库中，无需重复导入。');
+          return;
+        }
+
+        logMsg(`成功解析 ${rowsToInsert.length} 家新商户，正在写入云端数据库...`);
+        const { error } = await supabaseClient.from('posts').insert(rowsToInsert);
+        if (error) throw error;
+
+        logMsg(`🎉 批量导入完成！共新增 ${rowsToInsert.length} 条 ${cityVal} 商户信息，首页已同步显示（7天有效期）。`);
+      } catch (err) {
+        logMsg('导入出错：' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '⚡ 一键拉取公开商户并发布到首页';
+      }
+    }
+  </script>
+</body>
+</html>
