@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>大马吉通 · 站内原生导航 (CN/EN/BM) | 全马五级雷达·智能联想·营业状态</title>
+  <title>大马吉通 · 站内原生导航 (CN/EN/BM) | 全马极速检索·三语地名·营业状态</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -37,7 +37,7 @@
         <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-medium transition shrink-0">← 首页</a>
         <div>
           <h1 id="headerTitle" class="font-bold text-sm sm:text-base leading-tight">大马吉通 · 站内原生导航</h1>
-          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">全马 8km-1000km 递进雷达 · 实时营业状态</p>
+          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">全马极速检索 · 实时营业状态 · 语音带路</p>
         </div>
       </div>
 
@@ -88,16 +88,16 @@
     </div>
   </div>
 
-  <!-- 城市快捷切换 -->
+  <!-- 城市快捷切换（三语同步） -->
   <div id="cityBar" class="bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
     <span id="cityLabel" class="text-xs text-slate-400 shrink-0 font-medium">城市：</span>
     <button onclick="locateMe(true)" id="quickNearMeCityBtn" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shrink-0">📍 我附近</button>
-    <button onclick="switchCity(3.1390, 101.6869, 'Kuala Lumpur')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">吉隆坡 KL</button>
-    <button onclick="switchCity(5.4141, 100.3288, 'Penang')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">槟城 Penang</button>
-    <button onclick="switchCity(1.4927, 103.7414, 'Johor Bahru')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">新山 JB</button>
-    <button onclick="switchCity(2.1896, 102.2501, 'Melaka')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">马六甲 Melaka</button>
-    <button onclick="switchCity(4.5975, 101.0901, 'Ipoh')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">怡保 Ipoh</button>
-    <button onclick="switchCity(5.9804, 116.0735, 'Kota Kinabalu')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">亚庇 KK</button>
+    <button id="cityBtn-kl" onclick="switchCity(3.1390, 101.6869, 'Kuala Lumpur')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">吉隆坡 KL</button>
+    <button id="cityBtn-pg" onclick="switchCity(5.4141, 100.3288, 'Penang')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">槟城 Penang</button>
+    <button id="cityBtn-jb" onclick="switchCity(1.4927, 103.7414, 'Johor Bahru')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">新山 JB</button>
+    <button id="cityBtn-mk" onclick="switchCity(2.1896, 102.2501, 'Melaka')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">马六甲 Melaka</button>
+    <button id="cityBtn-ip" onclick="switchCity(4.5975, 101.0901, 'Ipoh')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">怡保 Ipoh</button>
+    <button id="cityBtn-kk" onclick="switchCity(5.9804, 116.0735, 'Kota Kinabalu')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">亚庇 KK</button>
   </div>
 
   <!-- 起终点、附近连锁搜索、收藏夹与历史记录面板 -->
@@ -119,7 +119,7 @@
       <!-- 起点输入 -->
       <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:bg-white">
         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-        <input id="startInput" type="text" placeholder="自动定位当前位置中..." class="bg-transparent w-full text-sm focus:outline-none" />
+        <input id="startInput" type="text" placeholder="输入起点或点击右侧定位" class="bg-transparent w-full text-sm focus:outline-none" />
         <button onclick="locateMe(true)" id="gpsBtn" class="text-xs text-emerald-600 font-semibold shrink-0 px-2 py-0.5 bg-emerald-50 rounded">📍 重新定位</button>
       </div>
 
@@ -129,7 +129,6 @@
           <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
           <input id="endInput" type="text" autocomplete="off"
                  oninput="handleEndInput(this.value)"
-                 onfocus="handleEndInput(this.value)"
                  onkeydown="if(event.key==='Enter'){ hideSuggestions(); planRoute(); }"
                  placeholder="输入任何大马地名、门牌地址、门店或机场..." class="bg-transparent w-full text-sm focus:outline-none" />
           <button onclick="clearEndInput()" id="clearEndBtn" class="hidden text-xs text-slate-400 hover:text-slate-600 px-1">✕</button>
@@ -140,7 +139,7 @@
         <div id="autoSuggestDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-64 overflow-y-auto divide-y divide-slate-100"></div>
       </div>
 
-      <!-- 搜附近常用连锁店 & 机场快捷栏（三语自动联动） -->
+      <!-- 搜附近常用连锁店 & 机场快捷栏 -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
         <span id="nearbyLabel" class="text-[11px] text-amber-600 font-bold shrink-0">🔍 搜最近：</span>
         <button id="chipAirport" onclick="quickNearby('机场')" class="text-[11px] bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 px-2 py-0.5 rounded font-semibold shrink-0">✈️ 机场</button>
@@ -168,9 +167,7 @@
           <span id="fallbackTitle" class="text-xs font-bold text-rose-800">💡 未直接匹配到精准门牌，请选择以下相近地点或直接点击地图：</span>
           <button onclick="document.getElementById('fallbackSuggestBox').classList.add('hidden')" class="text-[11px] text-slate-400">✕</button>
         </div>
-        <p id="fallbackHint" class="text-[11px] text-rose-700 leading-relaxed">
-          建议尝试输入更完整的街道名/英文名（例如：Jalan Gurney / Pavilion KL），或直接在下方地图上点击目标位置，也可以从下方全马热门地点中一键选择：
-        </p>
+        <p id="fallbackHint" class="text-[11px] text-rose-700 leading-relaxed"></p>
         <div id="fallbackChips" class="flex flex-wrap gap-1.5 pt-0.5"></div>
       </div>
 
@@ -281,9 +278,12 @@
       zh: {
         backHome: '← 首页',
         headerTitle: '大马吉通 · 站内原生导航',
-        headerSub: '全马 8km-1000km 递进雷达 · 实时营业状态',
+        headerSub: '全马极速检索 · 实时营业状态 · 语音带路',
         cityLabel: '城市：',
         nearMeCity: '📍 我附近',
+        cityKL: '吉隆坡 KL', cityPG: '槟城 Penang', cityJB: '新山 JB',
+        cityMK: '马六甲 Melaka', cityIP: '怡保 Ipoh', cityKK: '亚庇 KK',
+        gpsLabel: '我的当前位置 (GPS)',
         modeDriving: '🚗 驾车',
         modeTransit: '🚇 公交',
         modeWalking: '🚶 步行',
@@ -297,12 +297,12 @@
         chipPetrol: '⛽ 加油站',
         chipWatsons: '💊 屈臣氏',
         chipHospital: '🏥 医院',
-        nearbyResultsTitle: (km) => `📍 已在 ${km}km 内匹配到以下地点（按营业中与距离排序）：`,
+        nearbyResultsTitle: '📍 匹配的目的地（优先营业中 · 从近到远）：',
         closeNearby: '关闭 ✕',
         nearestBadge: '最近',
         approxMin: (m) => `约 ${m} 分钟`,
         searchBtn: '🧭 全马智能搜索并规划路线',
-        searchingRadius: (km) => `⏳ 正在扩大范围至 ${km}km 雷达搜索...`,
+        searchingBtn: '⏳ 正在极速检索全马路网...',
         favTitle: '⭐ 已收藏：',
         histTitle: '🕒 最近搜索：',
         clearHist: '清空',
@@ -328,15 +328,18 @@
         statusOpen: '🟢 营业中',
         statusClosed: (t) => t ? `🔴 已打烊 (${t} 开门)` : '🔴 已打烊',
         statusCheck: '🟡 建议先电话确认',
-        fallbackTitle: '💡 已扫描全马 1000km 未直接命中，请选择推荐地点或直接点击地图：',
+        fallbackTitle: '💡 未直接命中该词，请选择下方推荐地点或直接点击地图：',
         fallbackHint: '您可以直接点击下方全马热门地点，或补充完整街道/城市名（如“槟城 Gurney”、“KLCC”），也可以直接在下方地图上点选目标位置：'
       },
       en: {
         backHome: '← Home',
         headerTitle: 'DamaJitong · In-App Navigation',
-        headerSub: '8km-1000km Progressive Radar · Live Open Status',
+        headerSub: 'Fast All-MY Search · Live Open Status · Voice Nav',
         cityLabel: 'City:',
         nearMeCity: '📍 Near Me',
+        cityKL: 'Kuala Lumpur', cityPG: 'Penang', cityJB: 'Johor Bahru',
+        cityMK: 'Melaka', cityIP: 'Ipoh', cityKK: 'Kota Kinabalu',
+        gpsLabel: 'My Current Location (GPS)',
         modeDriving: '🚗 Drive',
         modeTransit: '🚇 Transit',
         modeWalking: '🚶 Walk',
@@ -350,12 +353,12 @@
         chipPetrol: '⛽ Petrol',
         chipWatsons: '💊 Watsons',
         chipHospital: '🏥 Hospital',
-        nearbyResultsTitle: (km) => `📍 Matched within ${km}km (Open first · Closest):`,
+        nearbyResultsTitle: '📍 Matched destinations (Open first · Closest):',
         closeNearby: 'Close ✕',
         nearestBadge: 'Nearest',
         approxMin: (m) => `~${m} min`,
         searchBtn: '🧭 Search All Malaysia & Get Route',
-        searchingRadius: (km) => `⏳ Expanding radar search to ${km}km...`,
+        searchingBtn: '⏳ Searching Malaysia road network...',
         favTitle: '⭐ Saved:',
         histTitle: '🕒 Recent:',
         clearHist: 'Clear',
@@ -381,15 +384,18 @@
         statusOpen: '🟢 Open Now',
         statusClosed: (t) => t ? `🔴 Closed (Opens ${t})` : '🔴 Closed Now',
         statusCheck: '🟡 Check Hours Before Going',
-        fallbackTitle: '💡 No exact match within 1000km. Pick a suggested place or tap map:',
+        fallbackTitle: '💡 No exact match found. Pick a suggested place or tap map:',
         fallbackHint: 'Choose from popular Malaysia destinations below, enter a fuller street/city name, or tap directly on the map below:'
       },
       ms: {
         backHome: '← Utama',
         headerTitle: 'DamaJitong · Navigasi Terus',
-        headerSub: 'Radar 8km-1000km Seluruh MY · Status Buka',
+        headerSub: 'Carian Pantas Seluruh MY · Status Buka · Suara',
         cityLabel: 'Bandar:',
         nearMeCity: '📍 Dekat Saya',
+        cityKL: 'Kuala Lumpur', cityPG: 'Pulau Pinang', cityJB: 'Johor Bahru',
+        cityMK: 'Melaka', cityIP: 'Ipoh', cityKK: 'Kota Kinabalu',
+        gpsLabel: 'Lokasi Semasa Saya (GPS)',
         modeDriving: '🚗 Pandu',
         modeTransit: '🚇 Bas/MRT',
         modeWalking: '🚶 Jalan',
@@ -403,12 +409,12 @@
         chipPetrol: '⛽ Stesen Minyak',
         chipWatsons: '💊 Watsons',
         chipHospital: '🏥 Hospital',
-        nearbyResultsTitle: (km) => `📍 Dijumpai dalam ${km}km (Dibuka dahulu · Terdekat):`,
+        nearbyResultsTitle: '📍 Lokasi sepadan (Dibuka dahulu · Terdekat):',
         closeNearby: 'Tutup ✕',
         nearestBadge: 'Terdekat',
         approxMin: (m) => `~${m} min`,
         searchBtn: '🧭 Cari Seluruh Malaysia & Laluan',
-        searchingRadius: (km) => `⏳ Meluaskan carian radar ke ${km}km...`,
+        searchingBtn: '⏳ Mencari laluan seluruh Malaysia...',
         favTitle: '⭐ Disimpan:',
         histTitle: '🕒 Sejarah:',
         clearHist: 'Padam',
@@ -434,7 +440,7 @@
         statusOpen: '🟢 Dibuka Sekarang',
         statusClosed: (t) => t ? `🔴 Tutup (Buka ${t})` : '🔴 Tutup Sekarang',
         statusCheck: '🟡 Sahkan Waktu Operasi',
-        fallbackTitle: '💡 Tiada padanan tepat dalam 1000km. Pilih lokasi cadangan atau tekan peta:',
+        fallbackTitle: '💡 Tiada padanan tepat. Pilih lokasi cadangan atau tekan peta:',
         fallbackHint: 'Pilih destinasi popular di bawah, masukkan nama jalan/bandar yang lebih lengkap, atau tekan terus pada peta:'
       }
     };
@@ -459,17 +465,58 @@
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
 
+    // 马来西亚主要城市/州属中心坐标库（0 毫秒秒级响应，彻底解决跨州城市搜索慢与语言问题）
+    const MY_CITIES_DB = [
+      { keys: ['ipoh', '怡保', 'perak'], zh: '怡保 Ipoh (霹雳州)', en: 'Ipoh, Perak', ms: 'Ipoh, Perak', lat: 4.5975, lng: 101.0901 },
+      { keys: ['kuala lumpur', 'kl', '吉隆坡'], zh: '吉隆坡 Kuala Lumpur', en: 'Kuala Lumpur', ms: 'Kuala Lumpur', lat: 3.1390, lng: 101.6869 },
+      { keys: ['penang', 'pulau pinang', 'george town', '槟城', '乔治市'], zh: '槟城 George Town, Penang', en: 'George Town, Penang', ms: 'George Town, Pulau Pinang', lat: 5.4141, lng: 100.3288 },
+      { keys: ['butterworth', '北海', 'seberang perai'], zh: '北海 Butterworth, Penang', en: 'Butterworth, Penang', ms: 'Butterworth, Pulau Pinang', lat: 5.3991, lng: 100.3638 },
+      { keys: ['bukit mertajam', '大山脚'], zh: '大山脚 Bukit Mertajam, Penang', en: 'Bukit Mertajam, Penang', ms: 'Bukit Mertajam, Pulau Pinang', lat: 5.3630, lng: 100.4667 },
+      { keys: ['johor bahru', 'jb', '新山'], zh: '新山 Johor Bahru, Johor', en: 'Johor Bahru, Johor', ms: 'Johor Bahru, Johor', lat: 1.4927, lng: 103.7414 },
+      { keys: ['melaka', 'malacca', '马六甲'], zh: '马六甲 Melaka', en: 'Melaka', ms: 'Melaka', lat: 2.1896, lng: 102.2501 },
+      { keys: ['seremban', '芙蓉', 'negeri sembilan'], zh: '芙蓉 Seremban, Negeri Sembilan', en: 'Seremban, Negeri Sembilan', ms: 'Seremban, Negeri Sembilan', lat: 2.7258, lng: 101.9424 },
+      { keys: ['petaling jaya', 'pj', '八打灵再也'], zh: '八打灵再也 Petaling Jaya, Selangor', en: 'Petaling Jaya, Selangor', ms: 'Petaling Jaya, Selangor', lat: 3.1073, lng: 101.6067 },
+      { keys: ['subang jaya', '梳邦再也'], zh: '梳邦再也 Subang Jaya, Selangor', en: 'Subang Jaya, Selangor', ms: 'Subang Jaya, Selangor', lat: 3.0567, lng: 101.5851 },
+      { keys: ['shah alam', '莎阿南'], zh: '莎阿南 Shah Alam, Selangor', en: 'Shah Alam, Selangor', ms: 'Shah Alam, Selangor', lat: 3.0733, lng: 101.5185 },
+      { keys: ['klang', '巴生'], zh: '巴生 Klang, Selangor', en: 'Klang, Selangor', ms: 'Klang, Selangor', lat: 3.0449, lng: 101.4456 },
+      { keys: ['puchong', '蒲种'], zh: '蒲种 Puchong, Selangor', en: 'Puchong, Selangor', ms: 'Puchong, Selangor', lat: 3.0256, lng: 101.6168 },
+      { keys: ['cheras', '蕉赖'], zh: '蕉赖 Cheras, Kuala Lumpur', en: 'Cheras, Kuala Lumpur', ms: 'Cheras, Kuala Lumpur', lat: 3.0833, lng: 101.7333 },
+      { keys: ['kepong', '甲洞'], zh: '甲洞 Kepong, Kuala Lumpur', en: 'Kepong, Kuala Lumpur', ms: 'Kepong, Kuala Lumpur', lat: 3.2140, lng: 101.6356 },
+      { keys: ['kuantan', '关丹', 'pahang'], zh: '关丹 Kuantan, Pahang', en: 'Kuantan, Pahang', ms: 'Kuantan, Pahang', lat: 3.8077, lng: 103.3260 },
+      { keys: ['alor setar', '亚罗士打', 'kedah'], zh: '亚罗士打 Alor Setar, Kedah', en: 'Alor Setar, Kedah', ms: 'Alor Setar, Kedah', lat: 6.1248, lng: 100.3678 },
+      { keys: ['sungai petani', '双溪大年'], zh: '双溪大年 Sungai Petani, Kedah', en: 'Sungai Petani, Kedah', ms: 'Sungai Petani, Kedah', lat: 5.6470, lng: 100.4877 },
+      { keys: ['kota kinabalu', 'kk', '亚庇', 'sabah'], zh: '亚庇 Kota Kinabalu, Sabah', en: 'Kota Kinabalu, Sabah', ms: 'Kota Kinabalu, Sabah', lat: 5.9804, lng: 116.0735 },
+      { keys: ['kuching', '古晋', 'sarawak'], zh: '古晋 Kuching, Sarawak', en: 'Kuching, Sarawak', ms: 'Kuching, Sarawak', lat: 1.5533, lng: 110.3592 },
+      { keys: ['miri', '美里'], zh: '美里 Miri, Sarawak', en: 'Miri, Sarawak', ms: 'Miri, Sarawak', lat: 4.3995, lng: 113.9914 },
+      { keys: ['sibu', '诗巫'], zh: '诗巫 Sibu, Sarawak', en: 'Sibu, Sarawak', ms: 'Sibu, Sarawak', lat: 2.2873, lng: 111.8305 },
+      { keys: ['taiping', '太平'], zh: '太平 Taiping, Perak', en: 'Taiping, Perak', ms: 'Taiping, Perak', lat: 4.8519, lng: 100.7416 },
+      { keys: ['cameron highlands', '金马仑'], zh: '金马仑高原 Cameron Highlands', en: 'Cameron Highlands, Pahang', ms: 'Cameron Highlands, Pahang', lat: 4.4721, lng: 101.3801 },
+      { keys: ['genting highlands', '云顶'], zh: '云顶高原 Genting Highlands', en: 'Genting Highlands, Pahang', ms: 'Genting Highlands, Pahang', lat: 3.4236, lng: 101.7932 }
+    ];
+
+    // 马来西亚主要机场航站楼出发层精准 road-snapped 坐标库
+    const MY_AIRPORTS = [
+      { keywords: ['槟城机场', 'penang airport', 'penang international', 'bayan lepas airport', 'pen'], zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang (PEN)', fullAddr: '11900 Bayan Lepas, Pulau Pinang', lat: 5.2932, lng: 100.2658, phone: '+604-6434411' },
+      { keywords: ['吉隆坡机场', '吉隆坡国际机场', 'klia', 'klia1', 'kuala lumpur international airport'], zh: '吉隆坡国际机场 (KLIA T1)', en: 'Kuala Lumpur International Airport (KLIA T1)', ms: 'Lapangan Terbang Antarabangsa KLIA T1', fullAddr: '64000 Sepang, Selangor', lat: 2.7545, lng: 101.7037, phone: '+603-87762000' },
+      { keywords: ['klia2', 'klia 2', '亚航机场'], zh: '吉隆坡第二国际机场 (klia2)', en: 'KLIA Terminal 2 (klia2)', ms: 'Terminal KLIA 2 (klia2)', fullAddr: '64000 Sepang, Selangor', lat: 2.7433, lng: 101.6859, phone: '+603-87785500' },
+      { keywords: ['梳邦机场', 'subang airport', 'sultan abdul aziz shah', 'szb'], zh: '梳邦机场 (Subang Skypark)', en: 'Sultan Abdul Aziz Shah Airport (Subang)', ms: 'Lapangan Terbang Sultan Abdul Aziz Shah (Subang)', fullAddr: '47200 Subang, Selangor', lat: 3.1303, lng: 101.5553, phone: '+603-78453245' },
+      { keywords: ['新山机场', '士乃机场', 'senai airport', 'johor bahru airport', 'jhb'], zh: '新山士乃国际机场 (JHB)', en: 'Senai International Airport (JHB)', ms: 'Lapangan Terbang Antarabangsa Senai (JHB)', fullAddr: '81250 Johor Bahru, Johor', lat: 1.6353, lng: 103.6672, phone: '+607-5994500' },
+      { keywords: ['亚庇机场', 'kota kinabalu airport', 'kkia', 'bki'], zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Antarabangsa Kota Kinabalu (BKI)', fullAddr: '88200 Kota Kinabalu, Sabah', lat: 5.9325, lng: 116.0503, phone: '+6088-325555' },
+      { keywords: ['古晋机场', 'kuching airport', 'kch'], zh: '古晋国际机场 (KCH)', en: 'Kuching International Airport (KCH)', ms: 'Lapangan Terbang Antarabangsa Kuching (KCH)', fullAddr: '93250 Kuching, Sarawak', lat: 1.4877, lng: 110.3422, phone: '+6082-454242' },
+      { keywords: ['浮罗交怡机场', '兰卡威机场', 'langkawi airport', 'lgk'], zh: '浮罗交怡国际机场 (LGK)', en: 'Langkawi International Airport (LGK)', ms: 'Lapangan Terbang Antarabangsa Langkawi (LGK)', fullAddr: '07100 Padang Matsirat, Kedah', lat: 6.3389, lng: 99.7336, phone: '+604-9551311' },
+      { keywords: ['怡保机场', 'ipoh airport', 'sultan azlan shah airport', 'iph'], zh: '怡保苏丹阿兹兰沙机场 (IPH)', en: 'Sultan Azlan Shah Airport Ipoh (IPH)', ms: 'Lapangan Terbang Sultan Azlan Shah Ipoh (IPH)', fullAddr: '31350 Ipoh, Perak', lat: 4.5679, lng: 101.0921, phone: '+605-3188202' },
+      { keywords: ['马六甲机场', 'melaka airport', 'batu berendam airport', 'mkz'], zh: '马六甲国际机场 (MKZ)', en: 'Melaka International Airport (MKZ)', ms: 'Lapangan Terbang Antarabangsa Melaka (MKZ)', fullAddr: '75350 Batu Berendam, Melaka', lat: 2.2633, lng: 102.2515, phone: '+606-3175860' }
+    ];
+
     // 马来西亚全场景高频联想词库（支持中文、英文、马来文前缀 0ms 秒弹）
     const AUTOCOMPLETE_DICT = [
-      { icon: '✈️', zh: '飞机场 (最近国际机场)', en: 'Nearest Airport', ms: 'Lapangan Terbang Terdekat', query: '机场', keys: ['飞', '机场', '飞机场', 'air', 'airport', 'lapangan', 'terbang'] },
-      { icon: '✈️', zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang', query: '槟城机场', keys: ['槟城机', 'penang air', 'pen', 'bayan lepas'] },
+      { icon: '✈️', zh: '飞机场 (最近国际机场)', en: 'Nearest International Airport', ms: 'Lapangan Terbang Terdekat', query: '机场', keys: ['飞', '机场', '飞机场', 'air', 'airport', 'lapangan', 'terbang'] },
+      { icon: '✈️', zh: '怡保机场 (IPH)', en: 'Ipoh Airport (IPH)', ms: 'Lapangan Terbang Ipoh (IPH)', query: '怡保机场', keys: ['ipoh air', 'iph', '怡保机'] },
+      { icon: '✈️', zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang', query: '槟城机场', keys: ['槟城机', 'penang air', 'pen'] },
       { icon: '✈️', zh: '吉隆坡国际机场 (KLIA 1)', en: 'Kuala Lumpur International Airport (KLIA)', ms: 'Lapangan Terbang Antarabangsa KLIA', query: 'klia', keys: ['吉隆坡机', 'klia', 'sepang'] },
       { icon: '✈️', zh: '吉隆坡第二国际机场 (KLIA 2)', en: 'KLIA Terminal 2 (klia2)', ms: 'Terminal KLIA 2', query: 'klia2', keys: ['klia2', '亚航机场'] },
       { icon: '✈️', zh: '新山士乃国际机场 (JHB)', en: 'Senai International Airport (JHB)', ms: 'Lapangan Terbang Senai', query: '新山机场', keys: ['新山机', '士乃', 'senai', 'jhb'] },
-      { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Kota Kinabalu', query: '亚庇机场', keys: ['亚庇机', 'kkia', 'bki', 'kota kinabalu air'] },
-      { icon: '✈️', zh: '古晋国际机场 (KCH)', en: 'Kuching International Airport (KCH)', ms: 'Lapangan Terbang Kuching', query: '古晋机场', keys: ['古晋机', 'kuching air', 'kch'] },
-      { icon: '✈️', zh: '浮罗交怡/兰卡威机场 (LGK)', en: 'Langkawi International Airport (LGK)', ms: 'Lapangan Terbang Langkawi', query: '浮罗交怡机场', keys: ['浮罗交怡', '兰卡威', 'langkawi', 'lgk'] },
-      { icon: '✈️', zh: '怡保机场 (IPH)', en: 'Sultan Azlan Shah Airport Ipoh (IPH)', ms: 'Lapangan Terbang Ipoh', query: '怡保机场', keys: ['怡保机', 'ipoh air', 'iph'] },
+      { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Kota Kinabalu', query: '亚庇机场', keys: ['亚庇机', 'kkia', 'bki'] },
       { icon: '🍗', zh: 'KFC 肯德基 (最近分店)', en: 'KFC (Nearest Outlet)', ms: 'KFC (Cawangan Terdekat)', query: 'KFC', keys: ['k', 'kf', 'kfc', '肯', '肯德基'] },
       { icon: '🍔', zh: "McDonald's 麦当劳 (最近分店)", en: "McDonald's (Nearest Outlet)", ms: "McDonald's (Terdekat)", query: "McDonald's", keys: ['m', 'mc', 'mcd', '麦', '麦当劳'] },
       { icon: '☕', zh: 'Starbucks 星巴克', en: 'Starbucks Coffee', ms: 'Starbucks Coffee', query: 'Starbucks', keys: ['st', 'star', '星', '星巴克'] },
@@ -490,7 +537,7 @@
       { icon: '🏦', zh: 'Maybank 马来亚银行', en: 'Maybank Branch / ATM', ms: 'Cawangan Maybank', query: 'Maybank', keys: ['ma', 'may', 'maybank', '银', '银行', 'atm'] },
       { icon: '🏦', zh: 'CIMB Bank 联昌银行', en: 'CIMB Bank Branch / ATM', ms: 'Cawangan CIMB', query: 'CIMB', keys: ['c', 'ci', 'cimb', '银', '银行'] },
       { icon: '🏦', zh: 'Public Bank 大众银行', en: 'Public Bank Branch / ATM', ms: 'Cawangan Public Bank', query: 'Public Bank', keys: ['pu', 'pub', 'public', '大', '大众银行', '银行'] },
-      { icon: '🏙️', zh: 'KLCC 吉隆坡双子塔', en: 'Petronas Twin Towers (KLCC)', ms: 'Menara Berkembar Petronas (KLCC)', query: 'Petronas Twin Towers Kuala Lumpur', keys: ['klcc', '双', '双子塔', '吉隆坡'] },
+      { icon: '🏙️', zh: 'KLCC 吉隆坡双子塔', en: 'Petronas Twin Towers (KLCC)', ms: 'Menara Berkembar Petronas (KLCC)', query: 'Petronas Twin Towers Kuala Lumpur', keys: ['klcc', '双', '双子塔'] },
       { icon: '🛍️', zh: 'Pavilion KL 柏威年广场', en: 'Pavilion Kuala Lumpur', ms: 'Pavilion Kuala Lumpur', query: 'Pavilion Kuala Lumpur', keys: ['pa', 'pav', 'pavilion', '柏', '柏威年'] },
       { icon: '🛍️', zh: 'Gurney Plaza 槟城合您广场', en: 'Gurney Plaza Penang', ms: 'Gurney Plaza Pulau Pinang', query: 'Gurney Plaza Penang', keys: ['gur', 'gurney', '合', '合您'] },
       { icon: '🛍️', zh: 'Queensbay Mall 槟城皇后湾广场', en: 'Queensbay Mall Penang', ms: 'Queensbay Mall Pulau Pinang', query: 'Queensbay Mall Penang', keys: ['qu', 'que', 'queensbay', '皇', '皇后湾'] },
@@ -499,37 +546,15 @@
 
     let suggestTimer = null;
 
-    // 马来西亚主要机场航站楼出发层精准 road-snapped 坐标库
-    const MY_AIRPORTS = [
-      { keywords: ['槟城机场', 'penang airport', 'penang international', 'bayan lepas airport', 'pen'], name: 'Penang International Airport (PEN) · 槟城国际机场', fullAddr: 'Jalan Sultan Azlan Shah, 11900 Bayan Lepas, Pulau Pinang', lat: 5.2932, lng: 100.2658, phone: '+604-6434411' },
-      { keywords: ['吉隆坡机场', '吉隆坡国际机场', 'klia', 'klia1', 'kuala lumpur international airport'], name: 'Kuala Lumpur International Airport (KLIA Terminal 1)', fullAddr: '64000 Sepang, Selangor', lat: 2.7545, lng: 101.7037, phone: '+603-87762000' },
-      { keywords: ['klia2', 'klia 2', '亚航机场'], name: 'KLIA Terminal 2 (klia2)', fullAddr: '64000 Sepang, Selangor', lat: 2.7433, lng: 101.6859, phone: '+603-87785500' },
-      { keywords: ['梳邦机场', 'subang airport', 'sultan abdul aziz shah', 'szb'], name: 'Sultan Abdul Aziz Shah Airport (Subang Skypark)', fullAddr: '47200 Subang, Selangor', lat: 3.1303, lng: 101.5553, phone: '+603-78453245' },
-      { keywords: ['新山机场', '士乃机场', 'senai airport', 'johor bahru airport', 'jhb'], name: 'Senai International Airport (JHB) · 新山士乃机场', fullAddr: '81250 Johor Bahru, Johor', lat: 1.6353, lng: 103.6672, phone: '+607-5994500' },
-      { keywords: ['亚庇机场', 'kota kinabalu airport', 'kkia', 'bki'], name: 'Kota Kinabalu International Airport (BKI) · 亚庇机场', fullAddr: '88200 Kota Kinabalu, Sabah', lat: 5.9325, lng: 116.0503, phone: '+6088-325555' },
-      { keywords: ['古晋机场', 'kuching airport', 'kch'], name: 'Kuching International Airport (KCH) · 古晋机场', fullAddr: '93250 Kuching, Sarawak', lat: 1.4877, lng: 110.3422, phone: '+6082-454242' },
-      { keywords: ['浮罗交怡机场', '兰卡威机场', 'langkawi airport', 'lgk'], name: 'Langkawi International Airport (LGK) · 浮罗交怡机场', fullAddr: '07100 Padang Matsirat, Kedah', lat: 6.3389, lng: 99.7336, phone: '+604-9551311' },
-      { keywords: ['怡保机场', 'ipoh airport', 'sultan azlan shah airport', 'iph'], name: 'Sultan Azlan Shah Airport (IPH) · 怡保机场', fullAddr: '31350 Ipoh, Perak', lat: 4.5679, lng: 101.0921, phone: '+605-3188202' },
-      { keywords: ['马六甲机场', 'melaka airport', 'batu berendam airport', 'mkz'], name: 'Melaka International Airport (MKZ) · 马六甲机场', fullAddr: '75350 Batu Berendam, Melaka', lat: 2.2633, lng: 102.2515, phone: '+606-3175860' }
-    ];
-
-    // 全马热门地标与城市枢纽保底推荐库
-    const MY_POPULAR_PLACES = [
-      { label: 'KLCC 双子塔', name: 'Petronas Twin Towers (KLCC)', fullAddr: 'Kuala Lumpur City Centre', lat: 3.1579, lng: 101.7116 },
-      { label: 'KL Sentral 交通枢纽', name: 'KL Sentral Station', fullAddr: 'Brickfields, Kuala Lumpur', lat: 3.1344, lng: 101.6865 },
-      { label: '槟城光大 KOMTAR', name: 'KOMTAR George Town', fullAddr: 'George Town, Pulau Pinang', lat: 5.4145, lng: 100.3297 },
-      { label: '槟城机场 PEN', name: 'Penang International Airport (PEN)', fullAddr: 'Bayan Lepas, Pulau Pinang', lat: 5.2932, lng: 100.2658 },
-      { label: '新山关卡 JB CIQ', name: 'JB Sentral / CIQ Checkpoint', fullAddr: 'Johor Bahru, Johor', lat: 1.4648, lng: 103.7644 },
-      { label: '云顶高原 Genting', name: 'Resorts World Genting', fullAddr: 'Genting Highlands, Pahang', lat: 3.4236, lng: 101.7932 },
-      { label: '马六甲鸡场街', name: 'Jonker Street Melaka', fullAddr: 'Melaka', lat: 2.1951, lng: 102.2485 },
-      { label: '怡保二奶巷', name: 'Concubine Lane Ipoh', fullAddr: 'Ipoh, Perak', lat: 4.5964, lng: 101.0772 },
-      { label: '亚庇市中心 KK', name: 'Suria Sabah / Kota Kinabalu', fullAddr: 'Kota Kinabalu, Sabah', lat: 5.9866, lng: 116.0775 },
-      { label: '古晋河滨公园', name: 'Kuching Waterfront', fullAddr: 'Kuching, Sarawak', lat: 1.5591, lng: 110.3458 }
-    ];
-
     if ('speechSynthesis' in window) {
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    function getAcceptLangHeader() {
+      if (currentLang === 'ms') return 'ms,en';
+      if (currentLang === 'en') return 'en';
+      return 'zh-CN,en';
     }
 
     function getMalaysiaNow() {
@@ -619,6 +644,20 @@
       document.getElementById('headerSub').innerText = t.headerSub;
       document.getElementById('cityLabel').innerText = t.cityLabel;
       document.getElementById('quickNearMeCityBtn').innerText = t.nearMeCity;
+      document.getElementById('cityBtn-kl').innerText = t.cityKL;
+      document.getElementById('cityBtn-pg').innerText = t.cityPG;
+      document.getElementById('cityBtn-jb').innerText = t.cityJB;
+      document.getElementById('cityBtn-mk').innerText = t.cityMK;
+      document.getElementById('cityBtn-ip').innerText = t.cityIP;
+      document.getElementById('cityBtn-kk').innerText = t.cityKK;
+
+      // 如果起点是 GPS 默认文字，同步翻译起点输入框
+      const startVal = document.getElementById('startInput').value;
+      if (startVal.includes('(GPS)')) {
+        document.getElementById('startInput').value = t.gpsLabel;
+        if (startCoords) startCoords.name = t.gpsLabel;
+      }
+
       document.getElementById('mode-driving').innerText = t.modeDriving;
       document.getElementById('mode-transit').innerText = t.modeTransit;
       document.getElementById('mode-walking').innerText = t.modeWalking;
@@ -649,7 +688,11 @@
       document.getElementById('navMap').innerText = t.navMap;
       document.getElementById('navPost').innerText = t.navPost;
 
-      if (startCoords && endCoords) planRoute();
+      const curEnd = document.getElementById('endInput').value.trim();
+      if (curEnd && !document.getElementById('autoSuggestDropdown').classList.contains('hidden')) {
+        handleEndInput(curEnd);
+      }
+      if (startCoords && endCoords) calculateAndRenderRoute();
     }
 
     const map = L.map('map').setView([3.1390, 101.6869], 14);
@@ -729,7 +772,7 @@
       const active = document.getElementById(`mode-${mode}`);
       active.classList.add('bg-white', 'text-emerald-700', 'shadow-sm');
       active.classList.remove('text-slate-600');
-      if (startCoords && endCoords) planRoute();
+      if (startCoords && endCoords) calculateAndRenderRoute();
     }
 
     function switchCity(lat, lng, label) {
@@ -752,7 +795,7 @@
           const lng = pos.coords.longitude;
           updateLiveUserDot(lat, lng);
           if (setAsStart) {
-            const label = currentLang === 'en' ? 'My Current Location (GPS)' : (currentLang === 'ms' ? 'Lokasi Semasa Saya (GPS)' : '我的当前位置 (GPS)');
+            const label = i18n[currentLang].gpsLabel;
             startCoords = { lat, lng, name: label };
             document.getElementById('startInput').value = label;
             if (startMarker) map.removeLayer(startMarker);
@@ -780,7 +823,7 @@
       }
     }
 
-    // ==================== 实时联想下拉框逻辑 ====================
+    // ==================== 0ms 毫秒级实时联想下拉框（严格遵守当前所选语言） ====================
     function hideSuggestions() {
       const box = document.getElementById('autoSuggestDropdown');
       if (box) box.classList.add('hidden');
@@ -819,18 +862,25 @@
       }
 
       const lower = q.toLowerCase();
+      const refLat = startCoords ? startCoords.lat : map.getCenter().lat;
+      const refLng = startCoords ? startCoords.lng : map.getCenter().lng;
 
-      // 1. 匹配收藏夹和历史记录
+      // 1. 0ms 匹配内置全马城市地标库（严格显示当前语言的 name）
+      const cityMatches = MY_CITIES_DB.filter(c =>
+        c.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower))
+      ).slice(0, 4);
+
+      // 2. 0ms 匹配收藏夹和历史记录
       const favs = getSavedList(STORAGE_FAV_KEY).filter(f => f.label.toLowerCase().includes(lower) || f.name.toLowerCase().includes(lower));
       const hist = getSavedList(STORAGE_HIST_KEY).filter(h => h.name.toLowerCase().includes(lower));
 
-      // 2. 匹配高频词典（前缀或包含匹配，0 毫秒秒弹）
+      // 3. 0ms 匹配高频品牌/机场词典
       const dictMatches = AUTOCOMPLETE_DICT.filter(item =>
         item.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower)) ||
         item.zh.toLowerCase().includes(lower) ||
         item.en.toLowerCase().includes(lower) ||
         item.ms.toLowerCase().includes(lower)
-      ).slice(0, 6);
+      ).slice(0, 5);
 
       let html = '';
 
@@ -846,8 +896,22 @@
           </div>`;
       });
 
+      cityMatches.forEach(c => {
+        const displayName = c[currentLang] || c.en;
+        const km = (map.distance([refLat, refLng], [c.lat, c.lng]) / 1000).toFixed(1);
+        html += `
+          <div onclick="pickSuggestion('${displayName.replace(/'/g, "\\'")}', ${c.lat}, ${c.lng})"
+               class="px-3 py-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm shrink-0">🏙️</span>
+              <span class="text-xs font-bold text-slate-800 truncate">${displayName}</span>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0">${km} km</span>
+          </div>`;
+      });
+
       dictMatches.forEach(item => {
-        const label = item[currentLang] || item.zh;
+        const label = item[currentLang] || item.en;
         html += `
           <div onclick="pickSuggestion('${item.query.replace(/'/g, "\\'")}')"
                class="px-3 py-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between gap-2">
@@ -878,21 +942,20 @@
         box.classList.add('hidden');
       }
 
-      // 3. 停顿 380ms 后异步请求全马真实地名联想补全（专治具体路名/商场/住宅区）
+      // 4. 停顿 450ms 后异步补全全马具体街道/大厦（强制传入 accept-language 匹配当前语言！）
       clearTimeout(suggestTimer);
-      if (q.length >= 2) {
+      if (q.length >= 3) {
         suggestTimer = setTimeout(async () => {
           try {
             const normQ = await normalizeSearchQuery(q);
-            const c = startCoords ? { lat: startCoords.lat, lng: startCoords.lng } : map.getCenter();
             const deg = 0.45;
-            const vb = `${c.lng - deg},${c.lat + deg},${c.lng + deg},${c.lat - deg}`;
-            const url = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=my&limit=5&viewbox=${vb}&bounded=0&q=${encodeURIComponent(normQ)}`;
+            const vb = `${refLng - deg},${refLat + deg},${refLng + deg},${refLat - deg}`;
+            const langParam = getAcceptLangHeader();
+            const url = `https://nominatim.openstreetmap.org/search?format=json&accept-language=${langParam}&countrycodes=my&limit=4&viewbox=${vb}&bounded=0&q=${encodeURIComponent(normQ)}`;
             const res = await fetch(url);
             if (!res.ok) return;
             const data = await res.json();
             if (!data || data.length === 0) return;
-
             if (document.getElementById('endInput').value.trim() !== q) return;
 
             const remoteHtml = data.map(item => {
@@ -901,7 +964,7 @@
               const sub = parts.slice(1, 3).join(', ');
               const lat = parseFloat(item.lat);
               const lng = parseFloat(item.lon);
-              const km = (map.distance([c.lat, c.lng], [lat, lng]) / 1000).toFixed(1);
+              const km = (map.distance([refLat, refLng], [lat, lng]) / 1000).toFixed(1);
               return `
                 <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng})"
                      class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
@@ -916,7 +979,7 @@
             box.innerHTML = html + remoteHtml;
             box.classList.remove('hidden');
           } catch (e) {}
-        }, 380);
+        }, 450);
       }
     }
 
@@ -959,37 +1022,15 @@
       document.getElementById('endInput').value = endCoords.name;
       if (endMarker) map.removeLayer(endMarker);
       endMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('🔴 Destination').openPopup();
-      if (startCoords) planRoute();
+      if (startCoords) calculateAndRenderRoute();
     });
 
-    async function queryNominatimRadius(query, refLat, refLng, radiusKm) {
-      const degLat = radiusKm / 111.0;
-      const degLng = radiusKm / (111.0 * Math.cos(refLat * Math.PI / 180));
-      const viewbox = `${refLng - degLng},${refLat + degLat},${refLng + degLng},${refLat - degLat}`;
-      const bounded = radiusKm >= 1000 ? 0 : 1;
-      const url = `https://nominatim.openstreetmap.org/search?format=json&extratags=1&countrycodes=my&limit=15&viewbox=${viewbox}&bounded=${bounded}&q=${encodeURIComponent(query)}`;
-      const res = await fetch(url);
-      if (!res.ok) return [];
-      const data = await res.json();
-      if (!data || data.length === 0) return [];
-
-      return data.map(item => {
-        const lat = parseFloat(item.lat);
-        const lng = parseFloat(item.lon);
-        const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
-        const parts = item.display_name.split(',').map(s => s.trim());
-        const tags = item.extratags || {};
-        const status = evaluateOpeningStatus(tags, parts[0]);
-        const phone = tags.phone || tags['contact:phone'] || '';
-        return { lat, lng, name: parts[0], fullAddr: parts.slice(1, 4).join(', '), straightKm, status, phone };
-      }).filter(item => radiusKm >= 1000 || item.straightKm <= radiusKm * 1.15);
-    }
-
-    async function searchPlacesNear(rawQuery, refLat, refLng, onProgressRadius = null) {
+    // 极速并发检索引擎（本地城市/机场毫秒命中 + 8km Overpass 与全马 Nominatim 并发请求 + accept-language 严格匹配当前语言）
+    async function searchPlacesNear(rawQuery, refLat, refLng) {
       const rawLower = rawQuery.trim().toLowerCase();
       let candidates = [];
-      let matchedRadiusKm = 8;
 
+      // 0A. 专项机场库精准匹配
       const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(rawQuery.trim());
       const matchedAirports = MY_AIRPORTS.filter(ap =>
         isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw))
@@ -1001,68 +1042,86 @@
           return {
             lat: ap.lat,
             lng: ap.lng,
-            name: ap.name,
+            name: ap[currentLang] || ap.en,
             fullAddr: ap.fullAddr,
             straightKm,
             status: { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' },
             phone: ap.phone
           };
         });
-        matchedRadiusKm = Math.max(8, Math.ceil(Math.min(...candidates.map(c => c.straightKm))));
       }
 
-      const query = await normalizeSearchQuery(rawQuery);
-
+      // 0B. 内置全马主要城市毫秒级匹配（输入 ipoh / 怡保 / penang 等瞬间出结果，0 网络等待）
       if (candidates.length === 0) {
-        if (onProgressRadius) onProgressRadius(8);
-        try {
-          const cleanKw = query.replace(/["\\]/g, '').trim();
-          const overpassQuery = `[out:json][timeout:6];(node["name"~"${cleanKw}",i](around:8000,${refLat},${refLng});way["name"~"${cleanKw}",i](around:8000,${refLat},${refLng});node["brand"~"${cleanKw}",i](around:8000,${refLat},${refLng});way["brand"~"${cleanKw}",i](around:8000,${refLat},${refLng}););out center 20;`;
-          const ovRes = await fetch('https://overpass-api.de/api/interpreter', {
-            method: 'POST',
-            body: 'data=' + encodeURIComponent(overpassQuery)
+        const matchedCities = MY_CITIES_DB.filter(c => c.keys.some(k => k === rawLower));
+        if (matchedCities.length > 0) {
+          candidates = matchedCities.map(c => {
+            const straightKm = map.distance([refLat, refLng], [c.lat, c.lng]) / 1000;
+            return {
+              lat: c.lat,
+              lng: c.lng,
+              name: c[currentLang] || c.en,
+              fullAddr: 'Malaysia',
+              straightKm,
+              status: null,
+              phone: ''
+            };
           });
-          if (ovRes.ok) {
-            const ovData = await ovRes.json();
-            if (ovData && ovData.elements && ovData.elements.length > 0) {
-              candidates = ovData.elements.map(el => {
-                const lat = el.lat || (el.center && el.center.lat);
-                const lng = el.lon || (el.center && el.center.lon);
-                if (!lat || !lng) return null;
-                const tags = el.tags || {};
-                const name = tags.name || tags.brand || query;
-                const addrParts = [tags['addr:street'], tags['addr:suburb'], tags['addr:city']].filter(Boolean);
-                const fullAddr = addrParts.join(', ') || (currentLang === 'zh' ? '附近门店' : 'Nearby Branch');
-                const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
-                const status = evaluateOpeningStatus(tags, name);
-                const phone = tags.phone || tags['contact:phone'] || '';
-                return { lat, lng, name, fullAddr, straightKm, status, phone };
-              }).filter(Boolean);
-              matchedRadiusKm = 8;
-            }
-          }
-        } catch (e) {}
-      }
-
-      const radiusTiers = [60, 150, 400, 1000];
-      for (const rKm of radiusTiers) {
-        if (candidates.length > 0) break;
-        if (onProgressRadius) onProgressRadius(rKm);
-        matchedRadiusKm = rKm;
-        candidates = await queryNominatimRadius(query, refLat, refLng, rKm);
-      }
-
-      if (candidates.length === 0) {
-        const tokens = query.split(/[\s,，、-]+/).filter(w => w.length >= 2);
-        if (tokens.length > 1) {
-          const fallbackQuery = tokens.slice(-2).join(' ');
-          candidates = await queryNominatimRadius(fallbackQuery, refLat, refLng, 1000);
-          matchedRadiusKm = 1000;
         }
       }
 
-      if (candidates.length === 0) return { list: [], radiusKm: 1000 };
+      // 1. 并发同时请求：周边 8km 门店雷达 + 全马地理接口（不再串行卡顿，且严格携带 accept-language）
+      if (candidates.length === 0) {
+        const query = await normalizeSearchQuery(rawQuery);
+        const cleanKw = query.replace(/["\\]/g, '').trim();
+        const langParam = getAcceptLangHeader();
 
+        const deg = 0.6;
+        const vb = `${refLng - deg},${refLat + deg},${refLng + deg},${refLat - deg}`;
+        const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&accept-language=${langParam}&extratags=1&countrycodes=my&limit=12&viewbox=${vb}&bounded=0&q=${encodeURIComponent(query)}`;
+        const ovQuery = `[out:json][timeout:4];(node["name"~"${cleanKw}",i](around:8000,${refLat},${refLng});way["name"~"${cleanKw}",i](around:8000,${refLat},${refLng});node["brand"~"${cleanKw}",i](around:8000,${refLat},${refLng}););out center 15;`;
+
+        const [ovResult, nomResult] = await Promise.allSettled([
+          fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(ovQuery) }).then(r => r.ok ? r.json() : null),
+          fetch(nomUrl).then(r => r.ok ? r.json() : null)
+        ]);
+
+        if (ovResult.status === 'fulfilled' && ovResult.value && ovResult.value.elements) {
+          ovResult.value.elements.forEach(el => {
+            const lat = el.lat || (el.center && el.center.lat);
+            const lng = el.lon || (el.center && el.center.lon);
+            if (!lat || !lng) return;
+            const tags = el.tags || {};
+            const name = tags.name || tags.brand || query;
+            const addrParts = [tags['addr:street'], tags['addr:suburb'], tags['addr:city']].filter(Boolean);
+            const fullAddr = addrParts.join(', ') || (currentLang === 'zh' ? '附近门店' : 'Nearby');
+            const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
+            candidates.push({ lat, lng, name, fullAddr, straightKm, status: evaluateOpeningStatus(tags, name), phone: tags.phone || '' });
+          });
+        }
+
+        if (nomResult.status === 'fulfilled' && Array.isArray(nomResult.value)) {
+          nomResult.value.forEach(item => {
+            const lat = parseFloat(item.lat);
+            const lng = parseFloat(item.lon);
+            const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
+            const parts = item.display_name.split(',').map(s => s.trim());
+            const tags = item.extratags || {};
+            candidates.push({
+              lat, lng,
+              name: parts[0],
+              fullAddr: parts.slice(1, 4).join(', '),
+              straightKm,
+              status: evaluateOpeningStatus(tags, parts[0]),
+              phone: tags.phone || ''
+            });
+          });
+        }
+      }
+
+      if (candidates.length === 0) return [];
+
+      // 去重并按直线距离取最近的 8 个候选
       const deduped = [];
       candidates.sort((a, b) => a.straightKm - b.straightKm).forEach(item => {
         const exists = deduped.some(d => map.distance([d.lat, d.lng], [item.lat, item.lng]) < 80);
@@ -1070,6 +1129,7 @@
       });
       const preSorted = deduped.slice(0, 8);
 
+      // 2. 调用 OSRM 批量计算实际道路距离与时间
       try {
         const coordsStr = [`${refLng},${refLat}`, ...preSorted.map(p => `${p.lng},${p.lat}`)].join(';');
         const profile = currentMode === 'walking' ? 'foot' : 'driving';
@@ -1107,7 +1167,7 @@
         return a.distKm - b.distKm;
       });
 
-      return { list: preSorted, radiusKm: matchedRadiusKm };
+      return preSorted;
     }
 
     function showFallbackSuggestions(refLat, refLng) {
@@ -1116,8 +1176,11 @@
       document.getElementById('fallbackTitle').innerText = t.fallbackTitle;
       document.getElementById('fallbackHint').innerText = t.fallbackHint;
 
-      const sortedPopular = MY_POPULAR_PLACES.map(p => ({
-        ...p,
+      const sortedPopular = MY_CITIES_DB.slice(0, 10).map(p => ({
+        label: p[currentLang] || p.en,
+        name: p[currentLang] || p.en,
+        lat: p.lat,
+        lng: p.lng,
         km: (map.distance([refLat, refLng], [p.lat, p.lng]) / 1000).toFixed(0)
       })).sort((a, b) => Number(a.km) - Number(b.km));
 
@@ -1140,11 +1203,12 @@
       endCoords = {
         lat,
         lng,
-        name: `${name}${fullAddr && fullAddr !== '附近门店' && fullAddr !== 'Nearby Branch' ? ' · ' + fullAddr.split(',')[0] : ''}`,
+        name: `${name}${fullAddr && fullAddr !== '附近门店' && fullAddr !== 'Nearby' && fullAddr !== 'Malaysia' ? ' · ' + fullAddr.split(',')[0] : ''}`,
         status: statusText ? { text: statusText, badgeClass: statusClass } : null,
         phone
       };
       document.getElementById('endInput').value = endCoords.name;
+      addToHistory(endCoords);
       calculateAndRenderRoute();
     }
 
@@ -1207,7 +1271,7 @@
         return;
       }
 
-      btn.innerText = t.searchingRadius(8);
+      btn.innerText = t.searchingBtn;
       btn.disabled = true;
 
       try {
@@ -1216,19 +1280,15 @@
           startCoords = { lat: mapCenter.lat, lng: mapCenter.lng, name: 'Map Center' };
           document.getElementById('startInput').value = currentLang === 'zh' ? '当前地图中心' : 'Map Center';
         } else if (!startText.includes('(GPS)') && !startText.includes('Map Center') && !startText.includes('地图中心')) {
-          const startRes = await searchPlacesNear(startText, mapCenter.lat, mapCenter.lng);
-          if (startRes.list.length > 0) startCoords = startRes.list[0];
+          const startList = await searchPlacesNear(startText, mapCenter.lat, mapCenter.lng);
+          if (startList.length > 0) startCoords = startList[0];
         }
 
         const refLat = startCoords ? startCoords.lat : mapCenter.lat;
         const refLng = startCoords ? startCoords.lng : mapCenter.lng;
 
         if (!endText.startsWith('Pin (')) {
-          const searchResult = await searchPlacesNear(endText, refLat, refLng, (rKm) => {
-            btn.innerText = t.searchingRadius(rKm);
-          });
-
-          const matches = searchResult.list;
+          const matches = await searchPlacesNear(endText, refLat, refLng);
           if (matches.length === 0) {
             document.getElementById('nearbyResultsBox').classList.add('hidden');
             showFallbackSuggestions(refLat, refLng);
@@ -1250,14 +1310,14 @@
           endCoords = {
             lat: nearest.lat,
             lng: nearest.lng,
-            name: `${nearest.name}${nearest.fullAddr && nearest.fullAddr !== '附近门店' && nearest.fullAddr !== 'Nearby Branch' ? ' · ' + nearest.fullAddr.split(',')[0] : ''}`,
+            name: `${nearest.name}${nearest.fullAddr && nearest.fullAddr !== '附近门店' && nearest.fullAddr !== 'Nearby' && nearest.fullAddr !== 'Malaysia' ? ' · ' + nearest.fullAddr.split(',')[0] : ''}`,
             status: nearest.status,
             phone: nearest.phone
           };
 
           const nearbyBox = document.getElementById('nearbyResultsBox');
           const nearbyList = document.getElementById('nearbyResultsList');
-          document.getElementById('nearbyResultsTitle').innerText = t.nearbyResultsTitle(searchResult.radiusKm);
+          document.getElementById('nearbyResultsTitle').innerText = t.nearbyResultsTitle;
           nearbyBox.classList.remove('hidden');
           nearbyList.innerHTML = matches.map((m, idx) => `
             <div onclick="selectNearbyCandidate(${m.lat}, ${m.lng}, '${m.name.replace(/'/g, "\\'")}', '${m.fullAddr.replace(/'/g, "\\'")}', '${(m.status?.text || '').replace(/'/g, "\\'")}', '${m.status?.badgeClass || ''}', '${(m.phone || '').replace(/'/g, "\\'")}')"
