@@ -223,7 +223,6 @@
         <button onclick="closePostModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">✕</button>
       </div>
       <form id="postForm" onsubmit="submitPost(event)" class="space-y-3">
-        <!-- 实拍照片上传区 -->
         <div>
           <label id="labelPhoto" class="block text-xs font-bold text-gray-700 mb-1">上传实拍照片 (可选，更吸引关注)</label>
           <div class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition overflow-hidden">
@@ -249,9 +248,7 @@
           </div>
           <div>
             <label id="labelCity" class="block text-xs font-bold text-gray-700 mb-1">所在州属 / 直辖区 *</label>
-            <select id="postCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
-              <!-- 由 JS 自动填充全马 13 州 + 3 联邦直辖区 -->
-            </select>
+            <select id="postCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></select>
           </div>
         </div>
         <div>
@@ -282,7 +279,6 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ==================== 1. 防垃圾与合规审核规则库 ====================
     const SPAM_BLOCK_WORDS = [
       '918kiss', 'mega888', 'pussy888', 'xe88', 'jili', 'scr888', 'winbox', 'bk8', '12play',
       'judi', 'kasino', 'casino', 'slot', 'togel', '4d magnum', '网赌', '博彩', '赌博', '老虎机', '百家乐', '六合彩', '万字',
@@ -338,7 +334,6 @@
       renderFavs();
     }
 
-    // 马来西亚全部 13 个州 + 3 个联邦直辖区（含州中心坐标，用于自动定位所在州属）
     const MY_REGIONS = [
       { value: '全马', group: 'all', zh: '全马地区', en: 'All Malaysia', ms: 'Seluruh Malaysia' },
       { value: '吉隆坡', group: 'ft', zh: '吉隆坡 (直辖区)', en: 'Kuala Lumpur (FT)', ms: 'WP Kuala Lumpur', lat: 3.1390, lng: 101.6869 },
@@ -418,10 +413,6 @@
         reportBtn: '🚨 举报',
         daysLeft: (d) => `剩${d}天`,
         noDesc: '发布者未填写更多补充描述。',
-        translateBtn: '🌐 翻译成中文',
-        translatingBtn: '⏳ 正在翻译...',
-        showOriginalBtn: '↩ 显示原文',
-        translatedBadge: '已自动翻译为中文',
         favBtn: '☆ 收藏',
         favedBtn: '⭐ 已收藏',
         waBtn: '💬 一键联系 WhatsApp',
@@ -457,7 +448,7 @@
         descPlaceholder: '填写具体位置、条件要求、联系方式补充...',
         submitBtn: '立即发布上线',
         uploadingImg: '正在上传实拍照片...',
-        syncingCloud: '正在同步到云端...',
+        syncingCloud: '正在自动生成三语并写入云端...',
         spamAlert: '⚠️ 内容包含违规或敏感词汇（如博彩、非法借贷、刷单等），系统已自动拦截！',
         phoneAlert: '⚠️ 请输入有效的马来西亚 WhatsApp 手机号码（例如 0123456789 或 60123456789）！',
         limitAlert: '⚠️ 为防止刷屏广告，每台设备每日最多免费发布 3 条信息，如需置顶推广请前往商家入驻中心。',
@@ -489,10 +480,6 @@
         reportBtn: '🚨 Report',
         daysLeft: (d) => `${d}d left`,
         noDesc: 'No additional description provided.',
-        translateBtn: '🌐 Translate to English',
-        translatingBtn: '⏳ Translating...',
-        showOriginalBtn: '↩ Show Original',
-        translatedBadge: 'Auto-translated to English',
         favBtn: '☆ Save',
         favedBtn: '⭐ Saved',
         waBtn: '💬 Chat on WhatsApp',
@@ -528,7 +515,7 @@
         descPlaceholder: 'Location details, requirements, contact notes...',
         submitBtn: 'Publish Now',
         uploadingImg: 'Uploading photo...',
-        syncingCloud: 'Publishing to cloud...',
+        syncingCloud: 'Generating trilingual & saving...',
         spamAlert: '⚠️ Restricted keywords detected (gambling/loan/scam). Submission blocked.',
         phoneAlert: '⚠️ Please enter a valid Malaysia WhatsApp number (e.g. 0123456789 or 60123456789).',
         limitAlert: '⚠️ Daily limit of 3 free posts reached to prevent spam.',
@@ -560,10 +547,6 @@
         reportBtn: '🚨 Lapor',
         daysLeft: (d) => `${d}h lagi`,
         noDesc: 'Tiada maklumat tambahan dinyatakan.',
-        translateBtn: '🌐 Terjemah ke Bahasa Melayu',
-        translatingBtn: '⏳ Menterjemah...',
-        showOriginalBtn: '↩ Teks Asal',
-        translatedBadge: 'Diterjemah ke Bahasa Melayu',
         favBtn: '☆ Simpan',
         favedBtn: '⭐ Disimpan',
         waBtn: '💬 Hubungi WhatsApp',
@@ -599,7 +582,7 @@
         descPlaceholder: 'Lokasi tepat, syarat-syarat, maklumat tambahan...',
         submitBtn: 'Hantar Iklan Sekarang',
         uploadingImg: 'Memuat naik gambar...',
-        syncingCloud: 'Menyimpan iklan...',
+        syncingCloud: 'Menjana 3 bahasa & menyimpan...',
         spamAlert: '⚠️ Kata kunci terlarang dikesan (judi/pinjaman haram). Penghantaran disekat.',
         phoneAlert: '⚠️ Sila masukkan nombor WhatsApp Malaysia yang sah (cth: 0123456789 atau 60123456789).',
         limitAlert: '⚠️ Had 3 iklan percuma sehari telah dicapai untuk mengelakkan spam.',
@@ -660,59 +643,24 @@
       postSelect.value = prevPostVal;
     }
 
-    async function autoTranslateText(text, targetLangCode) {
-      if (!text) return '';
-      const cacheKey = `${targetLangCode}_${text}`;
+    async function translateSnippet(text, targetLang) {
+      if (!text || !text.trim()) return text || '';
+      const cleanInput = text.replace(/【/g, '[').replace(/】/g, '] ');
+      const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
+      const cacheKey = `${tl}::${cleanInput}`;
       if (translationCache[cacheKey]) return translationCache[cacheKey];
 
-      const tlMap = { zh: 'zh-CN', en: 'en', ms: 'ms' };
-      const tl = tlMap[targetLangCode] || 'en';
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      const translated = data[0].map(item => item[0]).join('');
-      translationCache[cacheKey] = translated;
-      return translated;
-    }
-
-    async function toggleTranslateDetail(postId) {
-      const t = I18N[currentLang];
-      const post = allPosts.find(p => p.id === postId);
-      if (!post) return;
-
-      const btn = document.getElementById('detailTranslateBtn');
-      const titleEl = document.getElementById('detailPostTitle');
-      const descEl = document.getElementById('detailPostDesc');
-      const badgeEl = document.getElementById('detailTranslatedBadge');
-
-      if (btn.dataset.translated === 'true') {
-        titleEl.innerText = post.title;
-        descEl.innerText = post.description || t.noDesc;
-        btn.innerText = t.translateBtn;
-        btn.dataset.translated = 'false';
-        badgeEl.classList.add('hidden');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = t.translatingBtn;
       try {
-        const transTitle = await autoTranslateText(post.title, currentLang);
-        const transDesc = post.description ? await autoTranslateText(post.description, currentLang) : t.noDesc;
-
-        titleEl.innerText = transTitle;
-        descEl.innerText = transDesc;
-        btn.innerText = t.showOriginalBtn;
-        btn.dataset.translated = 'true';
-        badgeEl.innerText = t.translatedBadge;
-        badgeEl.classList.remove('hidden');
-      } catch (err) {
-        alert('Translation network error, please try again.');
-        btn.innerText = t.translateBtn;
-      } finally {
-        btn.disabled = false;
-      }
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(cleanInput)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const translated = (json[0] || []).map(item => item[0]).join('').trim();
+        if (translated) {
+          translationCache[cacheKey] = translated;
+          return translated;
+        }
+      } catch (e) {}
+      return cleanInput;
     }
 
     async function fetchLiveRates() {
@@ -920,12 +868,20 @@
       return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: 'Info' };
     }
 
+    // 最高级 0ms 直出：直接从数据库字段读取当前语言对应的 title / price
     function createPostCardHTML(post) {
       const t = I18N[currentLang];
       const vis = getCategoryVisual(post.category);
       const dateStr = new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' });
       const displayCat = t.cats[post.category] || post.category;
       const displayCity = getRegionDisplayName(post.city, currentLang);
+
+      const localizedTitle =
+        (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
+        post.title;
+      const localizedPrice =
+        (currentLang === 'en' ? post.price_en : (currentLang === 'ms' ? post.price_ms : post.price_zh)) ||
+        post.price;
 
       const ageDays = Math.floor((Date.now() - new Date(post.created_at).getTime()) / 86400000);
       const remainDays = Math.max(1, 7 - ageDays);
@@ -934,7 +890,7 @@
         : '';
 
       const rightMediaHTML = post.image_url
-        ? `<img src="${post.image_url}" alt="${post.title}" class="w-24 h-24 rounded-xl object-cover shrink-0 border border-gray-100 shadow-xs" />`
+        ? `<img src="${post.image_url}" alt="${localizedTitle}" class="w-24 h-24 rounded-xl object-cover shrink-0 border border-gray-100 shadow-xs" />`
         : `<div class="w-24 h-24 rounded-xl bg-gradient-to-br ${vis.bg} text-white shrink-0 flex flex-col items-center justify-center p-2 text-center shadow-inner">
              <span class="text-2xl mb-1">${vis.icon}</span>
              <span class="text-[11px] font-bold tracking-wide opacity-95">${vis.label}</span>
@@ -951,10 +907,10 @@
                   <span class="text-[11px] text-gray-400 truncate">📍 ${displayCity}</span>
                   ${expireBadgeHTML}
                 </div>
-                <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${post.title}</h3>
+                <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${localizedTitle}</h3>
               </div>
               <div class="flex items-center justify-between gap-2">
-                <span class="text-red-600 font-extrabold text-sm truncate">${post.price}</span>
+                <span class="text-red-600 font-extrabold text-sm truncate">${localizedPrice}</span>
                 <div class="flex items-center gap-2 shrink-0">
                   <span class="text-[11px] text-gray-400">${post.is_pinned ? t.pinnedPrefix : ''}${dateStr}${t.publishedSuffix}</span>
                   <button onclick="reportPost(event, ${post.id})" class="text-[10px] text-gray-400 hover:text-rose-600 px-1.5 py-0.5 rounded bg-gray-50 hover:bg-rose-50 transition">
@@ -967,68 +923,6 @@
           </div>
         </div>
       `;
-    }
-
-    const TRANS_CACHE_KEY = 'dama_trans_cache_v1';
-    let transCache = {};
-    try { transCache = JSON.parse(localStorage.getItem(TRANS_CACHE_KEY) || '{}'); } catch (e) {}
-
-    function detectTextLang(text) {
-      if (!text) return 'en';
-      if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN';
-      if (/\b(dan|yang|untuk|dengan|di|ke|dari|ini|itu|bilik|sewa|kerja|murah|jual|beli|rumah|kereta)\b/i.test(text)) return 'ms';
-      return 'en';
-    }
-
-    async function translateSnippet(text, targetLang) {
-      if (!text || !text.trim()) return text;
-      const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
-      if (detectTextLang(text) === tl) return text;
-
-      const cacheKey = `${tl}::${text.slice(0, 120)}`;
-      if (transCache[cacheKey]) return transCache[cacheKey];
-
-      try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text.slice(0, 300))}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        const translated = (json[0] || []).map(item => item[0]).join('');
-        if (translated) {
-          transCache[cacheKey] = translated;
-          try { localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(transCache)); } catch (e) {}
-          return translated;
-        }
-      } catch (e) {}
-      return text;
-    }
-
-    async function autoTranslateRenderedCards(posts, lang) {
-      const cards = document.querySelectorAll('#postList > *');
-      const tasks = posts.map(async (p, i) => {
-        const card = cards[i];
-        if (!card || !p) return;
-
-        // 1. 并发翻译标题（替换全角中括号避免接口拒翻）
-        if (p.title) {
-          const cleanTitleForTrans = p.title.replace(/【/g, '[').replace(/】/g, '] ');
-          const newTitle = await translateSnippet(cleanTitleForTrans, lang);
-          if (newTitle && newTitle !== cleanTitleForTrans && currentLang === lang) {
-            const h3 = card.querySelector('h3');
-            if (h3) h3.innerText = newTitle;
-          }
-        }
-
-        // 2. 同步翻译价格/薪资标签（如 “人均 RM 12 - 22”）
-        if (p.price && /[\u4e00-\u9fa5]/.test(p.price) && lang !== 'zh') {
-          const newPrice = await translateSnippet(p.price, lang);
-          if (newPrice && newPrice !== p.price && currentLang === lang) {
-            const priceEl = card.querySelector('.text-red-600.font-extrabold');
-            if (priceEl) priceEl.innerText = newPrice;
-          }
-        }
-      });
-
-      await Promise.allSettled(tasks);
     }
 
     function renderPosts() {
@@ -1046,17 +940,14 @@
         if (hiddenIds.includes(p.id) || (reportCounts[p.id] || 0) >= 3) return false;
         if (containsSpamContent(p.title) || containsSpamContent(p.description)) return false;
 
-        // 普通免费帖满 7 天自动下架隐藏（VIP 置顶帖不受限制）
         const ageMs = Date.now() - new Date(p.created_at).getTime();
         if (!p.is_pinned && ageMs > 7 * 86400000) return false;
 
         const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
         const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
         const matchCat = (currentCategory === '全部' || p.category === currentCategory);
-        const matchKey = !keyword ||
-          p.title.toLowerCase().includes(keyword) ||
-          (p.description && p.description.toLowerCase().includes(keyword)) ||
-          p.price.toLowerCase().includes(keyword);
+        const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.price || ''}`.toLowerCase();
+        const matchKey = !keyword || searchBlob.includes(keyword);
         return matchCity && matchCat && matchKey;
       });
 
@@ -1068,7 +959,6 @@
       }
 
       listEl.innerHTML = filtered.map(createPostCardHTML).join('');
-      autoTranslateRenderedCards(filtered, currentLang);
     }
 
     function selectCategory(cat) {
@@ -1170,13 +1060,38 @@
       }
 
       btn.innerText = t.syncingCloud;
+      const postCat = document.getElementById('postCategory').value;
+      const postCity = document.getElementById('postCity').value;
+
+      // 发布瞬间生成 CN / EN / BM 三语版本写入云端数据库
+      const [tZh, tEn, tMs, pZh, pEn, pMs, dZh, dEn, dMs] = await Promise.all([
+        translateSnippet(rawTitle, 'zh'),
+        translateSnippet(rawTitle, 'en'),
+        translateSnippet(rawTitle, 'ms'),
+        translateSnippet(rawPrice, 'zh'),
+        translateSnippet(rawPrice, 'en'),
+        translateSnippet(rawPrice, 'ms'),
+        rawDesc ? translateSnippet(rawDesc, 'zh') : Promise.resolve(''),
+        rawDesc ? translateSnippet(rawDesc, 'en') : Promise.resolve(''),
+        rawDesc ? translateSnippet(rawDesc, 'ms') : Promise.resolve('')
+      ]);
+
       const newPost = {
-        category: document.getElementById('postCategory').value,
-        city: document.getElementById('postCity').value,
+        category: postCat,
+        city: postCity,
         title: rawTitle,
+        title_zh: tZh || rawTitle,
+        title_en: tEn || rawTitle,
+        title_ms: tMs || rawTitle,
         price: rawPrice,
+        price_zh: pZh || rawPrice,
+        price_en: pEn || rawPrice,
+        price_ms: pMs || rawPrice,
         whatsapp: normalizedWa,
         description: rawDesc,
+        desc_zh: dZh || rawDesc,
+        desc_en: dEn || rawDesc,
+        desc_ms: dMs || rawDesc,
         image_url: uploadedImageUrl,
         is_pinned: false
       };
