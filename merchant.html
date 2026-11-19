@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>商家入驻与认证中心 · 大马吉通 MY</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/api.js"></script>
+  <script src="/pay.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 顶部尊享黑金商业导航栏 -->
+    <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-900 text-white sticky top-0 z-30 shadow-lg px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <a href="/" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl text-xs font-bold transition">← 首页</a>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-black text-sm tracking-wide">大马吉通 · 商家入驻</h1>
+            <span class="vip-badge text-[9px] px-1.5 py-0.5 rounded">VIP</span>
+          </div>
+          <p class="text-[10px] text-amber-200/90">全马华人 & 本地商户免费入驻 · 地图导流曝光</p>
+        </div>
+      </div>
+      <a href="/admin.html" class="text-[11px] text-amber-300/80 hover:text-amber-200 underline">站长后台</a>
+    </header>
+
+    <!-- 商业权益展示横幅 -->
+    <section class="mx-3 mt-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-4 text-white shadow-md">
+      <h2 class="font-black text-base mb-1">让全马客户直接导航到你店门口！</h2>
+      <p class="text-xs text-amber-50 leading-relaxed mb-3">入驻大马吉通本地商家库，客户可直接在详情页一键唤起「站内语音导航」与「WhatsApp 预约下单」。</p>
+      <div class="grid grid-cols-3 gap-2 text-center bg-black/15 rounded-xl p-2 text-[11px]">
+        <div>
+          <div class="font-black text-sm">🆓 0 佣金</div>
+          <div class="text-amber-100 text-[10px]">免费入驻展示</div>
+        </div>
+        <div>
+          <div class="font-black text-sm">🧭 一键到店</div>
+          <div class="text-amber-100 text-[10px]">直连站内地图</div>
+        </div>
+        <div>
+          <div class="font-black text-sm">💬 秒接单</div>
+          <div class="text-amber-100 text-[10px]">WhatsApp直聊</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 商家入驻申请表单 -->
+    <section class="mx-3 mt-3 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <h3 class="font-extrabold text-sm text-gray-800 mb-3 flex items-center gap-1.5">
+        <span class="w-1 h-4 bg-amber-500 rounded-full"></span>
+        <span>填写店铺 / 服务商入驻资料</span>
+      </h3>
+
+      <form id="merchantForm" onsubmit="submitMerchant(event)" class="space-y-3">
+        <!-- 门头照片 / 营业执照预览上传 -->
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">上传店铺门头照 / 招牌海报 (强烈推荐)</label>
+          <div class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-amber-300 rounded-xl bg-amber-50/40 hover:bg-amber-50 transition overflow-hidden">
+            <div id="mPlaceholder" class="flex flex-col items-center text-amber-700/70 pointer-events-none">
+              <span class="text-2xl mb-1">🏪</span>
+              <span class="text-xs font-semibold">点击上传门店照片或优惠海报</span>
+            </div>
+            <img id="mPreview" src="" class="hidden w-full h-full object-cover pointer-events-none" />
+            <input type="file" accept="image/*" onchange="previewMerchantImg(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">店铺 / 公司名称 *</label>
+          <input type="text" id="mName" required placeholder="例如：槟城老字号炒粿条 / KL 极速冷气维修" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">所属州属 *</label>
+            <select id="mCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">主营行业 *</label>
+            <select id="mIndustry" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+              <option value="餐饮美食">🍜 餐饮美食</option>
+              <option value="生活服务">🛠️ 维修/搬家/清洁</option>
+              <option value="美容美发">💇 美容美发/养生</option>
+              <option value="汽车服务">🚗 修车/租车/洗车</option>
+              <option value="零售百货">🛍️ 零售百货/批发</option>
+              <option value="旅游民宿">🏨 旅游/包车/民宿</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">招牌优惠 / 人均消费 *</label>
+            <input type="text" id="mPromo" required placeholder="例如：开业8折 / 人均 RM15" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">接单 WhatsApp *</label>
+            <input type="text" id="mWhatsapp" required placeholder="60123456789" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">详细地址与营业时间 *</label>
+          <textarea id="mDesc" rows="3" required placeholder="填写详细街道地址（方便客户地图导航）、营业时间、特色服务介绍..." class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></textarea>
+        </div>
+
+        <button type="submit" id="mSubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-3.5 rounded-xl shadow-md hover:opacity-95 transition">
+          🚀 立即提交商家入驻
+        </button>
+      </form>
+    </section>
+
+    <!-- 付费黄金置顶套餐说明 -->
+    <section class="mx-3 mt-3 vip-card rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-black text-sm text-amber-900">👑 商家爆单推广 · 首页黄金置顶</span>
+        <span class="text-[11px] text-amber-700 font-bold">曝光量提升 10 倍</span>
+      </div>
+      <div id="planCards" class="space-y-2 mb-3"></div>
+      <button onclick="openPayModal()" class="w-full bg-slate-900 text-amber-300 font-bold text-xs py-3 rounded-xl shadow hover:bg-slate-800 transition">
+        💳 申请首页黄金置顶（支持 TNG / DuitNow 转账）
+      </button>
+    </section>
+
+    <!-- 付费置顶弹窗 -->
+    <div id="payModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
+      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-black text-base text-gray-800">👑 开通首页黄金置顶</h3>
+          <button onclick="document.getElementById('payModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500">✕</button>
+        </div>
+
+        <form onsubmit="handlePaySubmit(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">1. 选择置顶套餐 *</label>
+            <select id="payPlanSelect" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm font-bold text-amber-800"></select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">2. 输入要置顶的店铺/帖子标题 *</label>
+            <input type="text" id="payPostTitle" required placeholder="输入您已发布的店铺或帖子标题" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">3. 您的 WhatsApp 联系方式 *</label>
+            <input type="text" id="payPhone" required placeholder="60123456789" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
+          </div>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-1">
+            <div class="font-bold text-amber-900">💳 站长官方收款方式：</div>
+            <div id="receiverInfo" class="text-amber-800"></div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">4. 上传 TNG / Bank 转账截图凭证 *</label>
+            <input type="file" id="receiptFileInput" accept="image/*" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2 text-xs" />
+          </div>
+
+          <button type="submit" id="paySubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow">
+            ✅ 提交付款凭证（后台秒审置顶）
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let merchantFile = null;
+
+    // 填充全马州属下拉框
+    const citySel = document.getElementById('mCity');
+    DMJT_REGIONS.filter(r => r.value !== '全马').forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.value;
+      opt.textContent = r.zh;
+      if (r.value === '吉隆坡') opt.selected = true;
+      citySel.appendChild(opt);
+    });
+
+    // 渲染置顶套餐
+    const planCards = document.getElementById('planCards');
+    const payPlanSelect = document.getElementById('payPlanSelect');
+    DMJT_PAY.PLANS.forEach(p => {
+      planCards.innerHTML += `
+        <div class="bg-white rounded-xl p-2.5 border border-amber-200/70 flex items-center justify-between text-xs">
+          <span class="font-bold text-gray-800">${p.zh}</span>
+          <span class="font-black text-red-600 text-sm">RM ${p.price}</span>
+        </div>
+      `;
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.zh} — RM ${p.price}`;
+      payPlanSelect.appendChild(opt);
+    });
+
+    document.getElementById('receiverInfo').innerHTML = `
+      <div>渠道：<b>${DMJT_PAY.RECEIVER.bankName}</b></div>
+      <div>户名：<b>${DMJT_PAY.RECEIVER.accountName}</b></div>
+      <div>账号：<b>${DMJT_PAY.RECEIVER.accountNo}</b></div>
+    `;
+
+    function previewMerchantImg(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      merchantFile = file;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('mPreview').src = ev.target.result;
+        document.getElementById('mPreview').classList.remove('hidden');
+        document.getElementById('mPlaceholder').classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function submitMerchant(e) {
+      e.preventDefault();
+      const btn = document.getElementById('mSubmitBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ 正在提交商家入驻资料...';
+
+      try {
+        let imgUrl = null;
+        if (merchantFile) {
+          imgUrl = await DMJT_API.uploadImage(merchantFile);
+        }
+
+        const industry = document.getElementById('mIndustry').value;
+        const name = document.getElementById('mName').value.trim();
+        const postData = {
+          category: '本地优惠',
+          city: document.getElementById('mCity').value,
+          title: `【认证商家·${industry}】${name}`,
+          price: document.getElementById('mPromo').value.trim(),
+          whatsapp: document.getElementById('mWhatsapp').value.trim(),
+          description: document.getElementById('mDesc').value.trim(),
+          image_url: imgUrl,
+          is_pinned: false
+        };
+
+        const { error } = await dmjtSupabase.from('posts').insert([postData]);
+        if (error) throw error;
+
+        alert('🎉 恭喜！您的商家资料已成功入驻大马吉通，现已上线展示！');
+        window.location.href = '/';
+      } catch (err) {
+        alert('提交失败：' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 立即提交商家入驻';
+      }
+    }
+
+    function openPayModal() {
+      const titleInput = document.getElementById('mName').value.trim();
+      const phoneInput = document.getElementById('mWhatsapp').value.trim();
+      if (titleInput) document.getElementById('payPostTitle').value = titleInput;
+      if (phoneInput) document.getElementById('payPhone').value = phoneInput;
+      document.getElementById('payModal').classList.remove('hidden');
+    }
+
+    async function handlePaySubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('paySubmitBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ 正在上传凭证并提交订单...';
+
+      try {
+        const file = document.getElementById('receiptFileInput').files[0];
+        let receiptUrl = null;
+        if (file) {
+          receiptUrl = await DMJT_API.uploadImage(file);
+        }
+
+        await DMJT_PAY.submitTopOrder({
+          postId: '商家申请',
+          postTitle: document.getElementById('payPostTitle').value.trim(),
+          planId: document.getElementById('payPlanSelect').value,
+          payerPhone: document.getElementById('payPhone').value.trim(),
+          receiptUrl
+        });
+
+        alert('✅ 付款凭证已提交！站长在后台核实后将立即为您开启首页黄金置顶。');
+        document.getElementById('payModal').classList.add('hidden');
+      } catch (err) {
+        alert('提交失败：' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '✅ 提交付款凭证（后台秒审置顶）';
+      }
+    }
+  </script>
+</body>
+</html>
