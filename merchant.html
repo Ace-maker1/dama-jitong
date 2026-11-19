@@ -201,7 +201,7 @@
         labelDesc: '详细地址与营业时间 *',
         phDesc: '填写详细街道地址（方便客户地图导航）、营业时间、特色服务介绍...',
         submitBtn: '🚀 立即提交商家入驻',
-        submittingBtn: '⏳ 正在提交商家入驻资料...',
+        submittingBtn: '⏳ 正在生成三语并提交商家资料...',
         successAlert: '🎉 恭喜！您的商家资料已成功入驻大马吉通，现已上线展示！',
         vipTitle: '👑 商家爆单推广 · 首页黄金置顶',
         vipBadge: '曝光量提升 10 倍',
@@ -244,7 +244,7 @@
         labelDesc: 'Full Address & Opening Hours *',
         phDesc: 'Enter full street address (for map navigation), opening hours, and services...',
         submitBtn: '🚀 Submit Merchant Listing',
-        submittingBtn: '⏳ Submitting business profile...',
+        submittingBtn: '⏳ Generating trilingual & submitting...',
         successAlert: '🎉 Success! Your business is now live on DamaJitong!',
         vipTitle: '👑 Boost Sales · Homepage Prime Pin',
         vipBadge: '10x More Views',
@@ -287,7 +287,7 @@
         labelDesc: 'Alamat Penuh & Waktu Operasi *',
         phDesc: 'Masukkan alamat jalan lengkap (untuk navigasi peta), waktu operasi & servis...',
         submitBtn: '🚀 Hantar Pendaftaran Peniaga',
-        submittingBtn: '⏳ Menghantar maklumat kedai...',
+        submittingBtn: '⏳ Menjana 3 bahasa & menghantar...',
         successAlert: '🎉 Tahniah! Kedai anda telah berjaya didaftarkan dan dipaparkan di DamaJitong!',
         vipTitle: '👑 Promosi Laris · Pin Utama Laman Depan',
         vipBadge: '10x Lebih Tontonan',
@@ -310,6 +310,27 @@
 
     let currentMLang = localStorage.getItem('dama_lang') || 'zh';
     let merchantFile = null;
+    const mTranslateCache = {};
+
+    async function translateMerchantText(text, targetLang) {
+      if (!text || !text.trim()) return text || '';
+      const cleanInput = text.replace(/【/g, '[').replace(/】/g, '] ');
+      const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
+      const cacheKey = `${tl}::${cleanInput}`;
+      if (mTranslateCache[cacheKey]) return mTranslateCache[cacheKey];
+
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(cleanInput)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const translated = (json[0] || []).map(item => item[0]).join('').trim();
+        if (translated) {
+          mTranslateCache[cacheKey] = translated;
+          return translated;
+        }
+      } catch (e) {}
+      return cleanInput;
+    }
 
     function populateCities(lang) {
       const citySel = document.getElementById('mCity');
@@ -464,13 +485,38 @@
 
         const industry = document.getElementById('mIndustry').value;
         const name = document.getElementById('mName').value.trim();
+        const promo = document.getElementById('mPromo').value.trim();
+        const desc = document.getElementById('mDesc').value.trim();
+        const fullTitle = `【${M_I18N.zh.tagPrefix}·${industry}】${name}`;
+
+        const [tZh, tEn, tMs, pZh, pEn, pMs, dZh, dEn, dMs] = await Promise.all([
+          translateMerchantText(fullTitle, 'zh'),
+          translateMerchantText(fullTitle, 'en'),
+          translateMerchantText(fullTitle, 'ms'),
+          translateMerchantText(promo, 'zh'),
+          translateMerchantText(promo, 'en'),
+          translateMerchantText(promo, 'ms'),
+          desc ? translateMerchantText(desc, 'zh') : Promise.resolve(''),
+          desc ? translateMerchantText(desc, 'en') : Promise.resolve(''),
+          desc ? translateMerchantText(desc, 'ms') : Promise.resolve('')
+        ]);
+
         const postData = {
           category: '本地优惠',
           city: document.getElementById('mCity').value,
-          title: `【${t.tagPrefix}·${industry}】${name}`,
-          price: document.getElementById('mPromo').value.trim(),
+          title: fullTitle,
+          title_zh: tZh || fullTitle,
+          title_en: tEn || fullTitle,
+          title_ms: tMs || fullTitle,
+          price: promo,
+          price_zh: pZh || promo,
+          price_en: pEn || promo,
+          price_ms: pMs || promo,
           whatsapp: document.getElementById('mWhatsapp').value.trim(),
-          description: document.getElementById('mDesc').value.trim(),
+          description: desc,
+          desc_zh: dZh || desc,
+          desc_en: dEn || desc,
+          desc_ms: dMs || desc,
           image_url: imgUrl,
           is_pinned: false
         };
