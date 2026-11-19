@@ -1,12 +1,12 @@
 const ALLOWED_HOSTS = [
+  'kwongwah.com.my',
+  'news.google.com',
+  'rthk.hk',
   'feeds.bbci.co.uk',
-  'www.thestar.com.my',
+  'news.ltn.com.tw',
   'www.malaymail.com',
   'www.freemalaysiatoday.com',
-  'www.sinchew.com.my',
-  'www.chinapress.com.my',
-  'www.orientaldaily.com.my',
-  'rss.nytimes.com'
+  'www.channelnewsasia.com'
 ];
 
 module.exports = async function handler(req, res) {
