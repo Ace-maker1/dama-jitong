@@ -6,7 +6,7 @@
   <title>大马吉通 MY - DamaJitong Malaysia Classifieds</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="DamaJitong 大马吉通">
+  <meta name="apple-mobile-web-app-title" content="DamaJitong 大马吉通">
   <link rel="apple-touch-icon" href="/icon.png?v=3">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -29,9 +29,12 @@
             <span id="brandTitle" class="font-extrabold text-sm tracking-tight">大马吉通</span>
             <span class="text-[9px] bg-white/20 px-1.5 py-0.2 rounded font-bold">MY</span>
           </div>
-          <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1 max-w-[185px]">
-            <!-- 由 JS 根据 CN/EN/BM 自动生成全部 13 州 + 3 直辖区 -->
-          </select>
+          <div class="flex items-center gap-1">
+            <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1 max-w-[155px]">
+              <!-- 由 JS 根据 CN/EN/BM 自动生成全部 13 州 + 3 直辖区 -->
+            </select>
+            <button onclick="autoDetectState()" id="autoStateBtn" title="自动定位所在州属" class="text-[10px] bg-white/20 hover:bg-white/30 px-1.5 py-0.2 rounded font-bold shrink-0">📍定位</button>
+          </div>
         </div>
       </div>
 
@@ -53,7 +56,7 @@
 
   <!-- 主页面内容 -->
   <main id="mainTab" class="flex-1 pb-24">
-    <!-- 大马今日便民速览卡片（实时汇率 + 云端同步油价） -->
+    <!-- 大马今日便民速览卡片（实时汇率 + 2026最新油价） -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100">
       <div class="flex items-center justify-between mb-2.5">
         <div class="flex items-center space-x-1.5">
@@ -65,15 +68,15 @@
       <div class="grid grid-cols-3 gap-2 text-center">
         <div class="bg-red-50/70 rounded-xl p-2 border border-red-100">
           <div class="text-[10px] text-gray-500 mb-0.5">RON95 / RON97</div>
-          <div id="fuelPriceDisplay" class="text-xs font-extrabold text-red-600">RM 2.05 <span class="text-gray-400 font-normal">/ 3.19</span></div>
+          <div id="fuelPriceDisplay" class="text-xs font-extrabold text-red-600">RM 1.99 <span class="text-gray-400 font-normal">/ 4.00</span></div>
         </div>
         <div class="bg-amber-50/70 rounded-xl p-2 border border-amber-100">
           <div id="rateCnyLabel" class="text-[10px] text-gray-500 mb-0.5">马币兑人民币</div>
-          <div id="rateCnyDisplay" class="text-xs font-extrabold text-amber-600">1 MYR ≈ 1.63 CNY</div>
+          <div id="rateCnyDisplay" class="text-xs font-extrabold text-amber-600">1 MYR ≈ 1.62 CNY</div>
         </div>
         <div class="bg-blue-50/70 rounded-xl p-2 border border-blue-100">
           <div id="rateSgdLabel" class="text-[10px] text-gray-500 mb-0.5">新币兑马币</div>
-          <div id="rateSgdDisplay" class="text-xs font-extrabold text-blue-600">1 SGD ≈ 3.32 MYR</div>
+          <div id="rateSgdDisplay" class="text-xs font-extrabold text-blue-600">1 SGD ≈ 3.19 MYR</div>
         </div>
       </div>
     </section>
@@ -154,8 +157,8 @@
         <div class="flex items-center space-x-3">
           <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base">🏪</span>
           <div>
-           <div id="profileMerchantTitle" class="text-sm font-extrabold text-amber-800">商家入驻 · 首页黄金置顶</div>
-<div id="profileMerchantDesc" class="text-xs text-gray-400">全马商户免费入驻 · 地图导流曝光</div>
+            <div id="profileMerchantTitle" class="text-sm font-extrabold text-amber-800">商家入驻 · 首页黄金置顶</div>
+            <div id="profileMerchantDesc" class="text-xs text-gray-400">全马商户免费入驻 · 地图导流曝光</div>
           </div>
         </div>
         <span class="text-amber-500 font-bold text-lg">›</span>
@@ -188,7 +191,7 @@
     </button>
     <a href="/news.html" id="navNews" class="flex flex-col items-center text-gray-400 hover:text-red-600">
       <span class="text-lg">📰</span>
-     <span id="navNewsText" class="text-[10px] font-medium mt-0.5">实时新闻</span>
+      <span id="navNewsText" class="text-[10px] font-medium mt-0.5">实时新闻</span>
     </a>
     <button onclick="openPostModal()" class="flex flex-col items-center -mt-6">
       <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-orange-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white hover:scale-105 transition">+</div>
@@ -279,31 +282,112 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 马来西亚全部 13 个州 + 3 个联邦直辖区（含三语与分组）
+    // ==================== 1. 防垃圾与合规审核规则库 ====================
+    const SPAM_BLOCK_WORDS = [
+      '918kiss', 'mega888', 'pussy888', 'xe88', 'jili', 'scr888', 'winbox', 'bk8', '12play',
+      'judi', 'kasino', 'casino', 'slot', 'togel', '4d magnum', '网赌', '博彩', '赌博', '老虎机', '百家乐', '六合彩', '万字',
+      'pinjaman wang', 'ah long', '大耳窿', '高利贷', '非法借贷', '洗钱', '跑分', '兼职刷单', '日赚过千', '裸聊', '约炮', '色情'
+    ];
+    const HIDDEN_POSTS_KEY = 'dama_hidden_posts_v1';
+    const REPORT_COUNTS_KEY = 'dama_report_counts_v1';
+    const DAILY_POST_LOG_KEY = 'dama_daily_posts_v1';
+
+    function containsSpamContent(text) {
+      if (!text) return false;
+      const lower = text.toLowerCase();
+      return SPAM_BLOCK_WORDS.some(w => lower.includes(w));
+    }
+
+    function normalizeMalaysiaWhatsapp(raw) {
+      let digits = (raw || '').replace(/[^0-9]/g, '');
+      if (digits.startsWith('01')) digits = '60' + digits.slice(1);
+      if (digits.startsWith('1') && digits.length >= 9 && digits.length <= 10) digits = '60' + digits;
+      return digits;
+    }
+
+    function getHiddenPostIds() {
+      try { return JSON.parse(localStorage.getItem(HIDDEN_POSTS_KEY) || '[]'); } catch (e) { return []; }
+    }
+
+    function getReportCounts() {
+      try { return JSON.parse(localStorage.getItem(REPORT_COUNTS_KEY) || '{}'); } catch (e) { return {}; }
+    }
+
+    function reportPost(event, postId) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const confirmMsg = currentLang === 'en'
+        ? 'Report this listing as spam/scam? It will be hidden immediately.'
+        : (currentLang === 'ms' ? 'Laporkan iklan ini sebagai spam/penipuan? Ia akan disembunyikan serta-merta.' : '确认举报此违规/虚假信息？确认后将立即为您屏蔽该条内容。');
+
+      if (!confirm(confirmMsg)) return;
+
+      const hidden = getHiddenPostIds();
+      if (!hidden.includes(postId)) {
+        hidden.push(postId);
+        localStorage.setItem(HIDDEN_POSTS_KEY, JSON.stringify(hidden));
+      }
+
+      const counts = getReportCounts();
+      counts[postId] = (counts[postId] || 0) + 1;
+      localStorage.setItem(REPORT_COUNTS_KEY, JSON.stringify(counts));
+
+      renderPosts();
+      renderFavs();
+    }
+
+    // 马来西亚全部 13 个州 + 3 个联邦直辖区（含州中心坐标，用于自动定位所在州属）
     const MY_REGIONS = [
       { value: '全马', group: 'all', zh: '全马地区', en: 'All Malaysia', ms: 'Seluruh Malaysia' },
-      // 3 个联邦直辖区
-      { value: '吉隆坡', group: 'ft', zh: '吉隆坡 (直辖区)', en: 'Kuala Lumpur (FT)', ms: 'WP Kuala Lumpur' },
-      { value: '布城', group: 'ft', zh: '布城 (直辖区)', en: 'Putrajaya (FT)', ms: 'WP Putrajaya' },
-      { value: '纳闽', group: 'ft', zh: '纳闽 (直辖区)', en: 'Labuan (FT)', ms: 'WP Labuan' },
-      // 西马 11 州
-      { value: '柔佛', group: 'west', zh: '柔佛 Johor', en: 'Johor', ms: 'Johor' },
-      { value: '吉打', group: 'west', zh: '吉打 Kedah', en: 'Kedah', ms: 'Kedah' },
-      { value: '吉兰丹', group: 'west', zh: '吉兰丹 Kelantan', en: 'Kelantan', ms: 'Kelantan' },
-      { value: '马六甲', group: 'west', zh: '马六甲 Melaka', en: 'Melaka', ms: 'Melaka' },
-      { value: '森美兰', group: 'west', zh: '森美兰 Negeri Sembilan', en: 'Negeri Sembilan', ms: 'Negeri Sembilan' },
-      { value: '彭亨', group: 'west', zh: '彭亨 Pahang', en: 'Pahang', ms: 'Pahang' },
-      { value: '槟城', group: 'west', zh: '槟城 Penang', en: 'Penang', ms: 'Pulau Pinang' },
-      { value: '霹雳', group: 'west', zh: '霹雳 Perak', en: 'Perak', ms: 'Perak' },
-      { value: '玻璃市', group: 'west', zh: '玻璃市 Perlis', en: 'Perlis', ms: 'Perlis' },
-      { value: '雪兰莪', group: 'west', zh: '雪兰莪 Selangor', en: 'Selangor', ms: 'Selangor' },
-      { value: '登嘉楼', group: 'west', zh: '登嘉楼 Terengganu', en: 'Terengganu', ms: 'Terengganu' },
-      // 东马 2 州
-      { value: '沙巴', group: 'east', zh: '沙巴 Sabah', en: 'Sabah', ms: 'Sabah' },
-      { value: '砂拉越', group: 'east', zh: '砂拉越 Sarawak', en: 'Sarawak', ms: 'Sarawak' }
+      { value: '吉隆坡', group: 'ft', zh: '吉隆坡 (直辖区)', en: 'Kuala Lumpur (FT)', ms: 'WP Kuala Lumpur', lat: 3.1390, lng: 101.6869 },
+      { value: '布城', group: 'ft', zh: '布城 (直辖区)', en: 'Putrajaya (FT)', ms: 'WP Putrajaya', lat: 2.9264, lng: 101.6964 },
+      { value: '纳闽', group: 'ft', zh: '纳闽 (直辖区)', en: 'Labuan (FT)', ms: 'WP Labuan', lat: 5.2831, lng: 115.2308 },
+      { value: '柔佛', group: 'west', zh: '柔佛 Johor', en: 'Johor', ms: 'Johor', lat: 1.4927, lng: 103.7414 },
+      { value: '吉打', group: 'west', zh: '吉打 Kedah', en: 'Kedah', ms: 'Kedah', lat: 6.1248, lng: 100.3678 },
+      { value: '吉兰丹', group: 'west', zh: '吉兰丹 Kelantan', en: 'Kelantan', ms: 'Kelantan', lat: 6.1254, lng: 102.2381 },
+      { value: '马六甲', group: 'west', zh: '马六甲 Melaka', en: 'Melaka', ms: 'Melaka', lat: 2.1896, lng: 102.2501 },
+      { value: '森美兰', group: 'west', zh: '森美兰 Negeri Sembilan', en: 'Negeri Sembilan', ms: 'Negeri Sembilan', lat: 2.7258, lng: 101.9424 },
+      { value: '彭亨', group: 'west', zh: '彭亨 Pahang', en: 'Pahang', ms: 'Pahang', lat: 3.8077, lng: 103.3260 },
+      { value: '槟城', group: 'west', zh: '槟城 Penang', en: 'Penang', ms: 'Pulau Pinang', lat: 5.4141, lng: 100.3288 },
+      { value: '霹雳', group: 'west', zh: '霹雳 Perak', en: 'Perak', ms: 'Perak', lat: 4.5975, lng: 101.0901 },
+      { value: '玻璃市', group: 'west', zh: '玻璃市 Perlis', en: 'Perlis', ms: 'Perlis', lat: 6.4449, lng: 100.2048 },
+      { value: '雪兰莪', group: 'west', zh: '雪兰莪 Selangor', en: 'Selangor', ms: 'Selangor', lat: 3.0733, lng: 101.5185 },
+      { value: '登嘉楼', group: 'west', zh: '登嘉楼 Terengganu', en: 'Terengganu', ms: 'Terengganu', lat: 5.3117, lng: 103.1324 },
+      { value: '沙巴', group: 'east', zh: '沙巴 Sabah', en: 'Sabah', ms: 'Sabah', lat: 5.9804, lng: 116.0735 },
+      { value: '砂拉越', group: 'east', zh: '砂拉越 Sarawak', en: 'Sarawak', ms: 'Sarawak', lat: 1.5533, lng: 110.3592 }
     ];
 
-    // 兼容旧数据别名映射
+    function autoDetectState() {
+      if (!navigator.geolocation) return;
+      const btn = document.getElementById('autoStateBtn');
+      btn.innerText = '⏳';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const uLat = pos.coords.latitude;
+          const uLng = pos.coords.longitude;
+          let closest = null;
+          let minDist = Infinity;
+          MY_REGIONS.filter(r => r.lat && r.lng).forEach(r => {
+            const d = Math.hypot(uLat - r.lat, uLng - r.lng);
+            if (d < minDist) {
+              minDist = d;
+              closest = r;
+            }
+          });
+          if (closest && minDist < 1.5) {
+            document.getElementById('cityFilter').value = closest.value;
+            document.getElementById('postCity').value = closest.value;
+            renderPosts();
+          }
+          btn.innerText = '📍';
+        },
+        () => { btn.innerText = '📍'; },
+        { timeout: 6000 }
+      );
+    }
+
     const LEGACY_CITY_MAP = {
       '吉隆坡/雪兰莪': ['吉隆坡', '雪兰莪'],
       '新山': ['柔佛']
@@ -312,6 +396,7 @@
     const I18N = {
       zh: {
         brandTitle: '大马吉通',
+        autoLocBtn: '📍定位',
         searchPlaceholder: '搜租房、招聘、二手...',
         dailyBoardTitle: '大马今日便民速览',
         dailyBoardSub: '汇率实时 · 油价每周四更新',
@@ -330,6 +415,7 @@
         pinnedTag: '置顶',
         pinnedPrefix: '置顶 · ',
         publishedSuffix: '发布',
+        reportBtn: '🚨 举报',
         noDesc: '发布者未填写更多补充描述。',
         translateBtn: '🌐 翻译成中文',
         translatingBtn: '⏳ 正在翻译...',
@@ -341,7 +427,7 @@
         safetyTip: '安全提示：线下交易请核实对方身份，切勿提前转账定金。',
         waGreeting: (title) => `你好，我在【大马吉通】看到你发布的：${title}，请问还在吗？`,
         navHome: '首页',
-        navNews: '本地资讯',
+        navNews: '实时新闻',
         navPost: '发布',
         navFav: '收藏',
         navProfile: '我的',
@@ -371,12 +457,16 @@
         submitBtn: '立即发布上线',
         uploadingImg: '正在上传实拍照片...',
         syncingCloud: '正在同步到云端...',
+        spamAlert: '⚠️ 内容包含违规或敏感词汇（如博彩、非法借贷、刷单等），系统已自动拦截！',
+        phoneAlert: '⚠️ 请输入有效的马来西亚 WhatsApp 手机号码（例如 0123456789 或 60123456789）！',
+        limitAlert: '⚠️ 为防止刷屏广告，每台设备每日最多免费发布 3 条信息，如需置顶推广请前往商家入驻中心。',
         groupLabels: { ft: '联邦直辖区 (3)', west: '西马各州 (11)', east: '东马各州 (2)', all: '通用' },
         cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' },
         cardLabels: { '找房子': '精选房源', '找工作': '名企直聘', '二手闲置': '同城闲置', '本地优惠': '本地热点' }
       },
       en: {
         brandTitle: 'DamaJitong',
+        autoLocBtn: '📍GPS',
         searchPlaceholder: 'Search rent, jobs, preloved...',
         dailyBoardTitle: 'Malaysia Daily Info',
         dailyBoardSub: 'Live FX · Fuel Updated Thu',
@@ -395,6 +485,7 @@
         pinnedTag: 'TOP',
         pinnedPrefix: 'Featured · ',
         publishedSuffix: '',
+        reportBtn: '🚨 Report',
         noDesc: 'No additional description provided.',
         translateBtn: '🌐 Translate to English',
         translatingBtn: '⏳ Translating...',
@@ -406,7 +497,7 @@
         safetyTip: 'Safety Tip: Meet in public & verify before making any advance payment.',
         waGreeting: (title) => `Hi, I saw your post on DamaJitong: "${title}". Is it still available?`,
         navHome: 'Home',
-        navNews: 'Local Deals',
+        navNews: 'News',
         navPost: 'Post',
         navFav: 'Saved',
         navProfile: 'Me',
@@ -436,12 +527,16 @@
         submitBtn: 'Publish Now',
         uploadingImg: 'Uploading photo...',
         syncingCloud: 'Publishing to cloud...',
+        spamAlert: '⚠️ Restricted keywords detected (gambling/loan/scam). Submission blocked.',
+        phoneAlert: '⚠️ Please enter a valid Malaysia WhatsApp number (e.g. 0123456789 or 60123456789).',
+        limitAlert: '⚠️ Daily limit of 3 free posts reached to prevent spam.',
         groupLabels: { ft: 'Federal Territories (3)', west: 'Peninsular States (11)', east: 'East Malaysia (2)', all: 'General' },
         cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' },
         cardLabels: { '找房子': 'Property', '找工作': 'Hiring', '二手闲置': 'Preloved', '本地优惠': 'Hot Deal' }
       },
       ms: {
         brandTitle: 'DamaJitong',
+        autoLocBtn: '📍GPS',
         searchPlaceholder: 'Cari rumah sewa, kerja, terpakai...',
         dailyBoardTitle: 'Info Harian Malaysia',
         dailyBoardSub: 'Kadar Semasa · Minyak Khamis',
@@ -460,6 +555,7 @@
         pinnedTag: 'PILIHAN',
         pinnedPrefix: 'Taja · ',
         publishedSuffix: '',
+        reportBtn: '🚨 Lapor',
         noDesc: 'Tiada maklumat tambahan dinyatakan.',
         translateBtn: '🌐 Terjemah ke Bahasa Melayu',
         translatingBtn: '⏳ Menterjemah...',
@@ -471,7 +567,7 @@
         safetyTip: 'Tip Keselamatan: Sahkan identiti sebelum membuat sebarang bayaran pendahuluan.',
         waGreeting: (title) => `Salam, saya nampak iklan anda di DamaJitong: "${title}". Masih ada lagi?`,
         navHome: 'Utama',
-        navNews: 'Info Tempatan',
+        navNews: 'Berita',
         navPost: 'Iklan',
         navFav: 'Simpanan',
         navProfile: 'Saya',
@@ -501,6 +597,9 @@
         submitBtn: 'Hantar Iklan Sekarang',
         uploadingImg: 'Memuat naik gambar...',
         syncingCloud: 'Menyimpan iklan...',
+        spamAlert: '⚠️ Kata kunci terlarang dikesan (judi/pinjaman haram). Penghantaran disekat.',
+        phoneAlert: '⚠️ Sila masukkan nombor WhatsApp Malaysia yang sah (cth: 0123456789 atau 60123456789).',
+        limitAlert: '⚠️ Had 3 iklan percuma sehari telah dicapai untuk mengelakkan spam.',
         groupLabels: { ft: 'Wilayah Persekutuan (3)', west: 'Semenanjung (11 Negeri)', east: 'Sabah & Sarawak (2)', all: 'Umum' },
         cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' },
         cardLabels: { '找房子': 'Hartanah', '找工作': 'Kerjaya', '二手闲置': 'Terpakai', '本地优惠': 'Promosi' }
@@ -521,7 +620,6 @@
       return found ? found[lang] : val;
     }
 
-    // 动态填充顶部筛选框 & 发帖弹窗里的 13 州 + 3 直辖区选项
     function populateRegionDropdowns() {
       const t = I18N[currentLang];
       const filterSelect = document.getElementById('cityFilter');
@@ -614,7 +712,7 @@
       }
     }
 
-   async function fetchLiveRates() {
+    async function fetchLiveRates() {
       try {
         const res = await fetch('https://api.frankfurter.dev/v1/latest?base=MYR&symbols=CNY,SGD');
         const json = await res.json();
@@ -625,9 +723,7 @@
           document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${sgdToMyr} MYR`;
           return;
         }
-      } catch (e) {
-        console.warn('主汇率接口切换至备用接口:', e);
-      }
+      } catch (e) {}
 
       try {
         const res2 = await fetch('https://open.er-api.com/v6/latest/MYR');
@@ -636,9 +732,7 @@
           document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${json2.rates.CNY.toFixed(2)} CNY`;
           document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${(1 / json2.rates.SGD).toFixed(2)} MYR`;
         }
-      } catch (e2) {
-        console.warn('使用默认兜底汇率:', e2);
-      }
+      } catch (e2) {}
     }
 
     async function fetchLiveFuel() {
@@ -648,12 +742,10 @@
           .select('ron95, ron97')
           .eq('id', 1)
           .single();
-        if (!error && data) {
+        if (!error && data && data.ron95 && data.ron97) {
           document.getElementById('fuelPriceDisplay').innerHTML = `RM ${data.ron95} <span class="text-gray-400 font-normal">/ ${data.ron97}</span>`;
         }
-      } catch (e) {
-        console.warn('使用默认兜底油价:', e);
-      }
+      } catch (e) {}
     }
 
     function setLang(lang) {
@@ -671,25 +763,24 @@
       });
 
       populateRegionDropdowns();
+      const autoBtn = document.getElementById('autoStateBtn');
+      if (autoBtn) autoBtn.innerText = t.autoLocBtn;
+
       const navNewsEl = document.getElementById('navNewsText');
-  if (navNewsEl) {
-    navNewsEl.textContent = lang === 'en' ? 'News' : (lang === 'ms' ? 'Berita' : '实时新闻');
-  }
-  const fabMapEl = document.getElementById('fabMapText');
-  if (fabMapEl) {
-    fabMapEl.textContent = lang === 'en' ? 'Routes' : (lang === 'ms' ? 'Laluan' : '查路线');
-  }
+      if (navNewsEl) navNewsEl.textContent = t.navNews;
+
+      const fabMapEl = document.getElementById('fabMapText');
+      if (fabMapEl) {
+        fabMapEl.textContent = lang === 'en' ? 'Routes' : (lang === 'ms' ? 'Laluan' : '查路线');
+      }
       const merchTitleEl = document.getElementById('profileMerchantTitle');
-  if (merchTitleEl) {
-    merchTitleEl.textContent = lang === 'en' ? 'Merchant Listing · Prime Pin' : (lang === 'ms' ? 'Daftar Peniaga · Pin Utama' : '商家入驻 · 首页黄金置顶');
-  }
-  const merchDescEl = document.getElementById('profileMerchantDesc');
-  if (merchDescEl) {
-    merchDescEl.textContent = lang === 'en' ? 'Free MY Listing · Map Traffic Boost' : (lang === 'ms' ? 'Daftar Percuma · Trafik Peta' : '全马商户免费入驻 · 地图导流曝光');
-  }
-  if (typeof renderPosts === 'function') {
-    renderPosts();
-  }
+      if (merchTitleEl) {
+        merchTitleEl.textContent = lang === 'en' ? 'Merchant Listing · Prime Pin' : (lang === 'ms' ? 'Daftar Peniaga · Pin Utama' : '商家入驻 · 首页黄金置顶');
+      }
+      const merchDescEl = document.getElementById('profileMerchantDesc');
+      if (merchDescEl) {
+        merchDescEl.textContent = lang === 'en' ? 'Free MY Listing · Map Traffic Boost' : (lang === 'ms' ? 'Daftar Percuma · Trafik Peta' : '全马商户免费入驻 · 地图导流曝光');
+      }
 
       document.getElementById('brandTitle').innerText = t.brandTitle;
       document.getElementById('searchInput').placeholder = t.searchPlaceholder;
@@ -706,7 +797,6 @@
       document.getElementById('topFreePostBtn').innerText = t.freePostBtn;
 
       if (document.getElementById('navHomeText')) document.getElementById('navHomeText').innerText = t.navHome;
-      if (document.getElementById('navNewsText')) document.getElementById('navNewsText').innerText = t.navNews;
       if (document.getElementById('navPostText')) document.getElementById('navPostText').innerText = t.navPost;
       if (document.getElementById('navFavText')) document.getElementById('navFavText').innerText = t.navFav;
       if (document.getElementById('navProfileText')) document.getElementById('navProfileText').innerText = t.navProfile;
@@ -853,9 +943,14 @@
                 </div>
                 <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${post.title}</h3>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="text-red-600 font-extrabold text-sm">${post.price}</span>
-                <span class="text-[11px] text-gray-400">${post.is_pinned ? t.pinnedPrefix : ''}${dateStr}${t.publishedSuffix}</span>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-red-600 font-extrabold text-sm truncate">${post.price}</span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-[11px] text-gray-400">${post.is_pinned ? t.pinnedPrefix : ''}${dateStr}${t.publishedSuffix}</span>
+                  <button onclick="reportPost(event, ${post.id})" class="text-[10px] text-gray-400 hover:text-rose-600 px-1.5 py-0.5 rounded bg-gray-50 hover:bg-rose-50 transition">
+                    ${t.reportBtn}
+                  </button>
+                </div>
               </div>
             </div>
             ${rightMediaHTML}
@@ -865,105 +960,97 @@
     }
 
     const TRANS_CACHE_KEY = 'dama_trans_cache_v1';
-let transCache = {};
-try { transCache = JSON.parse(localStorage.getItem(TRANS_CACHE_KEY) || '{}'); } catch (e) {}
+    let transCache = {};
+    try { transCache = JSON.parse(localStorage.getItem(TRANS_CACHE_KEY) || '{}'); } catch (e) {}
 
-function detectTextLang(text) {
-  if (!text) return 'en';
-  if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN';
-  if (/\b(dan|yang|untuk|dengan|di|ke|dari|ini|itu|bilik|sewa|kerja|murah|jual|beli|rumah|kereta)\b/i.test(text)) return 'ms';
-  return 'en';
-}
-
-async function translateSnippet(text, targetLang) {
-  if (!text || !text.trim()) return text;
-  const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
-  if (detectTextLang(text) === tl) return text;
-
-  const cacheKey = `${tl}::${text.slice(0, 120)}`;
-  if (transCache[cacheKey]) return transCache[cacheKey];
-
-  try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text.slice(0, 300))}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    const translated = (json[0] || []).map(item => item[0]).join('');
-    if (translated) {
-      transCache[cacheKey] = translated;
-      try { localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(transCache)); } catch (e) {}
-      return translated;
+    function detectTextLang(text) {
+      if (!text) return 'en';
+      if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN';
+      if (/\b(dan|yang|untuk|dengan|di|ke|dari|ini|itu|bilik|sewa|kerja|murah|jual|beli|rumah|kereta)\b/i.test(text)) return 'ms';
+      return 'en';
     }
-  } catch (e) {}
-  return text;
-}
 
-async function autoTranslateRenderedCards(posts, lang) {
-  const cards = document.querySelectorAll('#postList > *');
-  for (let i = 0; i < posts.length; i++) {
-    const p = posts[i];
-    const card = cards[i];
-    if (!card || !p) continue;
+    async function translateSnippet(text, targetLang) {
+      if (!text || !text.trim()) return text;
+      const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
+      if (detectTextLang(text) === tl) return text;
 
-    if (p.title) {
-      const newTitle = await translateSnippet(p.title, lang);
-      if (newTitle && newTitle !== p.title && currentLang === lang) {
-        const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
-        let node;
-        while ((node = walker.nextNode())) {
-          if (node.nodeValue && node.nodeValue.trim() === p.title.trim()) {
-            node.nodeValue = node.nodeValue.replace(p.title.trim(), newTitle);
-            break;
+      const cacheKey = `${tl}::${text.slice(0, 120)}`;
+      if (transCache[cacheKey]) return transCache[cacheKey];
+
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text.slice(0, 300))}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const translated = (json[0] || []).map(item => item[0]).join('');
+        if (translated) {
+          transCache[cacheKey] = translated;
+          try { localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(transCache)); } catch (e) {}
+          return translated;
+        }
+      } catch (e) {}
+      return text;
+    }
+
+    async function autoTranslateRenderedCards(posts, lang) {
+      const cards = document.querySelectorAll('#postList > *');
+      for (let i = 0; i < posts.length; i++) {
+        const p = posts[i];
+        const card = cards[i];
+        if (!card || !p) continue;
+
+        if (p.title) {
+          const newTitle = await translateSnippet(p.title, lang);
+          if (newTitle && newTitle !== p.title && currentLang === lang) {
+            const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+            let node;
+            while ((node = walker.nextNode())) {
+              if (node.nodeValue && node.nodeValue.trim() === p.title.trim()) {
+                node.nodeValue = node.nodeValue.replace(p.title.trim(), newTitle);
+                break;
+              }
+            }
           }
         }
       }
     }
 
-    if (p.description) {
-      const newDesc = await translateSnippet(p.description, lang);
-      if (newDesc && newDesc !== p.description && currentLang === lang) {
-        const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
-        let node;
-        while ((node = walker.nextNode())) {
-          if (node.nodeValue && node.nodeValue.includes(p.description.trim().slice(0, 20))) {
-            node.nodeValue = newDesc;
-            break;
-          }
-        }
+    function renderPosts() {
+      const t = I18N[currentLang];
+      const city = document.getElementById('cityFilter').value;
+      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      const listEl = document.getElementById('postList');
+      const hiddenIds = getHiddenPostIds();
+      const reportCounts = getReportCounts();
+
+      const displayCityHeader = getRegionDisplayName(city, currentLang);
+      document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${t.latestSuffix}`;
+
+      const filtered = allPosts.filter(p => {
+        if (hiddenIds.includes(p.id) || (reportCounts[p.id] || 0) >= 3) return false;
+        if (containsSpamContent(p.title) || containsSpamContent(p.description)) return false;
+
+        const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
+        const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
+        const matchCat = (currentCategory === '全部' || p.category === currentCategory);
+        const matchKey = !keyword ||
+          p.title.toLowerCase().includes(keyword) ||
+          (p.description && p.description.toLowerCase().includes(keyword)) ||
+          p.price.toLowerCase().includes(keyword);
+        return matchCity && matchCat && matchKey;
+      });
+
+      document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
+        return;
       }
+
+      listEl.innerHTML = filtered.map(createPostCardHTML).join('');
+      autoTranslateRenderedCards(filtered, currentLang);
     }
-  }
-}
 
-function renderPosts() {
-  const t = I18N[currentLang];
-  const city = document.getElementById('cityFilter').value;
-  const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
-  const listEl = document.getElementById('postList');
-
-  const displayCityHeader = getRegionDisplayName(city, currentLang);
-  document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${t.latestSuffix}`;
-
-  const filtered = allPosts.filter(p => {
-    const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
-    const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
-    const matchCat = (currentCategory === '全部' || p.category === currentCategory);
-    const matchKey = !keyword ||
-      p.title.toLowerCase().includes(keyword) ||
-      (p.description && p.description.toLowerCase().includes(keyword)) ||
-      p.price.toLowerCase().includes(keyword);
-    return matchCity && matchCat && matchKey;
-  });
-
-  document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
-
-  if (filtered.length === 0) {
-    listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
-    return;
-  }
-
-  listEl.innerHTML = filtered.map(createPostCardHTML).join('');
-  autoTranslateRenderedCards(filtered, currentLang);
-}
     function selectCategory(cat) {
       currentCategory = cat;
       document.querySelectorAll('.cat-item').forEach(btn => {
@@ -976,54 +1063,6 @@ function renderPosts() {
         }
       });
       renderPosts();
-    }
-
-    function openDetail(id) {
-      const t = I18N[currentLang];
-      const post = allPosts.find(p => p.id === id);
-      if (!post) return;
-      const cleanPhone = post.whatsapp.replace(/[^0-9]/g, '');
-      const waText = encodeURIComponent(t.waGreeting(post.title));
-      const waLink = `https://wa.me/${cleanPhone}?text=${waText}`;
-      const isFav = savedIds.includes(post.id);
-      const displayCat = t.cats[post.category] || post.category;
-      const displayCity = getRegionDisplayName(post.city, currentLang);
-
-      const detailImageHTML = post.image_url
-        ? `<div class="mb-4 rounded-2xl overflow-hidden border border-gray-100 bg-gray-50">
-             <img src="${post.image_url}" alt="${post.title}" class="w-full max-h-72 object-contain mx-auto" />
-           </div>`
-        : '';
-
-      document.getElementById('detailContent').innerHTML = `
-        ${detailImageHTML}
-        <div class="flex items-center justify-between gap-2 mb-2">
-          <div class="flex items-center space-x-2">
-            <span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-0.5 rounded-md">${displayCat}</span>
-            <span class="text-xs text-gray-500">📍 ${displayCity}</span>
-          </div>
-          <button id="detailTranslateBtn" data-translated="false" onclick="toggleTranslateDetail(${post.id})" 
-                  class="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-2.5 py-1 rounded-full transition shrink-0">
-            ${t.translateBtn}
-          </button>
-        </div>
-        <div id="detailTranslatedBadge" class="hidden text-[11px] text-blue-600 font-medium mb-1"></div>
-        <h2 id="detailPostTitle" class="text-lg font-extrabold text-gray-900 mb-2 leading-snug">${post.title}</h2>
-        <div class="text-xl font-black text-red-600 mb-4">${post.price}</div>
-        <div id="detailPostDesc" class="bg-gray-50 rounded-2xl p-4 text-sm text-gray-700 leading-relaxed mb-5 whitespace-pre-line border border-gray-100">
-          ${post.description || t.noDesc}
-        </div>
-        <div class="flex space-x-2.5">
-          <button onclick="toggleFav(${post.id})" class="px-4 py-3.5 rounded-xl border border-gray-200 font-bold text-sm ${isFav ? 'bg-amber-50 text-amber-600 border-amber-200' : 'text-gray-600'}">
-            ${isFav ? t.favedBtn : t.favBtn}
-          </button>
-          <a href="${waLink}" target="_blank" class="flex-1 bg-green-600 text-white text-center font-bold py-3.5 rounded-xl shadow-md hover:bg-green-700 transition flex items-center justify-center space-x-1.5">
-            <span>${t.waBtn}</span>
-          </a>
-        </div>
-        <p class="text-center text-[11px] text-gray-400 mt-3.5">${t.safetyTip}</p>
-      `;
-      document.getElementById('detailModal').classList.remove('hidden');
     }
 
     function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
@@ -1040,13 +1079,13 @@ function renderPosts() {
         savedIds.push(id);
       }
       localStorage.setItem('dama_favs', JSON.stringify(savedIds));
-      openDetail(id);
       renderFavs();
     }
 
     function renderFavs() {
       const t = I18N[currentLang];
-      const favPosts = allPosts.filter(p => savedIds.includes(p.id));
+      const hiddenIds = getHiddenPostIds();
+      const favPosts = allPosts.filter(p => savedIds.includes(p.id) && !hiddenIds.includes(p.id));
       const favEl = document.getElementById('favList');
       if (favPosts.length === 0) {
         favEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyFav}</div>`;
@@ -1058,6 +1097,33 @@ function renderPosts() {
     async function submitPost(e) {
       e.preventDefault();
       const t = I18N[currentLang];
+
+      const rawTitle = document.getElementById('postTitle').value.trim();
+      const rawDesc = document.getElementById('postDesc').value.trim();
+      const rawPrice = document.getElementById('postPrice').value.trim();
+      const normalizedWa = normalizeMalaysiaWhatsapp(document.getElementById('postWhatsapp').value.trim());
+
+      // 1. 敏感词与博彩/假贷防垃圾拦截
+      if (containsSpamContent(rawTitle) || containsSpamContent(rawDesc)) {
+        alert(t.spamAlert);
+        return;
+      }
+
+      // 2. 马来西亚 WhatsApp 号码合法性校验
+      if (normalizedWa.length < 10 || normalizedWa.length > 13 || !normalizedWa.startsWith('601')) {
+        alert(t.phoneAlert);
+        return;
+      }
+
+      // 3. 单台设备每日发帖上限校验（防刷屏）
+      const todayKey = new Date().toISOString().slice(0, 10);
+      let dailyLog = {};
+      try { dailyLog = JSON.parse(localStorage.getItem(DAILY_POST_LOG_KEY) || '{}'); } catch (err) {}
+      if ((dailyLog[todayKey] || 0) >= 3) {
+        alert(t.limitAlert);
+        return;
+      }
+
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
 
@@ -1090,10 +1156,10 @@ function renderPosts() {
       const newPost = {
         category: document.getElementById('postCategory').value,
         city: document.getElementById('postCity').value,
-        title: document.getElementById('postTitle').value.trim(),
-        price: document.getElementById('postPrice').value.trim(),
-        whatsapp: document.getElementById('postWhatsapp').value.trim(),
-        description: document.getElementById('postDesc').value.trim(),
+        title: rawTitle,
+        price: rawPrice,
+        whatsapp: normalizedWa,
+        description: rawDesc,
         image_url: uploadedImageUrl,
         is_pinned: false
       };
@@ -1106,6 +1172,9 @@ function renderPosts() {
         alert('Error: ' + error.message);
         return;
       }
+
+      dailyLog[todayKey] = (dailyLog[todayKey] || 0) + 1;
+      try { localStorage.setItem(DAILY_POST_LOG_KEY, JSON.stringify(dailyLog)); } catch (err) {}
 
       document.getElementById('postForm').reset();
       closePostModal();
@@ -1137,10 +1206,11 @@ function renderPosts() {
     fetchLiveFuel();
     fetchPosts();
   </script>
- <!-- 大马全能出行导航悬浮入口按钮 -->
-<a href="/map.html" style="position:fixed;right:14px;bottom:84px;z-index:40;display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#059669,#0d9488);color:#ffffff;padding:8px 13px;border-radius:999px;font-size:12px;font-weight:bold;text-decoration:none;box-shadow:0 4px 12px rgba(5,150,105,0.35);border:1.5px solid #ffffff;">
-  <span style="font-size:15px;">🗺️</span>
-<span id="fabMapText">查路线</span>
-</a>
+
+  <!-- 大马全能出行导航悬浮入口按钮 -->
+  <a href="/map.html" style="position:fixed;right:14px;bottom:84px;z-index:40;display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#059669,#0d9488);color:#ffffff;padding:8px 13px;border-radius:999px;font-size:12px;font-weight:bold;text-decoration:none;box-shadow:0 4px 12px rgba(5,150,105,0.35);border:1.5px solid #ffffff;">
+    <span style="font-size:15px;">🗺️</span>
+    <span id="fabMapText">查路线</span>
+  </a>
 </body>
 </html>
