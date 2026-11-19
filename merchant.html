@@ -11,38 +11,44 @@
   <script src="/pay.js"></script>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- 顶部尊享黑金商业导航栏 -->
-    <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-900 text-white sticky top-0 z-30 shadow-lg px-4 py-3.5 flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <a href="/" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl text-xs font-bold transition">← 首页</a>
-        <div>
+  <div class="app-shell pb-16">
+    <!-- 顶部尊享黑金商业导航栏（已移除站长后台，改为三语切换） -->
+    <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-900 text-white sticky top-0 z-30 shadow-lg px-3.5 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <a href="/" id="mBackBtn" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl text-xs font-bold transition shrink-0">← 首页</a>
+        <div class="min-w-0">
           <div class="flex items-center gap-1.5">
-            <h1 class="font-black text-sm tracking-wide">大马吉通 · 商家入驻</h1>
-            <span class="vip-badge text-[9px] px-1.5 py-0.5 rounded">VIP</span>
+            <h1 id="mHeaderTitle" class="font-black text-sm tracking-wide truncate">大马吉通 · 商家入驻</h1>
+            <span class="vip-badge text-[9px] px-1.5 py-0.5 rounded shrink-0">VIP</span>
           </div>
-          <p class="text-[10px] text-amber-200/90">全马华人 & 本地商户免费入驻 · 地图导流曝光</p>
+          <p id="mHeaderSub" class="text-[10px] text-amber-200/90 truncate">全马华人 & 本地商户免费入驻 · 地图导流曝光</p>
         </div>
       </div>
-      <a href="/admin.html" class="text-[11px] text-amber-300/80 hover:text-amber-200 underline">站长后台</a>
+
+      <!-- CN / EN / BM 三语切换器 -->
+      <div class="flex items-center bg-black/30 rounded-full p-0.5 text-[11px] font-bold shrink-0">
+        <button onclick="setMerchantLang('zh')" id="mLang-zh" class="px-2 py-0.5 rounded-full bg-white text-slate-900 transition">CN</button>
+        <button onclick="setMerchantLang('en')" id="mLang-en" class="px-2 py-0.5 rounded-full text-white/90 transition">EN</button>
+        <button onclick="setMerchantLang('ms')" id="mLang-ms" class="px-2 py-0.5 rounded-full text-white/90 transition">BM</button>
+      </div>
     </header>
 
     <!-- 商业权益展示横幅 -->
     <section class="mx-3 mt-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-4 text-white shadow-md">
-      <h2 class="font-black text-base mb-1">让全马客户直接导航到你店门口！</h2>
-      <p class="text-xs text-amber-50 leading-relaxed mb-3">入驻大马吉通本地商家库，客户可直接在详情页一键唤起「站内语音导航」与「WhatsApp 预约下单」。</p>
+      <h2 id="mBannerTitle" class="font-black text-base mb-1">让全马客户直接导航到你店门口！</h2>
+      <p id="mBannerDesc" class="text-xs text-amber-50 leading-relaxed mb-3">入驻大马吉通本地商家库，客户可直接在详情页一键唤起「站内语音导航」与「WhatsApp 预约下单」。</p>
       <div class="grid grid-cols-3 gap-2 text-center bg-black/15 rounded-xl p-2 text-[11px]">
         <div>
-          <div class="font-black text-sm">🆓 0 佣金</div>
-          <div class="text-amber-100 text-[10px]">免费入驻展示</div>
+          <div id="mPerk1Title" class="font-black text-sm">🆓 0 佣金</div>
+          <div id="mPerk1Sub" class="text-amber-100 text-[10px]">免费入驻展示</div>
         </div>
         <div>
-          <div class="font-black text-sm">🧭 一键到店</div>
-          <div class="text-amber-100 text-[10px]">直连站内地图</div>
+          <div id="mPerk2Title" class="font-black text-sm">🧭 一键到店</div>
+          <div id="mPerk2Sub" class="text-amber-100 text-[10px]">直连站内地图</div>
         </div>
         <div>
-          <div class="font-black text-sm">💬 秒接单</div>
-          <div class="text-amber-100 text-[10px]">WhatsApp直聊</div>
+          <div id="mPerk3Title" class="font-black text-sm">💬 秒接单</div>
+          <div id="mPerk3Sub" class="text-amber-100 text-[10px]">WhatsApp直聊</div>
         </div>
       </div>
     </section>
@@ -51,17 +57,17 @@
     <section class="mx-3 mt-3 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <h3 class="font-extrabold text-sm text-gray-800 mb-3 flex items-center gap-1.5">
         <span class="w-1 h-4 bg-amber-500 rounded-full"></span>
-        <span>填写店铺 / 服务商入驻资料</span>
+        <span id="mFormHeader">填写店铺 / 服务商入驻资料</span>
       </h3>
 
       <form id="merchantForm" onsubmit="submitMerchant(event)" class="space-y-3">
         <!-- 门头照片 / 营业执照预览上传 -->
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">上传店铺门头照 / 招牌海报 (强烈推荐)</label>
+          <label id="mLabelPhoto" class="block text-xs font-bold text-gray-700 mb-1">上传店铺门头照 / 招牌海报 (强烈推荐)</label>
           <div class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-amber-300 rounded-xl bg-amber-50/40 hover:bg-amber-50 transition overflow-hidden">
             <div id="mPlaceholder" class="flex flex-col items-center text-amber-700/70 pointer-events-none">
               <span class="text-2xl mb-1">🏪</span>
-              <span class="text-xs font-semibold">点击上传门店照片或优惠海报</span>
+              <span id="mPhotoHint" class="text-xs font-semibold">点击上传门店照片或优惠海报</span>
             </div>
             <img id="mPreview" src="" class="hidden w-full h-full object-cover pointer-events-none" />
             <input type="file" accept="image/*" onchange="previewMerchantImg(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
@@ -69,41 +75,41 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">店铺 / 公司名称 *</label>
+          <label id="mLabelName" class="block text-xs font-bold text-gray-700 mb-1">店铺 / 公司名称 *</label>
           <input type="text" id="mName" required placeholder="例如：槟城老字号炒粿条 / KL 极速冷气维修" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">所属州属 *</label>
+            <label id="mLabelCity" class="block text-xs font-bold text-gray-700 mb-1">所属州属 *</label>
             <select id="mCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">主营行业 *</label>
+            <label id="mLabelIndustry" class="block text-xs font-bold text-gray-700 mb-1">主营行业 *</label>
             <select id="mIndustry" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
-              <option value="餐饮美食">🍜 餐饮美食</option>
-              <option value="生活服务">🛠️ 维修/搬家/清洁</option>
-              <option value="美容美发">💇 美容美发/养生</option>
-              <option value="汽车服务">🚗 修车/租车/洗车</option>
-              <option value="零售百货">🛍️ 零售百货/批发</option>
-              <option value="旅游民宿">🏨 旅游/包车/民宿</option>
+              <option value="餐饮美食" id="indFood">🍜 餐饮美食</option>
+              <option value="生活服务" id="indService">🛠️ 维修/搬家/清洁</option>
+              <option value="美容美发" id="indBeauty">💇 美容美发/养生</option>
+              <option value="汽车服务" id="indAuto">🚗 修车/租车/洗车</option>
+              <option value="零售百货" id="indRetail">🛍️ 零售百货/批发</option>
+              <option value="旅游民宿" id="indTravel">🏨 旅游/包车/民宿</option>
             </select>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">招牌优惠 / 人均消费 *</label>
+            <label id="mLabelPromo" class="block text-xs font-bold text-gray-700 mb-1">招牌优惠 / 人均消费 *</label>
             <input type="text" id="mPromo" required placeholder="例如：开业8折 / 人均 RM15" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">接单 WhatsApp *</label>
+            <label id="mLabelWa" class="block text-xs font-bold text-gray-700 mb-1">接单 WhatsApp *</label>
             <input type="text" id="mWhatsapp" required placeholder="60123456789" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">详细地址与营业时间 *</label>
+          <label id="mLabelDesc" class="block text-xs font-bold text-gray-700 mb-1">详细地址与营业时间 *</label>
           <textarea id="mDesc" rows="3" required placeholder="填写详细街道地址（方便客户地图导航）、营业时间、特色服务介绍..." class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></textarea>
         </div>
 
@@ -116,11 +122,11 @@
     <!-- 付费黄金置顶套餐说明 -->
     <section class="mx-3 mt-3 vip-card rounded-2xl p-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="font-black text-sm text-amber-900">👑 商家爆单推广 · 首页黄金置顶</span>
-        <span class="text-[11px] text-amber-700 font-bold">曝光量提升 10 倍</span>
+        <span id="mVipTitle" class="font-black text-sm text-amber-900">👑 商家爆单推广 · 首页黄金置顶</span>
+        <span id="mVipBadge" class="text-[11px] text-amber-700 font-bold">曝光量提升 10 倍</span>
       </div>
       <div id="planCards" class="space-y-2 mb-3"></div>
-      <button onclick="openPayModal()" class="w-full bg-slate-900 text-amber-300 font-bold text-xs py-3 rounded-xl shadow hover:bg-slate-800 transition">
+      <button id="mOpenPayBtn" onclick="openPayModal()" class="w-full bg-slate-900 text-amber-300 font-bold text-xs py-3.5 rounded-xl shadow hover:bg-slate-800 transition">
         💳 申请首页黄金置顶（支持 TNG / DuitNow 转账）
       </button>
     </section>
@@ -129,31 +135,31 @@
     <div id="payModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
       <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-3">
-          <h3 class="font-black text-base text-gray-800">👑 开通首页黄金置顶</h3>
+          <h3 id="payModalTitle" class="font-black text-base text-gray-800">👑 开通首页黄金置顶</h3>
           <button onclick="document.getElementById('payModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500">✕</button>
         </div>
 
         <form onsubmit="handlePaySubmit(event)" class="space-y-3 text-xs">
           <div>
-            <label class="block font-bold text-gray-700 mb-1">1. 选择置顶套餐 *</label>
+            <label id="payLabelPlan" class="block font-bold text-gray-700 mb-1">1. 选择置顶套餐 *</label>
             <select id="payPlanSelect" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm font-bold text-amber-800"></select>
           </div>
           <div>
-            <label class="block font-bold text-gray-700 mb-1">2. 输入要置顶的店铺/帖子标题 *</label>
+            <label id="payLabelTitle" class="block font-bold text-gray-700 mb-1">2. 输入要置顶的店铺/帖子标题 *</label>
             <input type="text" id="payPostTitle" required placeholder="输入您已发布的店铺或帖子标题" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
           </div>
           <div>
-            <label class="block font-bold text-gray-700 mb-1">3. 您的 WhatsApp 联系方式 *</label>
+            <label id="payLabelPhone" class="block font-bold text-gray-700 mb-1">3. 您的 WhatsApp 联系方式 *</label>
             <input type="text" id="payPhone" required placeholder="60123456789" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
           </div>
 
           <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-1">
-            <div class="font-bold text-amber-900">💳 站长官方收款方式：</div>
+            <div id="payReceiverTitle" class="font-bold text-amber-900">💳 站长官方收款方式：</div>
             <div id="receiverInfo" class="text-amber-800"></div>
           </div>
 
           <div>
-            <label class="block font-bold text-gray-700 mb-1">4. 上传 TNG / Bank 转账截图凭证 *</label>
+            <label id="payLabelReceipt" class="block font-bold text-gray-700 mb-1">4. 上传 TNG / Bank 转账截图凭证 *</label>
             <input type="file" id="receiptFileInput" accept="image/*" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2 text-xs" />
           </div>
 
@@ -166,38 +172,229 @@
   </div>
 
   <script>
+    const M_I18N = {
+      zh: {
+        back: '← 首页',
+        headerTitle: '大马吉通 · 商家入驻',
+        headerSub: '全马华人 & 本地商户免费入驻 · 地图导流曝光',
+        bannerTitle: '让全马客户直接导航到你店门口！',
+        bannerDesc: '入驻大马吉通本地商家库，客户可直接在详情页一键唤起「站内语音导航」与「WhatsApp 预约下单」。',
+        perk1Title: '🆓 0 佣金', perk1Sub: '免费入驻展示',
+        perk2Title: '🧭 一键到店', perk2Sub: '直连站内地图',
+        perk3Title: '💬 秒接单', perk3Sub: 'WhatsApp直聊',
+        formHeader: '填写店铺 / 服务商入驻资料',
+        labelPhoto: '上传店铺门头照 / 招牌海报 (强烈推荐)',
+        photoHint: '点击上传门店照片或优惠海报',
+        labelName: '店铺 / 公司名称 *',
+        phName: '例如：槟城老字号炒粿条 / KL 极速冷气维修',
+        labelCity: '所属州属 *',
+        labelIndustry: '主营行业 *',
+        indFood: '🍜 餐饮美食', indService: '🛠️ 维修/搬家/清洁', indBeauty: '💇 美容美发/养生',
+        indAuto: '🚗 修车/租车/洗车', indRetail: '🛍️ 零售百货/批发', indTravel: '🏨 旅游/包车/民宿',
+        labelPromo: '招牌优惠 / 人均消费 *',
+        phPromo: '例如：开业8折 / 人均 RM15',
+        labelWa: '接单 WhatsApp *',
+        labelDesc: '详细地址与营业时间 *',
+        phDesc: '填写详细街道地址（方便客户地图导航）、营业时间、特色服务介绍...',
+        submitBtn: '🚀 立即提交商家入驻',
+        submittingBtn: '⏳ 正在提交商家入驻资料...',
+        successAlert: '🎉 恭喜！您的商家资料已成功入驻大马吉通，现已上线展示！',
+        vipTitle: '👑 商家爆单推广 · 首页黄金置顶',
+        vipBadge: '曝光量提升 10 倍',
+        openPayBtn: '💳 申请首页黄金置顶（支持 TNG / DuitNow 转账）',
+        payModalTitle: '👑 开通首页黄金置顶',
+        payLabelPlan: '1. 选择置顶套餐 *',
+        payLabelTitle: '2. 输入要置顶的店铺/帖子标题 *',
+        payPhTitle: '输入您已发布的店铺或帖子标题',
+        payLabelPhone: '3. 您的 WhatsApp 联系方式 *',
+        payReceiverTitle: '💳 官方收款方式：',
+        payLabelReceipt: '4. 上传 TNG / Bank 转账截图凭证 *',
+        paySubmitBtn: '✅ 提交付款凭证（审核后秒置顶）',
+        paySubmittingBtn: '⏳ 正在上传凭证并提交订单...',
+        paySuccessAlert: '✅ 付款凭证已提交！核实后将立即为您开启首页黄金置顶。',
+        tagPrefix: '认证商家'
+      },
+      en: {
+        back: '← Home',
+        headerTitle: 'DamaJitong · Merchant Listing',
+        headerSub: 'Free MY Merchant Registration · Map Traffic Boost',
+        bannerTitle: 'Let Customers Navigate Straight to Your Door!',
+        bannerDesc: 'Join DamaJitong local directory. Customers can launch In-App Voice Navigation or chat on WhatsApp in one tap.',
+        perk1Title: '🆓 0% Fee', perk1Sub: 'Free Listing',
+        perk2Title: '🧭 Direct Map', perk2Sub: 'In-App Navigation',
+        perk3Title: '💬 Fast Leads', perk3Sub: 'Direct WhatsApp',
+        formHeader: 'Business / Service Provider Details',
+        labelPhoto: 'Upload Storefront Photo / Promo Banner (Recommended)',
+        photoHint: 'Tap to upload store photo or promo poster',
+        labelName: 'Shop / Company Name *',
+        phName: 'e.g. Penang Char Koay Teow / KL Aircond Service',
+        labelCity: 'State / Territory *',
+        labelIndustry: 'Business Category *',
+        indFood: '🍜 Food & Beverage', indService: '🛠️ Repair / Moving / Cleaning', indBeauty: '💇 Beauty / Spa / Wellness',
+        indAuto: '🚗 Auto Repair / Rental / Wash', indRetail: '🛍️ Retail / Wholesale', indTravel: '🏨 Travel / Charter / Homestay',
+        labelPromo: 'Signature Deal / Avg Spend *',
+        phPromo: 'e.g. 20% Off / Avg RM15',
+        labelWa: 'WhatsApp Number *',
+        labelDesc: 'Full Address & Opening Hours *',
+        phDesc: 'Enter full street address (for map navigation), opening hours, and services...',
+        submitBtn: '🚀 Submit Merchant Listing',
+        submittingBtn: '⏳ Submitting business profile...',
+        successAlert: '🎉 Success! Your business is now live on DamaJitong!',
+        vipTitle: '👑 Boost Sales · Homepage Prime Pin',
+        vipBadge: '10x More Views',
+        openPayBtn: '💳 Apply for Prime Pin (TNG / DuitNow)',
+        payModalTitle: '👑 Activate Homepage Prime Pin',
+        payLabelPlan: '1. Select Pin Package *',
+        payLabelTitle: '2. Shop / Listing Title to Pin *',
+        payPhTitle: 'Enter your published shop or post title',
+        payLabelPhone: '3. Your WhatsApp Number *',
+        payReceiverTitle: '💳 Official Payment Details:',
+        payLabelReceipt: '4. Upload TNG / Bank Transfer Receipt *',
+        paySubmitBtn: '✅ Submit Receipt (Fast Approval)',
+        paySubmittingBtn: '⏳ Uploading receipt & submitting...',
+        paySuccessAlert: '✅ Receipt submitted! Your listing will be pinned shortly after verification.',
+        tagPrefix: 'Verified Merchant'
+      },
+      ms: {
+        back: '← Utama',
+        headerTitle: 'DamaJitong · Daftar Peniaga',
+        headerSub: 'Pendaftaran Percuma Peniaga MY · Trafik Peta',
+        bannerTitle: 'Biar Pelanggan Terus Navigasi ke Kedai Anda!',
+        bannerDesc: 'Sertai direktori peniaga tempatan DamaJitong. Pelanggan boleh terus guna Navigasi Suara atau WhatsApp anda.',
+        perk1Title: '🆓 0 Komisen', perk1Sub: 'Daftar Percuma',
+        perk2Title: '🧭 Terus ke Kedai', perk2Sub: 'Pautan Peta',
+        perk3Title: '💬 Cepat Laku', perk3Sub: 'Terus WhatsApp',
+        formHeader: 'Maklumat Kedai / Penyedia Servis',
+        labelPhoto: 'Muat Naik Gambar Kedai / Poster Promosi (Disyorkan)',
+        photoHint: 'Tekan untuk muat naik gambar kedai atau poster',
+        labelName: 'Nama Kedai / Syarikat *',
+        phName: 'Cth: Nasi Kandar Penang / Servis Aircond KL',
+        labelCity: 'Negeri / Wilayah *',
+        labelIndustry: 'Kategori Perniagaan *',
+        indFood: '🍜 Makanan & Minuman', indService: '🛠️ Baik Pulih / Pindah / Cuci', indBeauty: '💇 Kecantikan / Spa',
+        indAuto: '🚗 Bengkel / Sewa / Cuci Kereta', indRetail: '🛍️ Runcit / Borong', indTravel: '🏨 Pelancongan / Homestay',
+        labelPromo: 'Promosi Utama / Harga Purata *',
+        phPromo: 'Cth: Diskaun 20% / Purata RM15',
+        labelWa: 'Nombor WhatsApp *',
+        labelDesc: 'Alamat Penuh & Waktu Operasi *',
+        phDesc: 'Masukkan alamat jalan lengkap (untuk navigasi peta), waktu operasi & servis...',
+        submitBtn: '🚀 Hantar Pendaftaran Peniaga',
+        submittingBtn: '⏳ Menghantar maklumat kedai...',
+        successAlert: '🎉 Tahniah! Kedai anda telah berjaya didaftarkan dan dipaparkan di DamaJitong!',
+        vipTitle: '👑 Promosi Laris · Pin Utama Laman Depan',
+        vipBadge: '10x Lebih Tontonan',
+        openPayBtn: '💳 Mohon Pin Utama (TNG / DuitNow)',
+        payModalTitle: '👑 Aktifkan Pin Utama Laman Depan',
+        payLabelPlan: '1. Pilih Pakej Pin *',
+        payLabelTitle: '2. Tajuk Kedai / Iklan untuk Dipin *',
+        payPhTitle: 'Masukkan tajuk kedai atau iklan anda',
+        payLabelPhone: '3. Nombor WhatsApp Anda *',
+        payReceiverTitle: '💳 Maklumat Pembayaran Rasmi:',
+        payLabelReceipt: '4. Muat Naik Resit TNG / Pindahan Bank *',
+        paySubmitBtn: '✅ Hantar Resit Pembayaran',
+        paySubmittingBtn: '⏳ Memuat naik resit...',
+        paySuccessAlert: '✅ Resit dihantar! Iklan anda akan dipin sejurus selepas pengesahan.',
+        tagPrefix: 'Peniaga Sah'
+      }
+    };
+
+    let currentMLang = localStorage.getItem('dama_lang') || 'zh';
     let merchantFile = null;
 
-    // 填充全马州属下拉框
-    const citySel = document.getElementById('mCity');
-    DMJT_REGIONS.filter(r => r.value !== '全马').forEach(r => {
-      const opt = document.createElement('option');
-      opt.value = r.value;
-      opt.textContent = r.zh;
-      if (r.value === '吉隆坡') opt.selected = true;
-      citySel.appendChild(opt);
-    });
+    function populateCities(lang) {
+      const citySel = document.getElementById('mCity');
+      const prevVal = citySel.value || '吉隆坡';
+      citySel.innerHTML = '';
+      DMJT_REGIONS.filter(r => r.value !== '全马').forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.value;
+        opt.textContent = r[lang] || r.zh;
+        if (r.value === prevVal) opt.selected = true;
+        citySel.appendChild(opt);
+      });
+    }
 
-    // 渲染置顶套餐
-    const planCards = document.getElementById('planCards');
-    const payPlanSelect = document.getElementById('payPlanSelect');
-    DMJT_PAY.PLANS.forEach(p => {
-      planCards.innerHTML += `
-        <div class="bg-white rounded-xl p-2.5 border border-amber-200/70 flex items-center justify-between text-xs">
-          <span class="font-bold text-gray-800">${p.zh}</span>
-          <span class="font-black text-red-600 text-sm">RM ${p.price}</span>
-        </div>
-      `;
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = `${p.zh} — RM ${p.price}`;
-      payPlanSelect.appendChild(opt);
-    });
+    function renderPlans(lang) {
+      const planCards = document.getElementById('planCards');
+      const payPlanSelect = document.getElementById('payPlanSelect');
+      planCards.innerHTML = '';
+      payPlanSelect.innerHTML = '';
+      DMJT_PAY.PLANS.forEach(p => {
+        const label = p[lang] || p.zh;
+        planCards.innerHTML += `
+          <div class="bg-white rounded-xl p-2.5 border border-amber-200/70 flex items-center justify-between text-xs">
+            <span class="font-bold text-gray-800">${label}</span>
+            <span class="font-black text-red-600 text-sm">RM ${p.price}</span>
+          </div>
+        `;
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${label} — RM ${p.price}`;
+        payPlanSelect.appendChild(opt);
+      });
+    }
+
+    function setMerchantLang(lang) {
+      currentMLang = lang;
+      localStorage.setItem('dama_lang', lang);
+      ['zh', 'en', 'ms'].forEach(l => {
+        const b = document.getElementById(`mLang-${l}`);
+        b.className = l === lang
+          ? 'px-2 py-0.5 rounded-full bg-white text-slate-900 transition'
+          : 'px-2 py-0.5 rounded-full text-white/90 transition';
+      });
+
+      const t = M_I18N[lang];
+      document.getElementById('mBackBtn').innerText = t.back;
+      document.getElementById('mHeaderTitle').innerText = t.headerTitle;
+      document.getElementById('mHeaderSub').innerText = t.headerSub;
+      document.getElementById('mBannerTitle').innerText = t.bannerTitle;
+      document.getElementById('mBannerDesc').innerText = t.bannerDesc;
+      document.getElementById('mPerk1Title').innerText = t.perk1Title;
+      document.getElementById('mPerk1Sub').innerText = t.perk1Sub;
+      document.getElementById('mPerk2Title').innerText = t.perk2Title;
+      document.getElementById('mPerk2Sub').innerText = t.perk2Sub;
+      document.getElementById('mPerk3Title').innerText = t.perk3Title;
+      document.getElementById('mPerk3Sub').innerText = t.perk3Sub;
+      document.getElementById('mFormHeader').innerText = t.formHeader;
+      document.getElementById('mLabelPhoto').innerText = t.labelPhoto;
+      document.getElementById('mPhotoHint').innerText = t.photoHint;
+      document.getElementById('mLabelName').innerText = t.labelName;
+      document.getElementById('mName').placeholder = t.phName;
+      document.getElementById('mLabelCity').innerText = t.labelCity;
+      document.getElementById('mLabelIndustry').innerText = t.labelIndustry;
+      document.getElementById('indFood').innerText = t.indFood;
+      document.getElementById('indService').innerText = t.indService;
+      document.getElementById('indBeauty').innerText = t.indBeauty;
+      document.getElementById('indAuto').innerText = t.indAuto;
+      document.getElementById('indRetail').innerText = t.indRetail;
+      document.getElementById('indTravel').innerText = t.indTravel;
+      document.getElementById('mLabelPromo').innerText = t.labelPromo;
+      document.getElementById('mPromo').placeholder = t.phPromo;
+      document.getElementById('mLabelWa').innerText = t.labelWa;
+      document.getElementById('mLabelDesc').innerText = t.labelDesc;
+      document.getElementById('mDesc').placeholder = t.phDesc;
+      document.getElementById('mSubmitBtn').innerText = t.submitBtn;
+      document.getElementById('mVipTitle').innerText = t.vipTitle;
+      document.getElementById('mVipBadge').innerText = t.vipBadge;
+      document.getElementById('mOpenPayBtn').innerText = t.openPayBtn;
+      document.getElementById('payModalTitle').innerText = t.payModalTitle;
+      document.getElementById('payLabelPlan').innerText = t.payLabelPlan;
+      document.getElementById('payLabelTitle').innerText = t.payLabelTitle;
+      document.getElementById('payPostTitle').placeholder = t.payPhTitle;
+      document.getElementById('payLabelPhone').innerText = t.payLabelPhone;
+      document.getElementById('payReceiverTitle').innerText = t.payReceiverTitle;
+      document.getElementById('payLabelReceipt').innerText = t.payLabelReceipt;
+      document.getElementById('paySubmitBtn').innerText = t.paySubmitBtn;
+
+      populateCities(lang);
+      renderPlans(lang);
+    }
 
     document.getElementById('receiverInfo').innerHTML = `
-      <div>渠道：<b>${DMJT_PAY.RECEIVER.bankName}</b></div>
-      <div>户名：<b>${DMJT_PAY.RECEIVER.accountName}</b></div>
-      <div>账号：<b>${DMJT_PAY.RECEIVER.accountNo}</b></div>
+      <div>Bank / E-Wallet: <b>${DMJT_PAY.RECEIVER.bankName}</b></div>
+      <div>Name: <b>${DMJT_PAY.RECEIVER.accountName}</b></div>
+      <div>Account No: <b>${DMJT_PAY.RECEIVER.accountNo}</b></div>
     `;
 
     function previewMerchantImg(e) {
@@ -215,9 +412,10 @@
 
     async function submitMerchant(e) {
       e.preventDefault();
+      const t = M_I18N[currentMLang];
       const btn = document.getElementById('mSubmitBtn');
       btn.disabled = true;
-      btn.innerText = '⏳ 正在提交商家入驻资料...';
+      btn.innerText = t.submittingBtn;
 
       try {
         let imgUrl = null;
@@ -230,7 +428,7 @@
         const postData = {
           category: '本地优惠',
           city: document.getElementById('mCity').value,
-          title: `【认证商家·${industry}】${name}`,
+          title: `【${t.tagPrefix}·${industry}】${name}`,
           price: document.getElementById('mPromo').value.trim(),
           whatsapp: document.getElementById('mWhatsapp').value.trim(),
           description: document.getElementById('mDesc').value.trim(),
@@ -241,13 +439,13 @@
         const { error } = await dmjtSupabase.from('posts').insert([postData]);
         if (error) throw error;
 
-        alert('🎉 恭喜！您的商家资料已成功入驻大马吉通，现已上线展示！');
+        alert(t.successAlert);
         window.location.href = '/';
       } catch (err) {
-        alert('提交失败：' + err.message);
+        alert('Error: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = '🚀 立即提交商家入驻';
+        btn.innerText = t.submitBtn;
       }
     }
 
@@ -261,9 +459,10 @@
 
     async function handlePaySubmit(e) {
       e.preventDefault();
+      const t = M_I18N[currentMLang];
       const btn = document.getElementById('paySubmitBtn');
       btn.disabled = true;
-      btn.innerText = '⏳ 正在上传凭证并提交订单...';
+      btn.innerText = t.paySubmittingBtn;
 
       try {
         const file = document.getElementById('receiptFileInput').files[0];
@@ -280,15 +479,17 @@
           receiptUrl
         });
 
-        alert('✅ 付款凭证已提交！站长在后台核实后将立即为您开启首页黄金置顶。');
+        alert(t.paySuccessAlert);
         document.getElementById('payModal').classList.add('hidden');
       } catch (err) {
-        alert('提交失败：' + err.message);
+        alert('Error: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = '✅ 提交付款凭证（后台秒审置顶）';
+        btn.innerText = t.paySubmitBtn;
       }
     }
+
+    setMerchantLang(currentMLang);
   </script>
 </body>
 </html>
