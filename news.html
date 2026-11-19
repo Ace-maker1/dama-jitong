@@ -65,6 +65,7 @@
   </div>
 
   <script>
+    // 严格按语言匹配高可用直出 RSS 源，杜绝跨语言混杂与空频道
     const NEWS_I18N = {
       zh: {
         title: '实时新闻头条',
@@ -79,41 +80,40 @@
             id: 'my',
             label: '🇲🇾 马来西亚',
             feeds: [
-              { name: '东方日报', url: 'https://www.orientaldaily.com.my/feed' },
-              { name: '星洲网', url: 'https://www.sinchew.com.my/feed/' },
-              { name: 'Google MY', url: 'https://news.google.com/rss/search?q=%E9%A9%AC%E6%9D%A5%E8%A5%BF%E4%BA%9A&hl=zh-CN&gl=MY&ceid=MY:zh-Hans' }
+              { name: '光华日报', url: 'https://www.kwongwah.com.my/feed/' },
+              { name: '大马华文头条', url: 'https://news.google.com/rss/search?q=%E9%A6%AC%E4%BE%86%E8%A5%BF%E4%BA%9E+OR+%E5%90%89%E9%9A%86%E5%9D%A1+OR+%E6%AA%B3%E5%9F%8E&hl=zh-TW&gl=TW&ceid=TW:zh-Hant' }
             ]
           },
           {
             id: 'sg',
             label: '🇸🇬 新加坡',
             feeds: [
-              { name: '8视界新加坡', url: 'https://www.8world.com/rss/singapore' },
-              { name: 'Google SG', url: 'https://news.google.com/rss/search?q=%E6%96%B0%E5%8A%A0%E5%9D%A1&hl=zh-CN&gl=SG&ceid=SG:zh-Hans' }
+              { name: '新加坡中文头条', url: 'https://news.google.com/rss/search?q=%E6%96%B0%E5%8A%A0%E5%9D%A1&hl=zh-TW&gl=TW&ceid=TW:zh-Hant' },
+              { name: '8视界', url: 'https://www.8world.com/rss/singapore' }
             ]
           },
           {
             id: 'finance',
             label: '📈 投资财经',
             feeds: [
-              { name: '东方财经', url: 'https://www.orientaldaily.com.my/feed/business' },
-              { name: 'BBC 财经', url: 'https://feeds.bbci.co.uk/zhongwen/simp/business/rss.xml' }
+              { name: '大马马币财经', url: 'https://news.google.com/rss/search?q=%E9%A6%AC%E5%B9%A3+OR+%E9%A6%AC%E8%82%A1+OR+%E7%BE%8E%E8%82%A1+OR+%E9%BB%83%E9%87%91&hl=zh-TW&gl=TW&ceid=TW:zh-Hant' },
+              { name: 'BBC 中文财经', url: 'https://feeds.bbci.co.uk/zhongwen/trad/business/rss.xml' }
             ]
           },
           {
             id: 'life',
             label: '🍜 生活娱乐',
             feeds: [
-              { name: '东方生活', url: 'https://www.orientaldaily.com.my/feed/lifestyle' },
-              { name: 'Google 生活', url: 'https://news.google.com/rss/search?q=%E9%A9%AC%E6%9D%A5%E8%A5%BF%E4%BA%9A+%E7%BE%8E%E9%A3%9F+%E6%97%85%E6%B8%B8&hl=zh-CN&gl=MY&ceid=MY:zh-Hans' }
+              { name: '大马美食旅游', url: 'https://news.google.com/rss/search?q=%E9%A6%AC%E4%BE%86%E8%A5%BF%E4%BA%9E+%E7%BE%8E%E9%A3%9F+OR+%E6%97%85%E9%81%8A+OR+%E5%A8%9B%E6%A8%82&hl=zh-TW&gl=TW&ceid=TW:zh-Hant' },
+              { name: '光华副刊', url: 'https://www.kwongwah.com.my/category/%e5%89%af%e5%88%8a/feed/' }
             ]
           },
           {
             id: 'world',
             label: '🌍 国际要闻',
             feeds: [
-              { name: 'BBC 国际', url: 'https://feeds.bbci.co.uk/zhongwen/simp/world/rss.xml' },
-              { name: '东方国际', url: 'https://www.orientaldaily.com.my/feed/international' }
+              { name: 'BBC 国际头条', url: 'https://feeds.bbci.co.uk/zhongwen/trad/world/rss.xml' },
+              { name: '全球华人焦点', url: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FtVnVHZ0pWVXlnQVAB?hl=zh-TW&gl=TW&ceid=TW:zh-Hant' }
             ]
           }
         ]
@@ -140,7 +140,7 @@
             label: '🇸🇬 Singapore',
             feeds: [
               { name: 'CNA Singapore', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416' },
-              { name: 'CNA Asia', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511' }
+              { name: 'Google SG', url: 'https://news.google.com/rss/search?q=Singapore&hl=en-SG&gl=SG&ceid=SG:en' }
             ]
           },
           {
@@ -182,7 +182,7 @@
             id: 'my',
             label: '🇲🇾 Malaysia',
             feeds: [
-              { name: 'Astro Awani', url: 'https://rss.astroawani.com/rss/national/public' },
+              { name: 'Berita Malaysia', url: 'https://news.google.com/rss/search?q=Malaysia+kerajaan+OR+ekonomi+OR+rakyat&hl=ms&gl=MY&ceid=MY:ms' },
               { name: 'FMT Bahasa', url: 'https://www.freemalaysiatoday.com/category/bahasa/feed/' }
             ]
           },
@@ -190,28 +190,28 @@
             id: 'sg',
             label: '🇸🇬 Singapura',
             feeds: [
-              { name: 'BERITA Mediacorp', url: 'https://berita.mediacorp.sg/rss/singapura' }
+              { name: 'Berita Singapura', url: 'https://news.google.com/rss/search?q=Singapura&hl=ms&gl=MY&ceid=MY:ms' }
             ]
           },
           {
             id: 'finance',
             label: '📈 Ekonomi & Pelaburan',
             feeds: [
-              { name: 'Astro Awani Bisnes', url: 'https://rss.astroawani.com/rss/business/public' }
+              { name: 'Ekonomi & Ringgit', url: 'https://news.google.com/rss/search?q=Ringgit+OR+Bursa+Malaysia+OR+ekonomi&hl=ms&gl=MY&ceid=MY:ms' }
             ]
           },
           {
             id: 'life',
             label: '🍜 Gaya Hidup',
             feeds: [
-              { name: 'Astro Awani Gaya Hidup', url: 'https://rss.astroawani.com/rss/lifestyle/public' }
+              { name: 'Hiburan & Makanan', url: 'https://news.google.com/rss/search?q=makanan+viral+OR+pelancongan+Malaysia&hl=ms&gl=MY&ceid=MY:ms' }
             ]
           },
           {
             id: 'world',
             label: '🌍 Dunia',
             feeds: [
-              { name: 'Astro Awani Dunia', url: 'https://rss.astroawani.com/rss/international/public' }
+              { name: 'Berita Dunia', url: 'https://news.google.com/rss/search?q=berita+dunia+terkini&hl=ms&gl=MY&ceid=MY:ms' }
             ]
           }
         ]
@@ -222,7 +222,7 @@
     let currentTopicId = 'my';
     let activeRequestId = 0;
 
-    function fetchWithTimeout(url, ms = 6500) {
+    function fetchWithTimeout(url, ms = 7000) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), ms);
       return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
@@ -295,7 +295,16 @@
     }
 
     function renderNewsCards(items, topicLabel, readMoreText) {
-      return items.slice(0, 25).map((item, idx) => `
+      // 按标题去重，防止多个源抓取到同一条快讯
+      const seen = new Set();
+      const uniqueItems = items.filter(it => {
+        const key = it.title.slice(0, 18);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      return uniqueItems.slice(0, 25).map((item, idx) => `
         <a href="${item.link}" target="_blank" rel="noopener noreferrer"
            class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
           <div class="flex justify-between gap-3">
@@ -303,7 +312,7 @@
               <div>
                 <div class="flex items-center gap-1.5 mb-1.5">
                   ${idx < 3 ? `<span class="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded">HOT ${idx + 1}</span>` : ''}
-                  <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded truncate max-w-[150px]">${item.source}</span>
+                  <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded truncate max-w-[160px]">${item.realSource || item.source}</span>
                   <span class="text-[11px] text-gray-400 shrink-0">${timeAgo(item.pubDate, currentNewsLang)}</span>
                 </div>
                 <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${item.title}</h2>
@@ -319,16 +328,17 @@
       `).join('');
     }
 
-    // 直连自己的 Vercel 同源云函数 /api/news，彻底告别第三方 422 拦截
     async function fetchFeedFast(feedObj) {
       try {
-        const res = await fetchWithTimeout(`/api/news?url=${encodeURIComponent(feedObj.url)}`, 6500);
+        const res = await fetchWithTimeout(`/api/news?url=${encodeURIComponent(feedObj.url)}`, 7000);
         if (!res.ok) return [];
         const text = await res.text();
         const xml = new DOMParser().parseFromString(text, 'text/xml');
         return Array.from(xml.querySelectorAll('item')).map(node => {
           const rawTitle = node.querySelector('title')?.textContent?.trim() || '';
           const parts = rawTitle.split(' - ');
+          // 提取真实媒体名称（例如星洲网、中国报、南洋商报等）
+          const realMedia = parts.length > 1 ? parts[parts.length - 1].trim() : '';
           const cleanTitle = parts.length > 1 ? parts.slice(0, -1).join(' - ') : rawTitle;
           const media = node.getElementsByTagName('media:content')[0]?.getAttribute('url')
                      || node.querySelector('enclosure')?.getAttribute('url') || '';
@@ -337,7 +347,8 @@
             link: node.querySelector('link')?.textContent?.trim() || '',
             pubDate: node.querySelector('pubDate')?.textContent?.trim() || '',
             thumbnail: media,
-            source: feedObj.name
+            source: feedObj.name,
+            realSource: realMedia || feedObj.name
           };
         }).filter(x => x.title && x.link);
       } catch (e) {
@@ -351,7 +362,7 @@
       const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
       const box = document.getElementById('newsContainer');
       const syncBadge = document.getElementById('syncBadge');
-      const cacheKey = `dmjt_v2_news_${currentNewsLang}_${topic.id}`;
+      const cacheKey = `dmjt_v3_news_${currentNewsLang}_${topic.id}`;
 
       let hasCache = false;
       try {
