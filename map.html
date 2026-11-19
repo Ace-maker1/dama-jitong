@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>大马吉通 · 站内原生导航 (CN/EN/BM) | 全马极速检索·三语地名·营业状态</title>
+  <title>大马吉通 · 双引擎导航 (CN/EN/BM) | 站内原生地图 · Waze 实时路况</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    #map { height: 44vh; min-height: 290px; width: 100%; z-index: 1; transition: height 0.3s ease; }
-    body.nav-active #map { height: 64vh; min-height: 400px; }
+    #mapWrap { height: 46vh; min-height: 310px; width: 100%; position: relative; transition: height 0.3s ease; }
+    body.nav-active #mapWrap { height: 64vh; min-height: 400px; }
+    #map, #wazeFrame { height: 100%; width: 100%; }
+    #map { z-index: 1; }
+    #wazeFrame { z-index: 2; border: 0; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @keyframes pulse-ring {
@@ -36,8 +39,8 @@
       <div class="flex items-center gap-2">
         <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-medium transition shrink-0">← 首页</a>
         <div>
-          <h1 id="headerTitle" class="font-bold text-sm sm:text-base leading-tight">大马吉通 · 站内原生导航</h1>
-          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">全马极速检索 · 实时营业状态 · 语音带路</p>
+          <h1 id="headerTitle" class="font-bold text-sm sm:text-base leading-tight">大马吉通 · 双引擎智能导航</h1>
+          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">原生地图 + Waze 实时路况 · 营业状态查询</p>
         </div>
       </div>
 
@@ -192,15 +195,30 @@
     </div>
   </div>
 
-  <!-- 站内交互式高清地图 -->
-  <div class="relative">
+  <!-- 双地图引擎容器：标准原生地图 + 内嵌 Waze 实时路况 -->
+  <div id="mapWrap">
+    <!-- 左上角浮动地图引擎切换器（避开 Leaflet 缩放按钮） -->
+    <div class="absolute top-2.5 right-2.5 z-20 flex items-center bg-white/95 backdrop-blur p-1 rounded-xl shadow-lg border border-slate-200 text-xs font-bold">
+      <button id="engineNativeBtn" onclick="switchMapEngine('native')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white transition">
+        🗺️ 原生地图
+      </button>
+      <button id="engineWazeBtn" onclick="switchMapEngine('waze')" class="px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 transition flex items-center gap-1">
+        <span>🧭</span><span id="wazeTabText">Waze 路况</span>
+      </button>
+    </div>
+
+    <!-- 引擎 1：站内原生高清地图 -->
     <div id="map"></div>
+
+    <!-- 引擎 2：Waze Live Map 实时路况网页版 -->
+    <iframe id="wazeFrame" class="hidden" title="Waze Live Map" loading="lazy" allowfullscreen></iframe>
+
     <div id="mapBadge" class="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg text-[11px] text-slate-700 shadow border border-slate-200">
       💡 提示：直接点击地图任意位置即可设为目的地
     </div>
   </div>
 
-  <!-- 站内原生导航详情 + 营业状态 + 收藏按钮 + Grab / Waze 聚合栏 -->
+  <!-- 站内原生导航详情 + 营业状态 + 收藏按钮 + Waze / Google / Grab 聚合栏 -->
   <div id="resultPanel" class="max-w-2xl mx-auto p-3 space-y-3 hidden">
     <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-500">
       <div class="flex items-start justify-between gap-2">
@@ -224,18 +242,21 @@
         </button>
       </div>
 
-      <!-- 外部 App 与电话确认快捷调用 -->
+      <!-- 一键唤起外部 App（Waze App / Google Maps / Grab / 电话确认） -->
       <div class="mt-3 pt-3 border-t border-slate-100">
-        <div id="extAppsLabel" class="text-[11px] text-slate-400 mb-2">出发前确认营业或调用其他出行工具：</div>
-        <div class="grid grid-cols-3 gap-2">
-          <a id="callOrCheckLink" href="#" target="_blank" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold py-2 px-2 rounded-xl text-center transition">
-            📞 确认营业<br><span id="callSubTag" class="text-[10px] font-normal text-amber-600">查电话/时间</span>
+        <div id="extAppsLabel" class="text-[11px] text-slate-400 mb-2">一键唤起手机导航 App 避堵或确认营业：</div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <a id="wazeDeepLink" href="#" target="_blank" class="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
+            🧭 Waze<br><span id="wazeSubTag" class="text-[9px] font-normal text-sky-600">App导航</span>
           </a>
-          <a id="grabDeepLink" href="https://grab.onelink.me/2695613898" target="_blank" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold py-2 px-2 rounded-xl text-center transition">
-            🚕 Grab 叫车<br><span id="grabPriceTag" class="text-[10px] font-normal text-emerald-600">RM --</span>
+          <a id="googleMapsLink" href="#" target="_blank" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
+            🗺️ Google<br><span id="gmapSubTag" class="text-[9px] font-normal text-blue-600">Maps导航</span>
           </a>
-          <a id="wazeDeepLink" href="#" target="_blank" class="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 text-xs font-bold py-2 px-2 rounded-xl text-center transition">
-            🧭 Waze 导航<br><span class="text-[10px] font-normal text-sky-600">实时避堵</span>
+          <a id="grabDeepLink" href="https://grab.onelink.me/2695613898" target="_blank" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
+            🚕 Grab<br><span id="grabPriceTag" class="text-[9px] font-normal text-emerald-600">RM --</span>
+          </a>
+          <a id="callOrCheckLink" href="#" target="_blank" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
+            📞 查营业<br><span id="callSubTag" class="text-[9px] font-normal text-amber-600">电话/时间</span>
           </a>
         </div>
       </div>
@@ -277,8 +298,11 @@
     const i18n = {
       zh: {
         backHome: '← 首页',
-        headerTitle: '大马吉通 · 站内原生导航',
-        headerSub: '全马极速检索 · 实时营业状态 · 语音带路',
+        headerTitle: '大马吉通 · 双引擎智能导航',
+        headerSub: '原生地图 + Waze 实时路况 · 营业状态查询',
+        engineNative: '🗺️ 原生地图',
+        engineWaze: 'Waze 路况',
+        wazeBadgeTip: '🧭 当前为 Waze 实时路况视图（红黄线为拥堵路段）',
         cityLabel: '城市：',
         nearMeCity: '📍 我附近',
         cityKL: '吉隆坡 KL', cityPG: '槟城 Penang', cityJB: '新山 JB',
@@ -316,7 +340,9 @@
         voiceOff: '🔇 语音已静音',
         lockedText: '🎯 视角锁定中 (18x)',
         freeText: '🔓 自由拖动 (点此回正)',
-        extApps: '出发前确认营业或调用其他出行工具：',
+        extApps: '一键唤起手机导航 App 避堵或确认营业：',
+        wazeSub: 'App导航',
+        gmapSub: 'Maps导航',
         stepsHeader: '📋 站内逐步路线明细',
         navHome: '分类首页',
         navMap: '站内导航',
@@ -333,8 +359,11 @@
       },
       en: {
         backHome: '← Home',
-        headerTitle: 'DamaJitong · In-App Navigation',
-        headerSub: 'Fast All-MY Search · Live Open Status · Voice Nav',
+        headerTitle: 'DamaJitong · Dual-Engine Nav',
+        headerSub: 'In-App Map + Waze Live Traffic · Open Status',
+        engineNative: '🗺️ Standard',
+        engineWaze: 'Waze Traffic',
+        wazeBadgeTip: '🧭 Waze Live Traffic View (Red/Yellow = Traffic)',
         cityLabel: 'City:',
         nearMeCity: '📍 Near Me',
         cityKL: 'Kuala Lumpur', cityPG: 'Penang', cityJB: 'Johor Bahru',
@@ -372,7 +401,9 @@
         voiceOff: '🔇 Muted',
         lockedText: '🎯 Locked (18x)',
         freeText: '🔓 Free Pan (Recenter)',
-        extApps: 'Verify opening hours or launch travel apps:',
+        extApps: 'Launch phone navigation apps or check open hours:',
+        wazeSub: 'Open App',
+        gmapSub: 'Open App',
         stepsHeader: '📋 Turn-by-Turn Directions',
         navHome: 'Home',
         navMap: 'Navigation',
@@ -389,8 +420,11 @@
       },
       ms: {
         backHome: '← Utama',
-        headerTitle: 'DamaJitong · Navigasi Terus',
-        headerSub: 'Carian Pantas Seluruh MY · Status Buka · Suara',
+        headerTitle: 'DamaJitong · Navigasi Dwi-Enjin',
+        headerSub: 'Peta Terus + Trafik Waze · Status Buka',
+        engineNative: '🗺️ Peta Biasa',
+        engineWaze: 'Trafik Waze',
+        wazeBadgeTip: '🧭 Paparan Trafik Langsung Waze (Merah/Kuning = Sesak)',
         cityLabel: 'Bandar:',
         nearMeCity: '📍 Dekat Saya',
         cityKL: 'Kuala Lumpur', cityPG: 'Pulau Pinang', cityJB: 'Johor Bahru',
@@ -428,7 +462,9 @@
         voiceOff: '🔇 Senyap',
         lockedText: '🎯 Dikunci (18x)',
         freeText: '🔓 Bebas (Pusatkan)',
-        extApps: 'Sahkan waktu operasi atau buka aplikasi lain:',
+        extApps: 'Buka aplikasi navigasi telefon atau semak waktu operasi:',
+        wazeSub: 'Buka App',
+        gmapSub: 'Buka App',
         stepsHeader: '📋 Langkah Panduan Arah',
         navHome: 'Utama',
         navMap: 'Navigasi',
@@ -446,6 +482,7 @@
     };
 
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
+    let currentMapEngine = 'native'; // 'native' | 'waze'
     let currentMode = 'driving';
     let startCoords = null;
     let endCoords = null;
@@ -465,7 +502,44 @@
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
 
-    // 马来西亚主要城市/州属中心坐标库（0 毫秒秒级响应，彻底解决跨州城市搜索慢与语言问题）
+    // ==================== 地图双引擎切换（原生地图 vs Waze Live Map） ====================
+    function syncWazeEmbed() {
+      const target = endCoords || startCoords || { lat: map.getCenter().lat, lng: map.getCenter().lng };
+      const wazeLocale = currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh');
+      const pinParam = endCoords ? '&pin=1' : '';
+      const embedUrl = `https://embed.waze.com/${wazeLocale}/iframe?zoom=15&lat=${target.lat}&lon=${target.lng}${pinParam}`;
+      const frame = document.getElementById('wazeFrame');
+      if (frame.src !== embedUrl) {
+        frame.src = embedUrl;
+      }
+    }
+
+    function switchMapEngine(engine) {
+      currentMapEngine = engine;
+      const nativeBtn = document.getElementById('engineNativeBtn');
+      const wazeBtn = document.getElementById('engineWazeBtn');
+      const mapEl = document.getElementById('map');
+      const wazeEl = document.getElementById('wazeFrame');
+      const badgeEl = document.getElementById('mapBadge');
+
+      if (engine === 'waze') {
+        nativeBtn.className = 'px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 transition';
+        wazeBtn.className = 'px-2.5 py-1 rounded-lg bg-sky-500 text-white transition flex items-center gap-1';
+        mapEl.classList.add('hidden');
+        wazeEl.classList.remove('hidden');
+        badgeEl.innerText = i18n[currentLang].wazeBadgeTip;
+        syncWazeEmbed();
+      } else {
+        wazeBtn.className = 'px-2.5 py-1 rounded-lg text-slate-700 hover:bg-slate-100 transition flex items-center gap-1';
+        nativeBtn.className = 'px-2.5 py-1 rounded-lg bg-emerald-600 text-white transition';
+        wazeEl.classList.add('hidden');
+        mapEl.classList.remove('hidden');
+        badgeEl.innerText = i18n[currentLang].mapBadge;
+        setTimeout(() => map.invalidateSize(), 80);
+      }
+    }
+
+    // 马来西亚主要城市/州属中心坐标库
     const MY_CITIES_DB = [
       { keys: ['ipoh', '怡保', 'perak'], zh: '怡保 Ipoh (霹雳州)', en: 'Ipoh, Perak', ms: 'Ipoh, Perak', lat: 4.5975, lng: 101.0901 },
       { keys: ['kuala lumpur', 'kl', '吉隆坡'], zh: '吉隆坡 Kuala Lumpur', en: 'Kuala Lumpur', ms: 'Kuala Lumpur', lat: 3.1390, lng: 101.6869 },
@@ -494,7 +568,6 @@
       { keys: ['genting highlands', '云顶'], zh: '云顶高原 Genting Highlands', en: 'Genting Highlands, Pahang', ms: 'Genting Highlands, Pahang', lat: 3.4236, lng: 101.7932 }
     ];
 
-    // 马来西亚主要机场航站楼出发层精准 road-snapped 坐标库
     const MY_AIRPORTS = [
       { keywords: ['槟城机场', 'penang airport', 'penang international', 'bayan lepas airport', 'pen'], zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang (PEN)', fullAddr: '11900 Bayan Lepas, Pulau Pinang', lat: 5.2932, lng: 100.2658, phone: '+604-6434411' },
       { keywords: ['吉隆坡机场', '吉隆坡国际机场', 'klia', 'klia1', 'kuala lumpur international airport'], zh: '吉隆坡国际机场 (KLIA T1)', en: 'Kuala Lumpur International Airport (KLIA T1)', ms: 'Lapangan Terbang Antarabangsa KLIA T1', fullAddr: '64000 Sepang, Selangor', lat: 2.7545, lng: 101.7037, phone: '+603-87762000' },
@@ -508,7 +581,6 @@
       { keywords: ['马六甲机场', 'melaka airport', 'batu berendam airport', 'mkz'], zh: '马六甲国际机场 (MKZ)', en: 'Melaka International Airport (MKZ)', ms: 'Lapangan Terbang Antarabangsa Melaka (MKZ)', fullAddr: '75350 Batu Berendam, Melaka', lat: 2.2633, lng: 102.2515, phone: '+606-3175860' }
     ];
 
-    // 马来西亚全场景高频联想词库（支持中文、英文、马来文前缀 0ms 秒弹）
     const AUTOCOMPLETE_DICT = [
       { icon: '✈️', zh: '飞机场 (最近国际机场)', en: 'Nearest International Airport', ms: 'Lapangan Terbang Terdekat', query: '机场', keys: ['飞', '机场', '飞机场', 'air', 'airport', 'lapangan', 'terbang'] },
       { icon: '✈️', zh: '怡保机场 (IPH)', en: 'Ipoh Airport (IPH)', ms: 'Lapangan Terbang Ipoh (IPH)', query: '怡保机场', keys: ['ipoh air', 'iph', '怡保机'] },
@@ -642,6 +714,8 @@
       document.getElementById('backHomeBtn').innerText = t.backHome;
       document.getElementById('headerTitle').innerText = t.headerTitle;
       document.getElementById('headerSub').innerText = t.headerSub;
+      document.getElementById('engineNativeBtn').innerText = t.engineNative;
+      document.getElementById('wazeTabText').innerText = t.engineWaze;
       document.getElementById('cityLabel').innerText = t.cityLabel;
       document.getElementById('quickNearMeCityBtn').innerText = t.nearMeCity;
       document.getElementById('cityBtn-kl').innerText = t.cityKL;
@@ -651,7 +725,6 @@
       document.getElementById('cityBtn-ip').innerText = t.cityIP;
       document.getElementById('cityBtn-kk').innerText = t.cityKK;
 
-      // 如果起点是 GPS 默认文字，同步翻译起点输入框
       const startVal = document.getElementById('startInput').value;
       if (startVal.includes('(GPS)')) {
         document.getElementById('startInput').value = t.gpsLabel;
@@ -676,18 +749,21 @@
       document.getElementById('favTitleLabel').innerText = t.favTitle;
       document.getElementById('histTitleLabel').innerText = t.histTitle;
       document.getElementById('clearHistBtn').innerText = t.clearHist;
-      document.getElementById('mapBadge').innerText = t.mapBadge;
+      document.getElementById('mapBadge').innerText = currentMapEngine === 'waze' ? t.wazeBadgeTip : t.mapBadge;
       document.getElementById('nativeTag').innerText = t.nativeTag;
       document.getElementById('startNavBtn').innerHTML = `<span>▶️</span> <span>${t.startNav}</span>`;
       document.getElementById('stopNavBtn').innerText = t.stopNav;
       document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? t.voiceOn : t.voiceOff;
       document.getElementById('recenterBtn').innerText = cameraLocked ? t.lockedText : t.freeText;
       document.getElementById('extAppsLabel').innerText = t.extApps;
+      document.getElementById('wazeSubTag').innerText = t.wazeSub;
+      document.getElementById('gmapSubTag').innerText = t.gmapSub;
       document.getElementById('stepsHeader').innerText = t.stepsHeader;
       document.getElementById('navHome').innerText = t.navHome;
       document.getElementById('navMap').innerText = t.navMap;
       document.getElementById('navPost').innerText = t.navPost;
 
+      if (currentMapEngine === 'waze') syncWazeEmbed();
       const curEnd = document.getElementById('endInput').value.trim();
       if (curEnd && !document.getElementById('autoSuggestDropdown').classList.contains('hidden')) {
         handleEndInput(curEnd);
@@ -781,7 +857,8 @@
       document.getElementById('startInput').value = label;
       if (startMarker) map.removeLayer(startMarker);
       startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
-      document.getElementById('mapBadge').innerText = `📍 ${label}`;
+      if (currentMapEngine === 'waze') syncWazeEmbed();
+      else document.getElementById('mapBadge').innerText = `📍 ${label}`;
     }
 
     function locateMe(setAsStart = false, silent = false) {
@@ -802,6 +879,7 @@
             startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
           }
           map.setView([lat, lng], 15);
+          if (currentMapEngine === 'waze') syncWazeEmbed();
         },
         () => {
           if (!silent) {
@@ -823,7 +901,7 @@
       }
     }
 
-    // ==================== 0ms 毫秒级实时联想下拉框（严格遵守当前所选语言） ====================
+    // ==================== 0ms 毫秒级实时联想下拉框 ====================
     function hideSuggestions() {
       const box = document.getElementById('autoSuggestDropdown');
       if (box) box.classList.add('hidden');
@@ -865,16 +943,13 @@
       const refLat = startCoords ? startCoords.lat : map.getCenter().lat;
       const refLng = startCoords ? startCoords.lng : map.getCenter().lng;
 
-      // 1. 0ms 匹配内置全马城市地标库（严格显示当前语言的 name）
       const cityMatches = MY_CITIES_DB.filter(c =>
         c.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower))
       ).slice(0, 4);
 
-      // 2. 0ms 匹配收藏夹和历史记录
       const favs = getSavedList(STORAGE_FAV_KEY).filter(f => f.label.toLowerCase().includes(lower) || f.name.toLowerCase().includes(lower));
       const hist = getSavedList(STORAGE_HIST_KEY).filter(h => h.name.toLowerCase().includes(lower));
 
-      // 3. 0ms 匹配高频品牌/机场词典
       const dictMatches = AUTOCOMPLETE_DICT.filter(item =>
         item.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower)) ||
         item.zh.toLowerCase().includes(lower) ||
@@ -942,7 +1017,6 @@
         box.classList.add('hidden');
       }
 
-      // 4. 停顿 450ms 后异步补全全马具体街道/大厦（强制传入 accept-language 匹配当前语言！）
       clearTimeout(suggestTimer);
       if (q.length >= 3) {
         suggestTimer = setTimeout(async () => {
@@ -1006,6 +1080,7 @@
       const temp = startCoords;
       startCoords = endCoords;
       endCoords = temp;
+      if (currentMapEngine === 'waze') syncWazeEmbed();
     }
 
     map.on('click', function(e) {
@@ -1025,12 +1100,10 @@
       if (startCoords) calculateAndRenderRoute();
     });
 
-    // 极速并发检索引擎（本地城市/机场毫秒命中 + 8km Overpass 与全马 Nominatim 并发请求 + accept-language 严格匹配当前语言）
     async function searchPlacesNear(rawQuery, refLat, refLng) {
       const rawLower = rawQuery.trim().toLowerCase();
       let candidates = [];
 
-      // 0A. 专项机场库精准匹配
       const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(rawQuery.trim());
       const matchedAirports = MY_AIRPORTS.filter(ap =>
         isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw))
@@ -1051,7 +1124,6 @@
         });
       }
 
-      // 0B. 内置全马主要城市毫秒级匹配（输入 ipoh / 怡保 / penang 等瞬间出结果，0 网络等待）
       if (candidates.length === 0) {
         const matchedCities = MY_CITIES_DB.filter(c => c.keys.some(k => k === rawLower));
         if (matchedCities.length > 0) {
@@ -1070,7 +1142,6 @@
         }
       }
 
-      // 1. 并发同时请求：周边 8km 门店雷达 + 全马地理接口（不再串行卡顿，且严格携带 accept-language）
       if (candidates.length === 0) {
         const query = await normalizeSearchQuery(rawQuery);
         const cleanKw = query.replace(/["\\]/g, '').trim();
@@ -1121,7 +1192,6 @@
 
       if (candidates.length === 0) return [];
 
-      // 去重并按直线距离取最近的 8 个候选
       const deduped = [];
       candidates.sort((a, b) => a.straightKm - b.straightKm).forEach(item => {
         const exists = deduped.some(d => map.distance([d.lat, d.lng], [item.lat, item.lng]) < 80);
@@ -1129,7 +1199,6 @@
       });
       const preSorted = deduped.slice(0, 8);
 
-      // 2. 调用 OSRM 批量计算实际道路距离与时间
       try {
         const coordsStr = [`${refLng},${refLat}`, ...preSorted.map(p => `${p.lng},${p.lat}`)].join(';');
         const profile = currentMode === 'walking' ? 'foot' : 'driving';
@@ -1354,6 +1423,9 @@
     async function calculateAndRenderRoute() {
       if (!startCoords || !endCoords) return;
 
+      // 如果当前处于 Waze 实时路况模式，同步更新 Waze 地图中心与图钉
+      if (currentMapEngine === 'waze') syncWazeEmbed();
+
       if (startMarker) map.removeLayer(startMarker);
       if (endMarker) map.removeLayer(endMarker);
       startMarker = L.marker([startCoords.lat, startCoords.lng]).addTo(map).bindPopup(`🟢 ${startCoords.name}`);
@@ -1374,6 +1446,9 @@
         } catch (e) {}
       }
 
+      document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
+      document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
+
       if (!routeData || !routeData.routes || routeData.routes.length === 0) {
         const straightKm = (map.distance([startCoords.lat, startCoords.lng], [endCoords.lat, endCoords.lng]) / 1000).toFixed(1);
         if (routeLine) map.removeLayer(routeLine);
@@ -1382,7 +1457,6 @@
         document.getElementById('destDisplayTitle').innerText = `📍 ${endCoords.name}`;
         document.getElementById('routeDistBadge').innerText = `~${straightKm} km`;
         document.getElementById('routeTimeBadge').innerText = `${Math.round(straightKm * 1.5)} min`;
-        document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
         document.getElementById('resultPanel').classList.remove('hidden');
         return;
       }
@@ -1425,7 +1499,7 @@
       } else {
         callLink.href = `https://www.google.com/search?q=${encodeURIComponent(endCoords.name + ' Malaysia opening hours')}`;
         callLink.target = '_blank';
-        callSub.innerText = currentLang === 'zh' ? '查电话/时间' : 'Check Hours';
+        callSub.innerText = currentLang === 'zh' ? '电话/时间' : 'Hours';
       }
 
       const saveBtn = document.getElementById('saveFavBtn');
@@ -1438,8 +1512,6 @@
       } else {
         document.getElementById('routeSubInfo').innerText = `自驾预估油费 RM ${fuelCost} · Grab 参考约 RM ${grabEst}`;
       }
-
-      document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
 
       const transitBox = document.getElementById('transitGuideBox');
       if (currentMode === 'transit') {
@@ -1590,6 +1662,7 @@
     switchLang(currentLang);
 
     function focusStep(idx) {
+      if (currentMapEngine === 'waze') switchMapEngine('native');
       const st = currentSteps[idx];
       if (st && st.location) {
         map.setView([st.location[1], st.location[0]], 18);
@@ -1654,6 +1727,7 @@
 
     async function startLiveNav() {
       if (!currentSteps.length) return;
+      if (currentMapEngine === 'waze') switchMapEngine('native');
 
       isNavigating = true;
       cameraLocked = true;
