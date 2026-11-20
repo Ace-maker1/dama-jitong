@@ -35,9 +35,14 @@ export async function handler(event) {
     return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ success: false, error: '未配置 GEMINI_API_KEY' }) };
+  const rawKey = process.env.GEMINI_API_KEY || '';
+  const cleanKey = rawKey.replace(/[^A-Za-z0-9_-]/g, '');
+  if (!cleanKey) {
+    return {
+      statusCode: 500,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({ success: false, error: '未配置有效的 GEMINI_API_KEY' }),
+    };
   }
 
   try {
@@ -74,13 +79,14 @@ export async function handler(event) {
     }
     parts.push({ text: prompt });
 
-    const endpoint =
-      '[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=)' +
-      encodeURIComponent(apiKey.trim());
+    const endpoint = '[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent)';
 
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': cleanKey,
+      },
       body: JSON.stringify({
         contents: [{ parts }],
         generationConfig: { responseMimeType: 'application/json' },
