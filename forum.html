@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>大马吹水站 · 社区交流论坛 · 大马吉通 MY</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 顶部靛蓝渐变导航栏 -->
+    <header class="bg-gradient-to-r from-indigo-700 via-blue-700 to-sky-700 text-white sticky top-0 z-30 shadow-md px-3 py-2.5">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 transition">← 首页</a>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-300 animate-ping shrink-0"></span>
+              <h1 id="pageTitle" class="font-black text-sm tracking-tight truncate">💬 大马吹水站 · 论坛</h1>
+            </div>
+            <p id="pageSub" class="text-[10px] text-sky-100 truncate">本地吹水 · 美食探店 · 求助问答 · 商机交流</p>
+          </div>
+        </div>
+
+        <!-- 三语切换器 -->
+        <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
+          <button onclick="switchForumLang('zh')" id="fLang-zh" class="px-2 py-0.5 rounded-full bg-white text-indigo-700 transition">CN</button>
+          <button onclick="switchForumLang('en')" id="fLang-en" class="px-2 py-0.5 rounded-full text-white/90 transition">EN</button>
+          <button onclick="switchForumLang('ms')" id="fLang-ms" class="px-2 py-0.5 rounded-full text-white/90 transition">BM</button>
+        </div>
+      </div>
+
+      <!-- 搜索框 + 发帖快捷按钮 -->
+      <div class="flex items-center gap-2 mb-2">
+        <div class="relative flex-1">
+          <input id="forumSearchInput" type="text" oninput="renderPostsList()"
+                 placeholder="搜索帖子标题或内容..."
+                 class="w-full bg-white/15 text-white placeholder-white/70 text-xs rounded-xl pl-8 pr-3 py-1.5 focus:bg-white focus:text-slate-900 focus:placeholder-slate-400 focus:outline-none transition" />
+          <span class="absolute left-2.5 top-1.5 text-xs opacity-80">🔍</span>
+        </div>
+        <button onclick="openNewPostModal()" id="topNewPostBtn"
+                class="bg-amber-400 hover:bg-amber-300 text-slate-950 font
