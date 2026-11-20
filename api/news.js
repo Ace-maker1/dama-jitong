@@ -6,12 +6,15 @@ const ALLOWED_HOSTS = [
   'news.ltn.com.tw',
   'www.malaymail.com',
   'www.freemalaysiatoday.com',
-  'www.channelnewsasia.com'
+  'www.channelnewsasia.com',
+  'cointelegraph.com',
+  'www.coindesk.com',
+  'finance.yahoo.com'
 ];
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', 's-maxage=180, stale-while-revalidate=300');
 
   const { url } = req.query;
   if (!url) {
