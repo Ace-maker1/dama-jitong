@@ -147,6 +147,7 @@
         <button id="chipAirport" onclick="quickNearby('机场')" class="text-[11px] bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 px-2 py-0.5 rounded font-semibold shrink-0">✈️ 机场</button>
         <button onclick="quickNearby('KFC')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍗 KFC</button>
         <button id="chipMcd" onclick="quickNearby('McDonald\'s')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍔 麦当劳</button>
+        <button onclick="quickNearby('7-Eleven')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🏪 7-11</button>
         <button id="chipPetrol" onclick="quickNearby('Petronas')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">⛽ 加油站</button>
         <button id="chipWatsons" onclick="quickNearby('Watsons')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">💊 屈臣氏</button>
         <button id="chipHospital" onclick="quickNearby('Hospital')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🏥 医院</button>
@@ -546,13 +547,13 @@
       { icon: '✈️', zh: '新山士乃国际机场 (JHB)', en: 'Senai International Airport (JHB)', ms: 'Lapangan Terbang Senai', query: '新山机场', lat: 1.6353, lng: 103.6672, addr: '81250 Johor Bahru, Johor', is24: true, keys: ['新山机', '士乃', 'senai', 'jhb'] },
       { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Antarabangsa Kota Kinabalu', query: '亚庇机场', lat: 5.9325, lng: 116.0503, addr: '88200 Kota Kinabalu, Sabah', is24: true, keys: ['亚庇机', 'kkia', 'bki'] },
       { icon: '🍗', zh: 'KFC 肯德基 (最近分店)', en: 'KFC (Nearest Outlet)', ms: 'KFC (Cawangan Terdekat)', query: 'KFC', keys: ['k', 'kf', 'kfc', '肯', '肯德基'] },
-      { icon: '🍔', zh: "McDonald's 麦当劳 (最近分店)", en: "McDonald's (Nearest Outlet)", ms: "McDonald's (Terdekat)", query: "McDonald's", keys: ['m', 'mc', 'mcd', '麦', '麦当劳'] },
+      { icon: '🍔', zh: "McDonald's 麦当劳 (最近分店)", en: "McDonald's (Nearest Outlet)", ms: "McDonald's (Terdekat)", query: "McDonald's", keys: ['m', 'mc', 'mcd', 'mcdonald', 'mcdonalds', '麦', '麦当劳'] },
       { icon: '☕', zh: 'Starbucks 星巴克', en: 'Starbucks Coffee', ms: 'Starbucks Coffee', query: 'Starbucks', keys: ['st', 'star', '星', '星巴克'] },
       { icon: '🧋', zh: 'CHAGEE 霸王茶姬', en: 'CHAGEE Milk Tea', ms: 'CHAGEE', query: 'CHAGEE', keys: ['ch', 'cha', 'chagee', '霸', '霸王茶姬'] },
       { icon: '🧋', zh: 'Tealive 奶茶', en: 'Tealive', ms: 'Tealive', query: 'Tealive', keys: ['te', 'tea', 'tealive', '奶', '奶茶'] },
       { icon: '☕', zh: 'ZUS Coffee 咖啡', en: 'ZUS Coffee', ms: 'ZUS Coffee', query: 'ZUS Coffee', keys: ['z', 'zu', 'zus', '咖', '咖啡'] },
       { icon: '🍦', zh: 'MIXUE 蜜雪冰城', en: 'MIXUE Ice Cream & Tea', ms: 'MIXUE', query: 'Mixue', keys: ['mi', 'mix', 'mixue', '蜜', '蜜雪'] },
-      { icon: '🏪', zh: '7-Eleven 24小时便利店', en: '7-Eleven (24 Hours)', ms: '7-Eleven (24 Jam)', query: '7-Eleven', keys: ['7', '7-', '711', '7e', '便', '便利店'] },
+      { icon: '🏪', zh: '7-Eleven 24小时便利店', en: '7-Eleven (24 Hours)', ms: '7-Eleven (24 Jam)', query: '7-Eleven', keys: ['7', '7-', '711', '7-11', '7e', '便', '便利店'] },
       { icon: '🏪', zh: 'KK Super Mart 24小时超市', en: 'KK Super Mart', ms: 'KK Super Mart', query: 'KK Super Mart', keys: ['kk', '超', '超市'] },
       { icon: '🛒', zh: '99 Speedmart 迷你市场', en: '99 Speedmart', ms: '99 Speedmart', query: '99 Speedmart', keys: ['9', '99', 'speedmart'] },
       { icon: '⛽', zh: 'Petronas 国油加油站', en: 'Petronas Petrol Station', ms: 'Stesen Minyak Petronas', query: 'Petronas', keys: ['p', 'pe', 'pet', 'petronas', '加', '加油站', '油', '油站', 'stesen'] },
@@ -773,6 +774,9 @@
     });
 
     const cnAliasMap = {
+      'mcdonalds': "McDonald's",
+      'mcdonald': "McDonald's",
+      'mcd': "McDonald's",
       '麦当劳': "McDonald's",
       '肯德基': 'KFC',
       '星巴克': 'Starbucks',
@@ -781,6 +785,8 @@
       '加油站': 'Petronas',
       '油站': 'Petronas',
       'stesen minyak': 'Petronas',
+      '711': '7-Eleven',
+      '7-11': '7-Eleven',
       '便利店': '7-Eleven',
       'kedai serbaneka': '7-Eleven',
       '医院': 'Hospital',
@@ -809,8 +815,11 @@
       let q = rawQuery.trim();
       const lowerQ = q.toLowerCase();
       for (const [alias, target] of Object.entries(cnAliasMap)) {
-        if (lowerQ === alias.toLowerCase() || lowerQ.includes(alias.toLowerCase())) {
-          return q.replace(new RegExp(alias, 'i'), target);
+        if (lowerQ === alias.toLowerCase()) {
+          return target;
+        }
+        if (alias.length >= 2 && new RegExp(`(^|\\s|[^a-zA-Z0-9])${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|\\s|[^a-zA-Z0-9])`, 'i').test(q)) {
+          return q.replace(new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), target);
         }
       }
       if (/[\u4e00-\u9fa5]/.test(q)) {
@@ -911,24 +920,73 @@
       document.getElementById('endInput').focus();
     }
 
-    function pickSuggestion(queryOrName, lat = null, lng = null, addr = '') {
+    function pickSuggestion(queryOrName, lat = null, lng = null, addr = '', statusText = '', statusClass = '', phone = '') {
       hideSuggestions();
       clearPreviousRouteUI();
       document.getElementById('clearEndBtn').classList.remove('hidden');
       if (lat !== null && lng !== null) {
-        const statusObj = evaluateOpeningStatus({}, queryOrName);
+        if (!statusText) {
+          const statusObj = evaluateOpeningStatus({}, queryOrName);
+          if (statusObj.state !== 'unknown') {
+            statusText = statusObj.text;
+            statusClass = statusObj.badgeClass;
+          }
+        }
         selectNearbyCandidate(
           lat,
           lng,
           queryOrName,
           addr,
-          statusObj.state !== 'unknown' ? statusObj.text : '',
-          statusObj.badgeClass,
-          ''
+          statusText,
+          statusClass,
+          phone
         );
       } else {
         document.getElementById('endInput').value = queryOrName;
         planRoute();
+      }
+    }
+
+    // 调用后端 Google Places API (New) 安全代理
+    async function queryGooglePlaces(rawQuery, refLat, refLng) {
+      try {
+        const res = await fetch('/api/places', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: rawQuery,
+            lat: refLat,
+            lng: refLng,
+            lang: currentLang
+          })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!Array.isArray(data.places)) return null;
+
+        const t = i18n[currentLang];
+        return data.places.map(p => {
+          const straightKm = map.distance([refLat, refLng], [p.lat, p.lng]) / 1000;
+          let status = null;
+          if (p.openNow === true) {
+            status = { state: 'open', text: t.statusOpen, badgeClass: 'bg-emerald-100 text-emerald-700' };
+          } else if (p.openNow === false) {
+            status = { state: 'closed', text: t.statusClosed(''), badgeClass: 'bg-rose-100 text-rose-700' };
+          } else {
+            status = evaluateOpeningStatus({}, p.name);
+          }
+          return {
+            lat: p.lat,
+            lng: p.lng,
+            name: p.name,
+            fullAddr: p.address,
+            straightKm,
+            status,
+            phone: p.phone || ''
+          };
+        });
+      } catch (e) {
+        return null;
       }
     }
 
@@ -952,7 +1010,7 @@
 
       const cityMatches = MY_CITIES_DB.filter(c =>
         c.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower))
-      ).slice(0, 4);
+      ).slice(0, 3);
 
       const favs = getSavedList(STORAGE_FAV_KEY).filter(f => f.label.toLowerCase().includes(lower) || f.name.toLowerCase().includes(lower));
       const hist = getSavedList(STORAGE_HIST_KEY).filter(h => h.name.toLowerCase().includes(lower));
@@ -962,7 +1020,7 @@
         item.zh.toLowerCase().includes(lower) ||
         item.en.toLowerCase().includes(lower) ||
         item.ms.toLowerCase().includes(lower)
-      ).slice(0, 5);
+      ).slice(0, 3);
 
       let html = '';
 
@@ -1005,7 +1063,7 @@
               <span class="text-sm shrink-0">${item.icon}</span>
               <span class="text-xs font-bold text-slate-800 truncate">${label}</span>
             </div>
-            <span class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded shrink-0">${currentLang === 'zh' ? '直达' : 'Go'}</span>
+            <span class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded shrink-0">${currentLang === 'zh' ? '搜附近' : 'Go'}</span>
           </div>`;
       });
 
@@ -1030,42 +1088,71 @@
       }
 
       clearTimeout(suggestTimer);
-      if (q.length >= 3) {
+      if (q.length >= 2) {
         suggestTimer = setTimeout(async () => {
           try {
+            // 优先请求 Google Places API
+            const gResults = await queryGooglePlaces(q, refLat, refLng);
+            if (document.getElementById('endInput').value.trim() !== q) return;
+
+            if (gResults && gResults.length > 0) {
+              const googleHtml = gResults.slice(0, 6).map(p => {
+                const km = p.straightKm.toFixed(1);
+                const stText = p.status ? p.status.text : '';
+                const stClass = p.status ? p.status.badgeClass : '';
+                return `
+                  <div onclick="pickSuggestion('${p.name.replace(/'/g, "\\'")}', ${p.lat}, ${p.lng}, '${p.fullAddr.replace(/'/g, "\\'")}', '${stText.replace(/'/g, "\\'")}', '${stClass}', '${(p.phone || '').replace(/'/g, "\\'")}')"
+                       class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="text-xs font-bold text-slate-800 truncate">📍 ${p.name}</div>
+                      <div class="text-[10px] text-slate-400 truncate">${p.fullAddr}</div>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">${km} km</span>
+                    </div>
+                  </div>`;
+              }).join('');
+
+              box.innerHTML = googleHtml + html;
+              box.classList.remove('hidden');
+              return;
+            }
+
+            // Google 暂未返回时退回 Photon 免费实时联想
             const normQ = await normalizeSearchQuery(q);
-            const deg = 0.45;
-            const vb = `${refLng - deg},${refLat + deg},${refLng + deg},${refLat - deg}`;
-            const langParam = getAcceptLangHeader();
-            const url = `https://nominatim.openstreetmap.org/search?format=json&accept-language=${langParam}&countrycodes=my&limit=4&viewbox=${vb}&bounded=0&q=${encodeURIComponent(normQ)}`;
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(normQ)}&lat=${refLat}&lon=${refLng}&limit=5`;
             const res = await fetch(url);
             if (!res.ok) return;
             const data = await res.json();
-            if (!data || data.length === 0) return;
+            const feats = (data && data.features) || [];
+            if (feats.length === 0) return;
             if (document.getElementById('endInput').value.trim() !== q) return;
 
-            const remoteHtml = data.map(item => {
-              const parts = item.display_name.split(',').map(s => s.trim());
-              const title = parts[0];
-              const sub = parts.slice(1, 3).join(', ');
-              const lat = parseFloat(item.lat);
-              const lng = parseFloat(item.lon);
-              const km = (map.distance([refLat, refLng], [lat, lng]) / 1000).toFixed(1);
-              return `
-                <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')"
-                     class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
-                  <div class="min-w-0">
-                    <div class="text-xs font-bold text-slate-800 truncate">📍 ${title}</div>
-                    <div class="text-[10px] text-slate-400 truncate">${sub}</div>
-                  </div>
-                  <span class="text-[10px] font-bold text-slate-500 shrink-0">${km} km</span>
-                </div>`;
-            }).join('');
+            const remoteHtml = feats
+              .filter(f => (f.properties?.countrycode || 'MY').toUpperCase() === 'MY')
+              .map(f => {
+                const p = f.properties || {};
+                const [lng, lat] = f.geometry.coordinates;
+                const title = p.name || normQ;
+                const sub = [p.street, p.district || p.city, p.state].filter(Boolean).join(', ');
+                const km = (map.distance([refLat, refLng], [lat, lng]) / 1000).toFixed(1);
+                return `
+                  <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')"
+                       class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-slate-800 truncate">📍 ${title}</div>
+                      <div class="text-[10px] text-slate-400 truncate">${sub || 'Malaysia'}</div>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-500 shrink-0">${km} km</span>
+                  </div>`;
+              }).join('');
 
-            box.innerHTML = html + remoteHtml;
-            box.classList.remove('hidden');
+            if (remoteHtml) {
+              box.innerHTML = html + remoteHtml;
+              box.classList.remove('hidden');
+            }
           } catch (e) {}
-        }, 450);
+        }, 300);
       }
     }
 
@@ -1137,6 +1224,14 @@
         });
       }
 
+      // 优先请求 Google Places API (New)，获得与 Google Maps / Grab 一致的检索准确度
+      if (candidates.length === 0) {
+        const gPlaces = await queryGooglePlaces(rawQuery, refLat, refLng);
+        if (gPlaces && gPlaces.length > 0) {
+          candidates = gPlaces;
+        }
+      }
+
       if (candidates.length === 0) {
         const matchedDict = AUTOCOMPLETE_DICT.filter(d =>
           d.lat != null && (
@@ -1186,18 +1281,37 @@
 
       if (candidates.length === 0) {
         const query = await normalizeSearchQuery(rawQuery);
-        const cleanKw = query.replace(/["\\]/g, '').trim();
+        const cleanKw = query.replace(/["'\\]/g, '').trim();
         const langParam = getAcceptLangHeader();
 
-        const deg = 0.6;
+        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${refLat}&lon=${refLng}&limit=12`;
+        const deg = 0.5;
         const vb = `${refLng - deg},${refLat + deg},${refLng + deg},${refLat - deg}`;
         const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&accept-language=${langParam}&extratags=1&countrycodes=my&limit=12&viewbox=${vb}&bounded=0&q=${encodeURIComponent(query)}`;
-        const ovQuery = `[out:json][timeout:4];(node["name"~"${cleanKw}",i](around:8000,${refLat},${refLng});way["name"~"${cleanKw}",i](around:8000,${refLat},${refLng});node["brand"~"${cleanKw}",i](around:8000,${refLat},${refLng}););out center 15;`;
+        const ovQuery = `[out:json][timeout:6];(node["name"~"${cleanKw}",i](around:15000,${refLat},${refLng});way["name"~"${cleanKw}",i](around:15000,${refLat},${refLng});node["brand"~"${cleanKw}",i](around:15000,${refLat},${refLng});way["brand"~"${cleanKw}",i](around:15000,${refLat},${refLng}););out center 15;`;
 
-        const [ovResult, nomResult] = await Promise.allSettled([
+        const [photonResult, ovResult, nomResult] = await Promise.allSettled([
+          fetch(photonUrl).then(r => r.ok ? r.json() : null),
           fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(ovQuery) }).then(r => r.ok ? r.json() : null),
           fetch(nomUrl).then(r => r.ok ? r.json() : null)
         ]);
+
+        if (photonResult.status === 'fulfilled' && photonResult.value && Array.isArray(photonResult.value.features)) {
+          photonResult.value.features.forEach(f => {
+            const p = f.properties || {};
+            if (p.countrycode && p.countrycode.toUpperCase() !== 'MY') return;
+            const [lng, lat] = f.geometry.coordinates;
+            const name = p.name || query;
+            const addrParts = [p.street, p.district || p.city, p.state].filter(Boolean);
+            const fullAddr = addrParts.join(', ') || (currentLang === 'zh' ? '附近门店' : 'Nearby');
+            const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
+            candidates.push({
+              lat, lng, name, fullAddr, straightKm,
+              status: evaluateOpeningStatus({ name, amenity: p.osm_value, shop: p.osm_value }, name),
+              phone: ''
+            });
+          });
+        }
 
         if (ovResult.status === 'fulfilled' && ovResult.value && ovResult.value.elements) {
           ovResult.value.elements.forEach(el => {
