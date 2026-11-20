@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>足坛巨星实时动态 · 大马吉通 MY</title>
+  <title>足坛全明星实时动态 · 大马吉通 MY</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/style.css" />
 </head>
@@ -17,10 +17,10 @@
           <div>
             <div class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-lime-300 animate-ping"></span>
-              <h1 id="starPageTitle" class="font-black text-sm tracking-tight">⚽ 足坛巨星实时动态</h1>
+              <h1 id="starPageTitle" class="font-black text-sm tracking-tight">⚽ 足坛全明星实时动态</h1>
               <span id="syncBadge" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full">同步中...</span>
             </div>
-            <p id="starPageSub" class="text-[10px] text-emerald-100">C罗 · 梅西 · 姆巴佩 · 哈兰德 · 皇马巴萨英超球星</p>
+            <p id="starPageSub" class="text-[10px] text-emerald-100">国际巨星 + 马来/大马球星 · 实时聚合</p>
           </div>
         </div>
 
@@ -51,7 +51,7 @@
       </a>
       <a href="/football.html" class="flex flex-col items-center -mt-6">
         <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white">⚽</div>
-        <span id="navStar" class="text-[10px] font-bold text-emerald-700 mt-0.5">足坛巨星</span>
+        <span id="navStar" class="text-[10px] font-bold text-emerald-700 mt-0.5">足坛全明星</span>
       </a>
       <a href="/map.html" class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
         <span class="text-lg">🧭</span>
@@ -65,22 +65,30 @@
   </div>
 
   <script>
+    const MY_MALAY_STARS_QUERY = '(Arif Aiman OR Faisal Halim OR Safawi Rasid OR Luqman Hakim OR Dion Cools OR Harimau Malaya)';
+
     const STAR_I18N = {
       zh: {
         back: '← 新闻',
-        title: '⚽ 足坛巨星实时动态',
-        sub: 'C罗 · 梅西 · 姆巴佩 · 哈兰德 · 皇马巴萨英超球星',
+        title: '⚽ 足坛全明星实时动态',
+        sub: '国际巨星 + 马来/大马球星 · 实时聚合',
         syncing: '同步球星快讯...',
         empty: '暂时未拉取到最新动态，点击下方重试',
         retry: '↻ 立即刷新',
         readMore: '阅读全文 ↗',
-        navHome: '首页', navNews: '实时新闻', navStar: '足坛巨星', navMap: '查路线', navBiz: '商家入驻',
+        navHome: '首页', navNews: '实时新闻', navStar: '足坛全明星', navMap: '查路线', navBiz: '商家入驻',
         stars: [
           {
             id: 'all',
-            label: '🔥 全部巨星',
-            q: '(C羅 OR 梅西 OR 姆巴佩 OR 哈蘭德 OR 貝林厄姆 OR 維尼修斯 OR 亞馬爾 OR 薩拉赫) when:24h',
-            hl: 'zh-TW', gl: 'HK', ceid: 'HK:zh-Hant'
+            label: '🌟 全部球星（含马来球星）',
+            q: `(C羅 OR 梅西 OR 姆巴佩 OR 哈蘭德 OR 貝林厄姆 OR 維尼修斯 OR 亞馬爾 OR ${MY_MALAY_STARS_QUERY}) when:2d`,
+            hl: 'zh-TW', gl: 'MY', ceid: 'MY:zh-Hant'
+          },
+          {
+            id: 'malay',
+            label: '🇲🇾 马来/大马球星',
+            q: `${MY_MALAY_STARS_QUERY} when:5d`,
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
           },
           {
             id: 'cr7',
@@ -116,19 +124,25 @@
       },
       en: {
         back: '← News',
-        title: '⚽ Football Superstars Live',
-        sub: 'Ronaldo · Messi · Mbappé · Haaland · Yamal · Bellingham',
+        title: '⚽ All Football Stars Live',
+        sub: 'Global Superstars + Malay & Malaysian Stars',
         syncing: 'Syncing stars...',
         empty: 'No player updates loaded right now, tap to retry',
         retry: '↻ Reload',
         readMore: 'Read Full ↗',
-        navHome: 'Home', navNews: 'News', navStar: 'Stars', navMap: 'Navigate', navBiz: 'Merchants',
+        navHome: 'Home', navNews: 'News', navStar: 'All Stars', navMap: 'Navigate', navBiz: 'Merchants',
         stars: [
           {
             id: 'all',
-            label: '🔥 All Superstars',
-            q: '(Cristiano Ronaldo OR Lionel Messi OR Kylian Mbappe OR Erling Haaland OR Lamine Yamal OR Jude Bellingham) when:24h',
-            hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
+            label: '🌟 All Stars (Incl. MY)',
+            q: `(Cristiano Ronaldo OR Lionel Messi OR Kylian Mbappe OR Erling Haaland OR Lamine Yamal OR Jude Bellingham OR ${MY_MALAY_STARS_QUERY}) when:2d`,
+            hl: 'en-MY', gl: 'MY', ceid: 'MY:en'
+          },
+          {
+            id: 'malay',
+            label: '🇲🇾 Malay & MY Stars',
+            q: `${MY_MALAY_STARS_QUERY} when:5d`,
+            hl: 'en-MY', gl: 'MY', ceid: 'MY:en'
           },
           {
             id: 'cr7',
@@ -145,13 +159,13 @@
           {
             id: 'mbappe',
             label: '🇫🇷 Kylian Mbappé',
-            q: '(Kylian Mbappe OR Real Madrid) when:24h',
+            q: '(Kylian Mbappe OR Real Madrid) when:2d',
             hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
           },
           {
             id: 'haaland',
             label: '🇳🇴 Erling Haaland',
-            q: '(Erling Haaland OR Manchester City) when:24h',
+            q: '(Erling Haaland OR Manchester City) when:2d',
             hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
           },
           {
@@ -164,8 +178,8 @@
       },
       ms: {
         back: '← Berita',
-        title: '⚽ Bintang Bola Sepak Dunia',
-        sub: 'Ronaldo · Messi · Mbappé · Haaland · Yamal · Arif Aiman',
+        title: '⚽ Semua Bintang Bola Sepak',
+        sub: 'Bintang Dunia + Bintang Tempatan & Harimau Malaya',
         syncing: 'Mengemas kini...',
         empty: 'Tiada berita pemain ditemui, tekan untuk cuba semula',
         retry: '↻ Muat Semula',
@@ -174,8 +188,14 @@
         stars: [
           {
             id: 'all',
-            label: '🔥 Semua Bintang',
-            q: '(Cristiano Ronaldo OR Lionel Messi OR Kylian Mbappe OR Erling Haaland OR Lamine Yamal OR Arif Aiman) when:2d',
+            label: '🌟 Semua Bintang',
+            q: `(${MY_MALAY_STARS_QUERY} OR Cristiano Ronaldo OR Lionel Messi OR Kylian Mbappe OR Erling Haaland OR Lamine Yamal OR Jude Bellingham) when:3d`,
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
+          },
+          {
+            id: 'malay',
+            label: '🇲🇾 Bintang Tempatan MY',
+            q: `${MY_MALAY_STARS_QUERY} when:5d`,
             hl: 'ms', gl: 'MY', ceid: 'MY:ms'
           },
           {
@@ -204,8 +224,8 @@
           },
           {
             id: 'young',
-            label: '🇲🇾 Arif Aiman & Bintang Muda',
-            q: '(Arif Aiman OR Faisal Halim OR Lamine Yamal OR Jude Bellingham) when:4d',
+            label: '⚡ Yamal & Bellingham',
+            q: '(Lamine Yamal OR Jude Bellingham OR Vinicius Junior) when:3d',
             hl: 'ms', gl: 'MY', ceid: 'MY:ms'
           }
         ]
@@ -296,7 +316,7 @@
         return true;
       });
 
-      return uniqueItems.slice(0, 25).map((item, idx) => `
+      return uniqueItems.slice(0, 30).map((item, idx) => `
         <a href="${item.link}" target="_blank" rel="noopener noreferrer"
            class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
           <div class="flex justify-between gap-3">
@@ -326,7 +346,7 @@
       const starObj = t.stars.find(s => s.id === currentStarId) || t.stars[0];
       const box = document.getElementById('starNewsContainer');
       const syncBadge = document.getElementById('syncBadge');
-      const cacheKey = `dmjt_star_${currentStarLang}_${starObj.id}`;
+      const cacheKey = `dmjt_star_v2_${currentStarLang}_${starObj.id}`;
 
       let hasCache = false;
       try {
@@ -378,7 +398,7 @@
 
         if (items.length > 0) {
           box.innerHTML = renderStarCards(items, starObj.label, t.readMore);
-          try { localStorage.setItem(cacheKey, JSON.stringify(items.slice(0, 25))); } catch (e) {}
+          try { localStorage.setItem(cacheKey, JSON.stringify(items.slice(0, 30))); } catch (e) {}
         } else if (!hasCache) {
           box.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100"><div class="text-gray-400 text-sm">${t.empty}</div><button onclick="loadStarNews()" class="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full">${t.retry}</button></div>`;
         }
