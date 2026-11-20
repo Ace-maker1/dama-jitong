@@ -226,7 +226,6 @@
           lblPostContent: '详细内容 *',
           contentPh: '分享你的见闻、提问或吹水内容（请文明交流）...',
           submitBtn: '🚀 立即发布帖子',
-          submitting: '发布中...',
           repliesHeader: function (n) { return '💬 全部回复 (' + n + ')'; },
           noReplies: '还没有人回复，快来抢沙发吧！',
           replyPh: '写下你的回复参与盖楼...',
@@ -260,7 +259,6 @@
           lblPostContent: 'Details *',
           contentPh: 'Share your thoughts, questions, or local tips...',
           submitBtn: '🚀 Publish Post',
-          submitting: 'Publishing...',
           repliesHeader: function (n) { return '💬 Replies (' + n + ')'; },
           noReplies: 'No replies yet. Be the first to comment!',
           replyPh: 'Write a reply...',
@@ -294,7 +292,6 @@
           lblPostContent: 'Kandungan *',
           contentPh: 'Kongsi cerita, soalan atau info tempatan...',
           submitBtn: '🚀 Hantar Topik',
-          submitting: 'Menghantar...',
           repliesHeader: function (n) { return '💬 Semua Balasan (' + n + ')'; },
           noReplies: 'Belum ada balasan. Jadilah yang pertama!',
           replyPh: 'Tulis balasan anda...',
@@ -314,7 +311,7 @@
         }
       };
 
-      var CACHE_KEY = 'dmjt_forum_posts_fixed_v1';
+      var CACHE_KEY = 'dmjt_forum_posts_ready_v1';
       var currentLang = 'zh';
       try {
         var saved = localStorage.getItem('dama_lang');
@@ -349,13 +346,12 @@
       }
 
       function escapeHtml(str) {
-        var s = String(str || '');
-        s = s.split('&').join('&');
-        s = s.split('<').join('<');
-        s = s.split('>').join('>');
-        s = s.split('"').join('"');
-        s = s.split("'").join(''');
-        return s;
+        return String(str || '')
+          .replace(/&/g, '&')
+          .replace(/</g, '<')
+          .replace(/>/g, '>')
+          .replace(/"/g, '"')
+          .replace(/'/g, ''');
       }
 
       function timeAgo(isoStr) {
