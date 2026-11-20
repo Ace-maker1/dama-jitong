@@ -1,5 +1,6 @@
 const ALLOWED_HOSTS = [
   'kwongwah.com.my',
+  'www.kwongwah.com.my',
   'news.google.com',
   'rthk.hk',
   'feeds.bbci.co.uk',
@@ -8,7 +9,6 @@ const ALLOWED_HOSTS = [
   'www.freemalaysiatoday.com',
   'www.channelnewsasia.com',
   'cointelegraph.com',
-  'www.coindesk.com',
   'finance.yahoo.com'
 ];
 
