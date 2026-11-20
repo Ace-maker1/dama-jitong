@@ -51,23 +51,22 @@ export async function handler(event) {
       };
     }
 
-    const prompt = `
-你是马来西亚本地生活门户平台「大马吉通 (DaMaJitong)」的智能填表与文案助手。
-请识别图片中的商家宣传海报、价目表、名片或门店照片（并结合补充说明：${extraNotes}），提取关键信息并撰写符合马来西亚本地习惯的中、英、巫三语推广文案。
-没提到的字段留空字符串 ""，不要瞎编。
-请严格只输出合法 JSON（不要 markdown 代码块包裹），字段如下：
-{
-  "businessName": "店铺或服务名称",
-  "category": "推荐分类（如餐饮美食、五金装修、汽车维修、美容美发、生活服务、二手买卖、招聘求职）",
-  "phone": "联系电话或 WhatsApp",
-  "address": "地址或区域",
-  "businessHours": "营业时间",
-  "promoTagline": "一句吸睛置顶标语（20字内）",
-  "descZh": "中文介绍与卖点",
-  "descEn": "English description and highlights",
-  "descBm": "Penerangan dan kelebihan dalam Bahasa Melayu"
-}
-`;
+    const prompt =
+      '你是马来西亚本地生活门户平台「大马吉通 (DaMaJitong)」的智能填表与文案助手。\n' +
+      '请识别图片中的商家宣传海报、价目表、名片或门店照片（并结合补充说明：' + extraNotes + '），提取关键信息并撰写符合马来西亚本地习惯的中、英、巫三语推广文案。\n' +
+      '没提到的字段留空字符串 ""，不要瞎编。\n' +
+      '请严格只输出合法 JSON（不要 markdown 代码块包裹），字段如下：\n' +
+      '{\n' +
+      '  "businessName": "店铺或服务名称",\n' +
+      '  "category": "推荐分类（如餐饮美食、五金装修、汽车维修、美容美发、生活服务、二手买卖、招聘求职）",\n' +
+      '  "phone": "联系电话或 WhatsApp",\n' +
+      '  "address": "地址或区域",\n' +
+      '  "businessHours": "营业时间",\n' +
+      '  "promoTagline": "一句吸睛置顶标语（20字内）",\n' +
+      '  "descZh": "中文介绍与卖点",\n' +
+      '  "descEn": "English description and highlights",\n' +
+      '  "descBm": "Penerangan dan kelebihan dalam Bahasa Melayu"\n' +
+      '}';
 
     const parts = [];
     if (imageBase64) {
@@ -75,8 +74,11 @@ export async function handler(event) {
     }
     parts.push({ text: prompt });
 
-    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$){apiKey}`;
-    const res = await fetch(url, {
+    const endpoint =
+      '[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=)' +
+      encodeURIComponent(apiKey.trim());
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -87,7 +89,7 @@ export async function handler(event) {
 
     const data = await res.json();
     if (!res.ok) {
-      const apiMsg = data?.error?.message || `Gemini API HTTP ${res.status}`;
+      const apiMsg = data?.error?.message || ('Gemini API HTTP ' + res.status);
       throw new Error(apiMsg);
     }
 
