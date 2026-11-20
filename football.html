@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>足坛全明星实时动态 · 大马吉通 MY</title>
+  <title>足坛全明星 & 实时比分直播 · 大马吉通 MY</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/style.css" />
 </head>
@@ -17,10 +17,10 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-lime-300 animate-ping shrink-0"></span>
-              <h1 id="starPageTitle" class="font-black text-sm tracking-tight truncate">足坛全明星动态</h1>
+              <h1 id="starPageTitle" class="font-black text-sm tracking-tight truncate">足坛全明星 & 赛况</h1>
               <span id="syncBadge" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full shrink-0">同步中...</span>
             </div>
-            <p id="starPageSub" class="text-[10px] text-emerald-100 truncate">国际巨星 + 马来/大马球星 · 实时聚合</p>
+            <p id="starPageSub" class="text-[10px] text-emerald-100 truncate">实时比分 · 官方直播直达 · 国际与马来球星</p>
           </div>
         </div>
 
@@ -35,6 +35,31 @@
       <!-- 球星专题横向滑动标签栏 -->
       <div id="starTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
     </header>
+
+    <!-- 实时比分 & 官方直播直达看板 -->
+    <section class="bg-slate-900 text-white px-3 py-2.5 border-b border-slate-800">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+          <span id="liveScoreTitle" class="text-xs font-black tracking-wide">📺 实时比分 & 直播时间 (大马时间)</span>
+        </div>
+        <button onclick="loadLiveMatches()" id="refreshScoreBtn" class="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold shrink-0">↻ 刷新赛况</button>
+      </div>
+
+      <!-- 比赛横向卡片滚动区 -->
+      <div id="liveMatchesRow" class="flex items-stretch gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div class="text-[11px] text-slate-400 py-3 px-2">正在同步全球焦点赛程与实时比分...</div>
+      </div>
+
+      <!-- 大马官方合法看球平台快捷入口 -->
+      <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px]">
+        <span id="officialWatchLabel" class="text-slate-400 shrink-0 font-semibold">官方转播：</span>
+        <a href="https://www.youtube.com/@StadiumAstro/streams" target="_blank" rel="noopener noreferrer" class="bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2 py-0.5 rounded-full shrink-0 font-bold">▶ Stadium Astro</a>
+        <a href="https://www.youtube.com/@beINSPORTSAsia/streams" target="_blank" rel="noopener noreferrer" class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-2 py-0.5 rounded-full shrink-0 font-bold">▶ beIN SPORTS</a>
+        <a href="https://rtmklik.rtm.gov.my/" target="_blank" rel="noopener noreferrer" class="bg-slate-800 hover:bg-slate-700 text-amber-300 px-2 py-0.5 rounded-full shrink-0 font-bold">📺 RTM Klik (免费)</a>
+        <a href="https://sooka.my/" target="_blank" rel="noopener noreferrer" class="bg-slate-800 hover:bg-slate-700 text-rose-300 px-2 py-0.5 rounded-full shrink-0 font-bold">⚽ sooka MY</a>
+      </div>
+    </section>
 
     <!-- 新闻列表主体 -->
     <main class="flex-1 p-3 space-y-2.5" id="starNewsContainer"></main>
@@ -68,8 +93,15 @@
     const STAR_I18N = {
       zh: {
         back: '← 新闻',
-        title: '足坛全明星动态',
-        sub: '国际巨星 + 马来/大马球星 · 实时聚合',
+        title: '足坛全明星 & 赛况',
+        sub: '实时比分 · 官方直播直达 · 国际与马来球星',
+        liveScoreTitle: '📺 实时比分 & 直播时间 (大马时间)',
+        refreshScore: '↻ 刷新赛况',
+        officialWatch: '官方转播：',
+        watchBtn: '📺 直播/集锦',
+        upcomingTag: '未开赛',
+        ftTag: '已完场',
+        noMatches: '今日暂无焦点赛程，点击上方官方频道看集锦',
         syncing: '同步球星快讯...',
         empty: '暂时未拉取到最新动态，点击下方重试',
         retry: '↻ 立即刷新',
@@ -135,8 +167,15 @@
       },
       en: {
         back: '← News',
-        title: 'All Football Stars',
-        sub: 'Global Superstars + Malay & Malaysian Stars',
+        title: 'All Football Stars & Live',
+        sub: 'Live Scores · Official Streams · Global & MY Stars',
+        liveScoreTitle: '📺 Live Scores & Kickoff (MYT)',
+        refreshScore: '↻ Refresh',
+        officialWatch: 'Watch Live:',
+        watchBtn: '📺 Live/Clips',
+        upcomingTag: 'Upcoming',
+        ftTag: 'FT',
+        noMatches: 'No featured matches right now. Check official streams above.',
         syncing: 'Syncing stars...',
         empty: 'No player updates loaded right now, tap to retry',
         retry: '↻ Reload',
@@ -190,8 +229,15 @@
       },
       ms: {
         back: '← Berita',
-        title: 'Semua Bintang Bola',
-        sub: 'Bintang Dunia + Bintang Tempatan & Harimau Malaya',
+        title: 'Bintang Bola & Keputusan',
+        sub: 'Skor Langsung · Siaran Rasmi · Bintang Dunia & MY',
+        liveScoreTitle: '📺 Skor Langsung & Jadual (Waktu MY)',
+        refreshScore: '↻ Segar Semula',
+        officialWatch: 'Siaran Rasmi:',
+        watchBtn: '📺 Siaran/Klip',
+        upcomingTag: 'Akan Datang',
+        ftTag: 'Tamat',
+        noMatches: 'Tiada perlawanan utama buat masa ini.',
         syncing: 'Mengemas kini...',
         empty: 'Tiada berita pemain ditemui, tekan untuk cuba semula',
         retry: '↻ Muat Semula',
@@ -245,12 +291,133 @@
       }
     };
 
+    const LEAGUES = [
+      { code: 'eng.1', tag: 'EPL 英超' },
+      { code: 'uefa.champions', tag: 'UCL 欧冠' },
+      { code: 'esp.1', tag: 'LaLiga 西甲' },
+      { code: 'ita.1', tag: 'Serie A 意甲' },
+      { code: 'ksa.1', tag: 'Saudi 沙特联' },
+      { code: 'usa.1', tag: 'MLS 美职联' }
+    ];
+
     let currentStarLang = localStorage.getItem('dama_lang') || 'zh';
     let currentStarId = 'all';
     let activeStarReq = 0;
 
     function isSafeExternalUrl(url) {
       return /^https?:\/\//i.test((url || '').trim());
+    }
+
+    function formatMytTime(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleString('en-GB', {
+        timeZone: 'Asia/Kuala_Lumpur',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }) + ' MYT';
+    }
+
+    async function loadLiveMatches() {
+      const row = document.getElementById('liveMatchesRow');
+      const t = STAR_I18N[currentStarLang];
+
+      try {
+        const results = await Promise.all(LEAGUES.map(async (lg) => {
+          try {
+            const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg.code}/scoreboard`);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return (data.events || []).map(ev => {
+              const comp = ev.competitions?.[0];
+              const competitors = comp?.competitors || [];
+              const home = competitors.find(c => c.homeAway === 'home') || competitors[0];
+              const away = competitors.find(c => c.homeAway === 'away') || competitors[1];
+              const state = ev.status?.type?.state || 'pre'; // 'in', 'pre', 'post'
+              const detail = ev.status?.type?.shortDetail || '';
+              return {
+                league: lg.tag,
+                date: ev.date,
+                state,
+                detail,
+                homeName: home?.team?.shortDisplayName || home?.team?.name || 'Home',
+                homeLogo: home?.team?.logo || '',
+                homeScore: home?.score ?? '0',
+                awayName: away?.team?.shortDisplayName || away?.team?.name || 'Away',
+                awayLogo: away?.team?.logo || '',
+                awayScore: away?.score ?? '0'
+              };
+            });
+          } catch (e) {
+            return [];
+          }
+        }));
+
+        const allEvents = results.flat();
+        // 优先排正在直播 ('in')，其次未开赛 ('pre')，最后已完场 ('post')
+        const orderMap = { in: 0, pre: 1, post: 2 };
+        allEvents.sort((a, b) => {
+          if (orderMap[a.state] !== orderMap[b.state]) return orderMap[a.state] - orderMap[b.state];
+          return new Date(a.date) - new Date(b.date);
+        });
+
+        const topMatches = allEvents.slice(0, 12);
+        if (topMatches.length === 0) {
+          row.innerHTML = `<div class="text-[11px] text-slate-400 py-2">${t.noMatches}</div>`;
+          return;
+        }
+
+        row.innerHTML = topMatches.map(m => {
+          const isLive = m.state === 'in';
+          const isPost = m.state === 'post';
+          const statusBadge = isLive
+            ? `<span class="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded animate-pulse">● LIVE ${m.detail}</span>`
+            : isPost
+              ? `<span class="bg-slate-700 text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded">${t.ftTag}</span>`
+              : `<span class="bg-emerald-900/80 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded">${formatMytTime(m.date)}</span>`;
+
+          const ytQuery = encodeURIComponent(`${m.homeName} vs ${m.awayName} live highlights`);
+          const watchUrl = `https://www.youtube.com/results?search_query=${ytQuery}`;
+
+          return `
+            <div class="w-56 shrink-0 bg-slate-800/95 border ${isLive ? 'border-rose-500/70' : 'border-slate-700'} rounded-xl p-2.5 flex flex-col justify-between gap-2">
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-[9px] font-bold text-slate-400 truncate">${m.league}</span>
+                ${statusBadge}
+              </div>
+
+              <div class="space-y-1.5 my-0.5">
+                <div class="flex items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    ${m.homeLogo ? `<img src="${m.homeLogo}" class="w-4 h-4 object-contain shrink-0" />` : ''}
+                    <span class="font-bold text-slate-100 truncate">${m.homeName}</span>
+                  </div>
+                  <span class="font-black text-sm ${isLive ? 'text-rose-400' : 'text-white'}">${m.state === 'pre' ? '-' : m.homeScore}</span>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 text-xs">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    ${m.awayLogo ? `<img src="${m.awayLogo}" class="w-4 h-4 object-contain shrink-0" />` : ''}
+                    <span class="font-bold text-slate-100 truncate">${m.awayName}</span>
+                  </div>
+                  <span class="font-black text-sm ${isLive ? 'text-rose-400' : 'text-white'}">${m.state === 'pre' ? '-' : m.awayScore}</span>
+                </div>
+              </div>
+
+              <a href="${watchUrl}" target="_blank" rel="noopener noreferrer"
+                 class="block text-center text-[10px] font-bold py-1 rounded-lg ${isLive ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-slate-700 hover:bg-slate-600 text-emerald-300'} transition">
+                ${t.watchBtn}
+              </a>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        row.innerHTML = `<div class="text-[11px] text-slate-400 py-2">${t.noMatches}</div>`;
+      }
     }
 
     function switchStarLang(lang) {
@@ -263,6 +430,7 @@
           : 'px-2 py-0.5 rounded-full text-white/90 transition';
       });
       renderStarTabs();
+      loadLiveMatches();
       loadStarNews();
     }
 
@@ -277,6 +445,9 @@
       document.getElementById('backNewsLink').innerText = t.back;
       document.getElementById('starPageTitle').innerText = t.title;
       document.getElementById('starPageSub').innerText = t.sub;
+      document.getElementById('liveScoreTitle').innerText = t.liveScoreTitle;
+      document.getElementById('refreshScoreBtn').innerText = t.refreshScore;
+      document.getElementById('officialWatchLabel').innerText = t.officialWatch;
       document.getElementById('syncBadge').innerText = t.syncing;
       document.getElementById('navHome').innerText = t.navHome;
       document.getElementById('navNews').innerText = t.navNews;
@@ -391,7 +562,7 @@
       const starObj = t.stars.find(s => s.id === currentStarId) || t.stars[0];
       const box = document.getElementById('starNewsContainer');
       const syncBadge = document.getElementById('syncBadge');
-      const cacheKey = `dmjt_star_v3_${currentStarLang}_${starObj.id}`;
+      const cacheKey = `dmjt_star_v4_${currentStarLang}_${starObj.id}`;
 
       let hasCache = false;
       try {
