@@ -56,22 +56,24 @@
 
   <!-- 主页面内容 -->
   <main id="mainTab" class="flex-1 pb-24">
-    <!-- 万字开奖 4D 实时入口横幅 -->
-      <a href="/4d.html" class="block mx-3 mt-3 bg-gradient-to-r from-amber-500 via-red-600 to-rose-600 text-white rounded-2xl p-3 shadow-sm hover:opacity-95 transition">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">🎰</div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-amber-200 animate-ping shrink-0"></span>
-                <span id="idx4dTitle" class="font-black text-sm truncate">大马万字 4D 开奖 Live</span>
-              </div>
-              <p id="idx4dSub" class="text-[11px] text-amber-100 truncate">万能 · 多多 · 大马彩 · 快速对奖 & 官方直播</p>
-            </div>
+   <!-- 万字开奖 4D + 大马吹水站论坛 并排入口 -->
+      <div class="grid grid-cols-2 gap-2 mx-3 mt-3">
+        <a href="/4d.html" class="bg-gradient-to-r from-amber-500 to-red-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">🎰</div>
+          <div class="min-w-0">
+            <div id="idx4dTitle" class="font-black text-xs truncate">万字开奖 4D</div>
+            <p id="idx4dSub" class="text-[10px] text-amber-100 truncate">对奖 & 官方直播</p>
           </div>
-          <span class="bg-black/25 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0">查看 ↗</span>
-        </div>
-      </a>
+        </a>
+
+        <a href="/forum.html" class="bg-gradient-to-r from-indigo-600 to-sky-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">💬</div>
+          <div class="min-w-0">
+            <div id="idxForumTitle" class="font-black text-xs truncate">大马吹水站</div>
+            <p id="idxForumSub" class="text-[10px] text-sky-100 truncate">发帖交流 · 探店问答</p>
+          </div>
+        </a>
+      </div>
     <!-- 大马今日便民速览卡片（实时汇率 + 2026最新油价） -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100">
       <div class="flex items-center justify-between mb-2.5">
