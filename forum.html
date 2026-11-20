@@ -314,7 +314,7 @@
         }
       };
 
-      var CACHE_KEY = 'dmjt_forum_posts_v4';
+      var CACHE_KEY = 'dmjt_forum_posts_fixed_v1';
       var currentLang = 'zh';
       try {
         var saved = localStorage.getItem('dama_lang');
@@ -349,12 +349,13 @@
       }
 
       function escapeHtml(str) {
-        return String(str || '')
-          .split('&').join('&')
-          .split('<').join('<')
-          .split('>').join('>')
-          .split('"').join('"')
-          .split("'").join(''');
+        var s = String(str || '');
+        s = s.split('&').join('&');
+        s = s.split('<').join('<');
+        s = s.split('>').join('>');
+        s = s.split('"').join('"');
+        s = s.split("'").join(''');
+        return s;
       }
 
       function timeAgo(isoStr) {
