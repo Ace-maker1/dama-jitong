@@ -10,15 +10,16 @@
 </head>
 <body>
   <div class="app-shell">
-    <!-- 顶部靛蓝渐变导航栏 -->
+    <!-- 顶部靛蓝渐变导航栏（移除高耗能动画，保证滑动丝滑） -->
     <header class="bg-gradient-to-r from-indigo-700 via-blue-700 to-sky-700 text-white sticky top-0 z-30 shadow-md px-3 py-2.5">
       <div class="flex items-center justify-between gap-2 mb-2">
         <div class="flex items-center gap-2 min-w-0">
-          <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 transition">← 首页</a>
+          <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0">← 首页</a>
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-amber-300 animate-ping shrink-0"></span>
+              <span class="w-2 h-2 rounded-full bg-amber-300 shrink-0"></span>
               <h1 id="pageTitle" class="font-black text-sm tracking-tight truncate">💬 大马吹水站 · 论坛</h1>
+              <span id="syncTag" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full shrink-0">同步中</span>
             </div>
             <p id="pageSub" class="text-[10px] text-sky-100 truncate">本地吹水 · 美食探店 · 求助问答 · 商机交流</p>
           </div>
@@ -26,22 +27,22 @@
 
         <!-- 三语切换器 -->
         <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
-          <button onclick="switchForumLang('zh')" id="fLang-zh" class="px-2 py-0.5 rounded-full bg-white text-indigo-700 transition">CN</button>
-          <button onclick="switchForumLang('en')" id="fLang-en" class="px-2 py-0.5 rounded-full text-white/90 transition">EN</button>
-          <button onclick="switchForumLang('ms')" id="fLang-ms" class="px-2 py-0.5 rounded-full text-white/90 transition">BM</button>
+          <button onclick="switchForumLang('zh')" id="fLang-zh" class="px-2 py-0.5 rounded-full bg-white text-indigo-700">CN</button>
+          <button onclick="switchForumLang('en')" id="fLang-en" class="px-2 py-0.5 rounded-full text-white/90">EN</button>
+          <button onclick="switchForumLang('ms')" id="fLang-ms" class="px-2 py-0.5 rounded-full text-white/90">BM</button>
         </div>
       </div>
 
       <!-- 搜索框 + 发帖快捷按钮 -->
       <div class="flex items-center gap-2 mb-2">
         <div class="relative flex-1">
-          <input id="forumSearchInput" type="text" oninput="renderPostsList()"
+          <input id="forumSearchInput" type="text" oninput="debouncedRender()"
                  placeholder="搜索帖子标题或内容..."
-                 class="w-full bg-white/15 text-white placeholder-white/70 text-xs rounded-xl pl-8 pr-3 py-1.5 focus:bg-white focus:text-slate-900 focus:placeholder-slate-400 focus:outline-none transition" />
+                 class="w-full bg-white/15 text-white placeholder-white/70 text-xs rounded-xl pl-8 pr-3 py-1.5 focus:bg-white focus:text-slate-900 focus:placeholder-slate-400 focus:outline-none" />
           <span class="absolute left-2.5 top-1.5 text-xs opacity-80">🔍</span>
         </div>
         <button onclick="openNewPostModal()" id="topNewPostBtn"
-                class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl shrink-0 shadow-xs transition">
+                class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl shrink-0 shadow-xs">
           ✏️ 发帖
         </button>
       </div>
@@ -111,7 +112,7 @@
       </div>
 
       <button onclick="submitNewPost()" id="submitPostBtn"
-              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm py-3 rounded-2xl shadow-md transition">
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm py-3 rounded-2xl shadow-md">
         🚀 立即发布帖子
       </button>
     </div>
@@ -119,20 +120,18 @@
 
   <!-- 帖子详情 & 盖楼回复弹窗 -->
   <div id="detailModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center">
-    <div class="bg-white w-full max-w-md h-[88vh] sm:h-[82vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
-      <!-- 弹窗顶部 -->
+    <div class="bg-white w-full max-w-md h-[86vh] sm:h-[80vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
       <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
         <span id="detailCatBadge" class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">🔥 大马吹水站</span>
         <button onclick="closeDetailModal()" class="w-7 h-7 rounded-full bg-slate-200/80 text-slate-600 font-bold text-sm">✕</button>
       </div>
 
-      <!-- 滚动内容 + 盖楼列表 -->
-      <div class="flex-1 overflow-y-auto p-4 space-y-4" id="detailScrollBody">
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
         <div>
           <h2 id="detailTitle" class="font-black text-base text-slate-900 leading-snug mb-2"></h2>
           <div class="flex items-center justify-between text-[11px] text-slate-400 mb-3">
             <span id="detailMeta"></span>
-            <button onclick="likeCurrentPost()" id="detailLikeBtn" class="bg-rose-50 text-rose-600 font-bold px-2.5 py-1 rounded-full hover:bg-rose-100 transition">
+            <button onclick="likeCurrentPost()" id="detailLikeBtn" class="bg-rose-50 text-rose-600 font-bold px-2.5 py-1 rounded-full hover:bg-rose-100">
               ❤️ 0
             </button>
           </div>
@@ -145,8 +144,7 @@
         </div>
       </div>
 
-      <!-- 底部回帖输入框 -->
-      <div class="p-2.5 border-t border-slate-200 bg-white shrink-0 space-y-1.5">
+      <div class="p-2.5 border-t border-slate-200 bg-white shrink-0">
         <div class="flex items-center gap-1.5">
           <input id="replyAuthorInput" type="text" maxlength="20" placeholder="昵称"
                  class="w-24 bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none shrink-0" />
@@ -164,7 +162,32 @@
   <script>
     const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+    const SEED_POSTS = [
+      {
+        id: -1,
+        category: 'chat',
+        author_name: '大马吉通小助手',
+        title: '🎉 欢迎来到「大马吹水站」！大家都在哪个州属？',
+        content: '无论是槟城、吉隆坡、新山还是东马的街坊，欢迎在这里发帖吹水、分享美食探店或发布本地求助问答！点击右上角「✏️ 发帖」即可发布第一条话题。',
+        likes: 18,
+        reply_count: 1,
+        created_at: new Date().toISOString(),
+        isSeed: true
+      },
+      {
+        id: -2,
+        category: 'food',
+        author_name: '槟城觅食君',
+        title: '🍜 大家心目中最正宗的福建面 / 炒粿条在哪一档？',
+        content: '最近想整理一份全马街坊私藏美食清单，欢迎大家留言推荐你常去的老字号茶室或夜市档口！',
+        likes: 12,
+        reply_count: 0,
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+        isSeed: true
+      }
+    ];
 
     const FORUM_I18N = {
       zh: {
@@ -191,6 +214,7 @@
         emptyPosts: '该版块暂时还没有帖子，点击右上角「发帖」抢先开个话题吧！',
         alertMissing: '请填写帖子标题和内容',
         defaultAuthor: '匿名街坊',
+        viewThread: '查看讨论 →',
         categories: [
           { id: 'all', label: '🌐 全部话题' },
           { id: 'chat', label: '🔥 大马吹水站' },
@@ -224,6 +248,7 @@
         emptyPosts: 'No posts in this category yet. Tap "Post" to start one!',
         alertMissing: 'Please enter both title and content',
         defaultAuthor: 'Local Member',
+        viewThread: 'Open →',
         categories: [
           { id: 'all', label: '🌐 All Topics' },
           { id: 'chat', label: '🔥 Kopitiam Chat' },
@@ -257,6 +282,7 @@
         emptyPosts: 'Tiada topik dalam kategori ini lagi. Tekan "Tulis" untuk mula!',
         alertMissing: 'Sila isi tajuk dan kandungan',
         defaultAuthor: 'Ahli Komuniti',
+        viewThread: 'Lihat →',
         categories: [
           { id: 'all', label: '🌐 Semua Topik' },
           { id: 'chat', label: '🔥 Sembang Santai' },
@@ -268,10 +294,12 @@
       }
     };
 
+    const CACHE_KEY = 'dmjt_forum_posts_v2';
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let currentCat = 'all';
     let allPosts = [];
     let activePost = null;
+    let searchTimer = null;
 
     function escapeHtml(str) {
       return String(str || '')
@@ -299,14 +327,19 @@
       return found ? found.label : t.categories[1].label;
     }
 
+    function debouncedRender() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(renderPostsList, 120);
+    }
+
     function switchForumLang(lang) {
       currentLang = lang;
       localStorage.setItem('dama_lang', lang);
       ['zh', 'en', 'ms'].forEach(l => {
         const btn = document.getElementById(`fLang-${l}`);
         btn.className = l === lang
-          ? 'px-2 py-0.5 rounded-full bg-white text-indigo-700 transition'
-          : 'px-2 py-0.5 rounded-full text-white/90 transition';
+          ? 'px-2 py-0.5 rounded-full bg-white text-indigo-700'
+          : 'px-2 py-0.5 rounded-full text-white/90';
       });
 
       const t = FORUM_I18N[lang];
@@ -349,7 +382,7 @@
         const active = c.id === currentCat;
         return `
           <button onclick="selectCategory('${c.id}')"
-                  class="px-3 py-1 rounded-full text-xs font-bold shrink-0 transition ${active ? 'bg-white text-indigo-800 shadow-xs' : 'bg-black/20 text-white/90 hover:bg-black/30'}">
+                  class="px-3 py-1 rounded-full text-xs font-bold shrink-0 ${active ? 'bg-white text-indigo-800 shadow-xs' : 'bg-black/20 text-white/90'}">
             ${c.label}
           </button>
         `;
@@ -362,25 +395,38 @@
     }
 
     async function loadPosts() {
-      const box = document.getElementById('postsContainer');
-      box.innerHTML = Array(4).fill(0).map(() => `
-        <div class="bg-white rounded-2xl p-3.5 border border-gray-100 animate-pulse space-y-2">
-          <div class="h-4 w-24 bg-gray-200 rounded"></div>
-          <div class="h-4 w-full bg-gray-200 rounded"></div>
-          <div class="h-3 w-2/3 bg-gray-100 rounded"></div>
-        </div>
-      `).join('');
-
-      const { data, error } = await sb
-        .from('forum_posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(60);
-
-      if (!error && Array.isArray(data)) {
-        allPosts = data;
+      // 1. 秒开：优先从本地缓存或内置置顶帖瞬间渲染
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
+        allPosts = Array.isArray(cached) && cached.length > 0 ? cached : [...SEED_POSTS];
+      } catch (e) {
+        allPosts = [...SEED_POSTS];
       }
       renderPostsList();
+
+      if (!sb) return;
+      const syncTag = document.getElementById('syncTag');
+      syncTag.classList.remove('hidden');
+
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+        const queryPromise = sb
+          .from('forum_posts')
+          .select('id,category,author_name,title,content,likes,reply_count,created_at')
+          .order('created_at', { ascending: false })
+          .limit(40);
+
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+        if (!error && Array.isArray(data)) {
+          allPosts = data.length > 0 ? data : [...SEED_POSTS];
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
+          renderPostsList();
+        }
+      } catch (e) {
+        // 网络超时则静默保留本地展示，不卡死界面
+      } finally {
+        syncTag.classList.add('hidden');
+      }
     }
 
     function renderPostsList() {
@@ -407,7 +453,7 @@
 
       box.innerHTML = filtered.map(p => `
         <div onclick="openPostDetail(${p.id})"
-             class="bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 hover:border-indigo-200 transition cursor-pointer">
+             class="bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 active:bg-slate-50 cursor-pointer">
           <div class="flex items-center justify-between gap-2 mb-1.5">
             <span class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">${escapeHtml(getCatLabel(p.category))}</span>
             <span class="text-[11px] text-gray-400">${escapeHtml(p.author_name)} · ${timeAgo(p.created_at)}</span>
@@ -419,15 +465,14 @@
               <span>❤️ ${p.likes || 0}</span>
               <span>💬 ${p.reply_count || 0}</span>
             </div>
-            <span class="text-indigo-600 font-bold">查看讨论 →</span>
+            <span class="text-indigo-600 font-bold">${t.viewThread}</span>
           </div>
         </div>
       `).join('');
     }
 
     function openNewPostModal() {
-      const savedNick = localStorage.getItem('dmjt_forum_nick') || '';
-      document.getElementById('postAuthorInput').value = savedNick;
+      document.getElementById('postAuthorInput').value = localStorage.getItem('dmjt_forum_nick') || '';
       if (currentCat !== 'all') {
         document.getElementById('postCategoryInput').value = currentCat;
       }
@@ -453,25 +498,36 @@
       const author_name = authorRaw || t.defaultAuthor;
       if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw);
 
-      const btn = document.getElementById('submitPostBtn');
-      btn.disabled = true;
-      btn.innerText = t.submitting;
-
-      const { error } = await sb.from('forum_posts').insert([{
+      // 乐观更新：先瞬间插入列表关闭弹窗，不让用户等
+      const tempPost = {
+        id: Date.now(),
         category,
         author_name,
         title,
-        content
-      }]);
+        content,
+        likes: 0,
+        reply_count: 0,
+        created_at: new Date().toISOString()
+      };
+      allPosts = [tempPost, ...allPosts.filter(p => !p.isSeed)];
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
 
-      btn.disabled = false;
-      btn.innerText = t.submitBtn;
+      document.getElementById('postTitleInput').value = '';
+      document.getElementById('postContentInput').value = '';
+      closeNewPostModal();
+      renderPostsList();
 
-      if (!error) {
-        document.getElementById('postTitleInput').value = '';
-        document.getElementById('postContentInput').value = '';
-        closeNewPostModal();
-        await loadPosts();
+      if (sb) {
+        const { data } = await sb
+          .from('forum_posts')
+          .insert([{ category, author_name, title, content }])
+          .select()
+          .single();
+        if (data) {
+          allPosts = allPosts.map(p => (p.id === tempPost.id ? data : p));
+          try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
+          renderPostsList();
+        }
       }
     }
 
@@ -480,8 +536,7 @@
       if (!post) return;
       activePost = post;
 
-      const savedNick = localStorage.getItem('dmjt_forum_nick') || '';
-      document.getElementById('replyAuthorInput').value = savedNick;
+      document.getElementById('replyAuthorInput').value = localStorage.getItem('dmjt_forum_nick') || '';
       document.getElementById('detailCatBadge').innerText = getCatLabel(post.category);
       document.getElementById('detailTitle').innerText = post.title;
       document.getElementById('detailMeta').innerText = `${post.author_name} · ${timeAgo(post.created_at)}`;
@@ -502,9 +557,28 @@
       const listEl = document.getElementById('repliesList');
       const headerEl = document.getElementById('repliesHeader');
 
+      if (!sb || postId < 0) {
+        const demoReplies = postId === -1
+          ? [{ author_name: '吉隆坡阿杰', content: '报道！支持大马本地吹水站越做越好 👍', created_at: new Date().toISOString() }]
+          : [];
+        headerEl.innerText = t.repliesHeader(demoReplies.length);
+        listEl.innerHTML = demoReplies.length === 0
+          ? `<p class="text-xs text-gray-400 text-center py-4">${t.noReplies}</p>`
+          : demoReplies.map((r, idx) => `
+              <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                  <span class="font-bold text-slate-700">#${idx + 1} ${escapeHtml(r.author_name)}</span>
+                  <span>${timeAgo(r.created_at)}</span>
+                </div>
+                <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">${escapeHtml(r.content)}</p>
+              </div>
+            `).join('');
+        return;
+      }
+
       const { data } = await sb
         .from('forum_replies')
-        .select('*')
+        .select('id,author_name,content,created_at')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
@@ -536,8 +610,13 @@
 
       const author_name = authorRaw || t.defaultAuthor;
       if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw);
-
       document.getElementById('replyContentInput').value = '';
+
+      if (activePost.isSeed || !sb) {
+        alert('请先点击右上角「✏️ 发帖」发布一条真实话题后再进行盖楼回复！');
+        return;
+      }
+
       await sb.from('forum_replies').insert([{
         post_id: activePost.id,
         author_name,
@@ -557,8 +636,11 @@
       const nextLikes = (activePost.likes || 0) + 1;
       activePost.likes = nextLikes;
       document.getElementById('detailLikeBtn').innerText = `❤️ ${nextLikes}`;
-      await sb.from('forum_posts').update({ likes: nextLikes }).eq('id', activePost.id);
       renderPostsList();
+
+      if (!activePost.isSeed && sb) {
+        await sb.from('forum_posts').update({ likes: nextLikes }).eq('id', activePost.id);
+      }
     }
 
     switchForumLang(currentLang);
