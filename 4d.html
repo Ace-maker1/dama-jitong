@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>大马万字开奖 4D Live · 万能·多多·大马彩 · 大马吉通 MY</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 顶部金红渐变导航栏 -->
+    <header class="bg-gradient-to-r from-amber-600 via-red-600 to-rose-700 text-white sticky top-0 z-30 shadow-md px-3 py-2.5">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 transition">← 首页</a>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span id="liveDot" class="w-2 h-2 rounded-full bg-amber-300 animate-ping shrink-0"></span>
+              <h1 id="pageTitle" class="font-black text-sm tracking-tight truncate">🎰 大马万字 4D 开奖</h1>
+            </div>
+            <p id="pageSub" class="text-[10px] text-amber-100 truncate">万能 · 多多 · 大马彩 · 东马开彩时间 & 官方直播</p>
+          </div>
+        </div>
+
+        <!-- 三语切换器 -->
+        <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
+          <button onclick="switch4DLang('zh')" id="dLang-zh" class="px-2 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
+          <button onclick="switch4DLang('en')" id="dLang-en" class="px-2 py-0.5 rounded-full text-white/90 transition">EN</button>
+          <button onclick="switch4DLang('ms')" id="dLang-ms" class="px-2 py-0.5 rounded-full text-white/90 transition">BM</button>
+        </div>
+      </div>
+
+      <!-- 开彩状态 & 距离下期开彩倒计时条 -->
+      <div class="bg-black/25 rounded-xl px-3 py-1.5 flex items-center justify-between text-[11px]">
+        <span id="drawStatusBadge" class="font-bold text-amber-200">⏱️ 每逢周三 · 周六 · 周日 19:00 MYT 开彩</span>
+        <span id="drawCountdown" class="font-mono font-black text-white bg-black/30 px-2 py-0.5 rounded">--:--:--</span>
+      </div>
+    </header>
+
+    <main class="flex-1 p-3 space-y-3">
+      <!-- 官方实时开彩直播直达栏（安全合法直达各大官方平台） -->
+      <section class="bg-slate-900 text-white rounded-2xl p-3 shadow-sm border border-slate-800">
+        <div class="flex items-center justify-between mb-2">
+          <span id="liveStreamTitle" class="text-xs font-black text-amber-400">📺 官方实时开奖直播 & 成绩核对</span>
+          <span class="text-[10px] text-slate-400">19:00 - 20:00 MYT</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5 text-center text-[11px] font-bold">
+          <a href="https://www.magnum4d.my/en/" target="_blank" rel="noopener noreferrer"
+             class="bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 px-1 rounded-xl transition shadow-xs">
+            🟡 万能 Magnum<br><span class="text-[9px] font-semibold opacity-80">Live / 官方成绩</span>
+          </a>
+          <a href="https://www.sportstoto.com.my/" target="_blank" rel="noopener noreferrer"
+             class="bg-rose-600 hover:bg-rose-500 text-white py-2 px-1 rounded-xl transition shadow-xs">
+            🔴 多多 Toto<br><span class="text-[9px] font-normal opacity-90">Live / 官方成绩</span>
+          </a>
+          <a href="https://www.damacai.com.my/" target="_blank" rel="noopener noreferrer"
+             class="bg-blue-600 hover:bg-blue-500 text-white py-2 px-1 rounded-xl transition shadow-xs">
+            🔵 大马彩 PMP<br><span class="text-[9px] font-normal opacity-90">Live / 官方成绩</span>
+          </a>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5 text-center text-[10px] font-bold mt-1.5">
+          <a href="https://www.diriwan88.com/" target="_blank" rel="noopener noreferrer"
+             class="bg-slate-800 hover:bg-slate-700 text-emerald-300 py-1.5 px-1 rounded-lg transition">
+            🟢 沙巴 Sabah 88
+          </a>
+          <a href="https://www.stc4d.com/" target="_blank" rel="noopener noreferrer"
+             class="bg-slate-800 hover:bg-slate-700 text-sky-300 py-1.5 px-1 rounded-lg transition">
+            💠 山打根 STC
+          </a>
+          <a href="https://www.cashsweep.com.my/" target="_blank" rel="noopener noreferrer"
+             class="bg-slate-800 hover:bg-slate-700 text-amber-300 py-1.5 px-1 rounded-lg transition">
+            🟠 砂拉越 CashSweep
+          </a>
+        </div>
+      </section>
+
+      <!-- 快速对奖器（输入4位心水号码检查是否中奖） -->
+      <section class="bg-white rounded-2xl p-3 shadow-2xs border border-gray-200">
+        <div class="flex items-center justify-between mb-1.5">
+          <span id="checkerTitle" class="text-xs font-black text-slate-800">🔍 万字快速对奖器（输入 4 位号码）</span>
+          <span id="checkerSub" class="text-[10px] text-slate-400">支持正字 & 跳字(iBox)检测</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="my4dInput" type="tel" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,''); checkMy4D();"
+                 placeholder="例如: 8828"
+                 class="w-full bg-slate-100 border border-slate-200 focus:border-red-500 focus:bg-white rounded-xl px-3 py-2 text-base font-mono font-black tracking-[0.35em] text-center focus:outline-none" />
+          <button onclick="checkMy4D()" id="checkBtn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shrink-0">
+            立即核对
+          </button>
+        </div>
+        <div id="checkResultMsg" class="hidden mt-2 text-xs font-bold px-3 py-2 rounded-xl"></div>
+      </section>
+
+      <!-- 开彩机构切换标签栏 -->
+      <div id="companyTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+
+      <!-- 开奖成绩公告板卡片 -->
+      <section id="boardCard" class="bg-white rounded-2xl overflow-hidden shadow-sm border-2 border-amber-400">
+        <!-- 卡片头部 -->
+        <div id="boardHeader" class="bg-amber-500 text-slate-950 px-4 py-2.5 flex items-center justify-between">
+          <div>
+            <h2 id="boardCompanyName" class="font-black text-base leading-tight">万能 Magnum 4D</h2>
+            <p id="boardDrawMeta" class="text-[11px] font-semibold opacity-85">开彩日：每周三、六、日 · 19:00 MYT</p>
+          </div>
+          <a id="boardOfficialLink" href="https://www.magnum4d.my/en/" target="_blank" rel="noopener noreferrer"
+             class="bg-black/85 text-white text-[11px] font-bold px-3 py-1.5 rounded-full hover:bg-black transition shrink-0">
+            官方实时核对 ↗
+          </a>
+        </div>
+
+        <!-- 头奖 / 二奖 / 三奖 -->
+        <div class="p-3 space-y-2 bg-slate-50/70">
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-white rounded-xl p-2.5 border-2 border-red-500 shadow-2xs">
+              <div id="lbl1st" class="text-[10px] font-black text-red-600 mb-1">🥇 头奖 1ST</div>
+              <div id="num1st" class="font-mono font-black text-xl tracking-widest text-slate-900">----</div>
+            </div>
+            <div class="bg-white rounded-xl p-2.5 border border-amber-400 shadow-2xs">
+              <div id="lbl2nd" class="text-[10px] font-black text-amber-600 mb-1">🥈 二奖 2ND</div>
+              <div id="num2nd" class="font-mono font-black text-xl tracking-widest text-slate-900">----</div>
+            </div>
+            <div class="bg-white rounded-xl p-2.5 border border-slate-300 shadow-2xs">
+              <div id="lbl3rd" class="text-[10px] font-black text-slate-600 mb-1">🥉 三奖 3RD</div>
+              <div id="num3rd" class="font-mono font-black text-xl tracking-widest text-slate-900">----</div>
+            </div>
+          </div>
+
+          <!-- 特别奖 Special -->
+          <div class="bg-white rounded-xl p-2.5 border border-slate-200">
+            <div id="lblSpecial" class="text-center text-[11px] font-black text-slate-700 bg-slate-100 py-1 rounded-lg mb-2">✨ 特别奖 SPECIAL</div>
+            <div id="gridSpecial" class="grid grid-cols-5 gap-1.5 text-center font-mono font-bold text-sm text-slate-800"></div>
+          </div>
+
+          <!-- 安慰奖 Consolation -->
+          <div class="bg-white rounded-xl p-2.5 border border-slate-200">
+            <div id="lblConsolation" class="text-center text-[11px] font-black text-slate-700 bg-slate-100 py-1 rounded-lg mb-2">🎁 安慰奖 CONSOLATION</div>
+            <div id="gridConsolation" class="grid grid-cols-5 gap-1.5 text-center font-mono font-bold text-sm text-slate-800"></div>
+          </div>
+
+          <p id="boardNotice" class="text-[10px] text-slate-400 text-center pt-1">
+            💡 提示：每晚 7:00 PM 开彩时段请点击上方「官方实时核对」查看摇珠直播与最终派彩公报。
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- 底部5键导航栏 -->
+    <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+      <a href="/" class="flex flex-col items-center text-gray-400 hover:text-red-600">
+        <span class="text-lg">🏠</span>
+        <span id="navHome" class="text-[10px] font-medium mt-0.5">首页</span>
+      </a>
+      <a href="/news.html" class="flex flex-col items-center text-gray-400 hover:text-red-600">
+        <span class="text-lg">📰</span>
+        <span id="navNews" class="text-[10px] font-medium mt-0.5">实时新闻</span>
+      </a>
+      <a href="/4d.html" class="flex flex-col items-center -mt-6">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-red-600 text-white flex items-center justify-center text-xl font-black shadow-lg border-4 border-white">4D</div>
+        <span id="nav4d" class="text-[10px] font-bold text-red-600 mt-0.5">万字开奖</span>
+      </a>
+      <a href="/map.html" class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+        <span class="text-lg">🧭</span>
+        <span id="navMap" class="text-[10px] font-medium mt-0.5">查路线</span>
+      </a>
+      <a href="/merchant.html" class="flex flex-col items-center text-gray-400 hover:text-amber-600">
+        <span class="text-lg">🏪</span>
+        <span id="navBiz" class="text-[10px] font-medium mt-0.5">商家入驻</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const I18N_4D = {
+      zh: {
+        back: '← 首页',
+        title: '🎰 大马万字 4D 开奖',
+        sub: '万能 · 多多 · 大马彩 · 东马开彩时间 & 官方直播',
+        liveStreamTitle: '📺 官方实时开奖直播 & 成绩核对',
+        checkerTitle: '🔍 万字快速对奖器（输入 4 位号码）',
+        checkerSub: '支持正字 & 跳字(iBox)检测',
+        checkBtn: '立即核对',
+        officialBtn: '官方实时核对 ↗',
+        lbl1st: '🥇 头奖 1ST',
+        lbl2nd: '🥈 二奖 2ND',
+        lbl3rd: '🥉 三奖 3RD',
+        lblSpecial: '✨ 特别奖 SPECIAL',
+        lblConsolation: '🎁 安慰奖 CONSOLATION',
+        notice: '💡 提示：每晚 7:00 PM 开彩时段请点击上方「官方实时核对」查看摇珠直播与最终派彩公报。',
+        navHome: '首页', navNews: '实时新闻', nav4d: '万字开奖', navMap: '查路线', navBiz: '商家入驻',
+        liveNow: '🔴 正在开彩中 (19:00 - 20:00 MYT)',
+        nextDraw: '⏱️ 距离下期开彩倒计时：',
+        enter4Digits: '请输入完整的 4 位数字号码',
+        pendingNumbers: '本期开彩号码尚未公布，请点击上方绿色/金色按钮进入官方直播查看实时摇珠。',
+        hitExact: (prize) => `🎉 恭喜！正字命中【${prize}】！`,
+        hitBox: (num, prize) => `✨ 跳字(iBox)命中 ${num}【${prize}】！`,
+        noHit: '暂未匹配到本期已公布奖号，祝下期好运！'
+      },
+      en: {
+        back: '← Home',
+        title: '🎰 Malaysia 4D Live Results',
+        sub: 'Magnum · Sports Toto · Da Ma Cai · East MY Streams',
+        liveStreamTitle: '📺 Official Live Draw Streams & Verification',
+        checkerTitle: '🔍 Quick 4D Number Checker (4 Digits)',
+        checkerSub: 'Checks Straight & Permutation (iBox)',
+        checkBtn: 'Check',
+        officialBtn: 'Official Live ↗',
+        lbl1st: '🥇 1ST PRIZE',
+        lbl2nd: '🥈 2ND PRIZE',
+        lbl3rd: '🥉 3RD PRIZE',
+        lblSpecial: '✨ SPECIAL PRIZES',
+        lblConsolation: '🎁 CONSOLATION PRIZES',
+        notice: '💡 Tip: Tap "Official Live" during 7:00 PM MYT draw hours to watch the live draw broadcast.',
+        navHome: 'Home', navNews: 'News', nav4d: '4D Live', navMap: 'Navigate', navBiz: 'Merchants',
+        liveNow: '🔴 LIVE DRAW IN PROGRESS (19:00 - 20:00 MYT)',
+        nextDraw: '⏱️ Next Draw Countdown:',
+        enter4Digits: 'Please enter a 4-digit number',
+        pendingNumbers: 'Numbers not yet published on board. Tap the official stream buttons above for live draw.',
+        hitExact: (prize) => `🎉 Congrats! Exact match for [${prize}]!`,
+        hitBox: (num, prize) => `✨ Permutation (iBox) match ${num} [${prize}]!`,
+        noHit: 'No match in current displayed numbers. Better luck next draw!'
+      },
+      ms: {
+        back: '← Utama',
+        title: '🎰 Keputusan 4D Malaysia Live',
+        sub: 'Magnum · Sports Toto · Da Ma Cai · Siaran Rasmi',
+        liveStreamTitle: '📺 Siaran Langsung Cabutan Rasmi',
+        checkerTitle: '🔍 Penyemak Nombor 4D Pantas (4 Digit)',
+        checkerSub: 'Semak Tegak & Pusingan (iBox)',
+        checkBtn: 'Semak',
+        officialBtn: 'Semak Rasmi ↗',
+        lbl1st: '🥇 HADIAH PERTAMA',
+        lbl2nd: '🥈 HADIAH KEDUA',
+        lbl3rd: '🥉 HADIAH KETIGA',
+        lblSpecial: '✨ HADIAH KHAS (SPECIAL)',
+        lblConsolation: '🎁 HADIAH SAGU HATI',
+        notice: '💡 Tip: Tekan "Semak Rasmi" pada jam 7:00 malam untuk menonton siaran langsung cabutan.',
+        navHome: 'Utama', navNews: 'Berita', nav4d: '4D Live', navMap: 'Peta', navBiz: 'Peniaga',
+        liveNow: '🔴 CABUTAN SEDANG BERLANGSUNG (19:00 MYT)',
+        nextDraw: '⏱️ Kiraan Detik Cabutan Seterusnya:',
+        enter4Digits: 'Sila masukkan 4 digit nombor',
+        pendingNumbers: 'Keputusan belum dikemas kini di papan. Sila tekan butang rasmi di atas untuk siaran langsung.',
+        hitExact: (prize) => `🎉 Tahniah! Padanan tepat untuk [${prize}]!`,
+        hitBox: (num, prize) => `✨ Padanan pusingan (iBox) ${num} [${prize}]!`,
+        noHit: 'Tiada padanan ditemui. Semoga berjaya cabutan seterusnya!'
+      }
+    };
+
+    const COMPANIES = [
+      {
+        id: 'magnum',
+        zh: '🟡 万能 Magnum 4D',
+        en: '🟡 Magnum 4D',
+        ms: '🟡 Magnum 4D',
+        headerBg: 'bg-amber-500 text-slate-950',
+        borderCol: 'border-amber-400',
+        url: 'https://www.magnum4d.my/en/',
+        metaZh: '开彩日：每周三、六、日 · 19:00 MYT',
+        metaEn: 'Draw Days: Wed, Sat, Sun · 19:00 MYT',
+        metaMs: 'Hari Cabutan: Rabu, Sabtu, Ahad · 19:00 MYT'
+      },
+      {
+        id: 'toto',
+        zh: '🔴 多多 Sports Toto',
+        en: '🔴 Sports Toto 4D',
+        ms: '🔴 Sports Toto 4D',
+        headerBg: 'bg-rose-600 text-white',
+        borderCol: 'border-rose-500',
+        url: 'https://www.sportstoto.com.my/',
+        metaZh: '开彩日：每周三、六、日 · 19:00 MYT',
+        metaEn: 'Draw Days: Wed, Sat, Sun · 19:00 MYT',
+        metaMs: 'Hari Cabutan: Rabu, Sabtu, Ahad · 19:00 MYT'
+      },
+      {
+        id: 'damacai',
+        zh: '🔵 大马彩 Da Ma Cai',
+        en: '🔵 Da Ma Cai 1+3D',
+        ms: '🔵 Da Ma Cai 1+3D',
+        headerBg: 'bg-blue-700 text-white',
+        borderCol: 'border-blue-500',
+        url: 'https://www.damacai.com.my/',
+        metaZh: '开彩日：每周三、六、日 · 19:00 MYT',
+        metaEn: 'Draw Days: Wed, Sat, Sun · 19:00 MYT',
+        metaMs: 'Hari Cabutan: Rabu, Sabtu, Ahad · 19:00 MYT'
+      },
+      {
+        id: 'sabah88',
+        zh: '🟢 沙巴 Sabah 88',
+        en: '🟢 Sabah 88 4D',
+        ms: '🟢 Sabah 88 4D',
+        headerBg: 'bg-emerald-700 text-white',
+        borderCol: 'border-emerald-500',
+        url: 'https://www.diriwan88.com/',
+        metaZh: '东马开彩：每周三、六、日 · 19:00 MYT',
+        metaEn: 'East MY Draw: Wed, Sat, Sun · 19:00 MYT',
+        metaMs: 'Cabutan Sabah: Rabu, Sabtu, Ahad · 19:00 MYT'
+      },
+      {
+        id: 'stc',
+        zh: '💠 山打根 STC 4D',
+        en: '💠 Sandakan STC 4D',
+        ms: '💠 Sandakan STC 4D',
+        headerBg: 'bg-sky-700 text-white',
+        borderCol: 'border-sky-500',
+        url: 'https://www.stc4d.com/',
+        metaZh: '东马开彩：每周三、六、日 · 19:00 MYT',
+        metaEn: 'East MY Draw: Wed, Sat, Sun · 19:00 MYT',
+        metaMs: 'Cabutan STC: Rabu, Sabtu, Ahad · 19:00 MYT'
+      },
+      {
+        id: 'cashsweep',
+        zh: '🟠 砂拉越 CashSweep',
+        en: '🟠 Special CashSweep',
+        ms: '🟠 Special CashSweep',
+        headerBg: 'bg-orange-600 text-white',
+        borderCol: 'border-orange-500',
+        url: 'https://www.cashsweep.com.my/',
+        metaZh: '砂拉越开彩：每周三、六、日 · 19:00 MYT',
+        metaEn: 'Sarawak Draw: Wed, Sat, Sun · 19:00 MYT',
+        metaMs: 'Cabutan Sarawak: Rabu, Sabtu, Ahad · 19:00 MYT'
+      }
+    ];
+
+    // 默认数据（支持从 Supabase `results_4d` 表自动覆盖更新）
+    let liveResultsStore = {
+      magnum: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+      toto: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+      damacai: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+      sabah88: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+      stc: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+      cashsweep: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') }
+    };
+
+    let currentLang = localStorage.getItem('dama_lang') || 'zh';
+    let currentCompId = 'magnum';
+
+    // 若你在 Supabase 建了 results_4d 表，自动同步最新号码
+    (async function syncSupabase4D() {
+      try {
+        if (!window.supabase) return;
+        const client = window.supabase.createClient(
+          'https://uhgukdqggvyaepkvlugg.supabase.co',
+          'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
+        );
+        const { data } = await client.from('results_4d').select('*');
+        if (Array.isArray(data) && data.length > 0) {
+          data.forEach(row => {
+            if (row.company_id && liveResultsStore[row.company_id]) {
+              liveResultsStore[row.company_id] = {
+                p1: row.p1 || '----',
+                p2: row.p2 || '----',
+                p3: row.p3 || '----',
+                special: Array.isArray(row.special) && row.special.length === 10 ? row.special : Array(10).fill('----'),
+                consolation: Array.isArray(row.consolation) && row.consolation.length === 10 ? row.consolation : Array(10).fill('----')
+              };
+            }
+          });
+          renderBoard();
+        }
+      } catch (e) {}
+    })();
+
+    function getMytNow() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      return new Date(utc + 8 * 3600000);
+    }
+
+    function updateDrawCountdown() {
+      const t = I18N_4D[currentLang];
+      const myt = getMytNow();
+      const day = myt.getDay(); // 0=Sun, 3=Wed, 6=Sat
+      const hour = myt.getHours();
+      const isDrawDay = (day === 0 || day === 3 || day === 6);
+
+      const badgeEl = document.getElementById('drawStatusBadge');
+      const countEl = document.getElementById('drawCountdown');
+      const dotEl = document.getElementById('liveDot');
+
+      if (isDrawDay && hour >= 19 && hour < 20) {
+        badgeEl.innerText = t.liveNow;
+        badgeEl.className = 'font-black text-rose-300';
+        countEl.innerText = 'LIVE';
+        dotEl.className = 'w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping shrink-0';
+        return;
+      }
+
+      dotEl.className = 'w-2 h-2 rounded-full bg-amber-300 animate-ping shrink-0';
+      badgeEl.innerText = t.nextDraw;
+      badgeEl.className = 'font-bold text-amber-200';
+
+      // 计算下一个周三/周六/周日 19:00:00 MYT
+      let target = new Date(myt);
+      target.setHours(19, 0, 0, 0);
+      if (myt >= target) {
+        target.setDate(target.getDate() + 1);
+      }
+      while (![0, 3, 6].includes(target.getDay())) {
+        target.setDate(target.getDate() + 1);
+      }
+
+      const diffSec = Math.max(0, Math.floor((target - myt) / 1000));
+      const d = Math.floor(diffSec / 86400);
+      const h = Math.floor((diffSec % 86400) / 3600);
+      const m = Math.floor((diffSec % 3600) / 60);
+      const s = diffSec % 60;
+      const pad = (n) => String(n).padStart(2, '0');
+      countEl.innerText = d > 0 ? `${d}d ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+
+    setInterval(updateDrawCountdown, 1000);
+
+    function switch4DLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('dama_lang', lang);
+      ['zh', 'en', 'ms'].forEach(l => {
+        const btn = document.getElementById(`dLang-${l}`);
+        btn.className = l === lang
+          ? 'px-2 py-0.5 rounded-full bg-white text-red-600 transition'
+          : 'px-2 py-0.5 rounded-full text-white/90 transition';
+      });
+
+      const t = I18N_4D[lang];
+      document.getElementById('backHomeBtn').innerText = t.back;
+      document.getElementById('pageTitle').innerText = t.title;
+      document.getElementById('pageSub').innerText = t.sub;
+      document.getElementById('liveStreamTitle').innerText = t.liveStreamTitle;
+      document.getElementById('checkerTitle').innerText = t.checkerTitle;
+      document.getElementById('checkerSub').innerText = t.checkerSub;
+      document.getElementById('checkBtn').innerText = t.checkBtn;
+      document.getElementById('boardOfficialLink').innerText = t.officialBtn;
+      document.getElementById('lbl1st').innerText = t.lbl1st;
+      document.getElementById('lbl2nd').innerText = t.lbl2nd;
+      document.getElementById('lbl3rd').innerText = t.lbl3rd;
+      document.getElementById('lblSpecial').innerText = t.lblSpecial;
+      document.getElementById('lblConsolation').innerText = t.lblConsolation;
+      document.getElementById('boardNotice').innerText = t.notice;
+      document.getElementById('navHome').innerText = t.navHome;
+      document.getElementById('navNews').innerText = t.navNews;
+      document.getElementById('nav4d').innerText = t.nav4d;
+      document.getElementById('navMap').innerText = t.navMap;
+      document.getElementById('navBiz').innerText = t.navBiz;
+
+      updateDrawCountdown();
+      renderCompanyTabs();
+      renderBoard();
+    }
+
+    function selectCompany(id) {
+      currentCompId = id;
+      renderCompanyTabs();
+      renderBoard();
+      checkMy4D();
+    }
+
+    function renderCompanyTabs() {
+      const wrap = document.getElementById('companyTabs');
+      wrap.innerHTML = COMPANIES.map(c => {
+        const active = c.id === currentCompId;
+        const label = c[currentLang] || c.en;
+        return `
+          <button onclick="selectCompany('${c.id}')"
+                  class="px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition ${active ? 'bg-slate-900 text-amber-400 shadow-xs' : 'bg-white text-slate-700 border border-slate-200'}">
+            ${label}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderBoard() {
+      const comp = COMPANIES.find(c => c.id === currentCompId) || COMPANIES[0];
+      const data = liveResultsStore[comp.id];
+      const card = document.getElementById('boardCard');
+      const header = document.getElementById('boardHeader');
+
+      card.className = `bg-white rounded-2xl overflow-hidden shadow-sm border-2 ${comp.borderCol}`;
+      header.className = `${comp.headerBg} px-4 py-2.5 flex items-center justify-between`;
+      document.getElementById('boardCompanyName').innerText = comp[currentLang] || comp.en;
+      document.getElementById('boardDrawMeta').innerText =
+        currentLang === 'en' ? comp.metaEn : (currentLang === 'ms' ? comp.metaMs : comp.metaZh);
+      document.getElementById('boardOfficialLink').href = comp.url;
+
+      document.getElementById('num1st').innerText = data.p1;
+      document.getElementById('num2nd').innerText = data.p2;
+      document.getElementById('num3rd').innerText = data.p3;
+
+      document.getElementById('gridSpecial').innerHTML = data.special.map(n =>
+        `<div class="bg-slate-50 border border-slate-200/80 rounded-lg py-1.5">${n}</div>`
+      ).join('');
+
+      document.getElementById('gridConsolation').innerHTML = data.consolation.map(n =>
+        `<div class="bg-slate-50 border border-slate-200/80 rounded-lg py-1.5">${n}</div>`
+      ).join('');
+    }
+
+    function checkMy4D() {
+      const t = I18N_4D[currentLang];
+      const input = document.getElementById('my4dInput').value.trim();
+      const msgBox = document.getElementById('checkResultMsg');
+
+      if (!input) {
+        msgBox.classList.add('hidden');
+        return;
+      }
+      if (input.length < 4) {
+        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-slate-100 text-slate-600';
+        msgBox.innerText = t.enter4Digits;
+        msgBox.classList.remove('hidden');
+        return;
+      }
+
+      const data = liveResultsStore[currentCompId];
+      if (data.p1 === '----') {
+        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200';
+        msgBox.innerText = t.pendingNumbers;
+        msgBox.classList.remove('hidden');
+        return;
+      }
+
+      const allPrizes = [
+        { name: '1ST', num: data.p1 },
+        { name: '2ND', num: data.p2 },
+        { name: '3RD', num: data.p3 },
+        ...data.special.map(n => ({ name: 'SPECIAL', num: n })),
+        ...data.consolation.map(n => ({ name: 'CONSOLATION', num: n }))
+      ];
+
+      const exact = allPrizes.find(p => p.num === input);
+      if (exact) {
+        msgBox.className = 'mt-2 text-xs font-black px-3 py-2 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300';
+        msgBox.innerText = t.hitExact(exact.name);
+        msgBox.classList.remove('hidden');
+        return;
+      }
+
+      const sortedInput = input.split('').sort().join('');
+      const box = allPrizes.find(p => /^\d{4}$/.test(p.num) && p.num.split('').sort().join('') === sortedInput);
+      if (box) {
+        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-300';
+        msgBox.innerText = t.hitBox(box.num, box.name);
+        msgBox.classList.remove('hidden');
+        return;
+      }
+
+      msgBox.className = 'mt-2 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 text-slate-600';
+      msgBox.innerText = t.noHit;
+      msgBox.classList.remove('hidden');
+    }
+
+    switch4DLang(currentLang);
+  </script>
+</body>
+</html>
