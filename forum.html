@@ -41,4 +41,528 @@
           <span class="absolute left-2.5 top-1.5 text-xs opacity-80">🔍</span>
         </div>
         <button onclick="openNewPostModal()" id="topNewPostBtn"
-                class="bg-amber-400 hover:bg-amber-300 text-slate-950 font
+                class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl shrink-0 shadow-xs transition">
+          ✏️ 发帖
+        </button>
+      </div>
+
+      <!-- 版块横向滑动标签栏 -->
+      <div id="categoryTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+    </header>
+
+    <!-- 帖子列表主体 -->
+    <main class="flex-1 p-3 space-y-2.5 pb-24" id="postsContainer"></main>
+
+    <!-- 底部5键导航栏 -->
+    <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+      <a href="/" class="flex flex-col items-center text-gray-400 hover:text-red-600">
+        <span class="text-lg">🏠</span>
+        <span id="navHome" class="text-[10px] font-medium mt-0.5">首页</span>
+      </a>
+      <a href="/news.html" class="flex flex-col items-center text-gray-400 hover:text-red-600">
+        <span class="text-lg">📰</span>
+        <span id="navNews" class="text-[10px] font-medium mt-0.5">实时新闻</span>
+      </a>
+      <button onclick="openNewPostModal()" class="flex flex-col items-center -mt-6">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 to-sky-500 text-white flex items-center justify-center text-2xl font-black shadow-lg border-4 border-white">+</div>
+        <span id="navPost" class="text-[10px] font-bold text-indigo-700 mt-0.5">发新帖</span>
+      </button>
+      <a href="/4d.html" class="flex flex-col items-center text-gray-400 hover:text-amber-600">
+        <span class="text-lg">🎰</span>
+        <span id="nav4d" class="text-[10px] font-medium mt-0.5">万字开奖</span>
+      </a>
+      <a href="/merchant.html" class="flex flex-col items-center text-gray-400 hover:text-amber-600">
+        <span class="text-lg">🏪</span>
+        <span id="navBiz" class="text-[10px] font-medium mt-0.5">商家入驻</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- 发新帖弹窗 -->
+  <div id="newPostModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-4 space-y-3 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <h2 id="modalNewTitle" class="font-black text-base text-slate-900">✏️ 发布新话题</h2>
+        <button onclick="closeNewPostModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold text-sm">✕</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label id="lblPickCat" class="block text-[11px] font-bold text-slate-600 mb-1">选择版块</label>
+          <select id="postCategoryInput" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none"></select>
+        </div>
+        <div>
+          <label id="lblAuthorName" class="block text-[11px] font-bold text-slate-600 mb-1">你的昵称</label>
+          <input id="postAuthorInput" type="text" maxlength="20" placeholder="例如: 槟城阿明"
+                 class="w-full bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none" />
+        </div>
+      </div>
+
+      <div>
+        <label id="lblPostTitle" class="block text-[11px] font-bold text-slate-600 mb-1">帖子标题 *</label>
+        <input id="postTitleInput" type="text" maxlength="80" placeholder="一句话概括你想聊的话题..."
+               class="w-full bg-slate-100 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none" />
+      </div>
+
+      <div>
+        <label id="lblPostContent" class="block text-[11px] font-bold text-slate-600 mb-1">详细内容 *</label>
+        <textarea id="postContentInput" rows="4" maxlength="1500" placeholder="分享你的见闻、提问或吹水内容（请文明交流）..."
+                  class="w-full bg-slate-100 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs leading-relaxed text-slate-800 focus:outline-none"></textarea>
+      </div>
+
+      <button onclick="submitNewPost()" id="submitPostBtn"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm py-3 rounded-2xl shadow-md transition">
+        🚀 立即发布帖子
+      </button>
+    </div>
+  </div>
+
+  <!-- 帖子详情 & 盖楼回复弹窗 -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center">
+    <div class="bg-white w-full max-w-md h-[88vh] sm:h-[82vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+      <!-- 弹窗顶部 -->
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+        <span id="detailCatBadge" class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">🔥 大马吹水站</span>
+        <button onclick="closeDetailModal()" class="w-7 h-7 rounded-full bg-slate-200/80 text-slate-600 font-bold text-sm">✕</button>
+      </div>
+
+      <!-- 滚动内容 + 盖楼列表 -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4" id="detailScrollBody">
+        <div>
+          <h2 id="detailTitle" class="font-black text-base text-slate-900 leading-snug mb-2"></h2>
+          <div class="flex items-center justify-between text-[11px] text-slate-400 mb-3">
+            <span id="detailMeta"></span>
+            <button onclick="likeCurrentPost()" id="detailLikeBtn" class="bg-rose-50 text-rose-600 font-bold px-2.5 py-1 rounded-full hover:bg-rose-100 transition">
+              ❤️ 0
+            </button>
+          </div>
+          <div id="detailContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3.5 rounded-2xl border border-slate-100"></div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-3">
+          <h3 id="repliesHeader" class="text-xs font-black text-slate-700 mb-2.5">💬 全部回复 (0)</h3>
+          <div id="repliesList" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- 底部回帖输入框 -->
+      <div class="p-2.5 border-t border-slate-200 bg-white shrink-0 space-y-1.5">
+        <div class="flex items-center gap-1.5">
+          <input id="replyAuthorInput" type="text" maxlength="20" placeholder="昵称"
+                 class="w-24 bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:outline-none shrink-0" />
+          <input id="replyContentInput" type="text" maxlength="500" placeholder="写下你的回复参与盖楼..."
+                 class="flex-1 bg-slate-100 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none" />
+          <button onclick="submitReply()" id="sendReplyBtn"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3.5 py-2 rounded-xl shrink-0">
+            回复
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const FORUM_I18N = {
+      zh: {
+        back: '← 首页',
+        title: '💬 大马吹水站 · 论坛',
+        sub: '本地吹水 · 美食探店 · 求助问答 · 商机交流',
+        searchPh: '搜索帖子标题或内容...',
+        topPost: '✏️ 发帖',
+        navHome: '首页', navNews: '实时新闻', navPost: '发新帖', nav4d: '万字开奖', navBiz: '商家入驻',
+        modalNewTitle: '✏️ 发布新话题',
+        lblPickCat: '选择版块',
+        lblAuthorName: '你的昵称',
+        authorPh: '例如: 槟城阿明',
+        lblPostTitle: '帖子标题 *',
+        titlePh: '一句话概括你想聊的话题...',
+        lblPostContent: '详细内容 *',
+        contentPh: '分享你的见闻、提问或吹水内容（请文明交流）...',
+        submitBtn: '🚀 立即发布帖子',
+        submitting: '发布中...',
+        repliesHeader: (n) => `💬 全部回复 (${n})`,
+        noReplies: '还没有人回复，快来抢沙发吧！',
+        replyPh: '写下你的回复参与盖楼...',
+        sendReply: '回复',
+        emptyPosts: '该版块暂时还没有帖子，点击右上角「发帖」抢先开个话题吧！',
+        alertMissing: '请填写帖子标题和内容',
+        defaultAuthor: '匿名街坊',
+        categories: [
+          { id: 'all', label: '🌐 全部话题' },
+          { id: 'chat', label: '🔥 大马吹水站' },
+          { id: 'food', label: '🍜 美食探店' },
+          { id: 'biz', label: '💼 求职创业' },
+          { id: 'invest', label: '⚽ 体坛 & 理财' },
+          { id: 'help', label: '❓ 求助问答' }
+        ]
+      },
+      en: {
+        back: '← Home',
+        title: '💬 Malaysia Community Forum',
+        sub: 'Kopitiam Chat · Food Hunt · Q&A · Business',
+        searchPh: 'Search topics or keywords...',
+        topPost: '✏️ Post',
+        navHome: 'Home', navNews: 'News', navPost: 'New Post', nav4d: '4D Live', navBiz: 'Merchants',
+        modalNewTitle: '✏️ Start a New Topic',
+        lblPickCat: 'Category',
+        lblAuthorName: 'Your Nickname',
+        authorPh: 'e.g. Penang Alex',
+        lblPostTitle: 'Topic Title *',
+        titlePh: 'Summarize your topic...',
+        lblPostContent: 'Details *',
+        contentPh: 'Share your thoughts, questions, or local tips...',
+        submitBtn: '🚀 Publish Post',
+        submitting: 'Publishing...',
+        repliesHeader: (n) => `💬 Replies (${n})`,
+        noReplies: 'No replies yet. Be the first to comment!',
+        replyPh: 'Write a reply...',
+        sendReply: 'Send',
+        emptyPosts: 'No posts in this category yet. Tap "Post" to start one!',
+        alertMissing: 'Please enter both title and content',
+        defaultAuthor: 'Local Member',
+        categories: [
+          { id: 'all', label: '🌐 All Topics' },
+          { id: 'chat', label: '🔥 Kopitiam Chat' },
+          { id: 'food', label: '🍜 Food Hunt' },
+          { id: 'biz', label: '💼 Jobs & Biz' },
+          { id: 'invest', label: '⚽ Sports & Finance' },
+          { id: 'help', label: '❓ Help & Q&A' }
+        ]
+      },
+      ms: {
+        back: '← Utama',
+        title: '💬 Forum Komuniti Malaysia',
+        sub: 'Sembang Santai · Cari Makan · Soal Jawab · Niaga',
+        searchPh: 'Cari tajuk atau kandungan...',
+        topPost: '✏️ Tulis',
+        navHome: 'Utama', navNews: 'Berita', navPost: 'Topik Baru', nav4d: '4D Live', navBiz: 'Peniaga',
+        modalNewTitle: '✏️ Cipta Topik Baharu',
+        lblPickCat: 'Kategori',
+        lblAuthorName: 'Nama Samaran',
+        authorPh: 'cth: Ali Penang',
+        lblPostTitle: 'Tajuk Topik *',
+        titlePh: 'Ringkaskan topik perbincangan...',
+        lblPostContent: 'Kandungan *',
+        contentPh: 'Kongsi cerita, soalan atau info tempatan...',
+        submitBtn: '🚀 Hantar Topik',
+        submitting: 'Menghantar...',
+        repliesHeader: (n) => `💬 Semua Balasan (${n})`,
+        noReplies: 'Belum ada balasan. Jadilah yang pertama!',
+        replyPh: 'Tulis balasan anda...',
+        sendReply: 'Hantar',
+        emptyPosts: 'Tiada topik dalam kategori ini lagi. Tekan "Tulis" untuk mula!',
+        alertMissing: 'Sila isi tajuk dan kandungan',
+        defaultAuthor: 'Ahli Komuniti',
+        categories: [
+          { id: 'all', label: '🌐 Semua Topik' },
+          { id: 'chat', label: '🔥 Sembang Santai' },
+          { id: 'food', label: '🍜 Cari Makan' },
+          { id: 'biz', label: '💼 Kerja & Niaga' },
+          { id: 'invest', label: '⚽ Sukan & Kewangan' },
+          { id: 'help', label: '❓ Soal Jawab' }
+        ]
+      }
+    };
+
+    let currentLang = localStorage.getItem('dama_lang') || 'zh';
+    let currentCat = 'all';
+    let allPosts = [];
+    let activePost = null;
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
+        .replace(/'/g, ''');
+    }
+
+    function timeAgo(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '';
+      const mins = Math.max(1, Math.floor((Date.now() - d.getTime()) / 60000));
+      if (mins < 60) return currentLang === 'zh' ? `${mins}分钟前` : `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return currentLang === 'zh' ? `${hrs}小时前` : `${hrs}h ago`;
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    function getCatLabel(catId) {
+      const t = FORUM_I18N[currentLang];
+      const found = t.categories.find(c => c.id === catId);
+      return found ? found.label : t.categories[1].label;
+    }
+
+    function switchForumLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('dama_lang', lang);
+      ['zh', 'en', 'ms'].forEach(l => {
+        const btn = document.getElementById(`fLang-${l}`);
+        btn.className = l === lang
+          ? 'px-2 py-0.5 rounded-full bg-white text-indigo-700 transition'
+          : 'px-2 py-0.5 rounded-full text-white/90 transition';
+      });
+
+      const t = FORUM_I18N[lang];
+      document.getElementById('backHomeBtn').innerText = t.back;
+      document.getElementById('pageTitle').innerText = t.title;
+      document.getElementById('pageSub').innerText = t.sub;
+      document.getElementById('forumSearchInput').placeholder = t.searchPh;
+      document.getElementById('topNewPostBtn').innerText = t.topPost;
+      document.getElementById('navHome').innerText = t.navHome;
+      document.getElementById('navNews').innerText = t.navNews;
+      document.getElementById('navPost').innerText = t.navPost;
+      document.getElementById('nav4d').innerText = t.nav4d;
+      document.getElementById('navBiz').innerText = t.navBiz;
+
+      document.getElementById('modalNewTitle').innerText = t.modalNewTitle;
+      document.getElementById('lblPickCat').innerText = t.lblPickCat;
+      document.getElementById('lblAuthorName').innerText = t.lblAuthorName;
+      document.getElementById('postAuthorInput').placeholder = t.authorPh;
+      document.getElementById('lblPostTitle').innerText = t.lblPostTitle;
+      document.getElementById('postTitleInput').placeholder = t.titlePh;
+      document.getElementById('lblPostContent').innerText = t.lblPostContent;
+      document.getElementById('postContentInput').placeholder = t.contentPh;
+      document.getElementById('submitPostBtn').innerText = t.submitBtn;
+      document.getElementById('replyContentInput').placeholder = t.replyPh;
+      document.getElementById('sendReplyBtn').innerText = t.sendReply;
+
+      renderCategoryTabs();
+      renderPostsList();
+    }
+
+    function selectCategory(catId) {
+      currentCat = catId;
+      renderCategoryTabs();
+      renderPostsList();
+    }
+
+    function renderCategoryTabs() {
+      const t = FORUM_I18N[currentLang];
+      document.getElementById('categoryTabs').innerHTML = t.categories.map(c => {
+        const active = c.id === currentCat;
+        return `
+          <button onclick="selectCategory('${c.id}')"
+                  class="px-3 py-1 rounded-full text-xs font-bold shrink-0 transition ${active ? 'bg-white text-indigo-800 shadow-xs' : 'bg-black/20 text-white/90 hover:bg-black/30'}">
+            ${c.label}
+          </button>
+        `;
+      }).join('');
+
+      const sel = document.getElementById('postCategoryInput');
+      sel.innerHTML = t.categories.filter(c => c.id !== 'all').map(c =>
+        `<option value="${c.id}">${c.label}</option>`
+      ).join('');
+    }
+
+    async function loadPosts() {
+      const box = document.getElementById('postsContainer');
+      box.innerHTML = Array(4).fill(0).map(() => `
+        <div class="bg-white rounded-2xl p-3.5 border border-gray-100 animate-pulse space-y-2">
+          <div class="h-4 w-24 bg-gray-200 rounded"></div>
+          <div class="h-4 w-full bg-gray-200 rounded"></div>
+          <div class="h-3 w-2/3 bg-gray-100 rounded"></div>
+        </div>
+      `).join('');
+
+      const { data, error } = await sb
+        .from('forum_posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(60);
+
+      if (!error && Array.isArray(data)) {
+        allPosts = data;
+      }
+      renderPostsList();
+    }
+
+    function renderPostsList() {
+      const t = FORUM_I18N[currentLang];
+      const box = document.getElementById('postsContainer');
+      const kw = (document.getElementById('forumSearchInput').value || '').trim().toLowerCase();
+
+      const filtered = allPosts.filter(p => {
+        const matchCat = currentCat === 'all' || p.category === currentCat;
+        const matchKw = !kw || (p.title || '').toLowerCase().includes(kw) || (p.content || '').toLowerCase().includes(kw);
+        return matchCat && matchKw;
+      });
+
+      if (filtered.length === 0) {
+        box.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100">
+            <div class="text-3xl">💬</div>
+            <p class="text-xs text-gray-500 font-medium">${t.emptyPosts}</p>
+            <button onclick="openNewPostModal()" class="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-full">${t.topPost}</button>
+          </div>
+        `;
+        return;
+      }
+
+      box.innerHTML = filtered.map(p => `
+        <div onclick="openPostDetail(${p.id})"
+             class="bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 hover:border-indigo-200 transition cursor-pointer">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">${escapeHtml(getCatLabel(p.category))}</span>
+            <span class="text-[11px] text-gray-400">${escapeHtml(p.author_name)} · ${timeAgo(p.created_at)}</span>
+          </div>
+          <h2 class="font-bold text-gray-900 text-[15px] leading-snug mb-1">${escapeHtml(p.title)}</h2>
+          <p class="text-xs text-gray-500 line-clamp-2 mb-2.5 leading-relaxed">${escapeHtml(p.content)}</p>
+          <div class="flex items-center justify-between text-[11px] text-gray-400 pt-2 border-t border-gray-50">
+            <div class="flex items-center gap-3">
+              <span>❤️ ${p.likes || 0}</span>
+              <span>💬 ${p.reply_count || 0}</span>
+            </div>
+            <span class="text-indigo-600 font-bold">查看讨论 →</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openNewPostModal() {
+      const savedNick = localStorage.getItem('dmjt_forum_nick') || '';
+      document.getElementById('postAuthorInput').value = savedNick;
+      if (currentCat !== 'all') {
+        document.getElementById('postCategoryInput').value = currentCat;
+      }
+      document.getElementById('newPostModal').classList.remove('hidden');
+    }
+
+    function closeNewPostModal() {
+      document.getElementById('newPostModal').classList.add('hidden');
+    }
+
+    async function submitNewPost() {
+      const t = FORUM_I18N[currentLang];
+      const category = document.getElementById('postCategoryInput').value || 'chat';
+      const authorRaw = document.getElementById('postAuthorInput').value.trim();
+      const title = document.getElementById('postTitleInput').value.trim();
+      const content = document.getElementById('postContentInput').value.trim();
+
+      if (!title || !content) {
+        alert(t.alertMissing);
+        return;
+      }
+
+      const author_name = authorRaw || t.defaultAuthor;
+      if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw);
+
+      const btn = document.getElementById('submitPostBtn');
+      btn.disabled = true;
+      btn.innerText = t.submitting;
+
+      const { error } = await sb.from('forum_posts').insert([{
+        category,
+        author_name,
+        title,
+        content
+      }]);
+
+      btn.disabled = false;
+      btn.innerText = t.submitBtn;
+
+      if (!error) {
+        document.getElementById('postTitleInput').value = '';
+        document.getElementById('postContentInput').value = '';
+        closeNewPostModal();
+        await loadPosts();
+      }
+    }
+
+    async function openPostDetail(postId) {
+      const post = allPosts.find(p => p.id === postId);
+      if (!post) return;
+      activePost = post;
+
+      const savedNick = localStorage.getItem('dmjt_forum_nick') || '';
+      document.getElementById('replyAuthorInput').value = savedNick;
+      document.getElementById('detailCatBadge').innerText = getCatLabel(post.category);
+      document.getElementById('detailTitle').innerText = post.title;
+      document.getElementById('detailMeta').innerText = `${post.author_name} · ${timeAgo(post.created_at)}`;
+      document.getElementById('detailLikeBtn').innerText = `❤️ ${post.likes || 0}`;
+      document.getElementById('detailContent').innerText = post.content;
+
+      document.getElementById('detailModal').classList.remove('hidden');
+      await loadReplies(post.id);
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+      activePost = null;
+    }
+
+    async function loadReplies(postId) {
+      const t = FORUM_I18N[currentLang];
+      const listEl = document.getElementById('repliesList');
+      const headerEl = document.getElementById('repliesHeader');
+
+      const { data } = await sb
+        .from('forum_replies')
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      const replies = Array.isArray(data) ? data : [];
+      headerEl.innerText = t.repliesHeader(replies.length);
+
+      if (replies.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">${t.noReplies}</p>`;
+        return;
+      }
+
+      listEl.innerHTML = replies.map((r, idx) => `
+        <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+          <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+            <span class="font-bold text-slate-700">#${idx + 1} ${escapeHtml(r.author_name)}</span>
+            <span>${timeAgo(r.created_at)}</span>
+          </div>
+          <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">${escapeHtml(r.content)}</p>
+        </div>
+      `).join('');
+    }
+
+    async function submitReply() {
+      if (!activePost) return;
+      const t = FORUM_I18N[currentLang];
+      const authorRaw = document.getElementById('replyAuthorInput').value.trim();
+      const content = document.getElementById('replyContentInput').value.trim();
+      if (!content) return;
+
+      const author_name = authorRaw || t.defaultAuthor;
+      if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw);
+
+      document.getElementById('replyContentInput').value = '';
+      await sb.from('forum_replies').insert([{
+        post_id: activePost.id,
+        author_name,
+        content
+      }]);
+
+      const newCount = (activePost.reply_count || 0) + 1;
+      activePost.reply_count = newCount;
+      await sb.from('forum_posts').update({ reply_count: newCount }).eq('id', activePost.id);
+
+      await loadReplies(activePost.id);
+      renderPostsList();
+    }
+
+    async function likeCurrentPost() {
+      if (!activePost) return;
+      const nextLikes = (activePost.likes || 0) + 1;
+      activePost.likes = nextLikes;
+      document.getElementById('detailLikeBtn').innerText = `❤️ ${nextLikes}`;
+      await sb.from('forum_posts').update({ likes: nextLikes }).eq('id', activePost.id);
+      renderPostsList();
+    }
+
+    switchForumLang(currentLang);
+    loadPosts();
+  </script>
+</body>
+</html>
