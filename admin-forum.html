@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>吹水站审帖后台 · 大马吉通</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 text-slate-900">
+  <div class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-lg">
+    <!-- 顶部栏 -->
+    <header class="bg-slate-900 text-white px-4 py-3 sticky top-0 z-30 shadow-md">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h1 class="font-black text-base tracking-tight">🛡️ 大马吹水站 · 审帖台</h1>
+          <p class="text-[11px] text-slate-400">手机一键通过 / 撤回 / 删除帖子</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <a href="/forum.html" class="bg-white/10 hover:bg-white/20 text-xs font-bold px-2.5 py-1.5 rounded-xl">去论坛</a>
+          <button type="button" id="refreshBtn" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer">🔄 刷新</button>
+        </div>
+      </div>
+
+      <!-- 状态筛选标签 -->
+      <div id="filterBar" class="hidden grid grid-cols-3 gap-1.5 mt-3 bg-slate-800 p-1 rounded-xl text-xs font-bold">
+        <button type="button" data-filter="pending" class="tab-btn py-1.5 rounded-lg bg-amber-400 text-slate-950 cursor-pointer">
+          ⏳ 待审核 (<span id="cntPending">0</span>)
+        </button>
+        <button type="button" data-filter="approved" class="tab-btn py-1.5 rounded-lg text-slate-300 cursor-pointer">
+          ✅ 已公开 (<span id="cntApproved">0</span>)
+        </button>
+        <button type="button" data-filter="all" class="tab-btn py-1.5 rounded-lg text-slate-300 cursor-pointer">
+          📋 全部 (<span id="cntAll">0</span>)
+        </button>
+      </div>
+    </header>
+
+    <!-- 解锁验证卡片 -->
+    <section id="lockScreen" class="flex-1 flex items-center justify-center p-5">
+      <div class="bg-white w-full rounded-3xl p-6 shadow-sm border border-slate-200 space-y-4 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-slate-900 text-white text-xl flex items-center justify-center mx-auto">🔐</div>
+        <div>
+          <h2 class="font-black text-base text-slate-900">输入管理员口令</h2>
+          <p class="text-xs text-slate-400 mt-1">验证通过后即可管理所有新提交帖子</p>
+        </div>
+        <input id="pinInput" type="password" inputmode="numeric" maxlength="16" placeholder="请输入管理密码..."
+               class="w-full text-center tracking-widest font-black text-lg bg-slate-100 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-2xl px-4 py-3 focus:outline-none" />
+        <button type="button" id="unlockBtn"
+                class="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-sm py-3 rounded-2xl cursor-pointer transition">
+          进入审帖后台
+        </button>
+        <p id="lockErr" class="hidden text-xs text-rose-600 font-bold">口令错误，请重试</p>
+      </div>
+    </section>
+
+    <!-- 操作状态提示 -->
+    <div id="toastBar" class="hidden mx-3 mt-2.5 text-xs font-bold px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200"></div>
+
+    <!-- 帖子管理列表 -->
+    <main id="adminList" class="hidden flex-1 p-3 space-y-3 pb-10"></main>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      // 修改这里的密码即可自定义你的专属口令
+      var ADMIN_PIN = '888888';
+
+      var SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
+      var SUPABASE_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+      var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      var CAT_NAMES = {
+        chat: '🔥 大马吹水站',
+        food: '🍜 美食探店',
+        biz: '💼 求职创业',
+        invest: '⚽ 体坛 & 理财',
+        help: '❓ 求助问答'
+      };
+
+      var allRows = [];
+      var currentFilter = 'pending';
+
+      var escDiv = document.createElement('div');
+      function esc(str) {
+        escDiv.textContent = str == null ? '' : String(str);
+        return escDiv.innerHTML;
+      }
+
+      function showToast(msg, isErr) {
+        var bar = document.getElementById('toastBar');
+        if (!bar) return;
+        bar.className = 'mx-3 mt-2.5 text-xs font-bold px-3 py-2 rounded-xl border ' +
+          (isErr ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200');
+        bar.innerText = msg;
+        bar.classList.remove('hidden');
+        clearTimeout(bar._timer);
+        bar._timer = setTimeout(function () { bar.classList.add('hidden'); }, 2600);
+      }
+
+      function formatTime(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      }
+
+      function updateCounts() {
+        var pending = 0, approved = 0;
+        for (var i = 0; i < allRows.length; i++) {
+          if (allRows[i].status === 'approved') approved++;
+          else pending++;
+        }
+        document.getElementById('cntPending').innerText = pending;
+        document.getElementById('cntApproved').innerText = approved;
+        document.getElementById('cntAll').innerText = allRows.length;
+      }
+
+      function renderList() {
+        updateCounts();
+        var listEl = document.getElementById('adminList');
+        var filtered = [];
+        for (var i = 0; i < allRows.length; i++) {
+          var r = allRows[i];
+          if (currentFilter === 'all') filtered.push(r);
+          else if (currentFilter === 'approved' && r.status === 'approved') filtered.push(r);
+          else if (currentFilter === 'pending' && r.status !== 'approved') filtered.push(r);
+        }
+
+        if (filtered.length === 0) {
+          listEl.innerHTML = '<div class="bg-white rounded-2xl p-10 text-center border border-slate-100 space-y-1.5">' +
+            '<div class="text-3xl">🎉</div>' +
+            '<p class="text-xs font-bold text-slate-500">当前分类下没有需要处理的帖子</p>' +
+            '</div>';
+          return;
+        }
+
+        var html = '';
+        for (var j = 0; j < filtered.length; j++) {
+          var item = filtered[j];
+          var isApproved = item.status === 'approved';
+          html += '<div class="bg-white rounded-2xl p-3.5 shadow-2xs border ' +
+            (isApproved ? 'border-slate-200' : 'border-amber-300 bg-amber-50/20') + '">' +
+            '<div class="flex items-center justify-between gap-2 mb-2">' +
+              '<div class="flex items-center gap-1.5">' +
+                '<span class="text-[10px] font-black px-2 py-0.5 rounded-full ' +
+                  (isApproved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800') + '">' +
+                  (isApproved ? '✅ 已公开' : '⏳ 待审核') +
+                '</span>' +
+                '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">' +
+                  esc(CAT_NAMES[item.category] || item.category || '吹水') +
+                '</span>' +
+              '</div>' +
+              '<span class="text-[11px] text-slate-400">#' + item.id + ' · ' + esc(formatTime(item.created_at)) + '</span>' +
+            '</div>' +
+            '<h3 class="font-black text-sm text-slate-900 mb-1">' + esc(item.title) + '</h3>' +
+            '<p class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-2.5">' +
+              esc(item.content) +
+            '</p>' +
+            '<div class="flex items-center justify-between text-[11px] text-slate-400 mb-2.5">' +
+              '<span>发帖人：<strong class="text-slate-600">' + esc(item.author_name) + '</strong></span>' +
+              '<span>❤️ ' + (item.likes || 0) + ' · 💬 ' + (item.reply_count || 0) + '</span>' +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-2">' +
+              (isApproved
+                ? '<button type="button" data-act="pending" data-id="' + item.id + '" class="act-btn bg-amber-100 hover:bg-amber-200 text-amber-900 font-black text-xs py-2.5 rounded-xl cursor-pointer">⏸️ 撤回为待审</button>'
+                : '<button type="button" data-act="approved" data-id="' + item.id + '" class="act-btn bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2.5 rounded-xl shadow-xs cursor-pointer">✅ 一键通过公开</button>'
+              ) +
+              '<button type="button" data-act="delete" data-id="' + item.id + '" class="act-btn bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-black text-xs py-2.5 rounded-xl cursor-pointer">🗑️ 彻底删除</button>' +
+            '</div>' +
+          '</div>';
+        }
+        listEl.innerHTML = html;
+
+        var btns = listEl.querySelectorAll('.act-btn');
+        for (var k = 0; k < btns.length; k++) {
+          btns[k].addEventListener('click', function () {
+            var id = Number(this.getAttribute('data-id'));
+            var act = this.getAttribute('data-act');
+            handleAction(id, act);
+          });
+        }
+      }
+
+      function fetchAllPosts() {
+        sb.from('forum_posts')
+          .select('id,category,author_name,title,content,likes,reply_count,status,created_at')
+          .order('created_at', { ascending: false })
+          .limit(100)
+          .then(function (res) {
+            if (res && res.error) {
+              showToast('读取失败：' + res.error.message, true);
+              return;
+            }
+            allRows = Array.isArray(res.data) ? res.data : [];
+            renderList();
+          });
+      }
+
+      function handleAction(id, act) {
+        if (act === 'delete') {
+          if (!confirm('确定彻底删除 #' + id + ' 这条帖子吗？删掉后无法恢复。')) return;
+          sb.from('forum_posts').delete().eq('id', id).then(function (res) {
+            if (res && res.error) {
+              showToast('删除失败（请先在 SQL Editor 运行 delete 授权）：' + res.error.message, true);
+              return;
+            }
+            allRows = allRows.filter(function (r) { return r.id !== id; });
+            renderList();
+            showToast('🗑️ 已彻底删除帖子 #' + id, false);
+          });
+          return;
+        }
+
+        sb.from('forum_posts').update({ status: act }).eq('id', id).then(function (res) {
+          if (res && res.error) {
+            showToast('操作失败：' + res.error.message, true);
+            return;
+          }
+          for (var i = 0; i < allRows.length; i++) {
+            if (allRows[i].id === id) allRows[i].status = act;
+          }
+          renderList();
+          showToast(act === 'approved' ? '✅ 帖子 #' + id + ' 已审核通过并公开！' : '⏸️ 帖子 #' + id + ' 已撤回为待审', false);
+        });
+      }
+
+      function unlock() {
+        var val = (document.getElementById('pinInput').value || '').trim();
+        if (val !== ADMIN_PIN) {
+          document.getElementById('lockErr').classList.remove('hidden');
+          return;
+        }
+        try { sessionStorage.setItem('dmjt_admin_ok', '1'); } catch (e) {}
+        document.getElementById('lockScreen').classList.add('hidden');
+        document.getElementById('filterBar').classList.remove('hidden');
+        document.getElementById('adminList').classList.remove('hidden');
+        fetchAllPosts();
+      }
+
+      var tabBtns = document.querySelectorAll('.tab-btn');
+      for (var i = 0; i < tabBtns.length; i++) {
+        tabBtns[i].addEventListener('click', function () {
+          currentFilter = this.getAttribute('data-filter');
+          for (var j = 0; j < tabBtns.length; j++) {
+            var active = tabBtns[j].getAttribute('data-filter') === currentFilter;
+            tabBtns[j].className = active
+              ? 'tab-btn py-1.5 rounded-lg bg-amber-400 text-slate-950 cursor-pointer'
+              : 'tab-btn py-1.5 rounded-lg text-slate-300 cursor-pointer';
+          }
+          renderList();
+        });
+      }
+
+      document.getElementById('unlockBtn').addEventListener('click', unlock);
+      document.getElementById('pinInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') unlock();
+      });
+      document.getElementById('refreshBtn').addEventListener('click', function () {
+        fetchAllPosts();
+        showToast('🔄 已同步最新帖子列表', false);
+      });
+
+      try {
+        if (sessionStorage.getItem('dmjt_admin_ok') === '1') {
+          document.getElementById('lockScreen').classList.add('hidden');
+          document.getElementById('filterBar').classList.remove('hidden');
+          document.getElementById('adminList').classList.remove('hidden');
+          fetchAllPosts();
+        }
+      } catch (e) {}
+    });
+  </script>
+</body>
+</html>
