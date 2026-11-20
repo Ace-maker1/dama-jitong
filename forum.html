@@ -130,7 +130,12 @@
     <div class="bg-white w-full max-w-md h-[88vh] sm:h-[82vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
       <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
         <span id="detailCatBadge" class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">🔥 大马吹水站</span>
-        <button type="button" id="closeDetailBtn" class="w-7 h-7 rounded-full bg-slate-200/80 text-slate-600 font-bold text-sm cursor-pointer">✕</button>
+        <div class="flex items-center gap-2">
+          <button type="button" id="detailTranslateBtn" class="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-[11px] font-black px-2.5 py-1 rounded-full cursor-pointer transition">
+            🌐 翻译
+          </button>
+          <button type="button" id="closeDetailBtn" class="w-7 h-7 rounded-full bg-slate-200/80 text-slate-600 font-bold text-sm cursor-pointer">✕</button>
+        </div>
       </div>
 
       <div class="flex-1 overflow-y-auto p-4 space-y-4" id="detailScrollBody">
@@ -143,6 +148,7 @@
             </button>
           </div>
           <div id="detailContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3.5 rounded-2xl border border-slate-100"></div>
+          <div id="detailTranslatedBox" class="hidden mt-2.5 text-xs text-sky-900 leading-relaxed whitespace-pre-wrap bg-sky-50/90 p-3 rounded-2xl border border-sky-200"></div>
         </div>
 
         <div class="border-t border-slate-100 pt-3">
@@ -248,6 +254,11 @@
           alertMissing: '请填写帖子标题和内容',
           defaultAuthor: '匿名街坊',
           viewThread: '查看讨论 →',
+          translateBtn: '🌐 翻译',
+          showOrigBtn: '↩️ 原文',
+          translatingText: '正在翻译中...',
+          translateFail: '翻译服务暂时繁忙，请稍后再试',
+          targetCode: 'zh-CN',
           categories: [
             { id: 'all', label: '🌐 全部话题' },
             { id: 'chat', label: '🔥 大马吹水站' },
@@ -286,6 +297,11 @@
           alertMissing: 'Please enter both title and content',
           defaultAuthor: 'Local Member',
           viewThread: 'Open →',
+          translateBtn: '🌐 Translate',
+          showOrigBtn: '↩️ Original',
+          translatingText: 'Translating...',
+          translateFail: 'Translation temporarily unavailable. Please try again.',
+          targetCode: 'en',
           categories: [
             { id: 'all', label: '🌐 All Topics' },
             { id: 'chat', label: '🔥 Kopitiam Chat' },
@@ -324,6 +340,11 @@
           alertMissing: 'Sila isi tajuk dan kandungan',
           defaultAuthor: 'Ahli Komuniti',
           viewThread: 'Lihat →',
+          translateBtn: '🌐 Terjemah',
+          showOrigBtn: '↩️ Asal',
+          translatingText: 'Sedang menterjemah...',
+          translateFail: 'Terjemahan tidak tersedia buat sementara waktu.',
+          targetCode: 'ms',
           categories: [
             { id: 'all', label: '🌐 Semua Topik' },
             { id: 'chat', label: '🔥 Sembang Santai' },
@@ -348,6 +369,11 @@
       var myPendingPosts = [];
       var activePost = null;
       var searchTimer = null;
+      var translationCache = {};
+      var expandedPostIds = {};
+      var detailTranslatedOpen = false;
+      var currentReplies = [];
+      var expandedReplyIdx = {};
 
       try {
         var storedPending = JSON.parse(localStorage.getItem(MY_PENDING_KEY) || '[]');
@@ -399,6 +425,42 @@
           if (t.categories[i].id === catId) return t.categories[i].label;
         }
         return t.categories[1].label;
+      }
+
+      function translateSingleText(text, targetLangCode) {
+        var clean = String(text || '').trim();
+        if (!clean) return Promise.resolve('');
+        var cacheKey = targetLangCode + '::' + clean;
+        if (translationCache[cacheKey]) {
+          return Promise.resolve(translationCache[cacheKey]);
+        }
+
+        // 分段避免超长文本触发接口长度限制
+        var chunks = [];
+        var maxLen = 420;
+        for (var i = 0; i < clean.length; i += maxLen) {
+          chunks.push(clean.slice(i, i + maxLen));
+        }
+
+        return Promise.all(chunks.map(function (chunk) {
+          var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
+            encodeURIComponent(targetLangCode) + '&dt=t&q=' + encodeURIComponent(chunk);
+          return fetch(url)
+            .then(function (r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.json();
+            })
+            .then(function (data) {
+              if (!Array.isArray(data) || !Array.isArray(data[0])) {
+                throw new Error('Bad payload');
+              }
+              return data[0].map(function (seg) { return seg && seg[0] ? seg[0] : ''; }).join('');
+            });
+        })).then(function (parts) {
+          var merged = parts.join('');
+          translationCache[cacheKey] = merged;
+          return merged;
+        });
       }
 
       function checkPostRisk(title, content) {
@@ -515,8 +577,60 @@
         setPlaceholder('replyContentInput', t.replyPh);
         setText('sendReplyBtn', t.sendReply);
 
+        detailTranslatedOpen = false;
+        var dTransBox = document.getElementById('detailTranslatedBox');
+        if (dTransBox) {
+          dTransBox.classList.add('hidden');
+          dTransBox.innerText = '';
+        }
+        setText('detailTranslateBtn', t.translateBtn);
+
         renderCategoryTabs();
         renderPostsList();
+        if (activePost) {
+          setText('repliesHeader', t.repliesHeader(currentReplies.length));
+          var listEl = document.getElementById('repliesList');
+          if (listEl) listEl.innerHTML = renderRepliesHtml(currentReplies, t);
+        }
+      }
+
+      function toggleCardTranslation(postId) {
+        var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
+        var merged = getMergedPosts();
+        var post = null;
+        for (var i = 0; i < merged.length; i++) {
+          if (merged[i].id === postId) { post = merged[i]; break; }
+        }
+        if (!post) return;
+
+        var key = String(postId) + '_' + currentLang;
+        if (expandedPostIds[key]) {
+          delete expandedPostIds[key];
+          renderPostsList();
+          return;
+        }
+
+        var box = document.getElementById('cardTrans-' + postId);
+        var btn = document.querySelector('.card-trans-btn[data-post-id="' + postId + '"]');
+        if (box) {
+          box.classList.remove('hidden');
+          box.innerText = t.translatingText;
+        }
+        if (btn) btn.innerText = t.translatingText;
+
+        Promise.all([
+          translateSingleText(post.title, t.targetCode),
+          translateSingleText(post.content, t.targetCode)
+        ]).then(function (resPair) {
+          expandedPostIds[key] = { title: resPair[0], content: resPair[1] };
+          renderPostsList();
+        }).catch(function () {
+          if (box) {
+            box.classList.remove('hidden');
+            box.innerText = t.translateFail;
+          }
+          if (btn) btn.innerText = t.translateBtn;
+        });
       }
 
       function renderPostsList() {
@@ -556,6 +670,14 @@
             ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">' + escapeHtml(t.pendingBadge) + '</span>'
             : '<span class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">' + escapeHtml(getCatLabel(item.category)) + '</span>';
 
+          var transData = expandedPostIds[String(item.id) + '_' + currentLang];
+          var transBlockHtml = transData
+            ? '<div id="cardTrans-' + item.id + '" class="mt-2 p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-950 space-y-1">' +
+                '<div class="font-black text-[13px] leading-snug">' + escapeHtml(transData.title) + '</div>' +
+                '<p class="leading-relaxed whitespace-pre-wrap">' + escapeHtml(transData.content) + '</p>' +
+              '</div>'
+            : '<div id="cardTrans-' + item.id + '" class="hidden mt-2 p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-950"></div>';
+
           listHtml += '<div data-post-id="' + item.id + '" class="forum-post-card bg-white rounded-2xl p-3.5 shadow-2xs border ' +
             (isPending ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 hover:border-indigo-200') +
             ' transition cursor-pointer">' +
@@ -564,14 +686,29 @@
             '<span class="text-[11px] text-gray-400">' + escapeHtml(item.author_name) + ' · ' + escapeHtml(timeAgo(item.created_at)) + '</span>' +
             '</div>' +
             '<h2 class="font-bold text-gray-900 text-[15px] leading-snug mb-1">' + escapeHtml(item.title) + '</h2>' +
-            '<p class="text-xs text-gray-500 line-clamp-2 mb-2.5 leading-relaxed">' + escapeHtml(item.content) + '</p>' +
-            '<div class="flex items-center justify-between text-[11px] text-gray-400 pt-2 border-t border-gray-50">' +
-            '<div class="flex items-center gap-3"><span>❤️ ' + (item.likes || 0) + '</span><span>💬 ' + (item.reply_count || 0) + '</span></div>' +
+            '<p class="text-xs text-gray-500 line-clamp-2 leading-relaxed">' + escapeHtml(item.content) + '</p>' +
+            transBlockHtml +
+            '<div class="flex items-center justify-between text-[11px] text-gray-400 pt-2 mt-2.5 border-t border-gray-50">' +
+            '<div class="flex items-center gap-3">' +
+              '<span>❤️ ' + (item.likes || 0) + '</span>' +
+              '<span>💬 ' + (item.reply_count || 0) + '</span>' +
+              '<button type="button" data-post-id="' + item.id + '" class="card-trans-btn text-sky-600 hover:text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-full cursor-pointer">' +
+                escapeHtml(transData ? t.showOrigBtn : t.translateBtn) +
+              '</button>' +
+            '</div>' +
             '<span class="text-indigo-600 font-bold">' + escapeHtml(t.viewThread) + '</span>' +
             '</div>' +
             '</div>';
         }
         box.innerHTML = listHtml;
+
+        var transBtns = box.querySelectorAll('.card-trans-btn');
+        for (var m = 0; m < transBtns.length; m++) {
+          transBtns[m].addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            toggleCardTranslation(Number(this.getAttribute('data-post-id')));
+          });
+        }
 
         var cards = box.querySelectorAll('.forum-post-card');
         for (var k = 0; k < cards.length; k++) {
@@ -711,15 +848,55 @@
         var html = '';
         for (var i = 0; i < replies.length; i++) {
           var r = replies[i];
+          var rKey = (activePost ? activePost.id : 'x') + '_' + i + '_' + currentLang;
+          var rTrans = expandedReplyIdx[rKey];
           html += '<div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">' +
             '<div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">' +
             '<span class="font-bold text-slate-700">#' + (i + 1) + ' ' + escapeHtml(r.author_name) + '</span>' +
-            '<span>' + escapeHtml(timeAgo(r.created_at)) + '</span>' +
+            '<div class="flex items-center gap-2">' +
+              '<button type="button" data-ridx="' + i + '" class="reply-trans-btn text-sky-600 font-bold cursor-pointer">' +
+                escapeHtml(rTrans ? t.showOrigBtn : t.translateBtn) +
+              '</button>' +
+              '<span>' + escapeHtml(timeAgo(r.created_at)) + '</span>' +
+            '</div>' +
             '</div>' +
             '<p class="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">' + escapeHtml(r.content) + '</p>' +
+            (rTrans ? '<p class="mt-1.5 pt-1.5 border-t border-sky-100 text-xs text-sky-900 leading-relaxed whitespace-pre-wrap">' + escapeHtml(rTrans) + '</p>' : '') +
             '</div>';
         }
         return html;
+      }
+
+      function bindReplyTranslateEvents() {
+        var listEl = document.getElementById('repliesList');
+        if (!listEl) return;
+        var btns = listEl.querySelectorAll('.reply-trans-btn');
+        for (var i = 0; i < btns.length; i++) {
+          btns[i].addEventListener('click', function () {
+            var idx = Number(this.getAttribute('data-ridx'));
+            var row = currentReplies[idx];
+            if (!row) return;
+            var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
+            var rKey = (activePost ? activePost.id : 'x') + '_' + idx + '_' + currentLang;
+            if (expandedReplyIdx[rKey]) {
+              delete expandedReplyIdx[rKey];
+              listEl.innerHTML = renderRepliesHtml(currentReplies, t);
+              bindReplyTranslateEvents();
+              return;
+            }
+            var origBtnText = this.innerText;
+            this.innerText = t.translatingText;
+            var self = this;
+            translateSingleText(row.content, t.targetCode).then(function (out) {
+              expandedReplyIdx[rKey] = out;
+              listEl.innerHTML = renderRepliesHtml(currentReplies, t);
+              bindReplyTranslateEvents();
+            }).catch(function () {
+              self.innerText = origBtnText;
+              alert(t.translateFail);
+            });
+          });
+        }
       }
 
       function loadReplies(postId) {
@@ -728,11 +905,12 @@
         if (!listEl) return;
 
         if (!sb || postId < 0) {
-          var demo = postId === -1
+          currentReplies = postId === -1
             ? [{ author_name: '吉隆坡阿杰', content: '报道！支持大马本地吹水站越做越好 👍', created_at: new Date().toISOString() }]
             : [];
-          setText('repliesHeader', t.repliesHeader(demo.length));
-          listEl.innerHTML = renderRepliesHtml(demo, t);
+          setText('repliesHeader', t.repliesHeader(currentReplies.length));
+          listEl.innerHTML = renderRepliesHtml(currentReplies, t);
+          bindReplyTranslateEvents();
           return;
         }
 
@@ -741,13 +919,56 @@
           .eq('post_id', postId)
           .order('created_at', { ascending: true })
           .then(function (res) {
-            var rows = res && Array.isArray(res.data) ? res.data : [];
-            setText('repliesHeader', t.repliesHeader(rows.length));
-            listEl.innerHTML = renderRepliesHtml(rows, t);
+            currentReplies = res && Array.isArray(res.data) ? res.data : [];
+            setText('repliesHeader', t.repliesHeader(currentReplies.length));
+            listEl.innerHTML = renderRepliesHtml(currentReplies, t);
+            bindReplyTranslateEvents();
           });
       }
 
+      function toggleDetailTranslation() {
+        if (!activePost) return;
+        var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
+        var box = document.getElementById('detailTranslatedBox');
+        var btn = document.getElementById('detailTranslateBtn');
+        if (!box || !btn) return;
+
+        if (detailTranslatedOpen) {
+          detailTranslatedOpen = false;
+          box.classList.add('hidden');
+          btn.innerText = t.translateBtn;
+          return;
+        }
+
+        var cacheKey = 'detail_' + activePost.id + '_' + currentLang;
+        box.classList.remove('hidden');
+        if (translationCache[cacheKey]) {
+          detailTranslatedOpen = true;
+          box.innerText = translationCache[cacheKey];
+          btn.innerText = t.showOrigBtn;
+          return;
+        }
+
+        box.innerText = t.translatingText;
+        btn.innerText = t.translatingText;
+
+        Promise.all([
+          translateSingleText(activePost.title, t.targetCode),
+          translateSingleText(activePost.content, t.targetCode)
+        ]).then(function (pair) {
+          var combined = pair[0] + '\n\n' + pair[1];
+          translationCache[cacheKey] = combined;
+          detailTranslatedOpen = true;
+          box.innerText = combined;
+          btn.innerText = t.showOrigBtn;
+        }).catch(function () {
+          box.innerText = t.translateFail;
+          btn.innerText = t.translateBtn;
+        });
+      }
+
       function openPostDetail(postId) {
+        var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
         var merged = getMergedPosts();
         var post = null;
         for (var i = 0; i < merged.length; i++) {
@@ -755,6 +976,15 @@
         }
         if (!post) return;
         activePost = post;
+        expandedReplyIdx = {};
+        detailTranslatedOpen = false;
+
+        var dTransBox = document.getElementById('detailTranslatedBox');
+        if (dTransBox) {
+          dTransBox.classList.add('hidden');
+          dTransBox.innerText = '';
+        }
+        setText('detailTranslateBtn', t.translateBtn);
 
         var replyAuthorEl = document.getElementById('replyAuthorInput');
         if (replyAuthorEl) {
@@ -776,6 +1006,7 @@
         var modal = document.getElementById('detailModal');
         if (modal) modal.classList.add('hidden');
         activePost = null;
+        currentReplies = [];
       }
 
       function submitReply() {
@@ -852,6 +1083,7 @@
       var botPostBtn = document.getElementById('bottomNewPostBtn');
       var closePostBtn = document.getElementById('closeNewPostBtn');
       var submitPostBtn = document.getElementById('submitPostBtn');
+      var detailTransBtn = document.getElementById('detailTranslateBtn');
       var closeDetailBtn = document.getElementById('closeDetailBtn');
       var likeBtn = document.getElementById('detailLikeBtn');
       var sendReplyBtn = document.getElementById('sendReplyBtn');
@@ -860,6 +1092,7 @@
       if (botPostBtn) botPostBtn.addEventListener('click', openNewPostModal);
       if (closePostBtn) closePostBtn.addEventListener('click', closeNewPostModal);
       if (submitPostBtn) submitPostBtn.addEventListener('click', submitNewPost);
+      if (detailTransBtn) detailTransBtn.addEventListener('click', toggleDetailTranslation);
       if (closeDetailBtn) closeDetailBtn.addEventListener('click', closeDetailModal);
       if (likeBtn) likeBtn.addEventListener('click', likeCurrentPost);
       if (sendReplyBtn) sendReplyBtn.addEventListener('click', submitReply);
