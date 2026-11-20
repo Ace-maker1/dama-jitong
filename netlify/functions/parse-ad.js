@@ -1,3 +1,10 @@
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json',
+};
+
 function extractJsonObject(text) {
   if (!text || typeof text !== 'string') {
     throw new Error('Empty model response');
@@ -21,13 +28,16 @@ function extractJsonObject(text) {
 }
 
 export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: CORS_HEADERS, body: '' };
+  }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return { statusCode: 500, body: JSON.stringify({ success: false, error: '未配置 GEMINI_API_KEY' }) };
+    return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ success: false, error: '未配置 GEMINI_API_KEY' }) };
   }
 
   try {
@@ -36,6 +46,7 @@ export async function handler(event) {
     if (!imageBase64 && !extraNotes.trim()) {
       return {
         statusCode: 400,
+        headers: CORS_HEADERS,
         body: JSON.stringify({ success: false, error: '请上传图片或输入简要说明' }),
       };
     }
@@ -85,14 +96,14 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: CORS_HEADERS,
       body: JSON.stringify({ success: true, data: parsed }),
     };
   } catch (err) {
     console.error('parse-ad error:', err);
     return {
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: CORS_HEADERS,
       body: JSON.stringify({ success: false, error: err.message || 'AI 识别失败，请稍后重试' }),
     };
   }
