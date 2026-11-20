@@ -114,9 +114,13 @@
                   class="w-full bg-slate-100 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs leading-relaxed text-slate-800 focus:outline-none"></textarea>
       </div>
 
+      <p id="reviewNoticeHint" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+        🛡️ 为维护社区环境，新发布的帖子需经审核通过后公开展示。
+      </p>
+
       <button type="button" id="submitPostBtn"
               class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm py-3 rounded-2xl shadow-md cursor-pointer transition">
-        🚀 立即发布帖子
+        🚀 提交帖子（待审核）
       </button>
     </div>
   </div>
@@ -183,6 +187,7 @@
           likes: 18,
           reply_count: 1,
           created_at: new Date().toISOString(),
+          status: 'approved',
           isSeed: true
         },
         {
@@ -194,6 +199,7 @@
           likes: 12,
           reply_count: 0,
           created_at: new Date(Date.now() - 3600000).toISOString(),
+          status: 'approved',
           isSeed: true
         },
         {
@@ -205,9 +211,12 @@
           likes: 9,
           reply_count: 0,
           created_at: new Date(Date.now() - 7200000).toISOString(),
+          status: 'approved',
           isSeed: true
         }
       ];
+
+      var BLOCK_WORDS = ['博彩', '赌球', '网赌', '刷单', '兼职日赚', '免费领', '加v', '加微', 'telegram', 't.me/', 'whatsapp.com/', 'http://', 'https://'];
 
       var FORUM_I18N = {
         zh: {
@@ -225,12 +234,17 @@
           titlePh: '一句话概括你想聊的话题...',
           lblPostContent: '详细内容 *',
           contentPh: '分享你的见闻、提问或吹水内容（请文明交流）...',
-          submitBtn: '🚀 立即发布帖子',
+          reviewHint: '🛡️ 为维护社区环境，新发布的帖子需经审核通过后公开展示。',
+          submitBtn: '🚀 提交帖子（待审核）',
+          pendingSubmitted: '✅ 已提交审核！审核通过后将在论坛公开展示。',
+          pendingBadge: '⏳ 审核中（仅自己可见）',
+          cooldownMsg: '发帖太频繁啦，请 20 秒后再试',
+          blockedMsg: '内容包含敏感词或外部链接，暂无法发布',
           repliesHeader: function (n) { return '💬 全部回复 (' + n + ')'; },
           noReplies: '还没有人回复，快来抢沙发吧！',
           replyPh: '写下你的回复参与盖楼...',
           sendReply: '回复',
-          emptyPosts: '该版块暂时还没有帖子，点击右上角「发帖」抢先开个话题吧！',
+          emptyPosts: '该版块暂时还没有已通过审核的帖子，点击右上角「发帖」抢先开个话题吧！',
           alertMissing: '请填写帖子标题和内容',
           defaultAuthor: '匿名街坊',
           viewThread: '查看讨论 →',
@@ -258,12 +272,17 @@
           titlePh: 'Summarize your topic...',
           lblPostContent: 'Details *',
           contentPh: 'Share your thoughts, questions, or local tips...',
-          submitBtn: '🚀 Publish Post',
+          reviewHint: '🛡️ New posts are reviewed before going public to keep the community clean.',
+          submitBtn: '🚀 Submit for Review',
+          pendingSubmitted: '✅ Submitted for review! It will appear publicly once approved.',
+          pendingBadge: '⏳ Pending Review (Only visible to you)',
+          cooldownMsg: 'Please wait 20 seconds before posting again.',
+          blockedMsg: 'Content contains restricted words or links and cannot be submitted.',
           repliesHeader: function (n) { return '💬 Replies (' + n + ')'; },
           noReplies: 'No replies yet. Be the first to comment!',
           replyPh: 'Write a reply...',
           sendReply: 'Send',
-          emptyPosts: 'No posts in this category yet. Tap "Post" to start one!',
+          emptyPosts: 'No approved posts in this category yet. Tap "Post" to start one!',
           alertMissing: 'Please enter both title and content',
           defaultAuthor: 'Local Member',
           viewThread: 'Open →',
@@ -291,12 +310,17 @@
           titlePh: 'Ringkaskan topik perbincangan...',
           lblPostContent: 'Kandungan *',
           contentPh: 'Kongsi cerita, soalan atau info tempatan...',
-          submitBtn: '🚀 Hantar Topik',
+          reviewHint: '🛡️ Siaran baharu akan disemak terlebih dahulu sebelum dipaparkan secara umum.',
+          submitBtn: '🚀 Hantar (Semakan)',
+          pendingSubmitted: '✅ Dihantar untuk semakan! Akan dipaparkan selepas diluluskan.',
+          pendingBadge: '⏳ Dalam Semakan (Anda sahaja)',
+          cooldownMsg: 'Sila tunggu 20 saat sebelum menghantar siaran lagi.',
+          blockedMsg: 'Kandungan mengandungi kata kunci atau pautan terhad.',
           repliesHeader: function (n) { return '💬 Semua Balasan (' + n + ')'; },
           noReplies: 'Belum ada balasan. Jadilah yang pertama!',
           replyPh: 'Tulis balasan anda...',
           sendReply: 'Hantar',
-          emptyPosts: 'Tiada topik dalam kategori ini lagi. Tekan "Tulis" untuk mula!',
+          emptyPosts: 'Tiada siaran yang diluluskan dalam kategori ini lagi.',
           alertMissing: 'Sila isi tajuk dan kandungan',
           defaultAuthor: 'Ahli Komuniti',
           viewThread: 'Lihat →',
@@ -311,7 +335,8 @@
         }
       };
 
-      var CACHE_KEY = 'dmjt_forum_posts_safe_v1';
+      var CACHE_KEY = 'dmjt_forum_approved_v2';
+      var MY_PENDING_KEY = 'dmjt_forum_my_pending_v1';
       var currentLang = 'zh';
       try {
         var saved = localStorage.getItem('dama_lang');
@@ -319,9 +344,15 @@
       } catch (e) {}
 
       var currentCat = 'all';
-      var allPosts = [];
+      var approvedPosts = [];
+      var myPendingPosts = [];
       var activePost = null;
       var searchTimer = null;
+
+      try {
+        var storedPending = JSON.parse(localStorage.getItem(MY_PENDING_KEY) || '[]');
+        if (Array.isArray(storedPending)) myPendingPosts = storedPending;
+      } catch (e) {}
 
       function setText(id, val) {
         var el = document.getElementById(id);
@@ -345,7 +376,6 @@
         }
       }
 
-      // 彻底改用浏览器原生 DOM 文本节点转义，零正则、零引号冲突
       var escDiv = document.createElement('div');
       function escapeHtml(str) {
         escDiv.textContent = str == null ? '' : String(str);
@@ -369,6 +399,40 @@
           if (t.categories[i].id === catId) return t.categories[i].label;
         }
         return t.categories[1].label;
+      }
+
+      function checkPostRisk(title, content) {
+        var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
+        var lastTs = 0;
+        try { lastTs = Number(localStorage.getItem('dmjt_last_post_ts') || '0'); } catch (e) {}
+        if (Date.now() - lastTs < 20000) {
+          return t.cooldownMsg;
+        }
+        var blob = (title + ' ' + content).toLowerCase();
+        for (var i = 0; i < BLOCK_WORDS.length; i++) {
+          if (blob.indexOf(BLOCK_WORDS[i]) !== -1) {
+            return t.blockedMsg;
+          }
+        }
+        return '';
+      }
+
+      function getMergedPosts() {
+        var approvedIds = {};
+        for (var i = 0; i < approvedPosts.length; i++) {
+          approvedIds[approvedPosts[i].id] = true;
+        }
+        var activePending = [];
+        for (var j = 0; j < myPendingPosts.length; j++) {
+          if (!approvedIds[myPendingPosts[j].id]) {
+            activePending.push(myPendingPosts[j]);
+          }
+        }
+        if (activePending.length !== myPendingPosts.length) {
+          myPendingPosts = activePending;
+          try { localStorage.setItem(MY_PENDING_KEY, JSON.stringify(myPendingPosts)); } catch (e) {}
+        }
+        return myPendingPosts.concat(approvedPosts);
       }
 
       function renderCategoryTabs() {
@@ -446,6 +510,7 @@
         setPlaceholder('postTitleInput', t.titlePh);
         setText('lblPostContent', t.lblPostContent);
         setPlaceholder('postContentInput', t.contentPh);
+        setText('reviewNoticeHint', t.reviewHint);
         setText('submitPostBtn', t.submitBtn);
         setPlaceholder('replyContentInput', t.replyPh);
         setText('sendReplyBtn', t.sendReply);
@@ -459,12 +524,13 @@
         var box = document.getElementById('postsContainer');
         if (!box) return;
 
+        var merged = getMergedPosts();
         var searchEl = document.getElementById('forumSearchInput');
         var kw = (searchEl && searchEl.value ? searchEl.value : '').trim().toLowerCase();
 
         var filtered = [];
-        for (var i = 0; i < allPosts.length; i++) {
-          var p = allPosts[i];
+        for (var i = 0; i < merged.length; i++) {
+          var p = merged[i];
           var matchCat = currentCat === 'all' || p.category === currentCat;
           var textBlob = ((p.title || '') + ' ' + (p.content || '')).toLowerCase();
           var matchKw = !kw || textBlob.indexOf(kw) !== -1;
@@ -485,9 +551,16 @@
         var listHtml = '';
         for (var j = 0; j < filtered.length; j++) {
           var item = filtered[j];
-          listHtml += '<div data-post-id="' + item.id + '" class="forum-post-card bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 hover:border-indigo-200 transition cursor-pointer">' +
+          var isPending = item.status === 'pending';
+          var badgeHtml = isPending
+            ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">' + escapeHtml(t.pendingBadge) + '</span>'
+            : '<span class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">' + escapeHtml(getCatLabel(item.category)) + '</span>';
+
+          listHtml += '<div data-post-id="' + item.id + '" class="forum-post-card bg-white rounded-2xl p-3.5 shadow-2xs border ' +
+            (isPending ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 hover:border-indigo-200') +
+            ' transition cursor-pointer">' +
             '<div class="flex items-center justify-between gap-2 mb-1.5">' +
-            '<span class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">' + escapeHtml(getCatLabel(item.category)) + '</span>' +
+            badgeHtml +
             '<span class="text-[11px] text-gray-400">' + escapeHtml(item.author_name) + ' · ' + escapeHtml(timeAgo(item.created_at)) + '</span>' +
             '</div>' +
             '<h2 class="font-bold text-gray-900 text-[15px] leading-snug mb-1">' + escapeHtml(item.title) + '</h2>' +
@@ -512,9 +585,9 @@
       function loadPosts() {
         try {
           var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
-          allPosts = Array.isArray(cached) && cached.length > 0 ? cached : SEED_POSTS.slice();
+          approvedPosts = Array.isArray(cached) && cached.length > 0 ? cached : SEED_POSTS.slice();
         } catch (e) {
-          allPosts = SEED_POSTS.slice();
+          approvedPosts = SEED_POSTS.slice();
         }
         renderPostsList();
 
@@ -523,7 +596,8 @@
         if (syncTag) syncTag.classList.remove('hidden');
 
         sb.from('forum_posts')
-          .select('id,category,author_name,title,content,likes,reply_count,created_at')
+          .select('id,category,author_name,title,content,likes,reply_count,created_at,status')
+          .eq('status', 'approved')
           .order('created_at', { ascending: false })
           .limit(60)
           .then(function (res) {
@@ -533,9 +607,8 @@
               return;
             }
             if (res && Array.isArray(res.data)) {
-              showStatus('');
-              allPosts = res.data.length > 0 ? res.data : SEED_POSTS.slice();
-              try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
+              approvedPosts = res.data.length > 0 ? res.data : SEED_POSTS.slice();
+              try { localStorage.setItem(CACHE_KEY, JSON.stringify(approvedPosts)); } catch (e) {}
               renderPostsList();
             }
           })
@@ -577,8 +650,17 @@
           return;
         }
 
+        var riskErr = checkPostRisk(title, content);
+        if (riskErr) {
+          alert(riskErr);
+          return;
+        }
+
         var authorName = authorRaw || t.defaultAuthor;
-        try { if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw); } catch (e) {}
+        try {
+          if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw);
+          localStorage.setItem('dmjt_last_post_ts', String(Date.now()));
+        } catch (e) {}
 
         var tempPost = {
           id: Date.now(),
@@ -588,37 +670,34 @@
           content: content,
           likes: 0,
           reply_count: 0,
+          status: 'pending',
           created_at: new Date().toISOString()
         };
 
-        var nextList = [tempPost];
-        for (var i = 0; i < allPosts.length; i++) {
-          if (!allPosts[i].isSeed) nextList.push(allPosts[i]);
-        }
-        allPosts = nextList;
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
+        myPendingPosts.unshift(tempPost);
+        try { localStorage.setItem(MY_PENDING_KEY, JSON.stringify(myPendingPosts)); } catch (e) {}
 
         if (titleEl) titleEl.value = '';
         if (contentEl) contentEl.value = '';
         closeNewPostModal();
+        showStatus(t.pendingSubmitted);
         renderPostsList();
 
         if (sb) {
           sb.from('forum_posts')
-            .insert([{ category: category, author_name: authorName, title: title, content: content }])
+            .insert([{ category: category, author_name: authorName, title: title, content: content, status: 'pending' }])
             .select()
             .single()
             .then(function (res) {
               if (res && res.error) {
-                showStatus('发帖同步失败（已暂存本地）：' + res.error.message);
+                showStatus('发帖同步失败：' + res.error.message);
                 return;
               }
               if (res && res.data) {
-                showStatus('');
-                for (var j = 0; j < allPosts.length; j++) {
-                  if (allPosts[j].id === tempPost.id) allPosts[j] = res.data;
+                for (var j = 0; j < myPendingPosts.length; j++) {
+                  if (myPendingPosts[j].id === tempPost.id) myPendingPosts[j] = res.data;
                 }
-                try { localStorage.setItem(CACHE_KEY, JSON.stringify(allPosts)); } catch (e) {}
+                try { localStorage.setItem(MY_PENDING_KEY, JSON.stringify(myPendingPosts)); } catch (e) {}
                 renderPostsList();
               }
             });
@@ -669,9 +748,10 @@
       }
 
       function openPostDetail(postId) {
+        var merged = getMergedPosts();
         var post = null;
-        for (var i = 0; i < allPosts.length; i++) {
-          if (allPosts[i].id === postId) { post = allPosts[i]; break; }
+        for (var i = 0; i < merged.length; i++) {
+          if (merged[i].id === postId) { post = merged[i]; break; }
         }
         if (!post) return;
         activePost = post;
@@ -707,12 +787,21 @@
         var content = contentEl && contentEl.value ? contentEl.value.trim() : '';
         if (!content) return;
 
+        var riskErr = checkPostRisk('', content);
+        if (riskErr) {
+          alert(riskErr);
+          return;
+        }
+
         var authorName = authorRaw || t.defaultAuthor;
-        try { if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw); } catch (e) {}
+        try {
+          if (authorRaw) localStorage.setItem('dmjt_forum_nick', authorRaw);
+          localStorage.setItem('dmjt_last_post_ts', String(Date.now()));
+        } catch (e) {}
         if (contentEl) contentEl.value = '';
 
-        if (activePost.isSeed || !sb) {
-          alert('请先点击右上角「✏️ 发帖」发布一条真实话题后再进行盖楼回复！');
+        if (activePost.isSeed || activePost.status === 'pending' || !sb) {
+          alert('该帖子正在审核中或为演示话题，待审核通过公开后即可盖楼回复！');
           return;
         }
 
@@ -739,7 +828,7 @@
         setText('detailLikeBtn', '❤️ ' + nextLikes);
         renderPostsList();
 
-        if (!activePost.isSeed && sb) {
+        if (!activePost.isSeed && activePost.status === 'approved' && sb) {
           sb.from('forum_posts').update({ likes: nextLikes }).eq('id', activePost.id).then(function () {});
         }
       }
