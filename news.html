@@ -9,22 +9,21 @@
 </head>
 <body>
   <div class="app-shell">
-    <!-- 顶部红色新闻渐变导航栏 -->
-    <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3.5 py-3">
-      <div class="flex items-center justify-between gap-2 mb-2.5">
-        <div class="flex items-center gap-2">
-          <a href="/" id="backHomeLink" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold transition">← 首页</a>
-          <div>
+    <!-- 顶部红色新闻渐变导航栏（清爽单行标题 + 横向频道标签） -->
+    <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3 py-2.5">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <a href="/" id="backHomeLink" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 transition">← 首页</a>
+          <div class="min-w-0">
             <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
-              <h1 id="newsPageTitle" class="font-black text-sm tracking-tight">实时新闻头条</h1>
-              <span id="syncBadge" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full">同步中...</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping shrink-0"></span>
+              <h1 id="newsPageTitle" class="font-black text-sm tracking-tight truncate">实时新闻头条</h1>
+              <span id="syncBadge" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full shrink-0">同步中...</span>
             </div>
-            <p id="newsPageSub" class="text-[10px] text-white/85">大马 · 新加坡 · 加密 · 股市 · 地缘政治 · 体育</p>
+            <p id="newsPageSub" class="text-[10px] text-white/85 truncate">大马 · 新加坡 · 加密 · 股市 · 地缘 · 体育</p>
           </div>
         </div>
-<div class="flex items-center gap-1.5 shrink-0">
-          <a href="/football.html" class="bg-emerald-500 hover:bg-emerald-400 text-white px-2.5 py-1 rounded-full text-[11px] font-black shadow-xs transition">⚽ 球星专区</a>
+
         <!-- 三语切换器 -->
         <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
           <button onclick="switchNewsLang('zh')" id="nLang-zh" class="px-2 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
@@ -33,8 +32,11 @@
         </div>
       </div>
 
-      <!-- 新闻频道横向滑动标签栏 -->
-      <div id="topicTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+      <!-- 新闻频道横向滑动标签栏（首项直达足坛球星专区） -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+        <a href="/football.html" id="starZoneChip" class="px-3 py-1 rounded-full text-xs font-black bg-emerald-500 hover:bg-emerald-400 text-white shrink-0 shadow-xs transition">⚽ 球星专区</a>
+        <div id="topicTabs" class="flex items-center gap-1.5 shrink-0"></div>
+      </div>
     </header>
 
     <!-- 新闻列表主体 -->
@@ -70,7 +72,8 @@
       zh: {
         back: '← 首页',
         title: '实时新闻头条',
-        sub: '大马 · 新加坡 · 加密 · 股市 · 地缘政治 · 体育',
+        sub: '大马 · 新加坡 · 加密 · 股市 · 地缘 · 体育',
+        starChip: '⚽ 球星专区',
         syncing: '后台刷新中...',
         empty: '暂时未拉取到最新内容，点击下方重试',
         retry: '↻ 立即刷新',
@@ -97,7 +100,7 @@
             id: 'crypto',
             label: '₿ 加密货币',
             feeds: [
-              { name: '加密实时快讯', url: 'https://news.google.com/rss/search?q=(Bitcoin+OR+Ethereum+OR+Solana+OR+%E6%AF%94%E7%89%B9%E5%B8%A1+OR+%E5%8A%A0%E5%AF%86%E8%B2%A8%E5%B9%A3)+when:6h&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
+              { name: '加密实时快讯', url: 'https://news.google.com/rss/search?q=Bitcoin+OR+%E6%AF%94%E7%89%B9%E5%B8%A1+OR+%E5%8A%A0%E5%AF%86%E8%B2%A8%E5%B9%A3&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
               { name: 'Cointelegraph', url: 'https://cointelegraph.com/rss' }
             ]
           },
@@ -105,7 +108,7 @@
             id: 'stocks',
             label: '📊 股票市场',
             feeds: [
-              { name: '美股/马股/港股快讯', url: 'https://news.google.com/rss/search?q=(%E7%BE%8E%E8%82%A1+OR+%E7%B4%8D%E6%8C%87+OR+%E9%A6%AC%E8%82%A1+OR+%E6%B8%AF%E8%82%A1+OR+%E8%82%A1%E5%B8%82)+when:12h&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
+              { name: '美股/马股/港股快讯', url: 'https://news.google.com/rss/search?q=%E7%BE%8E%E8%82%A1+OR+%E9%A6%AC%E8%82%A1+OR+%E8%82%A1%E5%B8%82&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
               { name: 'RTHK 财经快讯', url: 'https://rthk.hk/rthk/news/rss/c_expressnews_cfinance.xml' },
               { name: 'BBC 中文财经', url: 'https://feeds.bbci.co.uk/zhongwen/trad/business/rss.xml' }
             ]
@@ -114,7 +117,7 @@
             id: 'geopolitics',
             label: '🌐 地缘政治',
             feeds: [
-              { name: '地缘局势实时', url: 'https://news.google.com/rss/search?q=(%E5%9C%B0%E7%B7%A3%E6%94%BF%E6%B2%BB+OR+%E4%B8%AD%E6%9D%B1+OR+%E7%BE%8E%E5%9C%8B+OR+%E9%97%9C%E7%A8%85+OR+%E5%9C%8B%E9%9A%9B%E5%B1%80%E5%8B%A2)+when:12h&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
+              { name: '地缘局势实时', url: 'https://news.google.com/rss/search?q=%E5%9C%B0%E7%B7%A3%E6%94%BF%E6%B2%BB+OR+%E4%B8%AD%E6%9D%B1+OR+%E5%9C%8B%E9%9A%9B%E5%B1%80%E5%8B%A2&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
               { name: 'BBC 中文国际', url: 'https://feeds.bbci.co.uk/zhongwen/trad/world/rss.xml' },
               { name: 'RTHK 国际新闻', url: 'https://rthk.hk/rthk/news/rss/c_expressnews_cinternational.xml' }
             ]
@@ -123,7 +126,7 @@
             id: 'sports',
             label: '⚽ 体育赛事',
             feeds: [
-              { name: '体坛实时快讯', url: 'https://news.google.com/rss/search?q=(%E8%8B%B1%E8%B6%85+OR+%E6%AD%90%E5%86%A0+OR+NBA+OR+%E7%BE%BD%E6%AF%9B%E7%90%83+OR+UFC)+when:12h&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
+              { name: '体坛实时快讯', url: 'https://news.google.com/rss/search?q=%E8%8B%B1%E8%B6%85+OR+%E6%AD%90%E5%86%A0+OR+NBA+OR+%E7%BE%BD%E6%AF%9B%E7%90%83&hl=zh-TW&gl=HK&ceid=HK:zh-Hant' },
               { name: 'RTHK 体育新闻', url: 'https://rthk.hk/rthk/news/rss/c_expressnews_csport.xml' },
               { name: 'BBC Sport', url: 'https://feeds.bbci.co.uk/sport/rss.xml' }
             ]
@@ -147,8 +150,10 @@
         ]
       },
       en: {
+        back: '← Home',
         title: 'Live News Feed',
-        sub: 'Malaysia · Singapore · Crypto · Stocks · Geopolitics · Sports',
+        sub: 'Malaysia · Singapore · Crypto · Stocks · World · Sports',
+        starChip: '⚽ Football Stars',
         syncing: 'Updating...',
         empty: 'No headlines loaded right now, tap to retry',
         retry: '↻ Reload',
@@ -176,7 +181,7 @@
             label: '₿ Crypto',
             feeds: [
               { name: 'Cointelegraph Live', url: 'https://cointelegraph.com/rss' },
-              { name: 'Crypto Breaking', url: 'https://news.google.com/rss/search?q=(Bitcoin+OR+Ethereum+OR+Solana+OR+Crypto)+when:6h&hl=en-US&gl=US&ceid=US:en' }
+              { name: 'Crypto Breaking', url: 'https://news.google.com/rss/search?q=Bitcoin+OR+Ethereum+OR+Crypto&hl=en-US&gl=US&ceid=US:en' }
             ]
           },
           {
@@ -184,7 +189,7 @@
             label: '📊 Stocks & Markets',
             feeds: [
               { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
-              { name: 'Markets & Bursa', url: 'https://news.google.com/rss/search?q=(stock+market+OR+Nasdaq+OR+S%26P+500+OR+Bursa+Malaysia)+when:6h&hl=en-US&gl=US&ceid=US:en' },
+              { name: 'Markets & Bursa', url: 'https://news.google.com/rss/search?q=stock+market+OR+Nasdaq+OR+Bursa+Malaysia&hl=en-US&gl=US&ceid=US:en' },
               { name: 'CNA Business', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6936' }
             ]
           },
@@ -193,7 +198,6 @@
             label: '🌐 Geopolitics',
             feeds: [
               { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
-              { name: 'Geopolitics Live', url: 'https://news.google.com/rss/search?q=(geopolitics+OR+Middle+East+OR+tariffs+OR+foreign+policy)+when:12h&hl=en-US&gl=US&ceid=US:en' },
               { name: 'CNA World', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311' }
             ]
           },
@@ -202,7 +206,7 @@
             label: '⚽ Sports',
             feeds: [
               { name: 'BBC Sport', url: 'https://feeds.bbci.co.uk/sport/rss.xml' },
-              { name: 'Sports Breaking', url: 'https://news.google.com/rss/search?q=(Premier+League+OR+Champions+League+OR+UFC+OR+Badminton+Malaysia)+when:6h&hl=en-MY&gl=MY&ceid=MY:en' }
+              { name: 'Sports Breaking', url: 'https://news.google.com/rss/search?q=Premier+League+OR+Champions+League+OR+Badminton+Malaysia&hl=en-MY&gl=MY&ceid=MY:en' }
             ]
           },
           {
@@ -224,8 +228,10 @@
         ]
       },
       ms: {
+        back: '← Utama',
         title: 'Berita Terkini',
-        sub: 'Malaysia · Singapura · Kripto · Saham · Geopolitik · Sukan',
+        sub: 'Malaysia · Singapura · Kripto · Saham · Dunia · Sukan',
+        starChip: '⚽ Bintang Bola',
         syncing: 'Mengemas kini...',
         empty: 'Tiada berita ditemui, tekan untuk cuba semula',
         retry: '↻ Muat Semula',
@@ -251,7 +257,7 @@
             id: 'crypto',
             label: '₿ Kripto',
             feeds: [
-              { name: 'Kripto Terkini', url: 'https://news.google.com/rss/search?q=(Bitcoin+OR+Ethereum+OR+Kripto+OR+Mata+Wang+Kripto)+when:12h&hl=ms&gl=MY&ceid=MY:ms' },
+              { name: 'Kripto Terkini', url: 'https://news.google.com/rss/search?q=Bitcoin+OR+Kripto+OR+Mata+Wang+Kripto&hl=ms&gl=MY&ceid=MY:ms' },
               { name: 'Cointelegraph', url: 'https://cointelegraph.com/rss' }
             ]
           },
@@ -259,21 +265,21 @@
             id: 'stocks',
             label: '📊 Saham & Pasaran',
             feeds: [
-              { name: 'Saham & Bursa', url: 'https://news.google.com/rss/search?q=(Bursa+Malaysia+OR+saham+OR+Ringgit+OR+pasaran+kewangan)+when:12h&hl=ms&gl=MY&ceid=MY:ms' }
+              { name: 'Saham & Bursa', url: 'https://news.google.com/rss/search?q=Bursa+Malaysia+OR+saham+OR+Ringgit&hl=ms&gl=MY&ceid=MY:ms' }
             ]
           },
           {
             id: 'geopolitics',
             label: '🌐 Geopolitik',
             feeds: [
-              { name: 'Geopolitik Dunia', url: 'https://news.google.com/rss/search?q=(geopolitik+OR+Timur+Tengah+OR+Amerika+Syarikat+OR+konflik+dunia)+when:12h&hl=ms&gl=MY&ceid=MY:ms' }
+              { name: 'Geopolitik Dunia', url: 'https://news.google.com/rss/search?q=geopolitik+OR+Timur+Tengah+OR+berita+dunia&hl=ms&gl=MY&ceid=MY:ms' }
             ]
           },
           {
             id: 'sports',
             label: '⚽ Sukan',
             feeds: [
-              { name: 'Sukan Terkini', url: 'https://news.google.com/rss/search?q=(sukan+OR+Liga+Perdana+OR+badminton+Malaysia+OR+Harimau+Malaya)+when:12h&hl=ms&gl=MY&ceid=MY:ms' }
+              { name: 'Sukan Terkini', url: 'https://news.google.com/rss/search?q=sukan+OR+Liga+Perdana+OR+Harimau+Malaya&hl=ms&gl=MY&ceid=MY:ms' }
             ]
           },
           {
@@ -332,6 +338,7 @@
       document.getElementById('backHomeLink').innerText = t.back;
       document.getElementById('newsPageTitle').innerText = t.title;
       document.getElementById('newsPageSub').innerText = t.sub;
+      document.getElementById('starZoneChip').innerText = t.starChip;
       document.getElementById('syncBadge').innerText = t.syncing;
       document.getElementById('navHome').innerText = t.navHome;
       document.getElementById('navNews').innerText = t.navNews;
@@ -458,7 +465,7 @@
       const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
       const box = document.getElementById('newsContainer');
       const syncBadge = document.getElementById('syncBadge');
-      const cacheKey = `dmjt_v5_news_${currentNewsLang}_${topic.id}`;
+      const cacheKey = `dmjt_v6_news_${currentNewsLang}_${topic.id}`;
 
       let hasCache = false;
       try {
