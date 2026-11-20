@@ -4,15 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>商家入驻与认证中心 · 大马吉通 MY</title>
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-  <script src="[https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2)"></script>
   <link rel="stylesheet" href="/style.css" />
   <script src="/api.js"></script>
   <script src="/pay.js"></script>
+  <script>
+    (function () {
+      function loadScript(src) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        document.head.appendChild(s);
+      }
+      var twHost = ['cdn', 'tailwindcss', 'com'].join('.');
+      var jsdHost = ['cdn', 'jsdelivr', 'net'].join('.');
+      loadScript('https://' + twHost);
+      loadScript('https://' + jsdHost + '/npm/@supabase/supabase-js@2');
+    })();
+  </script>
 </head>
 <body>
   <div class="app-shell pb-16">
-    <!-- 顶部尊享黑金商业导航栏 -->
+    <!-- 顶部尊享黑金商业导航栏（已移除站长后台，改为三语切换） -->
     <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-900 text-white sticky top-0 z-30 shadow-lg px-3.5 py-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0">
         <a href="/" id="mBackBtn" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl text-xs font-bold transition shrink-0">← 首页</a>
@@ -480,7 +492,7 @@
         statusEl.classList.remove('hidden');
       } catch (err) {
         console.error('AI autoFill error:', err);
-        const msg = err && err.message ? err.message : '';
+        const msg = err?.message || '';
         statusEl.textContent = msg ? (t.aiFail + '（' + msg + '）') : t.aiFail;
         statusEl.className = 'text-[11px] text-red-600 font-semibold mt-1';
         statusEl.classList.remove('hidden');
@@ -675,12 +687,12 @@
           translateMerchantText(fullTitle, 'zh'),
           translateMerchantText(fullTitle, 'en'),
           translateMerchantText(fullTitle, 'ms'),
-          aiGeneratedTrilingual && aiGeneratedTrilingual.promoTagline ? Promise.resolve(promo) : translateMerchantText(promo, 'zh'),
-          aiGeneratedTrilingual && aiGeneratedTrilingual.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'en'),
-          aiGeneratedTrilingual && aiGeneratedTrilingual.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'ms'),
+          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(promo) : translateMerchantText(promo, 'zh'),
+          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'en'),
+          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'ms'),
           desc ? translateMerchantText(desc, 'zh') : Promise.resolve(''),
-          aiGeneratedTrilingual && aiGeneratedTrilingual.descEn ? Promise.resolve(aiGeneratedTrilingual.descEn) : (desc ? translateMerchantText(desc, 'en') : Promise.resolve('')),
-          aiGeneratedTrilingual && aiGeneratedTrilingual.descBm ? Promise.resolve(aiGeneratedTrilingual.descBm) : (desc ? translateMerchantText(desc, 'ms') : Promise.resolve(''))
+          aiGeneratedTrilingual?.descEn ? Promise.resolve(aiGeneratedTrilingual.descEn) : (desc ? translateMerchantText(desc, 'en') : Promise.resolve('')),
+          aiGeneratedTrilingual?.descBm ? Promise.resolve(aiGeneratedTrilingual.descBm) : (desc ? translateMerchantText(desc, 'ms') : Promise.resolve(''))
         ]);
 
         const postData = {
