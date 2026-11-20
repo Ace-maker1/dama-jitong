@@ -79,7 +79,9 @@ export async function handler(event) {
     }
     parts.push({ text: prompt });
 
-    const endpoint = '[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent)';
+    const endpoint =
+      '[https://generativelanguage.googleapis.com](https://generativelanguage.googleapis.com)' +
+      '/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
     const res = await fetch(endpoint, {
       method: 'POST',
