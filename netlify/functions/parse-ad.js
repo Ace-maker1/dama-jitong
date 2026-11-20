@@ -1,3 +1,25 @@
+function extractJsonObject(text) {
+  if (!text || typeof text !== 'string') {
+    throw new Error('Empty model response');
+  }
+  const cleaned = text
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (_) {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start !== -1 && end !== -1 && end > start) {
+      return JSON.parse(cleaned.slice(start, end + 1));
+    }
+    throw new Error('Invalid JSON from model');
+  }
+}
+
 export async function handler(event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
@@ -42,7 +64,7 @@ export async function handler(event) {
     }
     parts.push({ text: prompt });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+    const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$){apiKey}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,21 +75,25 @@ export async function handler(event) {
     });
 
     const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) {
-      throw new Error('模型未返回有效内容');
+    if (!res.ok) {
+      const apiMsg = data?.error?.message || `Gemini API HTTP ${res.status}`;
+      throw new Error(apiMsg);
     }
+
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parsed = extractJsonObject(rawText);
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, data: JSON.parse(rawText) }),
+      body: JSON.stringify({ success: true, data: parsed }),
     };
   } catch (err) {
     console.error('parse-ad error:', err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ success: false, error: 'AI 识别失败，请稍后重试' }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ success: false, error: err.message || 'AI 识别失败，请稍后重试' }),
     };
   }
 }
