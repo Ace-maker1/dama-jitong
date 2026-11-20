@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>足坛巨星实时动态 · 大马吉通 MY</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 顶部绿茵渐变导航栏 -->
+    <header class="bg-gradient-to-r from-emerald-700 via-teal-700 to-green-800 text-white sticky top-0 z-30 shadow-md px-3.5 py-3">
+      <div class="flex items-center justify-between gap-2 mb-2.5">
+        <div class="flex items-center gap-2">
+          <a href="/news.html" id="backNewsLink" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold transition">← 新闻</a>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-lime-300 animate-ping"></span>
+              <h1 id="starPageTitle" class="font-black text-sm tracking-tight">⚽ 足坛巨星实时动态</h1>
+              <span id="syncBadge" class="hidden text-[9px] bg-black/25 px-1.5 py-0.5 rounded-full">同步中...</span>
+            </div>
+            <p id="starPageSub" class="text-[10px] text-emerald-100">C罗 · 梅西 · 姆巴佩 · 哈兰德 · 皇马巴萨英超球星</p>
+          </div>
+        </div>
+
+        <!-- 三语切换器 -->
+        <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
+          <button onclick="switchStarLang('zh')" id="sLang-zh" class="px-2 py-0.5 rounded-full bg-white text-emerald-700 transition">CN</button>
+          <button onclick="switchStarLang('en')" id="sLang-en" class="px-2 py-0.5 rounded-full text-white/90 transition">EN</button>
+          <button onclick="switchStarLang('ms')" id="sLang-ms" class="px-2 py-0.5 rounded-full text-white/90 transition">BM</button>
+        </div>
+      </div>
+
+      <!-- 球星专题横向滑动标签栏 -->
+      <div id="starTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+    </header>
+
+    <!-- 新闻列表主体 -->
+    <main class="flex-1 p-3 space-y-2.5" id="starNewsContainer"></main>
+
+    <!-- 底部5键导航栏 -->
+    <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+      <a href="/" class="flex flex-col items-center text-gray-400 hover:text-red-600">
+        <span class="text-lg">🏠</span>
+        <span id="navHome" class="text-[10px] font-medium mt-0.5">首页</span>
+      </a>
+      <a href="/news.html" class="flex flex-col items-center text-gray-400 hover:text-red-600">
+        <span class="text-lg">📰</span>
+        <span id="navNews" class="text-[10px] font-medium mt-0.5">实时新闻</span>
+      </a>
+      <a href="/football.html" class="flex flex-col items-center -mt-6">
+        <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white">⚽</div>
+        <span id="navStar" class="text-[10px] font-bold text-emerald-700 mt-0.5">足坛巨星</span>
+      </a>
+      <a href="/map.html" class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+        <span class="text-lg">🧭</span>
+        <span id="navMap" class="text-[10px] font-medium mt-0.5">查路线</span>
+      </a>
+      <a href="/merchant.html" class="flex flex-col items-center text-gray-400 hover:text-amber-600">
+        <span class="text-lg">🏪</span>
+        <span id="navBiz" class="text-[10px] font-medium mt-0.5">商家入驻</span>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const STAR_I18N = {
+      zh: {
+        back: '← 新闻',
+        title: '⚽ 足坛巨星实时动态',
+        sub: 'C罗 · 梅西 · 姆巴佩 · 哈兰德 · 皇马巴萨英超球星',
+        syncing: '同步球星快讯...',
+        empty: '暂时未拉取到最新动态，点击下方重试',
+        retry: '↻ 立即刷新',
+        readMore: '阅读全文 ↗',
+        navHome: '首页', navNews: '实时新闻', navStar: '足坛巨星', navMap: '查路线', navBiz: '商家入驻',
+        stars: [
+          {
+            id: 'all',
+            label: '🔥 全部巨星',
+            q: '(C羅 OR 梅西 OR 姆巴佩 OR 哈蘭德 OR 貝林厄姆 OR 維尼修斯 OR 亞馬爾 OR 薩拉赫) when:24h',
+            hl: 'zh-TW', gl: 'HK', ceid: 'HK:zh-Hant'
+          },
+          {
+            id: 'cr7',
+            label: '🇵🇹 C罗 CR7',
+            q: '(C羅 OR Cristiano Ronaldo OR 利雅得勝利) when:3d',
+            hl: 'zh-TW', gl: 'HK', ceid: 'HK:zh-Hant'
+          },
+          {
+            id: 'messi',
+            label: '🇦🇷 梅西 Messi',
+            q: '(梅西 OR Lionel Messi OR 邁阿密國際) when:3d',
+            hl: 'zh-TW', gl: 'HK', ceid: 'HK:zh-Hant'
+          },
+          {
+            id: 'mbappe',
+            label: '🇫🇷 姆巴佩',
+            q: '(姆巴佩 OR Kylian Mbappe OR 皇馬) when:3d',
+            hl: 'zh-TW', gl: 'HK', ceid: 'HK:zh-Hant'
+          },
+          {
+            id: 'haaland',
+            label: '🇳🇴 哈兰德',
+            q: '(哈蘭德 OR Erling Haaland OR 曼城) when:3d',
+            hl: 'zh-TW', gl: 'HK', ceid: 'HK:zh-Hant'
+          },
+          {
+            id: 'young',
+            label: '⚡ 亚马尔 / 贝林厄姆',
+            q: '(亞馬爾 OR Lamine Yamal OR 貝林厄姆 OR Jude Bellingham OR 維尼修斯) when:3d',
+            hl: 'zh-TW', gl: 'HK', ceid: 'HK:zh-Hant'
+          }
+        ]
+      },
+      en: {
+        back: '← News',
+        title: '⚽ Football Superstars Live',
+        sub: 'Ronaldo · Messi · Mbappé · Haaland · Yamal · Bellingham',
+        syncing: 'Syncing stars...',
+        empty: 'No player updates loaded right now, tap to retry',
+        retry: '↻ Reload',
+        readMore: 'Read Full ↗',
+        navHome: 'Home', navNews: 'News', navStar: 'Stars', navMap: 'Navigate', navBiz: 'Merchants',
+        stars: [
+          {
+            id: 'all',
+            label: '🔥 All Superstars',
+            q: '(Cristiano Ronaldo OR Lionel Messi OR Kylian Mbappe OR Erling Haaland OR Lamine Yamal OR Jude Bellingham) when:24h',
+            hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
+          },
+          {
+            id: 'cr7',
+            label: '🇵🇹 Cristiano Ronaldo',
+            q: '(Cristiano Ronaldo OR CR7 OR Al Nassr) when:3d',
+            hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
+          },
+          {
+            id: 'messi',
+            label: '🇦🇷 Lionel Messi',
+            q: '(Lionel Messi OR Inter Miami) when:3d',
+            hl: 'en-US', gl: 'US', ceid: 'US:en'
+          },
+          {
+            id: 'mbappe',
+            label: '🇫🇷 Kylian Mbappé',
+            q: '(Kylian Mbappe OR Real Madrid) when:24h',
+            hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
+          },
+          {
+            id: 'haaland',
+            label: '🇳🇴 Erling Haaland',
+            q: '(Erling Haaland OR Manchester City) when:24h',
+            hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
+          },
+          {
+            id: 'young',
+            label: '⚡ Yamal & Bellingham',
+            q: '(Lamine Yamal OR Jude Bellingham OR Vinicius Junior) when:3d',
+            hl: 'en-GB', gl: 'GB', ceid: 'GB:en'
+          }
+        ]
+      },
+      ms: {
+        back: '← Berita',
+        title: '⚽ Bintang Bola Sepak Dunia',
+        sub: 'Ronaldo · Messi · Mbappé · Haaland · Yamal · Arif Aiman',
+        syncing: 'Mengemas kini...',
+        empty: 'Tiada berita pemain ditemui, tekan untuk cuba semula',
+        retry: '↻ Muat Semula',
+        readMore: 'Baca Penuh ↗',
+        navHome: 'Utama', navNews: 'Berita', navStar: 'Bintang', navMap: 'Peta', navBiz: 'Peniaga',
+        stars: [
+          {
+            id: 'all',
+            label: '🔥 Semua Bintang',
+            q: '(Cristiano Ronaldo OR Lionel Messi OR Kylian Mbappe OR Erling Haaland OR Lamine Yamal OR Arif Aiman) when:2d',
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
+          },
+          {
+            id: 'cr7',
+            label: '🇵🇹 Cristiano Ronaldo',
+            q: '(Cristiano Ronaldo OR Al Nassr) when:4d',
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
+          },
+          {
+            id: 'messi',
+            label: '🇦🇷 Lionel Messi',
+            q: '(Lionel Messi OR Inter Miami) when:4d',
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
+          },
+          {
+            id: 'mbappe',
+            label: '🇫🇷 Kylian Mbappé',
+            q: '(Kylian Mbappe OR Real Madrid) when:3d',
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
+          },
+          {
+            id: 'haaland',
+            label: '🇳🇴 Erling Haaland',
+            q: '(Erling Haaland OR Manchester City) when:3d',
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
+          },
+          {
+            id: 'young',
+            label: '🇲🇾 Arif Aiman & Bintang Muda',
+            q: '(Arif Aiman OR Faisal Halim OR Lamine Yamal OR Jude Bellingham) when:4d',
+            hl: 'ms', gl: 'MY', ceid: 'MY:ms'
+          }
+        ]
+      }
+    };
+
+    let currentStarLang = localStorage.getItem('dama_lang') || 'zh';
+    let currentStarId = 'all';
+    let activeStarReq = 0;
+
+    function isSafeExternalUrl(url) {
+      return /^https?:\/\//i.test((url || '').trim());
+    }
+
+    function switchStarLang(lang) {
+      currentStarLang = lang;
+      localStorage.setItem('dama_lang', lang);
+      ['zh', 'en', 'ms'].forEach(l => {
+        const btn = document.getElementById(`sLang-${l}`);
+        btn.className = l === lang
+          ? 'px-2 py-0.5 rounded-full bg-white text-emerald-700 transition'
+          : 'px-2 py-0.5 rounded-full text-white/90 transition';
+      });
+      renderStarTabs();
+      loadStarNews();
+    }
+
+    function selectStar(starId) {
+      currentStarId = starId;
+      renderStarTabs();
+      loadStarNews();
+    }
+
+    function renderStarTabs() {
+      const t = STAR_I18N[currentStarLang];
+      document.getElementById('backNewsLink').innerText = t.back;
+      document.getElementById('starPageTitle').innerText = t.title;
+      document.getElementById('starPageSub').innerText = t.sub;
+      document.getElementById('syncBadge').innerText = t.syncing;
+      document.getElementById('navHome').innerText = t.navHome;
+      document.getElementById('navNews').innerText = t.navNews;
+      document.getElementById('navStar').innerText = t.navStar;
+      document.getElementById('navMap').innerText = t.navMap;
+      document.getElementById('navBiz').innerText = t.navBiz;
+
+      document.getElementById('starTabs').innerHTML = t.stars.map(st => {
+        const active = st.id === currentStarId;
+        return `
+          <button onclick="selectStar('${st.id}')"
+                  class="px-3 py-1 rounded-full text-xs font-bold shrink-0 transition ${active ? 'bg-white text-emerald-800 shadow-xs' : 'bg-black/20 text-white/90 hover:bg-black/30'}">
+            ${st.label}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function timeAgo(dateStr, lang) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      const diffMins = Math.max(1, Math.floor((Date.now() - d.getTime()) / 60000));
+      if (diffMins < 60) return lang === 'zh' ? `${diffMins}分钟前` : `${diffMins}m ago`;
+      const hrs = Math.floor(diffMins / 60);
+      if (hrs < 24) return lang === 'zh' ? `${hrs}小时前` : `${hrs}h ago`;
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    function renderSkeleton() {
+      return Array(5).fill(0).map(() => `
+        <div class="bg-white rounded-2xl p-3.5 border border-gray-100 animate-pulse space-y-2.5">
+          <div class="flex gap-2">
+            <div class="h-4 w-16 bg-gray-200 rounded"></div>
+            <div class="h-4 w-12 bg-gray-100 rounded"></div>
+          </div>
+          <div class="h-4 w-full bg-gray-200 rounded"></div>
+          <div class="h-4 w-3/4 bg-gray-200 rounded"></div>
+        </div>
+      `).join('');
+    }
+
+    function renderStarCards(items, starLabel, readMoreText) {
+      const seen = new Set();
+      const uniqueItems = items.filter(it => {
+        if (!isSafeExternalUrl(it.link)) return false;
+        const key = it.title.slice(0, 18);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      return uniqueItems.slice(0, 25).map((item, idx) => `
+        <a href="${item.link}" target="_blank" rel="noopener noreferrer"
+           class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
+          <div class="flex justify-between gap-3">
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  ${idx < 3 ? `<span class="bg-emerald-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded">STAR ${idx + 1}</span>` : ''}
+                  <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded truncate max-w-[160px]">${item.realSource}</span>
+                  <span class="text-[11px] text-gray-400 shrink-0">${timeAgo(item.pubDate, currentStarLang)}</span>
+                </div>
+                <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${item.title}</h2>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-emerald-700 font-semibold">${starLabel}</span>
+                <span class="text-emerald-600 font-bold">${readMoreText}</span>
+              </div>
+            </div>
+            ${item.thumbnail ? `<img src="${item.thumbnail}" loading="lazy" onerror="this.style.display='none'" class="w-20 h-20 rounded-xl object-cover shrink-0 border border-gray-100" />` : ''}
+          </div>
+        </a>
+      `).join('');
+    }
+
+    async function loadStarNews() {
+      const reqId = ++activeStarReq;
+      const t = STAR_I18N[currentStarLang];
+      const starObj = t.stars.find(s => s.id === currentStarId) || t.stars[0];
+      const box = document.getElementById('starNewsContainer');
+      const syncBadge = document.getElementById('syncBadge');
+      const cacheKey = `dmjt_star_${currentStarLang}_${starObj.id}`;
+
+      let hasCache = false;
+      try {
+        const cachedRaw = localStorage.getItem(cacheKey);
+        if (cachedRaw) {
+          const cachedItems = JSON.parse(cachedRaw);
+          if (Array.isArray(cachedItems) && cachedItems.length > 0) {
+            box.innerHTML = renderStarCards(cachedItems, starObj.label, t.readMore);
+            hasCache = true;
+          }
+        }
+      } catch (e) {}
+
+      if (!hasCache) box.innerHTML = renderSkeleton();
+      syncBadge.classList.remove('hidden');
+
+      const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(starObj.q)}&hl=${starObj.hl}&gl=${starObj.gl}&ceid=${starObj.ceid}`;
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 7000);
+        const res = await fetch(`/api/news?url=${encodeURIComponent(rssUrl)}`, { signal: controller.signal });
+        clearTimeout(timer);
+
+        if (reqId !== activeStarReq) return;
+        syncBadge.classList.add('hidden');
+
+        if (!res.ok) throw new Error('Fetch failed');
+        const text = await res.text();
+        const xml = new DOMParser().parseFromString(text, 'text/xml');
+        const items = Array.from(xml.querySelectorAll('item')).map(node => {
+          const rawTitle = node.querySelector('title')?.textContent?.trim() || '';
+          const parts = rawTitle.split(' - ');
+          const realMedia = parts.length > 1 ? parts[parts.length - 1].trim() : 'Football News';
+          const cleanTitle = parts.length > 1 ? parts.slice(0, -1).join(' - ') : rawTitle;
+          const media = cleanTitle
+            ? `https://tse2.mm.bing.net/th?q=${encodeURIComponent(cleanTitle.slice(0, 28))}&w=240&h=240&c=7&rs=1&p=0`
+            : '';
+
+          return {
+            title: cleanTitle,
+            link: node.querySelector('link')?.textContent?.trim() || '',
+            pubDate: node.querySelector('pubDate')?.textContent?.trim() || '',
+            thumbnail: media,
+            realSource: realMedia
+          };
+        }).filter(x => x.title && x.link);
+
+        items.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+
+        if (items.length > 0) {
+          box.innerHTML = renderStarCards(items, starObj.label, t.readMore);
+          try { localStorage.setItem(cacheKey, JSON.stringify(items.slice(0, 25))); } catch (e) {}
+        } else if (!hasCache) {
+          box.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100"><div class="text-gray-400 text-sm">${t.empty}</div><button onclick="loadStarNews()" class="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full">${t.retry}</button></div>`;
+        }
+      } catch (e) {
+        if (reqId !== activeStarReq) return;
+        syncBadge.classList.add('hidden');
+        if (!hasCache) {
+          box.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100"><div class="text-gray-400 text-sm">${t.empty}</div><button onclick="loadStarNews()" class="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full">${t.retry}</button></div>`;
+        }
+      }
+    }
+
+    switchStarLang(currentStarLang);
+  </script>
+</body>
+</html>
