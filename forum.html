@@ -163,7 +163,7 @@
   </div>
 
   <script>
-    (function () {
+    window.addEventListener('DOMContentLoaded', function () {
       var SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
       var SUPABASE_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
       var sb = null;
@@ -311,7 +311,7 @@
         }
       };
 
-      var CACHE_KEY = 'dmjt_forum_posts_ready_v1';
+      var CACHE_KEY = 'dmjt_forum_posts_safe_v1';
       var currentLang = 'zh';
       try {
         var saved = localStorage.getItem('dama_lang');
@@ -345,13 +345,11 @@
         }
       }
 
+      // 彻底改用浏览器原生 DOM 文本节点转义，零正则、零引号冲突
+      var escDiv = document.createElement('div');
       function escapeHtml(str) {
-        return String(str || '')
-          .replace(/&/g, '&')
-          .replace(/</g, '<')
-          .replace(/>/g, '>')
-          .replace(/"/g, '"')
-          .replace(/'/g, ''');
+        escDiv.textContent = str == null ? '' : String(str);
+        return escDiv.innerHTML;
       }
 
       function timeAgo(isoStr) {
@@ -377,36 +375,37 @@
         var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
         var tabsEl = document.getElementById('categoryTabs');
         if (tabsEl) {
-          var html = '';
+          tabsEl.innerHTML = '';
           for (var i = 0; i < t.categories.length; i++) {
             var c = t.categories[i];
             var active = c.id === currentCat;
-            html += '<button type="button" data-cat="' + c.id + '" class="forum-cat-btn px-3 py-1 rounded-full text-xs font-bold shrink-0 cursor-pointer transition ' +
-              (active ? 'bg-white text-indigo-800 shadow-xs' : 'bg-black/20 text-white/90 hover:bg-black/30') +
-              '">' + escapeHtml(c.label) + '</button>';
-          }
-          tabsEl.innerHTML = html;
-
-          var catBtns = tabsEl.querySelectorAll('.forum-cat-btn');
-          for (var j = 0; j < catBtns.length; j++) {
-            catBtns[j].addEventListener('click', function () {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('data-cat', c.id);
+            btn.className = 'px-3 py-1 rounded-full text-xs font-bold shrink-0 cursor-pointer transition ' +
+              (active ? 'bg-white text-indigo-800 shadow-xs' : 'bg-black/20 text-white/90 hover:bg-black/30');
+            btn.textContent = c.label;
+            btn.addEventListener('click', function () {
               currentCat = this.getAttribute('data-cat') || 'all';
               renderCategoryTabs();
               renderPostsList();
             });
+            tabsEl.appendChild(btn);
           }
         }
 
         var sel = document.getElementById('postCategoryInput');
         if (sel) {
           var prevVal = sel.value;
-          var opts = '';
+          sel.innerHTML = '';
           for (var k = 0; k < t.categories.length; k++) {
             if (t.categories[k].id !== 'all') {
-              opts += '<option value="' + t.categories[k].id + '">' + escapeHtml(t.categories[k].label) + '</option>';
+              var opt = document.createElement('option');
+              opt.value = t.categories[k].id;
+              opt.textContent = t.categories[k].label;
+              sel.appendChild(opt);
             }
           }
-          sel.innerHTML = opts;
           if (prevVal) sel.value = prevVal;
         }
       }
@@ -778,7 +777,7 @@
 
       switchForumLang(currentLang);
       loadPosts();
-    })();
+    });
   </script>
 </body>
 </html>
