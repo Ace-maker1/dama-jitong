@@ -428,40 +428,76 @@
       }
 
       function translateSingleText(text, targetLangCode) {
-        var clean = String(text || '').trim();
-        if (!clean) return Promise.resolve('');
-        var cacheKey = targetLangCode + '::' + clean;
-        if (translationCache[cacheKey]) {
-          return Promise.resolve(translationCache[cacheKey]);
-        }
+  var clean = String(text || '').trim();
+  if (!clean) return Promise.resolve('');
+  var cacheKey = targetLangCode + '::' + clean;
+  if (translationCache[cacheKey]) {
+    return Promise.resolve(translationCache[cacheKey]);
+  }
 
-        // 分段避免超长文本触发接口长度限制
-        var chunks = [];
-        var maxLen = 420;
-        for (var i = 0; i < clean.length; i += maxLen) {
-          chunks.push(clean.slice(i, i + maxLen));
-        }
+  var mmTarget = targetLangCode === 'zh-CN' ? 'zh-CN' : (targetLangCode === 'ms' ? 'ms-MY' : 'en-GB');
+  var lingvaTarget = targetLangCode === 'zh-CN' ? 'zh' : targetLangCode;
 
-        return Promise.all(chunks.map(function (chunk) {
-          var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
-            encodeURIComponent(targetLangCode) + '&dt=t&q=' + encodeURIComponent(chunk);
-          return fetch(url)
-            .then(function (r) {
-              if (!r.ok) throw new Error('HTTP ' + r.status);
-              return r.json();
-            })
-            .then(function (data) {
-              if (!Array.isArray(data) || !Array.isArray(data[0])) {
-                throw new Error('Bad payload');
-              }
-              return data[0].map(function (seg) { return seg && seg[0] ? seg[0] : ''; }).join('');
-            });
-        })).then(function (parts) {
-          var merged = parts.join('');
-          translationCache[cacheKey] = merged;
-          return merged;
-        });
-      }
+  function tryMyMemory(q) {
+    var url = 'https://api.mymemory.translated.net/get?q=' +
+      encodeURIComponent(q) + '&langpair=Autodetect|' + encodeURIComponent(mmTarget);
+    return fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('MM HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        var out = d && d.responseData ? d.responseData.translatedText : '';
+        if (!out || /MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(out)) {
+          throw new Error('MM limit/empty');
+        }
+        return out;
+      });
+  }
+
+  function tryLingva(q) {
+    var url = 'https://lingva.ml/api/v1/auto/' + encodeURIComponent(lingvaTarget) + '/' + encodeURIComponent(q);
+    return fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('Lingva HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        if (!d || !d.translation) throw new Error('Lingva empty');
+        return d.translation;
+      });
+  }
+
+  function tryGtx(q) {
+    var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
+      encodeURIComponent(targetLangCode) + '&dt=t&q=' + encodeURIComponent(q);
+    return fetch(url)
+      .then(function (r) {
+        if (!r.ok) throw new Error('GTX HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (!Array.isArray(data) || !Array.isArray(data[0])) throw new Error('GTX bad');
+        return data[0].map(function (seg) { return seg && seg[0] ? seg[0] : ''; }).join('');
+      });
+  }
+
+  var chunks = [];
+  var maxLen = 380;
+  for (var i = 0; i < clean.length; i += maxLen) {
+    chunks.push(clean.slice(i, i + maxLen));
+  }
+
+  return Promise.all(chunks.map(function (chunk) {
+    return tryMyMemory(chunk)
+      .catch(function () { return tryLingva(chunk); })
+      .catch(function () { return tryGtx(chunk); });
+  })).then(function (parts) {
+    var merged = parts.join('');
+    translationCache[cacheKey] = merged;
+    return merged;
+  });
+}
 
       function checkPostRisk(title, content) {
         var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
