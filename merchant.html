@@ -332,7 +332,7 @@
 
     let currentMLang = localStorage.getItem('dama_lang') || 'zh';
     let merchantFile = null;
-    let aiGeneratedTrilingual = null; // 缓存 AI 生成的三语数据
+    let aiGeneratedTrilingual = null;
     const mTranslateCache = {};
 
     function refreshAiButtonState() {
@@ -349,7 +349,6 @@
       }
     }
 
-    // 前端压缩图片为 JPEG base64，控制体积且兼容 Gemini 识图
     function compressFileToBase64(file, maxWidth = 1024, quality = 0.8) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -443,14 +442,20 @@
           document.getElementById('mDesc').value.trim()
         ].filter(Boolean).join(' | ');
 
-        const res = await fetch('/.netlify/functions/parse-ad', {
+        const res = await fetch('https://damajitong.netlify.app/.netlify/functions/parse-ad', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64, mimeType, extraNotes })
         });
-        const json = await res.json();
+        const rawBody = await res.text();
+        let json;
+        try {
+          json = JSON.parse(rawBody);
+        } catch (_) {
+          throw new Error(`接口返回异常(HTTP ${res.status})`);
+        }
         if (!res.ok || !json.success || !json.data) {
-          throw new Error(json.error || 'AI parse failed');
+          throw new Error(json.error || `HTTP ${res.status}`);
         }
 
         const d = json.data;
@@ -472,7 +477,8 @@
         statusEl.classList.remove('hidden');
       } catch (err) {
         console.error('AI autoFill error:', err);
-        statusEl.textContent = `${t.aiFail} (${err.message || ''})`;
+        const msg = err?.message || '';
+        statusEl.textContent = msg ? `${t.aiFail}（${msg}）` : t.aiFail;
         statusEl.className = 'text-[11px] text-red-600 font-semibold mt-1';
         statusEl.classList.remove('hidden');
       } finally {
