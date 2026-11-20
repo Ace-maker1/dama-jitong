@@ -147,7 +147,6 @@
         <button id="chipAirport" onclick="quickNearby('机场')" class="text-[11px] bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 px-2 py-0.5 rounded font-semibold shrink-0">✈️ 机场</button>
         <button onclick="quickNearby('KFC')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍗 KFC</button>
         <button id="chipMcd" onclick="quickNearby('McDonald\'s')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍔 麦当劳</button>
-        <button onclick="quickNearby('7-Eleven')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🏪 7-11</button>
         <button id="chipPetrol" onclick="quickNearby('Petronas')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">⛽ 加油站</button>
         <button id="chipWatsons" onclick="quickNearby('Watsons')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">💊 屈臣氏</button>
         <button id="chipHospital" onclick="quickNearby('Hospital')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🏥 医院</button>
@@ -476,6 +475,7 @@
     let isNavigating = false;
     let cameraLocked = true;
     let wakeLock = null;
+    let activeSearchSeq = 0;
 
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
@@ -539,12 +539,12 @@
 
     const AUTOCOMPLETE_DICT = [
       { icon: '✈️', zh: '飞机场 (最近国际机场)', en: 'Nearest International Airport', ms: 'Lapangan Terbang Terdekat', query: '机场', keys: ['飞', '机场', '飞机场', 'air', 'airport', 'lapangan', 'terbang'] },
-      { icon: '✈️', zh: '怡保机场 (IPH)', en: 'Ipoh Airport (IPH)', ms: 'Lapangan Terbang Ipoh (IPH)', query: '怡保机场', keys: ['ipoh air', 'iph', '怡保机'] },
-      { icon: '✈️', zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang', query: '槟城机场', keys: ['槟城机', 'penang air', 'pen'] },
-      { icon: '✈️', zh: '吉隆坡国际机场 (KLIA 1)', en: 'Kuala Lumpur International Airport (KLIA)', ms: 'Lapangan Terbang Antarabangsa KLIA', query: 'klia', keys: ['吉隆坡机', 'klia', 'sepang'] },
-      { icon: '✈️', zh: '吉隆坡第二国际机场 (KLIA 2)', en: 'KLIA Terminal 2 (klia2)', ms: 'Terminal KLIA 2', query: 'klia2', keys: ['klia2', '亚航机场'] },
-      { icon: '✈️', zh: '新山士乃国际机场 (JHB)', en: 'Senai International Airport (JHB)', ms: 'Lapangan Terbang Senai', query: '新山机场', keys: ['新山机', '士乃', 'senai', 'jhb'] },
-      { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Antarabangsa Kota Kinabalu', query: '亚庇机场', keys: ['亚庇机', 'kkia', 'bki'] },
+      { icon: '✈️', zh: '怡保机场 (IPH)', en: 'Ipoh Airport (IPH)', ms: 'Lapangan Terbang Ipoh (IPH)', query: '怡保机场', lat: 4.5679, lng: 101.0921, addr: '31350 Ipoh, Perak', is24: true, keys: ['ipoh air', 'iph', '怡保机'] },
+      { icon: '✈️', zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang', query: '槟城机场', lat: 5.2932, lng: 100.2658, addr: '11900 Bayan Lepas, Pulau Pinang', is24: true, keys: ['槟城机', 'penang air', 'pen'] },
+      { icon: '✈️', zh: '吉隆坡国际机场 (KLIA 1)', en: 'Kuala Lumpur International Airport (KLIA)', ms: 'Lapangan Terbang Antarabangsa KLIA', query: 'klia', lat: 2.7545, lng: 101.7037, addr: '64000 Sepang, Selangor', is24: true, keys: ['吉隆坡机', 'klia', 'sepang'] },
+      { icon: '✈️', zh: '吉隆坡第二国际机场 (KLIA 2)', en: 'KLIA Terminal 2 (klia2)', ms: 'Terminal KLIA 2', query: 'klia2', lat: 2.7433, lng: 101.6859, addr: '64000 Sepang, Selangor', is24: true, keys: ['klia2', '亚航机场'] },
+      { icon: '✈️', zh: '新山士乃国际机场 (JHB)', en: 'Senai International Airport (JHB)', ms: 'Lapangan Terbang Senai', query: '新山机场', lat: 1.6353, lng: 103.6672, addr: '81250 Johor Bahru, Johor', is24: true, keys: ['新山机', '士乃', 'senai', 'jhb'] },
+      { icon: '✈️', zh: '亚庇国际机场 (BKI)', en: 'Kota Kinabalu International Airport (BKI)', ms: 'Lapangan Terbang Antarabangsa Kota Kinabalu', query: '亚庇机场', lat: 5.9325, lng: 116.0503, addr: '88200 Kota Kinabalu, Sabah', is24: true, keys: ['亚庇机', 'kkia', 'bki'] },
       { icon: '🍗', zh: 'KFC 肯德基 (最近分店)', en: 'KFC (Nearest Outlet)', ms: 'KFC (Cawangan Terdekat)', query: 'KFC', keys: ['k', 'kf', 'kfc', '肯', '肯德基'] },
       { icon: '🍔', zh: "McDonald's 麦当劳 (最近分店)", en: "McDonald's (Nearest Outlet)", ms: "McDonald's (Terdekat)", query: "McDonald's", keys: ['m', 'mc', 'mcd', '麦', '麦当劳'] },
       { icon: '☕', zh: 'Starbucks 星巴克', en: 'Starbucks Coffee', ms: 'Starbucks Coffee', query: 'Starbucks', keys: ['st', 'star', '星', '星巴克'] },
@@ -565,11 +565,11 @@
       { icon: '🏦', zh: 'Maybank 马来亚银行', en: 'Maybank Branch / ATM', ms: 'Cawangan Maybank', query: 'Maybank', keys: ['ma', 'may', 'maybank', '银', '银行', 'atm'] },
       { icon: '🏦', zh: 'CIMB Bank 联昌银行', en: 'CIMB Bank Branch / ATM', ms: 'Cawangan CIMB', query: 'CIMB', keys: ['c', 'ci', 'cimb', '银', '银行'] },
       { icon: '🏦', zh: 'Public Bank 大众银行', en: 'Public Bank Branch / ATM', ms: 'Cawangan Public Bank', query: 'Public Bank', keys: ['pu', 'pub', 'public', '大', '大众银行', '银行'] },
-      { icon: '🏙️', zh: 'KLCC 吉隆坡双子塔', en: 'Petronas Twin Towers (KLCC)', ms: 'Menara Berkembar Petronas (KLCC)', query: 'Petronas Twin Towers Kuala Lumpur', keys: ['klcc', '双', '双子塔'] },
-      { icon: '🛍️', zh: 'Pavilion KL 柏威年广场', en: 'Pavilion Kuala Lumpur', ms: 'Pavilion Kuala Lumpur', query: 'Pavilion Kuala Lumpur', keys: ['pa', 'pav', 'pavilion', '柏', '柏威年'] },
-      { icon: '🛍️', zh: 'Gurney Plaza 槟城合您广场', en: 'Gurney Plaza Penang', ms: 'Gurney Plaza Pulau Pinang', query: 'Gurney Plaza Penang', keys: ['gur', 'gurney', '合', '合您'] },
-      { icon: '🛍️', zh: 'Queensbay Mall 槟城皇后湾广场', en: 'Queensbay Mall Penang', ms: 'Queensbay Mall Pulau Pinang', query: 'Queensbay Mall Penang', keys: ['qu', 'que', 'queensbay', '皇', '皇后湾'] },
-      { icon: '🚉', zh: 'JB Sentral / 新山关卡 CIQ', en: 'JB Sentral / CIQ Checkpoint', ms: 'JB Sentral / Kompleks CIQ', query: 'JB Sentral CIQ Johor Bahru', keys: ['jb', 'ciq', '新', '新山', '关卡'] }
+      { icon: '🏙️', zh: 'KLCC 吉隆坡双子塔', en: 'Petronas Twin Towers (KLCC)', ms: 'Menara Berkembar Petronas (KLCC)', query: 'Petronas Twin Towers Kuala Lumpur', lat: 3.1579, lng: 101.7116, addr: 'Kuala Lumpur City Centre', keys: ['klcc', '双', '双子塔'] },
+      { icon: '🛍️', zh: 'Pavilion KL 柏威年广场', en: 'Pavilion Kuala Lumpur', ms: 'Pavilion Kuala Lumpur', query: 'Pavilion Kuala Lumpur', lat: 3.1489, lng: 101.7133, addr: 'Bukit Bintang, Kuala Lumpur', keys: ['pa', 'pav', 'pavilion', '柏', '柏威年'] },
+      { icon: '🛍️', zh: 'Gurney Plaza 槟城合您广场', en: 'Gurney Plaza Penang', ms: 'Gurney Plaza Pulau Pinang', query: 'Gurney Plaza Penang', lat: 5.4375, lng: 100.3095, addr: 'Persiaran Gurney, George Town', keys: ['gur', 'gurney', '合', '合您'] },
+      { icon: '🛍️', zh: 'Queensbay Mall 槟城皇后湾广场', en: 'Queensbay Mall Penang', ms: 'Queensbay Mall Pulau Pinang', query: 'Queensbay Mall Penang', lat: 5.3332, lng: 100.3066, addr: 'Bayan Lepas, Pulau Pinang', keys: ['qu', 'que', 'queensbay', '皇', '皇后湾'] },
+      { icon: '🚉', zh: 'JB Sentral / 新山关卡 CIQ', en: 'JB Sentral / CIQ Checkpoint', ms: 'JB Sentral / Kompleks CIQ', query: 'JB Sentral CIQ Johor Bahru', lat: 1.4648, lng: 103.7652, addr: 'Bukit Chagar, Johor Bahru', keys: ['jb', 'ciq', '新', '新山', '关卡'] }
     ];
 
     let suggestTimer = null;
@@ -825,6 +825,13 @@
       return q;
     }
 
+    function clearPreviousRouteUI() {
+      map.closePopup();
+      if (nearbyMarkersLayer) nearbyMarkersLayer.clearLayers();
+      document.getElementById('nearbyResultsBox').classList.add('hidden');
+      document.getElementById('fallbackSuggestBox').classList.add('hidden');
+    }
+
     function setTravelMode(mode) {
       currentMode = mode;
       document.querySelectorAll('.mode-tab').forEach(btn => {
@@ -834,7 +841,12 @@
       const active = document.getElementById(`mode-${mode}`);
       active.classList.add('bg-white', 'text-emerald-700', 'shadow-sm');
       active.classList.remove('text-slate-600');
-      if (startCoords && endCoords) calculateAndRenderRoute();
+      const endText = document.getElementById('endInput').value.trim();
+      if (endText && (!endCoords || !endCoords.name.includes(endText))) {
+        planRoute();
+      } else if (startCoords && endCoords) {
+        calculateAndRenderRoute();
+      }
     }
 
     function switchCity(lat, lng, label) {
@@ -895,14 +907,25 @@
       document.getElementById('endInput').value = '';
       document.getElementById('clearEndBtn').classList.add('hidden');
       hideSuggestions();
+      clearPreviousRouteUI();
       document.getElementById('endInput').focus();
     }
 
-    function pickSuggestion(queryOrName, lat = null, lng = null) {
+    function pickSuggestion(queryOrName, lat = null, lng = null, addr = '') {
       hideSuggestions();
+      clearPreviousRouteUI();
       document.getElementById('clearEndBtn').classList.remove('hidden');
       if (lat !== null && lng !== null) {
-        selectNearbyCandidate(lat, lng, queryOrName, '');
+        const statusObj = evaluateOpeningStatus({}, queryOrName);
+        selectNearbyCandidate(
+          lat,
+          lng,
+          queryOrName,
+          addr,
+          statusObj.state !== 'unknown' ? statusObj.text : '',
+          statusObj.badgeClass,
+          ''
+        );
       } else {
         document.getElementById('endInput').value = queryOrName;
         planRoute();
@@ -972,8 +995,11 @@
 
       dictMatches.forEach(item => {
         const label = item[currentLang] || item.en;
+        const clickCall = item.lat != null
+          ? `pickSuggestion('${label.replace(/'/g, "\\'")}', ${item.lat}, ${item.lng}, '${(item.addr || '').replace(/'/g, "\\'")}')`
+          : `pickSuggestion('${item.query.replace(/'/g, "\\'")}')`;
         html += `
-          <div onclick="pickSuggestion('${item.query.replace(/'/g, "\\'")}')"
+          <div onclick="${clickCall}"
                class="px-3 py-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-sm shrink-0">${item.icon}</span>
@@ -1026,7 +1052,7 @@
               const lng = parseFloat(item.lon);
               const km = (map.distance([refLat, refLng], [lat, lng]) / 1000).toFixed(1);
               return `
-                <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng})"
+                <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')"
                      class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
                   <div class="min-w-0">
                     <div class="text-xs font-bold text-slate-800 truncate">📍 ${title}</div>
@@ -1053,6 +1079,7 @@
 
     function quickNearby(brandName) {
       hideSuggestions();
+      clearPreviousRouteUI();
       document.getElementById('endInput').value = brandName;
       document.getElementById('clearEndBtn').classList.remove('hidden');
       planRoute();
@@ -1066,12 +1093,13 @@
       const temp = startCoords;
       startCoords = endCoords;
       endCoords = temp;
+      if (startCoords && endCoords) calculateAndRenderRoute();
     }
 
     map.on('click', function(e) {
       if (isNavigating) return;
       hideSuggestions();
-      document.getElementById('fallbackSuggestBox').classList.add('hidden');
+      clearPreviousRouteUI();
       endCoords = {
         lat: e.latlng.lat,
         lng: e.latlng.lng,
@@ -1107,6 +1135,35 @@
             phone: ap.phone
           };
         });
+      }
+
+      if (candidates.length === 0) {
+        const matchedDict = AUTOCOMPLETE_DICT.filter(d =>
+          d.lat != null && (
+            d.query.toLowerCase() === rawLower ||
+            d.zh.toLowerCase().includes(rawLower) ||
+            d.en.toLowerCase().includes(rawLower) ||
+            d.ms.toLowerCase().includes(rawLower)
+          )
+        );
+        if (matchedDict.length > 0) {
+          candidates = matchedDict.map(d => {
+            const name = d[currentLang] || d.en;
+            const straightKm = map.distance([refLat, refLng], [d.lat, d.lng]) / 1000;
+            const st = d.is24
+              ? { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' }
+              : evaluateOpeningStatus({}, name);
+            return {
+              lat: d.lat,
+              lng: d.lng,
+              name,
+              fullAddr: d.addr || 'Malaysia',
+              straightKm,
+              status: st.state !== 'unknown' ? st : null,
+              phone: ''
+            };
+          });
+        }
       }
 
       if (candidates.length === 0) {
@@ -1184,6 +1241,13 @@
       });
       const preSorted = deduped.slice(0, 8);
 
+      const calcModeMins = (km, baseSecs) => {
+        if (currentMode === 'walking') return Math.max(3, Math.round(km * 12));
+        const driveMins = baseSecs != null ? Math.max(2, Math.round(baseSecs / 60)) : Math.max(3, Math.round(km * 1.6));
+        if (currentMode === 'transit') return Math.max(8, Math.round(driveMins * 1.45 + 10));
+        return driveMins;
+      };
+
       try {
         const coordsStr = [`${refLng},${refLat}`, ...preSorted.map(p => `${p.lng},${p.lat}`)].join(';');
         const profile = currentMode === 'walking' ? 'foot' : 'driving';
@@ -1198,19 +1262,13 @@
             const dMeters = dists[idx + 1];
             const dSecs = durs[idx + 1];
             item.distKm = dMeters != null ? (dMeters / 1000) : item.straightKm;
-            if (currentMode === 'walking') {
-              item.durationMin = Math.max(3, Math.round(item.distKm * 12));
-            } else {
-              item.durationMin = dSecs != null ? Math.max(2, Math.round(dSecs / 60)) : Math.max(3, Math.round(item.distKm * 1.6));
-            }
+            item.durationMin = calcModeMins(item.distKm, dSecs);
           });
         }
       } catch (e) {
         preSorted.forEach(item => {
           item.distKm = item.straightKm;
-          item.durationMin = currentMode === 'walking'
-            ? Math.max(3, Math.round(item.straightKm * 12))
-            : Math.max(3, Math.round(item.straightKm * 1.6));
+          item.durationMin = calcModeMins(item.straightKm, null);
         });
       }
 
@@ -1254,6 +1312,7 @@
     }
 
     function selectNearbyCandidate(lat, lng, name, fullAddr, statusText = '', statusClass = '', phone = '') {
+      activeSearchSeq++;
       endCoords = {
         lat,
         lng,
@@ -1312,13 +1371,14 @@
     }
 
     async function planRoute() {
+      const seq = ++activeSearchSeq;
       const btn = document.getElementById('searchRouteBtn');
       const startText = document.getElementById('startInput').value.trim();
       const endText = document.getElementById('endInput').value.trim();
       const t = i18n[currentLang];
 
       hideSuggestions();
-      document.getElementById('fallbackSuggestBox').classList.add('hidden');
+      clearPreviousRouteUI();
 
       if (!endText && !endCoords) {
         alert(currentLang === 'zh' ? '请先输入目的地或点击快捷按钮（如 机场 / 麦当劳）！' : 'Please enter destination or tap a quick button!');
@@ -1335,6 +1395,7 @@
           document.getElementById('startInput').value = currentLang === 'zh' ? '当前地图中心' : 'Map Center';
         } else if (!startText.includes('(GPS)') && !startText.includes('Map Center') && !startText.includes('地图中心')) {
           const startList = await searchPlacesNear(startText, mapCenter.lat, mapCenter.lng);
+          if (seq !== activeSearchSeq) return;
           if (startList.length > 0) startCoords = startList[0];
         }
 
@@ -1343,11 +1404,9 @@
 
         if (!endText.startsWith('Pin (')) {
           const matches = await searchPlacesNear(endText, refLat, refLng);
+          if (seq !== activeSearchSeq) return;
           if (matches.length === 0) {
-            document.getElementById('nearbyResultsBox').classList.add('hidden');
             showFallbackSuggestions(refLat, refLng);
-            btn.innerText = t.searchBtn;
-            btn.disabled = false;
             return;
           }
 
@@ -1411,7 +1470,7 @@
       if (startMarker) map.removeLayer(startMarker);
       if (endMarker) map.removeLayer(endMarker);
       startMarker = L.marker([startCoords.lat, startCoords.lng]).addTo(map).bindPopup(`🟢 ${startCoords.name}`);
-      endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup(`🔴 ${endCoords.name}<br>${endCoords.status?.text || ''}`).openPopup();
+      endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup(`🔴 ${endCoords.name}${endCoords.status?.text ? '<br>' + endCoords.status.text : ''}`).openPopup();
 
       const primaryProfile = currentMode === 'walking' ? 'foot' : 'driving';
       let routeData = null;
@@ -1595,9 +1654,11 @@
     }
 
     function useSavedPlace(lat, lng, name) {
+      clearPreviousRouteUI();
       const display = localizeKnownPlaceName(name, currentLang);
       endCoords = { lat, lng, name: display, status: null, phone: '' };
       document.getElementById('endInput').value = display;
+      document.getElementById('clearEndBtn').classList.remove('hidden');
       if (!startCoords) {
         const c = map.getCenter();
         startCoords = { lat: c.lat, lng: c.lng, name: currentLang === 'zh' ? '当前地图中心' : 'Map Center' };
@@ -1650,7 +1711,6 @@
     renderSavedAndHistory();
     switchLang(currentLang);
 
-    // 若从 detail.html 带参数 ?dest=...&lat=...&lng=... 跳转过来，自动填充并规划路线
     (function applyUrlParams() {
       const params = new URLSearchParams(window.location.search);
       const dest = params.get('dest');
