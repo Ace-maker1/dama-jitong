@@ -80,10 +80,7 @@ export async function handler(event) {
     parts.push({ text: prompt });
 
     const host = ['generativelanguage', 'googleapis', 'com'].join('.');
-    const endpoint =
-      'https://' +
-      host +
-      '/v1beta/models/gemini-2.5-flash-lite:generateContent';
+    const endpoint = 'https://' + host + '/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
     const res = await fetch(endpoint, {
       method: 'POST',
