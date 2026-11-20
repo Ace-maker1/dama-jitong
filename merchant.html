@@ -61,7 +61,7 @@
       </h3>
 
       <form id="merchantForm" onsubmit="submitMerchant(event)" class="space-y-3">
-        <!-- 门头照片 / 营业执照预览上传 -->
+        <!-- 门头照片 / 营业执照预览上传 + AI 识图自动填表 -->
         <div>
           <label id="mLabelPhoto" class="block text-xs font-bold text-gray-700 mb-1">上传店铺门头照 / 招牌海报 (强烈推荐)</label>
           <div class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-amber-300 rounded-xl bg-amber-50/40 hover:bg-amber-50 transition overflow-hidden">
@@ -72,6 +72,13 @@
             <img id="mPreview" src="" class="hidden w-full h-full object-cover pointer-events-none" />
             <input type="file" accept="image/*" onchange="previewMerchantImg(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
           </div>
+
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <button type="button" id="aiFillBtn" onclick="autoFillFromImage()" disabled class="flex-1 bg-slate-900 disabled:bg-gray-200 disabled:text-gray-400 text-amber-300 font-bold text-xs py-2.5 px-3 rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+              <span id="aiFillBtnText">✨ 先选图，再点 AI 自动填表</span>
+            </button>
+          </div>
+          <p id="aiFillStatus" class="text-[11px] text-amber-700 mt-1 hidden"></p>
         </div>
 
         <div>
@@ -189,6 +196,11 @@
         formHeader: '填写店铺 / 服务商入驻资料',
         labelPhoto: '上传店铺门头照 / 招牌海报 (强烈推荐)',
         photoHint: '点击上传门店照片或优惠海报',
+        aiBtnIdle: '✨ 识别图片并自动填表',
+        aiBtnNeedImg: '✨ 先选图，再点 AI 自动填表',
+        aiBtnLoading: '🤖 AI 正在识别海报并生成三语文案...',
+        aiSuccess: '✅ 已自动填入表单与中/英/巫三语文案，请核对后提交！',
+        aiFail: '⚠️ 识别失败，请检查网络或手动填写，谢谢。',
         labelName: '店铺 / 公司名称 *',
         phName: '例如：槟城老字号炒粿条 / KL 极速冷气维修',
         labelCity: '所属州属 *',
@@ -232,6 +244,11 @@
         formHeader: 'Business / Service Provider Details',
         labelPhoto: 'Upload Storefront Photo / Promo Banner (Recommended)',
         photoHint: 'Tap to upload store photo or promo poster',
+        aiBtnIdle: '✨ AI Scan Image & Auto-Fill',
+        aiBtnNeedImg: '✨ Select Image First for AI Auto-Fill',
+        aiBtnLoading: '🤖 AI scanning flyer & generating 3 languages...',
+        aiSuccess: '✅ Form & trilingual copy filled automatically. Please review and submit!',
+        aiFail: '⚠️ AI scan failed. Please retry or fill manually.',
         labelName: 'Shop / Company Name *',
         phName: 'e.g. Penang Char Koay Teow / KL Aircond Service',
         labelCity: 'State / Territory *',
@@ -275,6 +292,11 @@
         formHeader: 'Maklumat Kedai / Penyedia Servis',
         labelPhoto: 'Muat Naik Gambar Kedai / Poster Promosi (Disyorkan)',
         photoHint: 'Tekan untuk muat naik gambar kedai atau poster',
+        aiBtnIdle: '✨ Imbas Gambar & Isi Automatik AI',
+        aiBtnNeedImg: '✨ Pilih Gambar Dahulu untuk Auto-Isi AI',
+        aiBtnLoading: '🤖 AI sedang mengimbas & menjana 3 bahasa...',
+        aiSuccess: '✅ Borang & teks 3 bahasa telah diisi. Sila semak dan hantar!',
+        aiFail: '⚠️ Gagal mengimbas. Sila cuba lagi atau isi manual.',
         labelName: 'Nama Kedai / Syarikat *',
         phName: 'Cth: Nasi Kandar Penang / Servis Aircond KL',
         labelCity: 'Negeri / Wilayah *',
@@ -310,7 +332,154 @@
 
     let currentMLang = localStorage.getItem('dama_lang') || 'zh';
     let merchantFile = null;
+    let aiGeneratedTrilingual = null; // 缓存 AI 生成的三语数据
     const mTranslateCache = {};
+
+    function refreshAiButtonState() {
+      const t = M_I18N[currentMLang];
+      const btn = document.getElementById('aiFillBtn');
+      const txt = document.getElementById('aiFillBtnText');
+      if (!btn || !txt) return;
+      if (!merchantFile) {
+        btn.disabled = true;
+        txt.innerText = t.aiBtnNeedImg;
+      } else if (!btn.dataset.loading) {
+        btn.disabled = false;
+        txt.innerText = t.aiBtnIdle;
+      }
+    }
+
+    // 前端压缩图片为 JPEG base64，控制体积且兼容 Gemini 识图
+    function compressFileToBase64(file, maxWidth = 1024, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            const base64 = dataUrl.split(',')[1] || '';
+            resolve({ imageBase64: base64, mimeType: 'image/jpeg' });
+          };
+          img.onerror = reject;
+          img.src = ev.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function matchCityOption(aiAddressOrCity) {
+      const text = (aiAddressOrCity || '').toLowerCase();
+      const citySel = document.getElementById('mCity');
+      const mapRules = [
+        { keys: ['penang', 'pulau pinang', '槟城', 'georgetown', 'butterworth', 'bukit mertajam', 'bayan lepas'], val: '槟城' },
+        { keys: ['kuala lumpur', 'kl', '吉隆坡', 'cheras', 'bukit bintang', 'setapak'], val: '吉隆坡' },
+        { keys: ['selangor', '雪兰莪', 'petaling', 'subang', 'shah alam', 'klang', 'puchong'], val: '雪兰莪' },
+        { keys: ['johor', '柔佛', 'jb', 'johor bahru', 'skudai', 'mount austin'], val: '柔佛' },
+        { keys: ['perak', '霹雳', 'ipoh', '怡保', 'taiping'], val: '霹雳' },
+        { keys: ['melaka', 'malacca', '马六甲'], val: '马六甲' },
+        { keys: ['negeri sembilan', '森美兰', 'seremban', '芙蓉'], val: '森美兰' },
+        { keys: ['pahang', '彭亨', 'kuantan', 'genting', 'cameron'], val: '彭亨' },
+        { keys: ['kedah', '吉打', 'alor setar', 'sungai petani', 'langkawi'], val: '吉打' },
+        { keys: ['kelantan', '吉兰丹', 'kota bharu'], val: '吉兰丹' },
+        { keys: ['terengganu', '登嘉楼'], val: '登嘉楼' },
+        { keys: ['perlis', '玻璃市'], val: '玻璃市' },
+        { keys: ['sabah', '沙巴', 'kota kinabalu'], val: '沙巴' },
+        { keys: ['sarawak', '砂拉越', 'kuching', 'miri', 'sibu'], val: '砂拉越' }
+      ];
+      for (const rule of mapRules) {
+        if (rule.keys.some(k => text.includes(k))) {
+          const exists = Array.from(citySel.options).some(o => o.value === rule.val);
+          if (exists) {
+            citySel.value = rule.val;
+            return;
+          }
+        }
+      }
+    }
+
+    function matchIndustryOption(aiCategory) {
+      const text = (aiCategory || '').toLowerCase();
+      const indSel = document.getElementById('mIndustry');
+      const rules = [
+        { keys: ['餐', '食', '饮', 'food', 'makan', 'kopi', 'cafe', 'restaurant', 'nasi', '炒'], val: '餐饮美食' },
+        { keys: ['修', '搬', '清洁', '冷气', '水电', 'service', 'repair', 'aircond', 'plumbing', 'cleaning'], val: '生活服务' },
+        { keys: ['美', '发', '养生', 'spa', 'beauty', 'hair', 'salon'], val: '美容美发' },
+        { keys: ['车', 'auto', 'car', 'bengkel', 'wash'], val: '汽车服务' },
+        { keys: ['零', '百货', '批发', 'retail', 'shop', 'store', 'kedai'], val: '零售百货' },
+        { keys: ['旅', '民宿', '酒店', 'travel', 'hotel', 'homestay'], val: '旅游民宿' }
+      ];
+      for (const r of rules) {
+        if (r.keys.some(k => text.includes(k))) {
+          indSel.value = r.val;
+          return;
+        }
+      }
+    }
+
+    async function autoFillFromImage() {
+      const t = M_I18N[currentMLang];
+      const statusEl = document.getElementById('aiFillStatus');
+      const btn = document.getElementById('aiFillBtn');
+      const txt = document.getElementById('aiFillBtnText');
+
+      if (!merchantFile) return;
+
+      btn.disabled = true;
+      btn.dataset.loading = '1';
+      txt.innerText = t.aiBtnLoading;
+      statusEl.classList.add('hidden');
+
+      try {
+        const { imageBase64, mimeType } = await compressFileToBase64(merchantFile);
+        const extraNotes = [
+          document.getElementById('mName').value.trim(),
+          document.getElementById('mDesc').value.trim()
+        ].filter(Boolean).join(' | ');
+
+        const res = await fetch('/.netlify/functions/parse-ad', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64, mimeType, extraNotes })
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success || !json.data) {
+          throw new Error(json.error || 'AI parse failed');
+        }
+
+        const d = json.data;
+        aiGeneratedTrilingual = d;
+
+        if (d.businessName) document.getElementById('mName').value = d.businessName;
+        if (d.phone) document.getElementById('mWhatsapp').value = d.phone.replace(/[^\d]/g, '') || d.phone;
+        if (d.promoTagline) document.getElementById('mPromo').value = d.promoTagline;
+
+        const addrHours = [d.address, d.businessHours].filter(Boolean).join(' · ');
+        const combinedDesc = addrHours ? `${addrHours}\n${d.descZh || ''}`.trim() : (d.descZh || '');
+        if (combinedDesc) document.getElementById('mDesc').value = combinedDesc;
+
+        matchCityOption(`${d.address || ''} ${d.descZh || ''} ${d.descEn || ''}`);
+        matchIndustryOption(`${d.category || ''} ${d.businessName || ''}`);
+
+        statusEl.textContent = t.aiSuccess;
+        statusEl.className = 'text-[11px] text-emerald-700 font-semibold mt-1';
+        statusEl.classList.remove('hidden');
+      } catch (err) {
+        console.error('AI autoFill error:', err);
+        statusEl.textContent = `${t.aiFail} (${err.message || ''})`;
+        statusEl.className = 'text-[11px] text-red-600 font-semibold mt-1';
+        statusEl.classList.remove('hidden');
+      } finally {
+        delete btn.dataset.loading;
+        refreshAiButtonState();
+      }
+    }
 
     async function translateMerchantText(text, targetLang) {
       if (!text || !text.trim()) return text || '';
@@ -423,6 +592,7 @@
       }
       document.getElementById('paySubmitBtn').innerText = t.paySubmitBtn;
 
+      refreshAiButtonState();
       populateCities(lang);
       renderPlans(lang);
       updateReceiverInfo(lang);
@@ -461,6 +631,10 @@
       const file = e.target.files[0];
       if (!file) return;
       merchantFile = file;
+      aiGeneratedTrilingual = null;
+      document.getElementById('aiFillStatus').classList.add('hidden');
+      refreshAiButtonState();
+
       const reader = new FileReader();
       reader.onload = (ev) => {
         document.getElementById('mPreview').src = ev.target.result;
@@ -493,12 +667,12 @@
           translateMerchantText(fullTitle, 'zh'),
           translateMerchantText(fullTitle, 'en'),
           translateMerchantText(fullTitle, 'ms'),
-          translateMerchantText(promo, 'zh'),
-          translateMerchantText(promo, 'en'),
-          translateMerchantText(promo, 'ms'),
+          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(promo) : translateMerchantText(promo, 'zh'),
+          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'en'),
+          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'ms'),
           desc ? translateMerchantText(desc, 'zh') : Promise.resolve(''),
-          desc ? translateMerchantText(desc, 'en') : Promise.resolve(''),
-          desc ? translateMerchantText(desc, 'ms') : Promise.resolve('')
+          aiGeneratedTrilingual?.descEn ? Promise.resolve(aiGeneratedTrilingual.descEn) : (desc ? translateMerchantText(desc, 'en') : Promise.resolve('')),
+          aiGeneratedTrilingual?.descBm ? Promise.resolve(aiGeneratedTrilingual.descBm) : (desc ? translateMerchantText(desc, 'ms') : Promise.resolve(''))
         ]);
 
         const postData = {
