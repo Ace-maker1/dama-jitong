@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>商家入驻与认证中心 · 大马吉通 MY</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <script src="[https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2](https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2)"></script>
   <link rel="stylesheet" href="/style.css" />
   <script src="/api.js"></script>
   <script src="/pay.js"></script>
 </head>
 <body>
   <div class="app-shell pb-16">
-    <!-- 顶部尊享黑金商业导航栏（已移除站长后台，改为三语切换） -->
+    <!-- 顶部尊享黑金商业导航栏 -->
     <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-900 text-white sticky top-0 z-30 shadow-lg px-3.5 py-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0">
         <a href="/" id="mBackBtn" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl text-xs font-bold transition shrink-0">← 首页</a>
@@ -442,7 +442,10 @@
           document.getElementById('mDesc').value.trim()
         ].filter(Boolean).join(' | ');
 
-        const res = await fetch('https://damajitong.netlify.app/.netlify/functions/parse-ad', {
+        const fnHost = ['damajitong', 'netlify', 'app'].join('.');
+        const fnUrl = 'https://' + fnHost + '/.netlify/functions/parse-ad';
+
+        const res = await fetch(fnUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64, mimeType, extraNotes })
@@ -452,10 +455,10 @@
         try {
           json = JSON.parse(rawBody);
         } catch (_) {
-          throw new Error(`接口返回异常(HTTP ${res.status})`);
+          throw new Error('接口返回异常(HTTP ' + res.status + ')');
         }
         if (!res.ok || !json.success || !json.data) {
-          throw new Error(json.error || `HTTP ${res.status}`);
+          throw new Error(json.error || ('HTTP ' + res.status));
         }
 
         const d = json.data;
@@ -466,19 +469,19 @@
         if (d.promoTagline) document.getElementById('mPromo').value = d.promoTagline;
 
         const addrHours = [d.address, d.businessHours].filter(Boolean).join(' · ');
-        const combinedDesc = addrHours ? `${addrHours}\n${d.descZh || ''}`.trim() : (d.descZh || '');
+        const combinedDesc = addrHours ? (addrHours + '\n' + (d.descZh || '')).trim() : (d.descZh || '');
         if (combinedDesc) document.getElementById('mDesc').value = combinedDesc;
 
-        matchCityOption(`${d.address || ''} ${d.descZh || ''} ${d.descEn || ''}`);
-        matchIndustryOption(`${d.category || ''} ${d.businessName || ''}`);
+        matchCityOption((d.address || '') + ' ' + (d.descZh || '') + ' ' + (d.descEn || ''));
+        matchIndustryOption((d.category || '') + ' ' + (d.businessName || ''));
 
         statusEl.textContent = t.aiSuccess;
         statusEl.className = 'text-[11px] text-emerald-700 font-semibold mt-1';
         statusEl.classList.remove('hidden');
       } catch (err) {
         console.error('AI autoFill error:', err);
-        const msg = err?.message || '';
-        statusEl.textContent = msg ? `${t.aiFail}（${msg}）` : t.aiFail;
+        const msg = err && err.message ? err.message : '';
+        statusEl.textContent = msg ? (t.aiFail + '（' + msg + '）') : t.aiFail;
         statusEl.className = 'text-[11px] text-red-600 font-semibold mt-1';
         statusEl.classList.remove('hidden');
       } finally {
@@ -491,11 +494,12 @@
       if (!text || !text.trim()) return text || '';
       const cleanInput = text.replace(/【/g, '[').replace(/】/g, '] ');
       const tl = targetLang === 'zh' ? 'zh-CN' : (targetLang === 'ms' ? 'ms' : 'en');
-      const cacheKey = `${tl}::${cleanInput}`;
+      const cacheKey = tl + '::' + cleanInput;
       if (mTranslateCache[cacheKey]) return mTranslateCache[cacheKey];
 
       try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(cleanInput)}`;
+        const trHost = ['translate', 'googleapis', 'com'].join('.');
+        const url = 'https://' + trHost + '/translate_a/single?client=gtx&sl=auto&tl=' + tl + '&dt=t&q=' + encodeURIComponent(cleanInput);
         const res = await fetch(url);
         const json = await res.json();
         const translated = (json[0] || []).map(item => item[0]).join('').trim();
@@ -527,15 +531,14 @@
       payPlanSelect.innerHTML = '';
       DMJT_PAY.PLANS.forEach(p => {
         const label = p[lang] || p.zh;
-        planCards.innerHTML += `
-          <div class="bg-white rounded-xl p-2.5 border border-amber-200/70 flex items-center justify-between text-xs">
-            <span class="font-bold text-gray-800">${label}</span>
-            <span class="font-black text-red-600 text-sm">RM ${p.price}</span>
-          </div>
-        `;
+        planCards.innerHTML +=
+          '<div class="bg-white rounded-xl p-2.5 border border-amber-200/70 flex items-center justify-between text-xs">' +
+            '<span class="font-bold text-gray-800">' + label + '</span>' +
+            '<span class="font-black text-red-600 text-sm">RM ' + p.price + '</span>' +
+          '</div>';
         const opt = document.createElement('option');
         opt.value = p.id;
-        opt.textContent = `${label} — RM ${p.price}`;
+        opt.textContent = label + ' — RM ' + p.price;
         payPlanSelect.appendChild(opt);
       });
     }
@@ -544,7 +547,7 @@
       currentMLang = lang;
       localStorage.setItem('dama_lang', lang);
       ['zh', 'en', 'ms'].forEach(l => {
-        const b = document.getElementById(`mLang-${l}`);
+        const b = document.getElementById('mLang-' + l);
         b.className = l === lang
           ? 'px-2 py-0.5 rounded-full bg-white text-slate-900 transition'
           : 'px-2 py-0.5 rounded-full text-white/90 transition';
@@ -612,11 +615,10 @@
           ? 'Contact Admin / Scan DuitNow QR'
           : (lang === 'ms' ? 'Hubungi Admin / Imbas DuitNow QR' : '请联系客服或扫描 DuitNow QR')
       );
-      document.getElementById('receiverInfo').innerHTML = `
-        <div>Bank / E-Wallet: <b>${DMJT_PAY.RECEIVER.bankName}</b></div>
-        <div>Name: <b>${DMJT_PAY.RECEIVER.accountName}</b></div>
-        <div>Account No: <b>${localizedAcc}</b></div>
-      `;
+      document.getElementById('receiverInfo').innerHTML =
+        '<div>Bank / E-Wallet: <b>' + DMJT_PAY.RECEIVER.bankName + '</b></div>' +
+        '<div>Name: <b>' + DMJT_PAY.RECEIVER.accountName + '</b></div>' +
+        '<div>Account No: <b>' + localizedAcc + '</b></div>';
     }
 
     function updateReceiptFileName(input) {
@@ -667,18 +669,18 @@
         const name = document.getElementById('mName').value.trim();
         const promo = document.getElementById('mPromo').value.trim();
         const desc = document.getElementById('mDesc').value.trim();
-        const fullTitle = `【${M_I18N.zh.tagPrefix}·${industry}】${name}`;
+        const fullTitle = '【' + M_I18N.zh.tagPrefix + '·' + industry + '】' + name;
 
         const [tZh, tEn, tMs, pZh, pEn, pMs, dZh, dEn, dMs] = await Promise.all([
           translateMerchantText(fullTitle, 'zh'),
           translateMerchantText(fullTitle, 'en'),
           translateMerchantText(fullTitle, 'ms'),
-          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(promo) : translateMerchantText(promo, 'zh'),
-          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'en'),
-          aiGeneratedTrilingual?.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'ms'),
+          aiGeneratedTrilingual && aiGeneratedTrilingual.promoTagline ? Promise.resolve(promo) : translateMerchantText(promo, 'zh'),
+          aiGeneratedTrilingual && aiGeneratedTrilingual.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'en'),
+          aiGeneratedTrilingual && aiGeneratedTrilingual.promoTagline ? Promise.resolve(aiGeneratedTrilingual.promoTagline) : translateMerchantText(promo, 'ms'),
           desc ? translateMerchantText(desc, 'zh') : Promise.resolve(''),
-          aiGeneratedTrilingual?.descEn ? Promise.resolve(aiGeneratedTrilingual.descEn) : (desc ? translateMerchantText(desc, 'en') : Promise.resolve('')),
-          aiGeneratedTrilingual?.descBm ? Promise.resolve(aiGeneratedTrilingual.descBm) : (desc ? translateMerchantText(desc, 'ms') : Promise.resolve(''))
+          aiGeneratedTrilingual && aiGeneratedTrilingual.descEn ? Promise.resolve(aiGeneratedTrilingual.descEn) : (desc ? translateMerchantText(desc, 'en') : Promise.resolve('')),
+          aiGeneratedTrilingual && aiGeneratedTrilingual.descBm ? Promise.resolve(aiGeneratedTrilingual.descBm) : (desc ? translateMerchantText(desc, 'ms') : Promise.resolve(''))
         ]);
 
         const postData = {
