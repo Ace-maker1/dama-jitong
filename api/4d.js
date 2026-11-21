@@ -13,8 +13,12 @@ function emptyBoard(drawDate = '', drawNo = '') {
 }
 
 function getMytDateStr(offsetDays = 0) {
-  const d = new Date(Date.now() + 8 * 3600000 + offsetDays * 86400000);
-  return d.toISOString().slice(0, 10);
+  try {
+    const d = new Date(Date.now() + 8 * 3600000 + offsetDays * 86400000);
+    return d.toISOString().slice(0, 10);
+  } catch (_) {
+    return '2026-11-21';
+  }
 }
 
 function fmt4(v) {
@@ -48,24 +52,93 @@ async function fetchWithTimeout(url, options = {}, ms = 6500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
-    return await fetch(url, { ...options, signal: controller.signal, headers: { ...HEADERS, ...(options.headers || {}) } });
+    const r = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: { ...HEADERS, ...(options.headers || {}) }
+    });
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (_) {
+    return null;
   } finally {
     clearTimeout(timer);
   }
 }
 
-// 1. 大马彩 Da Ma Cai 官方 JSON 接口
+function htmlToCleanText(html = '') {
+  return String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/ /gi, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseChunkBoard(chunk, fallbackDate) {
+  const drawNo = chunk.match(/(?:No\.?|Draw\s*No\.?)?\s*(\d{3,4}\/\d{2})\b/i)?.[1] || '';
+  const dmy = chunk.match(/\b(\d{2})[-/](\d{2})[-/](20\d{2})\b/);
+  const iso = chunk.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+  const drawDate = iso ? iso[1] : (dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : fallbackDate);
+
+  // 优先按具名奖项提取
+  const p1Labeled = fmt4(chunk.match(/1st(?:\s*prize)?[\s:,-]*(\d{4}|-{4})/i)?.[1]);
+  const p2Labeled = fmt4(chunk.match(/2nd(?:\s*prize)?[\s:,-]*(\d{4}|-{4})/i)?.[1]);
+  const p3Labeled = fmt4(chunk.match(/3rd(?:\s*prize)?[\s:,-]*(\d{4}|-{4})/i)?.[1]);
+
+  const specBlock = chunk.match(/(?:special|starter)(?:\s*prizes?)?([\s\S]*?)(?:consolation|1st\s*prize\s*\d{3}|jackpot|$)/i)?.[1] || '';
+  const consBlock = chunk.match(/consolation(?:\s*prizes?)?([\s\S]*?)(?:1st\s*prize\s*\d{3}|3d\b|jackpot|$)/i)?.[1] || '';
+
+  const specLabeled = (specBlock.match(/\b(?:\d{4}|-{4})\b/g) || []).slice(0, 10).map(fmt4);
+  const consLabeled = (consBlock.match(/\b(?:\d{4}|-{4})\b/g) || []).slice(0, 10).map(fmt4);
+
+  if (p1Labeled !== '----' || p2Labeled !== '----' || p3Labeled !== '----') {
+    return {
+      drawNo,
+      drawDate,
+      p1: p1Labeled,
+      p2: p2Labeled,
+      p3: p3Labeled,
+      special: pad4List(specLabeled, 10),
+      consolation: pad4List(consLabeled, 10)
+    };
+  }
+
+  // 兜底：按顺序提取 23 个 4 位数字
+  const cleanNums = chunk
+    .replace(/\b\d{3,4}\/\d{2}\b/g, ' ')
+    .replace(/\b\d{2}[-/]\d{2}[-/]20\d{2}\b/g, ' ')
+    .replace(/\b20\d{2}-\d{2}-\d{2}\b/g, ' ')
+    .replace(/\b19:00\b/g, ' ')
+    .match(/\b\d{4}\b/g) || [];
+
+  if (cleanNums.length >= 23) {
+    return {
+      drawNo,
+      drawDate,
+      p1: cleanNums[0],
+      p2: cleanNums[1],
+      p3: cleanNums[2],
+      special: pad4List(cleanNums.slice(3, 13), 10),
+      consolation: pad4List(cleanNums.slice(13, 23), 10)
+    };
+  }
+
+  return null;
+}
+
+// 1. 大马彩 Da Ma Cai 官方接口 + 页面
 async function fetchDaMaCai(todayStr) {
   try {
-    const r = await fetchWithTimeout('https://www.damacai.com.my/callpassresult?pastdate=' + todayStr.replace(/-/g, ''));
-    if (r.ok) {
-      const text = await r.text();
-      const json = JSON.parse(text);
-      const link = json?.link;
-      if (link) {
-        const r2 = await fetchWithTimeout(link);
-        if (r2.ok) {
-          const d = await r2.json();
+    const rawJson = await fetchWithTimeout('https://www.damacai.com.my/callpassresult?pastdate=' + todayStr.replace(/-/g, ''));
+    if (rawJson) {
+      const json = JSON.parse(rawJson);
+      if (json?.link) {
+        const detailRaw = await fetchWithTimeout(json.link);
+        if (detailRaw) {
+          const d = JSON.parse(detailRaw);
           const p1 = fmt4(d['1st'] || d.first);
           if (p1 !== '----') {
             return {
@@ -83,116 +156,68 @@ async function fetchDaMaCai(todayStr) {
     }
   } catch (_) {}
 
-  // 备用：抓取大马彩公开结果页 HTML
-  try {
-    const r = await fetchWithTimeout('https://www.damacai.com.my/past-draw-result');
-    if (r.ok) {
-      const html = await r.text();
-      const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-      const drawNoMatch = text.match(/draw\s*no\.?\s*[:\-]?\s*(\d{3,4}\/\d{2})/i);
-      const dmyMatch = text.match(/draw\s*date\s*[:\-]?\s*(\d{2})\/(\d{2})\/(20\d{2})/i);
-      const drawDate = dmyMatch ? `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}` : todayStr;
-      const p1 = text.match(/1st\s*prize\s*(\d{4})/i)?.[1] || '----';
-      const p2 = text.match(/2nd\s*prize\s*(\d{4})/i)?.[1] || '----';
-      const p3 = text.match(/3rd\s*prize\s*(\d{4})/i)?.[1] || '----';
-      const starterSec = text.match(/starter\s*prizes([\s\S]*?)consolation\s*prizes/i)?.[1] || '';
-      const consSec = text.match(/consolation\s*prizes([\s\S]*?)(?:1st\s*prize\s*\d{3}|1\+3d\s*jackpot)/i)?.[1] || '';
-      if (p1 !== '----') {
-        return {
-          drawNo: drawNoMatch ? drawNoMatch[1] : '',
-          drawDate,
-          p1,
-          p2,
-          p3,
-          special: pad4List(starterSec.match(/\d{4}/g), 10),
-          consolation: pad4List(consSec.match(/\d{4}/g), 10)
-        };
-      }
-    }
-  } catch (_) {}
-  return null;
+  const html = await fetchWithTimeout('https://www.damacai.com.my/past-draw-result')
+    || await fetchWithTimeout('https://www.damacai.com.my/');
+  if (!html) return null;
+  const board = parseChunkBoard(htmlToCleanText(html), todayStr);
+  return board && board.p1 !== '----' ? board : null;
 }
 
-// 2. 从公开综合 4D 镜像页提取其余各家（Magnum / Toto / Sabah88 / STC / CashSweep）
+// 2. 从综合开奖页及东马开奖页提取 6 家公司
 async function fetchFromMirrorPages(todayStr) {
   const mirrors = [
     'https://4d88.com/',
     'https://www.4d88.com/',
-    'https://www.check4d.com/',
-    'https://www.check4d.org/',
+    'https://app.4d88.com/loto88-stc-cashsweep.html',
+    'https://4d88.co/',
     'https://www.4dmoon.com/',
-    'https://www.gdlotto.net/4d-results/'
+    'https://4d2ulive.com/'
   ];
 
   const anchors = [
     { key: 'magnum', re: /Magnum\s*4D/i },
     { key: 'damacai', re: /Da\s*Ma\s*Cai/i },
-    { key: 'toto', re: /Sports\s*Toto/i },
-    { key: 'sabah88', re: /Sabah\s*88|Diriwan/i },
-    { key: 'stc', re: /Sandakan\s*4D|STC\s*4D/i },
-    { key: 'cashsweep', re: /CashSweep|Sarawak/i }
+    { key: 'toto', re: /Sports\s*Toto|Toto\s*4D/i },
+    { key: 'sabah88', re: /Sabah\s*(?:Lotto\s*)?88|Diriwan/i },
+    { key: 'stc', re: /Sandakan\s*(?:STC\s*)?4D|STC\s*4D/i },
+    { key: 'cashsweep', re: /(?:Special\s*)?CashSweep|Sarawak/i }
   ];
 
+  const mergedMap = {};
+  const sourcesUsed = [];
+
   for (const url of mirrors) {
-    try {
-      const r = await fetchWithTimeout(url, {}, 6500);
-      if (!r.ok) continue;
-      const html = await r.text();
-      const text = html
-        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/ /g, ' ')
-        .replace(/\s+/g, ' ');
+    const html = await fetchWithTimeout(url, {}, 6500);
+    if (!html) continue;
 
-      const positions = anchors
-        .map(a => ({ key: a.key, idx: text.search(a.re) }))
-        .filter(x => x.idx !== -1)
-        .sort((a, b) => a.idx - b.idx);
+    const text = htmlToCleanText(html);
+    const positions = anchors
+      .map(a => ({ key: a.key, idx: text.search(a.re) }))
+      .filter(x => x.idx !== -1)
+      .sort((a, b) => a.idx - b.idx);
 
-      if (positions.length === 0) continue;
+    if (positions.length === 0) continue;
 
-      const foundMap = {};
-      let count = 0;
+    let pageHit = false;
+    for (let i = 0; i < positions.length; i++) {
+      const key = positions[i].key;
+      if (mergedMap[key]?.p1 && mergedMap[key].p1 !== '----') continue;
 
-      for (let i = 0; i < positions.length; i++) {
-        const start = positions[i].idx;
-        const end = i + 1 < positions.length ? Math.min(positions[i + 1].idx, start + 2400) : start + 2400;
-        const chunk = text.slice(start, end);
-
-        const drawNo = chunk.match(/\b(\d{3,4}\/\d{2})\b/)?.[1] || '';
-        const dmy = chunk.match(/\b(\d{2})\/(\d{2})\/(20\d{2})\b/);
-        const iso = chunk.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
-        const drawDate = iso ? iso[1] : (dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : todayStr);
-
-        const cleanNums = chunk
-          .replace(/\b\d{3,4}\/\d{2}\b/g, ' ')
-          .replace(/\b\d{2}\/\d{2}\/20\d{2}\b/g, ' ')
-          .replace(/\b20\d{2}-\d{2}-\d{2}\b/g, ' ')
-          .replace(/\b19:00\b/g, ' ')
-          .match(/\b\d{4}\b/g) || [];
-
-        if (cleanNums.length >= 23) {
-          foundMap[positions[i].key] = {
-            drawNo,
-            drawDate,
-            p1: cleanNums[0],
-            p2: cleanNums[1],
-            p3: cleanNums[2],
-            special: cleanNums.slice(3, 13),
-            consolation: cleanNums.slice(13, 23)
-          };
-          count++;
-        }
+      const start = positions[i].idx;
+      const end = i + 1 < positions.length ? Math.min(positions[i + 1].idx, start + 2600) : start + 2600;
+      const parsed = parseChunkBoard(text.slice(start, end), todayStr);
+      if (parsed && parsed.p1 !== '----') {
+        mergedMap[key] = parsed;
+        pageHit = true;
       }
+    }
 
-      if (count > 0) {
-        return { source: url, results: foundMap };
-      }
-    } catch (_) {}
+    if (pageHit) sourcesUsed.push(url);
   }
 
-  return null;
+  return Object.keys(mergedMap).length > 0
+    ? { source: sourcesUsed.join(' + '), results: mergedMap }
+    : null;
 }
 
 // 自动写入 Supabase 历史库（按 company_id + draw_date 每天自动更新）
@@ -235,14 +260,15 @@ async function loadHistoryMap() {
   const map = {};
   COMPANIES.forEach(k => { map[k] = []; });
 
+  const raw = await fetchWithTimeout(
+    `${url}/rest/v1/results_4d_history?select=*&order=draw_date.desc,id.desc&limit=180`,
+    { headers: { 'apikey': key, 'Authorization': `Bearer ${key}` } },
+    4500
+  );
+  if (!raw) return map;
+
   try {
-    const r = await fetchWithTimeout(
-      `${url}/rest/v1/results_4d_history?select=*&order=draw_date.desc,id.desc&limit=180`,
-      { headers: { 'apikey': key, 'Authorization': `Bearer ${key}` } },
-      4500
-    );
-    if (!r.ok) return map;
-    const rows = await r.json();
+    const rows = JSON.parse(raw);
     if (!Array.isArray(rows)) return map;
 
     for (const row of rows) {
@@ -273,42 +299,54 @@ module.exports = async function handler(req, res) {
 
   const todayStr = getMytDateStr(0);
   const results = {};
-  COMPANIES.forEach(k => { results[k] = emptyBoard(todayStr, ''); });
+  const history = {};
+  COMPANIES.forEach(k => {
+    results[k] = emptyBoard(todayStr, '');
+    history[k] = [];
+  });
 
-  // 并发抓取综合镜像 + 大马彩官方接口
-  const [mirrorData, dmcData] = await Promise.all([
-    fetchFromMirrorPages(todayStr),
-    fetchDaMaCai(todayStr)
-  ]);
+  try {
+    const [mirrorData, dmcData] = await Promise.all([
+      fetchFromMirrorPages(todayStr),
+      fetchDaMaCai(todayStr)
+    ]);
 
-  if (mirrorData?.results) {
-    for (const comp of COMPANIES) {
-      if (mirrorData.results[comp]?.p1 !== '----') {
-        results[comp] = mirrorData.results[comp];
+    if (mirrorData?.results) {
+      for (const comp of COMPANIES) {
+        if (mirrorData.results[comp]?.p1 !== '----') {
+          results[comp] = mirrorData.results[comp];
+        }
       }
     }
-  }
 
-  if (dmcData && dmcData.p1 !== '----') {
-    results.damacai = dmcData;
-  }
-
-  // 自动保存到每天历史表
-  await upsertHistory(results, todayStr);
-
-  // 读取历史库，若某家当天尚未出号则自动显示最近一期历史号
-  const history = await loadHistoryMap();
-  for (const comp of COMPANIES) {
-    if (results[comp].p1 === '----' && history[comp]?.length > 0) {
-      results[comp] = { ...history[comp][0] };
+    if (dmcData && dmcData.p1 !== '----') {
+      results.damacai = dmcData;
     }
-  }
 
-  return res.status(200).json({
-    ok: true,
-    today: todayStr,
-    source: [mirrorData?.source, dmcData ? 'damacai-official' : null].filter(Boolean).join(' + ') || 'history_fallback',
-    results,
-    history
-  });
+    await upsertHistory(results, todayStr);
+
+    const loadedHistory = await loadHistoryMap();
+    for (const comp of COMPANIES) {
+      history[comp] = loadedHistory[comp] || [];
+      if (results[comp].p1 === '----' && history[comp].length > 0) {
+        results[comp] = { ...history[comp][0] };
+      }
+    }
+
+    return res.status(200).json({
+      ok: true,
+      today: todayStr,
+      source: [mirrorData?.source, dmcData ? 'damacai-official' : null].filter(Boolean).join(' + ') || 'history_or_pending',
+      results,
+      history
+    });
+  } catch (_) {
+    return res.status(200).json({
+      ok: true,
+      today: todayStr,
+      source: 'safe-fallback',
+      results,
+      history
+    });
+  }
 };
