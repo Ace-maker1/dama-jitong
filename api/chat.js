@@ -1,4 +1,11 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      ok: true,
+      hasGroqKey: Boolean(process.env.GROQ_API_KEY)
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -9,7 +16,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages = [], imageBase64 = '', imageMimeType = 'image/jpeg', lang = 'zh' } = req.body || {};
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const { messages = [], imageBase64 = '', imageMimeType = 'image/jpeg', lang = 'zh' } = body;
+
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: 'Messages are required' });
     }
@@ -83,4 +92,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
-}
+};
