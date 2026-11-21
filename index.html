@@ -30,7 +30,7 @@
             <span class="text-[9px] bg-white/20 px-1.5 py-0.2 rounded font-bold">MY</span>
           </div>
           <div class="flex items-center gap-1">
-            <select id="cityFilter" onchange="renderPosts()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1 max-w-[155px]">
+            <select id="cityFilter" onchange="onCityDropdownChange()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1 max-w-[155px]">
               <!-- 由 JS 根据 CN/EN/BM 自动生成全部 13 州 + 3 直辖区 -->
             </select>
             <button onclick="autoDetectState()" id="autoStateBtn" title="自动定位所在州属" class="text-[10px] bg-white/20 hover:bg-white/30 px-1.5 py-0.2 rounded font-bold shrink-0">📍定位</button>
@@ -46,11 +46,12 @@
       </div>
     </div>
 
-    <!-- 第二行搜索框 -->
+    <!-- 第二行搜索框（带一键清空按钮） -->
     <div class="relative">
-      <input type="text" id="searchInput" oninput="renderPosts()" placeholder="搜租房、招聘、二手..." 
-             class="w-full bg-white/95 text-gray-800 text-xs rounded-full pl-8 pr-3 py-1.5 focus:outline-none shadow-inner">
-      <span class="absolute left-3 top-1.5 text-gray-400 text-xs">🔍</span>
+      <input type="text" id="searchInput" oninput="onSearchInput()" placeholder="搜租房、招聘、二手..." 
+             class="w-full bg-white/95 text-gray-800 text-xs rounded-full pl-8 pr-7 py-1.5 focus:outline-none shadow-inner">
+      <span class="absolute left-3 top-1.5 text-gray-400 text-xs pointer-events-none">🔍</span>
+      <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-2.5 top-1.5 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
     </div>
   </header>
 
@@ -74,6 +75,7 @@
           </div>
         </a>
       </div>
+
     <!-- 大马今日便民速览卡片（实时汇率 + 2026最新油价） -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100">
       <div class="flex items-center justify-between mb-2.5">
@@ -99,8 +101,21 @@
       </div>
     </section>
 
+    <!-- 热门城市快捷切换胶囊 -->
+    <section class="mx-3 mt-3 bg-white rounded-2xl px-3 py-2.5 shadow-sm border border-gray-100">
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
+        <span id="hotCityLabel" class="text-gray-400 shrink-0 font-medium">热门：</span>
+        <button type="button" onclick="selectQuickCity('全马')" data-quick-city="全马" class="quick-city-btn px-2.5 py-1 rounded-full bg-red-600 text-white font-bold shrink-0 transition">全马</button>
+        <button type="button" onclick="selectQuickCity('槟城')" data-quick-city="槟城" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">槟城 Penang</button>
+        <button type="button" onclick="selectQuickCity('怡保')" data-quick-city="怡保" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">怡保 Ipoh</button>
+        <button type="button" onclick="selectQuickCity('吉隆坡')" data-quick-city="吉隆坡" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">吉隆坡 KL</button>
+        <button type="button" onclick="selectQuickCity('雪兰莪')" data-quick-city="雪兰莪" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">雪兰莪 Selangor</button>
+        <button type="button" onclick="selectQuickCity('柔佛')" data-quick-city="柔佛" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">新山 JB</button>
+      </div>
+    </section>
+
     <!-- 5大金刚区分类导航 -->
-    <section class="mx-3 mt-3 bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
+    <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
       <div class="grid grid-cols-5 gap-1 text-center">
         <button onclick="selectCategory('全部')" class="cat-item flex flex-col items-center p-1.5 rounded-xl bg-red-50 text-red-600 transition" data-cat="全部">
           <div class="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center text-lg mb-1 shadow-sm">⊞</div>
@@ -127,14 +142,17 @@
 
     <!-- 列表标题栏 -->
     <div class="mx-4 mt-4 mb-2 flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <span class="w-1 h-4 bg-red-600 rounded-full"></span>
-        <h2 class="font-extrabold text-gray-800 text-sm" id="listHeaderTitle">全马最新动态</h2>
-        <span id="postCountBadge" class="text-[11px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">0</span>
+      <div class="flex items-center space-x-2 min-w-0">
+        <span class="w-1 h-4 bg-red-600 rounded-full shrink-0"></span>
+        <h2 class="font-extrabold text-gray-800 text-sm truncate" id="listHeaderTitle">全马最新动态</h2>
+        <span id="postCountBadge" class="text-[11px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium shrink-0">0</span>
       </div>
-      <button onclick="openPostModal()" id="topFreePostBtn" class="text-xs text-red-600 font-bold flex items-center space-x-1 hover:underline">
-        📝 免费发帖
-      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button type="button" onclick="resetAllFilters()" id="resetFilterBtn" class="hidden text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full hover:bg-amber-200 transition">重置</button>
+        <button onclick="openPostModal()" id="topFreePostBtn" class="text-xs text-red-600 font-bold flex items-center space-x-1 hover:underline">
+          📝 免费发帖
+        </button>
+      </div>
     </div>
 
     <!-- 云端实时帖子列表 -->
@@ -306,6 +324,31 @@
     const REPORT_COUNTS_KEY = 'dama_report_counts_v1';
     const DAILY_POST_LOG_KEY = 'dama_daily_posts_v1';
 
+    // 中英巫常用搜索同义词映射（提升本地检索命中率）
+    const SEARCH_SYNONYM_GROUPS = [
+      ['槟城', 'penang', 'pulau pinang', '北海', 'butterworth', '大山脚', 'bukit mertajam', 'bayan lepas', 'tanjung tokong', 'sungai bakap', 'batu kawan'],
+      ['怡保', 'ipoh', '霹雳', 'perak', 'kampar', 'taiping'],
+      ['吉隆坡', 'kl', 'kuala lumpur', 'cheras', '蕉赖', 'kepong', '甲洞', 'bukit bintang', 'mont kiara', 'setapak'],
+      ['雪兰莪', 'selangor', 'pj', 'petaling jaya', '八打灵', 'subang', 'puchong', '蒲种', 'klang', '巴生', 'shah alam', 'kajang'],
+      ['新山', 'jb', 'johor', 'johor bahru', '柔佛', 'skudai', 'mount austin', 'bukit indah'],
+      ['租房', '房子', '房间', '套房', 'condo', '公寓', 'rumah', 'sewa', 'bilik', 'rent', 'room'],
+      ['招聘', '工作', '兼职', '薪资', 'kerja', 'kosong', 'jawatan', 'job', 'hiring', 'part time'],
+      ['二手', '闲置', '转让', 'terpakai', 'preloved', 'used', 'second hand'],
+      ['美食', '探店', '优惠', '商家', 'makan', 'food', 'promo', 'kedai']
+    ];
+
+    function expandSearchTerms(rawKeyword) {
+      const kw = (rawKeyword || '').trim().toLowerCase();
+      if (!kw) return [];
+      const terms = new Set([kw]);
+      for (const group of SEARCH_SYNONYM_GROUPS) {
+        if (group.some(item => item.includes(kw) || kw.includes(item))) {
+          group.forEach(item => terms.add(item));
+        }
+      }
+      return Array.from(terms);
+    }
+
     function containsSpamContent(text) {
       if (!text) return false;
       const lower = text.toLowerCase();
@@ -372,6 +415,47 @@
       { value: '砂拉越', group: 'east', zh: '砂拉越 Sarawak', en: 'Sarawak', ms: 'Sarawak', lat: 1.5533, lng: 110.3592 }
     ];
 
+    function syncQuickCityButtons(cityVal) {
+      document.querySelectorAll('.quick-city-btn').forEach(btn => {
+        const isMatch = btn.dataset.quickCity === cityVal;
+        btn.className = isMatch
+          ? 'quick-city-btn px-2.5 py-1 rounded-full bg-red-600 text-white font-bold shrink-0 transition'
+          : 'quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition';
+      });
+    }
+
+    function selectQuickCity(cityVal) {
+      document.getElementById('cityFilter').value = cityVal;
+      syncQuickCityButtons(cityVal);
+      renderPosts();
+    }
+
+    function onCityDropdownChange() {
+      const val = document.getElementById('cityFilter').value;
+      syncQuickCityButtons(val);
+      renderPosts();
+    }
+
+    function onSearchInput() {
+      const val = document.getElementById('searchInput').value;
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', !val.trim());
+      renderPosts();
+    }
+
+    function clearSearchInput() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      renderPosts();
+    }
+
+    function resetAllFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      document.getElementById('cityFilter').value = '全马';
+      syncQuickCityButtons('全马');
+      selectCategory('全部');
+    }
+
     function autoDetectState() {
       if (!navigator.geolocation) return;
       const btn = document.getElementById('autoStateBtn');
@@ -392,6 +476,7 @@
           if (closest && minDist < 1.5) {
             document.getElementById('cityFilter').value = closest.value;
             document.getElementById('postCity').value = closest.value;
+            syncQuickCityButtons(closest.value);
             renderPosts();
           }
           btn.innerText = '📍';
@@ -410,11 +495,13 @@
       zh: {
         brandTitle: '大马吉通',
         autoLocBtn: '📍定位',
-        searchPlaceholder: '搜租房、招聘、二手...',
+        searchPlaceholder: '搜租房、招聘、二手、槟城/Ipoh...',
+        hotCityLabel: '热门：',
+        resetBtn: '重置',
         idx4dTitle: '万字开奖 4D',
-      idx4dSub: '对奖 & 官方直播',
-      idxForumTitle: '大马吹水站',
-      idxForumSub: '发帖交流 · 探店问答',
+        idx4dSub: '对奖 & 官方直播',
+        idxForumTitle: '大马吹水站',
+        idxForumSub: '发帖交流 · 探店问答',
         dailyBoardTitle: '大马今日便民速览',
         dailyBoardSub: '汇率实时 · 油价每周四更新',
         rateCnyLabel: '马币兑人民币',
@@ -428,7 +515,7 @@
         countUnit: '条',
         freePostBtn: '📝 免费发帖',
         loading: '正在连接云端数据库加载最新动态...',
-        emptyList: '当前筛选条件下暂无信息，点击底部“+”发布第一条吧！',
+        emptyList: '当前筛选条件下暂无信息，可点“重置”或点底部“+”发布！',
         pinnedTag: '置顶',
         pinnedPrefix: '置顶 · ',
         publishedSuffix: '发布',
@@ -481,11 +568,13 @@
       en: {
         brandTitle: 'DamaJitong',
         autoLocBtn: '📍GPS',
-        searchPlaceholder: 'Search rent, jobs, preloved...',
+        searchPlaceholder: 'Search rent, jobs, Penang/Ipoh...',
+        hotCityLabel: 'Hot:',
+        resetBtn: 'Reset',
         idx4dTitle: '4D Live Results',
-idx4dSub: 'Check & Official Draw',
-idxForumTitle: 'MY Community Forum',
-idxForumSub: 'Chat · Food & Q&A',
+        idx4dSub: 'Check & Official Draw',
+        idxForumTitle: 'MY Community Forum',
+        idxForumSub: 'Chat · Food & Q&A',
         dailyBoardTitle: 'Malaysia Daily Info',
         dailyBoardSub: 'Live FX · Fuel Updated Thu',
         rateCnyLabel: 'MYR to CNY',
@@ -499,7 +588,7 @@ idxForumSub: 'Chat · Food & Q&A',
         countUnit: 'posts',
         freePostBtn: '📝 Post Free Ad',
         loading: 'Loading latest posts from cloud...',
-        emptyList: 'No posts found here yet. Tap "+" below to post the first one!',
+        emptyList: 'No posts match filters. Tap Reset or "+" to post!',
         pinnedTag: 'TOP',
         pinnedPrefix: 'Featured · ',
         publishedSuffix: '',
@@ -552,11 +641,13 @@ idxForumSub: 'Chat · Food & Q&A',
       ms: {
         brandTitle: 'DamaJitong',
         autoLocBtn: '📍GPS',
-        searchPlaceholder: 'Cari rumah sewa, kerja, terpakai...',
+        searchPlaceholder: 'Cari sewa, kerja, Penang/Ipoh...',
+        hotCityLabel: 'Hot:',
+        resetBtn: 'Reset',
         idx4dTitle: 'Keputusan 4D Live',
-      idx4dSub: 'Semak & Siaran Rasmi',
-      idxForumTitle: 'Forum Komuniti MY',
-      idxForumSub: 'Sembang · Makan & Soal',
+        idx4dSub: 'Semak & Siaran Rasmi',
+        idxForumTitle: 'Forum Komuniti MY',
+        idxForumSub: 'Sembang · Makan & Soal',
         dailyBoardTitle: 'Info Harian Malaysia',
         dailyBoardSub: 'Kadar Semasa · Minyak Khamis',
         rateCnyLabel: 'MYR ke CNY',
@@ -570,7 +661,7 @@ idxForumSub: 'Chat · Food & Q&A',
         countUnit: 'iklan',
         freePostBtn: '📝 Iklan Percuma',
         loading: 'Memuatkan iklan terkini...',
-        emptyList: 'Tiada iklan buat masa ini. Tekan "+" di bawah untuk muat naik!',
+        emptyList: 'Tiada iklan sepadan. Tekan Reset atau "+" untuk muat naik!',
         pinnedTag: 'PILIHAN',
         pinnedPrefix: 'Taja · ',
         publishedSuffix: '',
@@ -671,6 +762,7 @@ idxForumSub: 'Chat · Food & Q&A',
 
       filterSelect.value = prevFilterVal;
       postSelect.value = prevPostVal;
+      syncQuickCityButtons(filterSelect.value);
     }
 
     async function translateSnippet(text, targetLang) {
@@ -746,6 +838,12 @@ idxForumSub: 'Chat · Food & Q&A',
       populateRegionDropdowns();
       const autoBtn = document.getElementById('autoStateBtn');
       if (autoBtn) autoBtn.innerText = t.autoLocBtn;
+
+      const hotLabel = document.getElementById('hotCityLabel');
+      if (hotLabel) hotLabel.innerText = t.hotCityLabel;
+
+      const resetBtn = document.getElementById('resetFilterBtn');
+      if (resetBtn) resetBtn.innerText = t.resetBtn;
 
       const navNewsEl = document.getElementById('navNewsText');
       if (navNewsEl) navNewsEl.textContent = t.navNews;
@@ -902,7 +1000,6 @@ idxForumSub: 'Chat · Food & Q&A',
       return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: 'Info' };
     }
 
-    // 最高级 0ms 直出：直接从数据库字段读取当前语言对应的 title / price
     function createPostCardHTML(post) {
       const t = I18N[currentLang];
       const vis = getCategoryVisual(post.category);
@@ -962,13 +1059,19 @@ idxForumSub: 'Chat · Food & Q&A',
     function renderPosts() {
       const t = I18N[currentLang];
       const city = document.getElementById('cityFilter').value;
-      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      const rawKeyword = document.getElementById('searchInput').value.trim();
+      const searchTerms = expandSearchTerms(rawKeyword);
       const listEl = document.getElementById('postList');
       const hiddenIds = getHiddenPostIds();
       const reportCounts = getReportCounts();
 
+      const hasFilter = (city !== '全马') || (currentCategory !== '全部') || Boolean(rawKeyword);
+      const resetBtn = document.getElementById('resetFilterBtn');
+      if (resetBtn) resetBtn.classList.toggle('hidden', !hasFilter);
+
       const displayCityHeader = getRegionDisplayName(city, currentLang);
-      document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${t.latestSuffix}`;
+      const catLabel = currentCategory === '全部' ? '' : ` · ${t.cats[currentCategory] || currentCategory}`;
+      document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${catLabel}${t.latestSuffix}`;
 
       const filtered = allPosts.filter(p => {
         if (hiddenIds.includes(p.id) || (reportCounts[p.id] || 0) >= 3) return false;
@@ -980,9 +1083,17 @@ idxForumSub: 'Chat · Food & Q&A',
         const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
         const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
         const matchCat = (currentCategory === '全部' || p.category === currentCategory);
-        const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.price || ''}`.toLowerCase();
-        const matchKey = !keyword || searchBlob.includes(keyword);
+        const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.desc_en || ''} ${p.desc_ms || ''} ${p.price || ''} ${p.city || ''}`.toLowerCase();
+        const matchKey = searchTerms.length === 0 || searchTerms.some(term => searchBlob.includes(term));
         return matchCity && matchCat && matchKey;
+      });
+
+      // 确保黄金置顶永远排在最前面
+      filtered.sort((a, b) => {
+        const pinA = a.is_pinned ? 1 : 0;
+        const pinB = b.is_pinned ? 1 : 0;
+        if (pinB !== pinA) return pinB - pinA;
+        return new Date(b.created_at) - new Date(a.created_at);
       });
 
       document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
@@ -1097,7 +1208,6 @@ idxForumSub: 'Chat · Food & Q&A',
       const postCat = document.getElementById('postCategory').value;
       const postCity = document.getElementById('postCity').value;
 
-      // 发布瞬间生成 CN / EN / BM 三语版本写入云端数据库
       const [tZh, tEn, tMs, pZh, pEn, pMs, dZh, dEn, dMs] = await Promise.all([
         translateSnippet(rawTitle, 'zh'),
         translateSnippet(rawTitle, 'en'),
