@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="app-shell">
+  <div class="app-shell pb-24">
     <!-- 顶部金红渐变导航栏 -->
     <header class="bg-gradient-to-r from-amber-600 via-red-600 to-rose-700 text-white sticky top-0 z-30 shadow-md px-3 py-2.5">
       <div class="flex items-center justify-between gap-2 mb-2">
@@ -43,7 +43,7 @@
     </header>
 
     <main class="flex-1 p-3 space-y-3">
-      <!-- 官方实时开彩直播直达栏（安全合法直达各大官方平台） -->
+      <!-- 官方实时开彩直播直达栏 -->
       <section class="bg-slate-900 text-white rounded-2xl p-3 shadow-sm border border-slate-800">
         <div class="flex items-center justify-between mb-2">
           <span id="liveStreamTitle" class="text-xs font-black text-amber-400">📺 官方实时开奖直播 & 成绩核对</span>
@@ -79,7 +79,7 @@
         </div>
       </section>
 
-      <!-- 快速对奖器（输入4位心水号码检查是否中奖） -->
+      <!-- 快速对奖器 -->
       <section class="bg-white rounded-2xl p-3 shadow-2xs border border-gray-200">
         <div class="flex items-center justify-between mb-1.5">
           <span id="checkerTitle" class="text-xs font-black text-slate-800">🔍 万字快速对奖器（输入 4 位号码）</span>
@@ -99,9 +99,21 @@
       <!-- 开彩机构切换标签栏 -->
       <div id="companyTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
 
+      <!-- 期数/日期切换条（查看最新或回看往期） -->
+      <div class="bg-white rounded-xl px-3 py-2 border border-slate-200 flex items-center justify-between gap-2">
+        <span id="drawPickerLabel" class="text-[11px] font-bold text-slate-700 shrink-0">📅 选择期数：</span>
+        <select id="drawSelect" onchange="onSelectDrawIndex(this.value)"
+                class="flex-1 min-w-0 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500">
+          <option value="-1">最新开奖结果</option>
+        </select>
+        <button type="button" id="backLatestBtn" onclick="onSelectDrawIndex(-1)"
+                class="hidden text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg shrink-0">
+          回最新
+        </button>
+      </div>
+
       <!-- 开奖成绩公告板卡片 -->
       <section id="boardCard" class="bg-white rounded-2xl overflow-hidden shadow-sm border-2 border-amber-400">
-        <!-- 卡片头部 -->
         <div id="boardHeader" class="bg-amber-500 text-slate-950 px-4 py-2.5 flex items-center justify-between gap-2">
           <div class="min-w-0">
             <h2 id="boardCompanyName" class="font-black text-base leading-tight truncate">万能 Magnum 4D</h2>
@@ -147,6 +159,21 @@
           </p>
         </div>
       </section>
+
+      <!-- 往期开奖历史记录卡片 -->
+      <section class="bg-white rounded-2xl p-3 shadow-2xs border border-gray-200">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 id="historyTitle" class="text-xs font-black text-slate-800">📜 往期开奖历史记录</h3>
+            <p id="historySub" class="text-[10px] text-slate-400">点击任意一期即可切换查看完整 23 组奖号</p>
+          </div>
+          <a id="officialPastLink" href="https://www.magnum4d.my/en/results" target="_blank" rel="noopener noreferrer"
+             class="text-[10px] font-bold text-blue-600 hover:underline shrink-0">
+            官网全部历史 ↗
+          </a>
+        </div>
+        <div id="historyList" class="space-y-1.5"></div>
+      </section>
     </main>
 
     <!-- 底部5键导航栏 -->
@@ -185,12 +212,19 @@
         checkerSub: '支持正字 & 跳字(iBox)检测',
         checkBtn: '立即核对',
         officialBtn: '官方实时核对 ↗',
+        drawPickerLabel: '📅 选择期数：',
+        latestOption: '最新开奖结果',
+        backLatestBtn: '回最新',
         lbl1st: '🥇 头奖 1ST',
         lbl2nd: '🥈 二奖 2ND',
         lbl3rd: '🥉 三奖 3RD',
         lblSpecial: '✨ 特别奖 SPECIAL',
         lblConsolation: '🎁 安慰奖 CONSOLATION',
         notice: '💡 提示：每晚 7:00 PM 开彩时段请点击上方「官方实时核对」查看摇珠直播与最终派彩公报。',
+        historyTitle: '📜 往期开奖历史记录',
+        historySub: '点击任意一期即可切换查看完整 23 组奖号',
+        officialPastLink: '官网全部历史 ↗',
+        emptyHistory: '暂无已归档历史期数，开奖同步后将自动保留往期记录，也可点右上角直达官网查询。',
         navHome: '首页', navNews: '实时新闻', nav4d: '万字开奖', navMap: '查路线', navBiz: '商家入驻',
         liveNow: '🔴 正在开彩中 (19:00 - 20:00 MYT)',
         nextDraw: '⏱️ 距离下期开彩倒计时：',
@@ -198,7 +232,7 @@
         pendingNumbers: '本期开彩号码尚未公布，请点击上方绿色/金色按钮进入官方直播查看实时摇珠。',
         hitExact: (prize) => `🎉 恭喜！正字命中【${prize}】！`,
         hitBox: (num, prize) => `✨ 跳字(iBox)命中 ${num}【${prize}】！`,
-        noHit: '暂未匹配到本期已公布奖号，祝下期好运！'
+        noHit: '暂未匹配到当前所选期数奖号，祝下期好运！'
       },
       en: {
         back: '← Home',
@@ -209,12 +243,19 @@
         checkerSub: 'Checks Straight & Permutation (iBox)',
         checkBtn: 'Check',
         officialBtn: 'Official Live ↗',
+        drawPickerLabel: '📅 Draw Date:',
+        latestOption: 'Latest Draw Result',
+        backLatestBtn: 'Latest',
         lbl1st: '🥇 1ST PRIZE',
         lbl2nd: '🥈 2ND PRIZE',
         lbl3rd: '🥉 3RD PRIZE',
         lblSpecial: '✨ SPECIAL PRIZES',
         lblConsolation: '🎁 CONSOLATION PRIZES',
         notice: '💡 Tip: Tap "Official Live" during 7:00 PM MYT draw hours to watch the live draw broadcast.',
+        historyTitle: '📜 Past Draw History',
+        historySub: 'Tap any past draw to view all 23 winning numbers',
+        officialPastLink: 'Official Archive ↗',
+        emptyHistory: 'No archived draws yet. Past results will appear automatically after draw sync.',
         navHome: 'Home', navNews: 'News', nav4d: '4D Live', navMap: 'Navigate', navBiz: 'Merchants',
         liveNow: '🔴 LIVE DRAW IN PROGRESS (19:00 - 20:00 MYT)',
         nextDraw: '⏱️ Next Draw Countdown:',
@@ -222,7 +263,7 @@
         pendingNumbers: 'Numbers not yet published on board. Tap the official stream buttons above for live draw.',
         hitExact: (prize) => `🎉 Congrats! Exact match for [${prize}]!`,
         hitBox: (num, prize) => `✨ Permutation (iBox) match ${num} [${prize}]!`,
-        noHit: 'No match in current displayed numbers. Better luck next draw!'
+        noHit: 'No match in selected draw numbers. Better luck next draw!'
       },
       ms: {
         back: '← Utama',
@@ -233,12 +274,19 @@
         checkerSub: 'Semak Tegak & Pusingan (iBox)',
         checkBtn: 'Semak',
         officialBtn: 'Semak Rasmi ↗',
+        drawPickerLabel: '📅 Tarikh Cabutan:',
+        latestOption: 'Keputusan Terkini',
+        backLatestBtn: 'Terkini',
         lbl1st: '🥇 HADIAH PERTAMA',
         lbl2nd: '🥈 HADIAH KEDUA',
         lbl3rd: '🥉 HADIAH KETIGA',
         lblSpecial: '✨ HADIAH KHAS (SPECIAL)',
         lblConsolation: '🎁 HADIAH SAGU HATI',
         notice: '💡 Tip: Tekan "Semak Rasmi" pada jam 7:00 malam untuk menonton siaran langsung cabutan.',
+        historyTitle: '📜 Rekod Cabutan Lepas',
+        historySub: 'Tekan mana-mana tarikh untuk lihat 23 nombor penuh',
+        officialPastLink: 'Arkib Rasmi ↗',
+        emptyHistory: 'Tiada rekod sejarah lagi. Keputusan lepas akan disimpan secara automatik.',
         navHome: 'Utama', navNews: 'Berita', nav4d: '4D Live', navMap: 'Peta', navBiz: 'Peniaga',
         liveNow: '🔴 CABUTAN SEDANG BERLANGSUNG (19:00 MYT)',
         nextDraw: '⏱️ Kiraan Detik Cabutan Seterusnya:',
@@ -259,6 +307,7 @@
         headerBg: 'bg-amber-500 text-slate-950',
         borderCol: 'border-amber-400',
         url: 'https://www.magnum4d.my/en/',
+        pastUrl: 'https://www.magnum4d.my/en/results',
         metaZh: '开彩日：每周三、六、日 · 19:00 MYT',
         metaEn: 'Draw Days: Wed, Sat, Sun · 19:00 MYT',
         metaMs: 'Hari Cabutan: Rabu, Sabtu, Ahad · 19:00 MYT'
@@ -271,6 +320,7 @@
         headerBg: 'bg-rose-600 text-white',
         borderCol: 'border-rose-500',
         url: 'https://www.sportstoto.com.my/',
+        pastUrl: 'https://www.sportstoto.com.my/results_past.asp',
         metaZh: '开彩日：每周三、六、日 · 19:00 MYT',
         metaEn: 'Draw Days: Wed, Sat, Sun · 19:00 MYT',
         metaMs: 'Hari Cabutan: Rabu, Sabtu, Ahad · 19:00 MYT'
@@ -283,6 +333,7 @@
         headerBg: 'bg-blue-700 text-white',
         borderCol: 'border-blue-500',
         url: 'https://www.damacai.com.my/',
+        pastUrl: 'https://www.damacai.com.my/past-draw-result/',
         metaZh: '开彩日：每周三、六、日 · 19:00 MYT',
         metaEn: 'Draw Days: Wed, Sat, Sun · 19:00 MYT',
         metaMs: 'Hari Cabutan: Rabu, Sabtu, Ahad · 19:00 MYT'
@@ -295,6 +346,7 @@
         headerBg: 'bg-emerald-700 text-white',
         borderCol: 'border-emerald-500',
         url: 'https://www.diriwan88.com/',
+        pastUrl: 'https://www.diriwan88.com/',
         metaZh: '东马开彩：每周三、六、日 · 19:00 MYT',
         metaEn: 'East MY Draw: Wed, Sat, Sun · 19:00 MYT',
         metaMs: 'Cabutan Sabah: Rabu, Sabtu, Ahad · 19:00 MYT'
@@ -307,6 +359,7 @@
         headerBg: 'bg-sky-700 text-white',
         borderCol: 'border-sky-500',
         url: 'https://www.stc4d.com/',
+        pastUrl: 'https://www.stc4d.com/',
         metaZh: '东马开彩：每周三、六、日 · 19:00 MYT',
         metaEn: 'East MY Draw: Wed, Sat, Sun · 19:00 MYT',
         metaMs: 'Cabutan STC: Rabu, Sabtu, Ahad · 19:00 MYT'
@@ -319,6 +372,7 @@
         headerBg: 'bg-orange-600 text-white',
         borderCol: 'border-orange-500',
         url: 'https://www.cashsweep.com.my/',
+        pastUrl: 'https://www.cashsweep.com.my/',
         metaZh: '砂拉越开彩：每周三、六、日 · 19:00 MYT',
         metaEn: 'Sarawak Draw: Wed, Sat, Sun · 19:00 MYT',
         metaMs: 'Cabutan Sarawak: Rabu, Sabtu, Ahad · 19:00 MYT'
@@ -337,27 +391,96 @@
     }
 
     let liveResultsStore = makeEmptyStore();
+    let historyStore = { magnum: [], toto: [], damacai: [], sabah88: [], stc: [], cashsweep: [] };
+    let selectedHistoryIdx = -1; // -1 表示显示最新一期
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let currentCompId = 'magnum';
 
-    function applyIncomingResults(rowsOrMap) {
-      let hasAny = false;
-      if (Array.isArray(rowsOrMap)) {
-        rowsOrMap.forEach(row => {
-          if (row.company_id && liveResultsStore[row.company_id]) {
-            liveResultsStore[row.company_id] = {
-              drawNo: row.draw_no || '',
-              drawDate: row.draw_date || '',
-              p1: row.p1 || '----',
-              p2: row.p2 || '----',
-              p3: row.p3 || '----',
-              special: Array.isArray(row.special) && row.special.length === 10 ? row.special : Array(10).fill('----'),
-              consolation: Array.isArray(row.consolation) && row.consolation.length === 10 ? row.consolation : Array(10).fill('----')
-            };
-            if (row.p1 && row.p1 !== '----') hasAny = true;
-          }
-        });
-      } else if (rowsOrMap && typeof rowsOrMap === 'object') {
+    function getActiveBoardData() {
+      const list = historyStore[currentCompId] || [];
+      if (selectedHistoryIdx >= 0 && list[selectedHistoryIdx]) {
+        return list[selectedHistoryIdx];
+      }
+      return liveResultsStore[currentCompId];
+    }
+
+    function onSelectDrawIndex(idx) {
+      selectedHistoryIdx = Number(idx);
+      if (Number.isNaN(selectedHistoryIdx)) selectedHistoryIdx = -1;
+      renderDrawPicker();
+      renderBoard();
+      renderHistoryList();
+      checkMy4D();
+    }
+
+    function renderDrawPicker() {
+      const t = I18N_4D[currentLang];
+      const selectEl = document.getElementById('drawSelect');
+      const backBtn = document.getElementById('backLatestBtn');
+      const list = historyStore[currentCompId] || [];
+      const latest = liveResultsStore[currentCompId];
+      const latestLabel = [
+        t.latestOption,
+        latest?.drawDate ? `(${latest.drawDate}${latest.drawNo ? ' #' + latest.drawNo : ''})` : ''
+      ].filter(Boolean).join(' ');
+
+      const options = [`<option value="-1">${latestLabel}</option>`];
+      list.forEach((item, idx) => {
+        const tag = [item.drawDate || '', item.drawNo ? `#${item.drawNo}` : '', item.p1 !== '----' ? `1st: ${item.p1}` : '']
+          .filter(Boolean)
+          .join(' · ');
+        options.push(`<option value="${idx}">${tag}</option>`);
+      });
+
+      selectEl.innerHTML = options.join('');
+      selectEl.value = String(selectedHistoryIdx);
+
+      if (selectedHistoryIdx >= 0) {
+        backBtn.classList.remove('hidden');
+      } else {
+        backBtn.classList.add('hidden');
+      }
+    }
+
+    function renderHistoryList() {
+      const t = I18N_4D[currentLang];
+      const box = document.getElementById('historyList');
+      const list = historyStore[currentCompId] || [];
+
+      if (list.length === 0) {
+        box.innerHTML = `<div class="text-[11px] text-slate-400 bg-slate-50 rounded-xl p-3 text-center">${t.emptyHistory}</div>`;
+        return;
+      }
+
+      box.innerHTML = list.map((item, idx) => {
+        const isSelected = selectedHistoryIdx === idx;
+        return `
+          <button type="button" onclick="onSelectDrawIndex(${idx})"
+                  class="w-full text-left rounded-xl px-3 py-2 border transition flex items-center justify-between gap-2 ${
+                    isSelected
+                      ? 'bg-red-50 border-red-400 shadow-2xs'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80'
+                  }">
+            <div class="min-w-0">
+              <div class="text-[11px] font-black text-slate-800 truncate">
+                ${item.drawDate || '-'} ${item.drawNo ? `<span class="text-slate-400 font-semibold">#${item.drawNo}</span>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-500 font-mono mt-0.5">
+                1ST: <b class="text-red-600">${item.p1}</b> · 2ND: <b class="text-amber-600">${item.p2}</b> · 3RD: <b class="text-slate-700">${item.p3}</b>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+              isSelected ? 'bg-red-600 text-white' : 'bg-white text-slate-600 border border-slate-200'
+            }">
+              ${isSelected ? '当前查看' : '查看详情'}
+            </span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function applyIncomingResults(rowsOrMap, incomingHistory = null) {
+      if (rowsOrMap && typeof rowsOrMap === 'object' && !Array.isArray(rowsOrMap)) {
         Object.keys(rowsOrMap).forEach(k => {
           if (liveResultsStore[k]) {
             const r = rowsOrMap[k];
@@ -370,15 +493,22 @@
               special: Array.isArray(r.special) && r.special.length === 10 ? r.special : Array(10).fill('----'),
               consolation: Array.isArray(r.consolation) && r.consolation.length === 10 ? r.consolation : Array(10).fill('----')
             };
-            if (r.p1 && r.p1 !== '----') hasAny = true;
           }
         });
       }
-      if (hasAny) {
-        renderBoard();
-        checkMy4D();
+
+      if (incomingHistory && typeof incomingHistory === 'object') {
+        Object.keys(historyStore).forEach(k => {
+          if (Array.isArray(incomingHistory[k])) {
+            historyStore[k] = incomingHistory[k];
+          }
+        });
       }
-      return hasAny;
+
+      renderDrawPicker();
+      renderBoard();
+      renderHistoryList();
+      checkMy4D();
     }
 
     async function syncLatest4D(manual = false) {
@@ -391,7 +521,8 @@
         const res = await fetch('/api/4d', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
-          if (json && json.results && applyIncomingResults(json.results)) {
+          if (json && json.results) {
+            applyIncomingResults(json.results, json.history || null);
             return;
           }
         }
@@ -403,9 +534,32 @@
             'https://uhgukdqggvyaepkvlugg.supabase.co',
             'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
           );
-          const { data } = await client.from('results_4d').select('*');
-          if (Array.isArray(data) && data.length > 0) {
-            applyIncomingResults(data);
+          const { data: histRows } = await client
+            .from('results_4d_history')
+            .select('*')
+            .order('draw_date', { ascending: false })
+            .limit(120);
+
+          if (Array.isArray(histRows) && histRows.length > 0) {
+            const grouped = { magnum: [], toto: [], damacai: [], sabah88: [], stc: [], cashsweep: [] };
+            histRows.forEach(row => {
+              if (grouped[row.company_id] && grouped[row.company_id].length < 20) {
+                grouped[row.company_id].push({
+                  drawNo: row.draw_no || '',
+                  drawDate: row.draw_date || '',
+                  p1: row.p1 || '----',
+                  p2: row.p2 || '----',
+                  p3: row.p3 || '----',
+                  special: Array.isArray(row.special) && row.special.length === 10 ? row.special : Array(10).fill('----'),
+                  consolation: Array.isArray(row.consolation) && row.consolation.length === 10 ? row.consolation : Array(10).fill('----')
+                });
+              }
+            });
+            const latestMap = {};
+            Object.keys(grouped).forEach(k => {
+              if (grouped[k][0]) latestMap[k] = grouped[k][0];
+            });
+            applyIncomingResults(latestMap, grouped);
           }
         }
       } catch (_) {} finally {
@@ -425,7 +579,7 @@
     function updateDrawCountdown() {
       const t = I18N_4D[currentLang];
       const myt = getMytNow();
-      const day = myt.getDay(); // 0=Sun, 3=Wed, 6=Sat
+      const day = myt.getDay();
       const hour = myt.getHours();
       const isDrawDay = (day === 0 || day === 3 || day === 6);
 
@@ -484,12 +638,17 @@
       document.getElementById('checkerSub').innerText = t.checkerSub;
       document.getElementById('checkBtn').innerText = t.checkBtn;
       document.getElementById('boardOfficialLink').innerText = t.officialBtn;
+      document.getElementById('drawPickerLabel').innerText = t.drawPickerLabel;
+      document.getElementById('backLatestBtn').innerText = t.backLatestBtn;
       document.getElementById('lbl1st').innerText = t.lbl1st;
       document.getElementById('lbl2nd').innerText = t.lbl2nd;
       document.getElementById('lbl3rd').innerText = t.lbl3rd;
       document.getElementById('lblSpecial').innerText = t.lblSpecial;
       document.getElementById('lblConsolation').innerText = t.lblConsolation;
       document.getElementById('boardNotice').innerText = t.notice;
+      document.getElementById('historyTitle').innerText = t.historyTitle;
+      document.getElementById('historySub').innerText = t.historySub;
+      document.getElementById('officialPastLink').innerText = t.officialPastLink;
       document.getElementById('navHome').innerText = t.navHome;
       document.getElementById('navNews').innerText = t.navNews;
       document.getElementById('nav4d').innerText = t.nav4d;
@@ -498,13 +657,18 @@
 
       updateDrawCountdown();
       renderCompanyTabs();
+      renderDrawPicker();
       renderBoard();
+      renderHistoryList();
     }
 
     function selectCompany(id) {
       currentCompId = id;
+      selectedHistoryIdx = -1;
       renderCompanyTabs();
+      renderDrawPicker();
       renderBoard();
+      renderHistoryList();
       checkMy4D();
     }
 
@@ -524,7 +688,7 @@
 
     function renderBoard() {
       const comp = COMPANIES.find(c => c.id === currentCompId) || COMPANIES[0];
-      const data = liveResultsStore[comp.id];
+      const data = getActiveBoardData();
       const card = document.getElementById('boardCard');
       const header = document.getElementById('boardHeader');
 
@@ -536,6 +700,7 @@
       const drawTag = [data.drawNo ? `#${data.drawNo}` : '', data.drawDate || ''].filter(Boolean).join(' · ');
       document.getElementById('boardDrawMeta').innerText = drawTag ? `${baseMeta} | ${drawTag}` : baseMeta;
       document.getElementById('boardOfficialLink').href = comp.url;
+      document.getElementById('officialPastLink').href = comp.pastUrl || comp.url;
 
       document.getElementById('num1st').innerText = data.p1;
       document.getElementById('num2nd').innerText = data.p2;
@@ -566,7 +731,7 @@
         return;
       }
 
-      const data = liveResultsStore[currentCompId];
+      const data = getActiveBoardData();
       if (data.p1 === '----') {
         msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200';
         msgBox.innerText = t.pendingNumbers;
