@@ -1,14 +1,5 @@
 const COMPANIES = ['magnum', 'toto', 'damacai', 'sabah88', 'stc', 'cashsweep'];
 
-const OPERATOR_SLUGS = {
-  magnum: ['magnum', 'magnum4d'],
-  toto: ['toto', 'sportstoto'],
-  damacai: ['damacai', 'pmp'],
-  sabah88: ['sabah88', 'sabah', 'diriwan'],
-  stc: ['stc', 'sandakan'],
-  cashsweep: ['cashsweep', 'sarawak']
-};
-
 function emptyBoard(drawDate = '', drawNo = '') {
   return {
     drawNo,
@@ -34,19 +25,16 @@ function getMytDateStr(offsetDays = 0) {
 
 function normalizeCompanyKey(raw = '') {
   const s = String(raw || '').toLowerCase().trim();
-  if (s.includes('magnum')) return 'magnum';
-  if (s.includes('toto')) return 'toto';
-  if (s.includes('damacai') || s.includes('da_ma_cai') || s.includes('pmp')) return 'damacai';
-  if (s.includes('sabah') || s.includes('diriwan')) return 'sabah88';
-  if (s.includes('stc') || s.includes('sandakan')) return 'stc';
-  if (s.includes('cashsweep') || s.includes('sarawak')) return 'cashsweep';
+  if (s === 'magnum' || s.includes('magnum')) return 'magnum';
+  if (s === 'toto' || s.includes('toto')) return 'toto';
+  if (s === 'damacai' || s.includes('da ma cai') || s.includes('damacai')) return 'damacai';
+  if (s === 'sabah88' || s.includes('sabah')) return 'sabah88';
+  if (s === 'stc' || s.includes('sandakan')) return 'stc';
+  if (s === 'cashsweep' || s.includes('sarawak')) return 'cashsweep';
   return null;
 }
 
 function fmt4(v) {
-  if (v && typeof v === 'object') {
-    v = v.number ?? v.num ?? v.value ?? v.code ?? '';
-  }
   const d = String(v ?? '').replace(/\D/g, '').slice(0, 4);
   return d.length === 4 ? d : '----';
 }
@@ -60,59 +48,41 @@ function pad4List(arr, count = 10) {
   return out;
 }
 
-// 兼容多种字段结构的开奖对象标准化
 function normalizeDrawRecord(item, fallbackDate = '') {
   if (!item || typeof item !== 'object') return null;
 
-  const p1 = fmt4(
-    item.p1 ?? item.first ?? item['1st'] ?? item.prize_1 ?? item.prizes?.first ?? item.prizes?.['1st'] ?? item.numbers?.[0]
-  );
-  const p2 = fmt4(
-    item.p2 ?? item.second ?? item['2nd'] ?? item.prize_2 ?? item.prizes?.second ?? item.prizes?.['2nd'] ?? item.numbers?.[1]
-  );
-  const p3 = fmt4(
-    item.p3 ?? item.third ?? item['3rd'] ?? item.prize_3 ?? item.prizes?.third ?? item.prizes?.['3rd'] ?? item.numbers?.[2]
-  );
-
-  const rawSpecial =
-    item.special ?? item.specials ?? item.starter ?? item.starters ??
-    item.prizes?.special ?? item.prizes?.starter ??
-    (Array.isArray(item.numbers) ? item.numbers.slice(3, 13) : []);
-
-  const rawConsolation =
-    item.consolation ?? item.consolations ??
-    item.prizes?.consolation ??
-    (Array.isArray(item.numbers) ? item.numbers.slice(13, 23) : []);
+  const p1 = fmt4(item.first ?? item.p1 ?? item['1st']);
+  const p2 = fmt4(item.second ?? item.p2 ?? item['2nd']);
+  const p3 = fmt4(item.third ?? item.p3 ?? item['3rd']);
 
   if (p1 === '----' && p2 === '----' && p3 === '----') return null;
 
   return {
-    drawNo: String(item.draw_no ?? item.drawNo ?? item.draw ?? ''),
-    drawDate: String(item.date ?? item.draw_date ?? item.drawDate ?? fallbackDate).slice(0, 10),
+    drawNo: String(item.draw_no ?? item.drawNo ?? ''),
+    drawDate: String(item.date ?? item.draw_date ?? fallbackDate).slice(0, 10),
     p1,
     p2,
     p3,
-    special: pad4List(rawSpecial, 10),
-    consolation: pad4List(rawConsolation, 10)
+    special: pad4List(item.special, 10),
+    consolation: pad4List(item.consolation, 10)
   };
 }
 
+// 精准解包 4dlivetoday 的 data.results / data / results 结构
 function extractItemsArray(payload) {
-  if (!payload) return [];
+  if (!payload || typeof payload !== 'object') return [];
   if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload.results)) return payload.results;
-  if (Array.isArray(payload.draws)) return payload.draws;
+  if (Array.isArray(payload.data?.results)) return payload.data.results;
+  if (Array.isArray(payload.data?.draws)) return payload.data.draws;
   if (Array.isArray(payload.data)) return payload.data;
-  if (payload.results && typeof payload.results === 'object') {
-    return Object.entries(payload.results).map(([k, v]) => ({ operator: k, ...(v || {}) }));
-  }
-  if (payload.operator || payload.p1 || payload.first || payload['1st']) {
-    return [payload];
+  if (Array.isArray(payload.results)) return payload.results;
+  if (payload.data && typeof payload.data === 'object' && (payload.data.first || payload.data.p1)) {
+    return [payload.data];
   }
   return [];
 }
 
-async function fetchJsonSafe(url, ms = 6000) {
+async function fetchJsonSafe(url, ms = 6500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
@@ -120,7 +90,7 @@ async function fetchJsonSafe(url, ms = 6000) {
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'DaMaJiTong-4D/1.0'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36'
       }
     });
     if (!r.ok) return null;
@@ -132,24 +102,40 @@ async function fetchJsonSafe(url, ms = 6000) {
   }
 }
 
-async function fetchOperatorHistoryFromApi(comp, todayStr) {
-  const slugs = OPERATOR_SLUGS[comp] || [comp];
-  for (const slug of slugs) {
-    const json = await fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${slug}?limit=15`, 5500);
-    const list = extractItemsArray(json);
-    const boards = [];
-    for (const item of list) {
-      const board = normalizeDrawRecord({ operator: comp, ...item }, todayStr);
-      if (board && board.p1 !== '----') {
-        boards.push(board);
-      }
-    }
-    if (boards.length > 0) {
-      boards.sort((a, b) => String(b.drawDate).localeCompare(String(a.drawDate)));
-      return boards;
-    }
+// 写入 Supabase 历史表，保证永久归档不丢失
+async function saveToSupabaseHistory(resultsMap, fallbackDate) {
+  const url = process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+
+  const rows = [];
+  for (const comp of COMPANIES) {
+    const item = resultsMap?.[comp];
+    if (!item || !/^\d{4}$/.test(item.p1)) continue;
+    rows.push({
+      company_id: comp,
+      draw_no: item.drawNo || '',
+      draw_date: item.drawDate || fallbackDate,
+      p1: item.p1,
+      p2: item.p2,
+      p3: item.p3,
+      special: item.special,
+      consolation: item.consolation
+    });
   }
-  return [];
+  if (rows.length === 0) return;
+
+  try {
+    await fetch(`${url}/rest/v1/results_4d_history?on_conflict=company_id,draw_date`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(rows)
+    });
+  } catch (_) {}
 }
 
 module.exports = async function handler(req, res) {
@@ -169,34 +155,48 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    // 并发拉取最新全盘结果 + 6家各自历史多期
-    const [latestJson, ...opHistories] = await Promise.all([
-      fetchJsonSafe('https://4dlivetoday.com/api/v1/latest', 6000),
-      ...COMPANIES.map(comp => fetchOperatorHistoryFromApi(comp, todayStr))
+    // 并发拉取最新全盘结果 + 6家各自近期历史
+    const [latestJson, ...opJsons] = await Promise.all([
+      fetchJsonSafe('https://4dlivetoday.com/api/v1/latest', 6500),
+      ...COMPANIES.map(comp => fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${comp}?limit=15`, 6000))
     ]);
 
+    // 1. 解析各家历史多期记录
     COMPANIES.forEach((comp, idx) => {
-      if (Array.isArray(opHistories[idx]) && opHistories[idx].length > 0) {
-        history[comp] = opHistories[idx];
-        results[comp] = { ...opHistories[idx][0] };
+      const list = extractItemsArray(opJsons[idx]);
+      const seen = new Set();
+      for (const item of list) {
+        const board = normalizeDrawRecord(item, todayStr);
+        if (!board || board.p1 === '----') continue;
+        const uid = `${board.drawDate}_${board.drawNo}`;
+        if (seen.has(uid)) continue;
+        seen.add(uid);
+        history[comp].push(board);
+      }
+      history[comp].sort((a, b) => String(b.drawDate).localeCompare(String(a.drawDate)));
+      if (history[comp].length > 0) {
+        results[comp] = { ...history[comp][0] };
       }
     });
 
+    // 2. 用 /latest 最新开奖结果覆盖并置于历史列表最前
     const latestItems = extractItemsArray(latestJson);
     for (const item of latestItems) {
-      const comp = normalizeCompanyKey(item.operator || item.operator_name || item.company || item.name);
+      const comp = normalizeCompanyKey(item.operator || item.operator_name);
       if (!comp) continue;
       const board = normalizeDrawRecord(item, todayStr);
       if (!board || board.p1 === '----') continue;
 
       results[comp] = board;
-      const existsIdx = history[comp].findIndex(h => h.drawDate === board.drawDate && h.drawNo === board.drawNo);
-      if (existsIdx === -1) {
+      const existIdx = history[comp].findIndex(h => h.drawDate === board.drawDate);
+      if (existIdx === -1) {
         history[comp].unshift(board);
       } else {
-        history[comp][existsIdx] = board;
+        history[comp][existIdx] = board;
       }
     }
+
+    await saveToSupabaseHistory(results, todayStr);
 
     const hitCount = COMPANIES.filter(c => results[c].p1 !== '----').length;
 
