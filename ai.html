@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>大马吉通 AI 助手 · 智能问答与拍照识图</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
+  </style>
+</head>
+<body class="max-w-md mx-auto bg-gray-100 min-h-screen flex flex-col shadow-2xl">
+
+  <!-- 顶部导航 -->
+  <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3.5 py-2.5 flex items-center justify-between">
+    <div class="flex items-center gap-2 min-w-0">
+      <a href="/" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-bold shrink-0">← 首页</a>
+      <div class="min-w-0">
+        <h1 class="font-black text-sm truncate">🤖 大马吉通 AI 助手</h1>
+        <p class="text-[10px] text-white/85 truncate">文字搜索问答 · 拍照识图翻译</p>
+      </div>
+    </div>
+    <button type="button" onclick="clearChat()" class="text-[11px] bg-black/20 hover:bg-black/30 px-2.5 py-1 rounded-full font-bold shrink-0">清空</button>
+  </header>
+
+  <!-- 快捷提问提示 -->
+  <div class="px-3 pt-2.5 flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0">
+    <button type="button" onclick="quickAsk('帮我拍张图翻译并解释一下这张马来文/英文单据或信件的意思')" class="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700 hover:border-red-400 shrink-0 shadow-2xs">📷 拍信件/罚单翻译</button>
+    <button type="button" onclick="quickAsk('帮我写一段槟城/KL公寓出租广告文案，突出交通便利和拎包入住')" class="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700 hover:border-red-400 shrink-0 shadow-2xs">🏠 写租房文案</button>
+    <button type="button" onclick="quickAsk('推荐几个马来西亚本地常见生活查询和办事渠道（如 JPJ、KWSP、LHDN）')" class="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700 hover:border-red-400 shrink-0 shadow-2xs">🇲🇾 本地办事指南</button>
+  </div>
+
+  <!-- 聊天记录区 -->
+  <main id="chatMessages" class="flex-1 p-3 pb-28 space-y-3 overflow-y-auto">
+    <div class="bg-white rounded-2xl p-3.5 shadow-xs border border-gray-100 text-xs text-gray-700 leading-relaxed">
+      <div class="font-bold text-red-600 mb-1">你好！我是大马吉通 AI 助手</div>
+      你可以直接输入问题搜索解答，也可以点下方 <b>📷 相机/相册图标</b> 上传照片（比如马来文通知、罚单、商品标签或菜单），我来帮你看图、翻译和解答。
+    </div>
+  </main>
+
+  <!-- 底部输入区（含拍照/选图预览） -->
+  <footer class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 p-2.5 z-30">
+    <div id="imgPreviewBar" class="hidden mb-2 flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
+      <img id="chatImgThumb" src="" class="w-12 h-12 rounded-lg object-cover border" />
+      <span class="text-[11px] text-gray-600 flex-1 truncate">已附带图片，输入问题后发送即可识图</span>
+      <button type="button" onclick="clearChatImage()" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded-lg font-bold">✕</button>
+    </div>
+
+    <form id="chatForm" onsubmit="sendChatMessage(event)" class="flex items-end gap-1.5">
+      <label class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center cursor-pointer shrink-0 text-base" title="拍照或选图">
+        📷
+        <input type="file" id="chatImageInput" accept="image/*" capture="environment" onchange="handleChatImage(event)" class="hidden" />
+      </label>
+      <textarea id="chatInput" rows="1" placeholder="问点什么，或拍张照让我看看..."
+                class="flex-1 bg-gray-100 text-gray-800 text-xs rounded-2xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none max-h-28"></textarea>
+      <button type="submit" id="sendChatBtn" class="px-3.5 h-9 rounded-full bg-gradient-to-r from-red-600 to-orange-600 text-white text-xs font-bold shrink-0 shadow-xs">发送</button>
+    </form>
+  </footer>
+
+  <script>
+    const chatHistory = [];
+    let pendingImageBase64 = '';
+    let pendingImageMime = 'image/jpeg';
+
+    function handleChatImage(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxSide = 1024;
+          let w = img.width;
+          let h = img.height;
+          if (w > h && w > maxSide) { h = Math.round(h * maxSide / w); w = maxSide; }
+          else if (h > maxSide) { w = Math.round(w * maxSide / h); h = maxSide; }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+          pendingImageBase64 = dataUrl;
+          pendingImageMime = 'image/jpeg';
+          document.getElementById('chatImgThumb').src = dataUrl;
+          document.getElementById('imgPreviewBar').classList.remove('hidden');
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearChatImage() {
+      pendingImageBase64 = '';
+      document.getElementById('chatImageInput').value = '';
+      document.getElementById('chatImgThumb').src = '';
+      document.getElementById('imgPreviewBar').classList.add('hidden');
+    }
+
+    function quickAsk(text) {
+      const input = document.getElementById('chatInput');
+      input.value = text;
+      input.focus();
+    }
+
+    function clearChat() {
+      chatHistory.length = 0;
+      clearChatImage();
+      document.getElementById('chatMessages').innerHTML = `
+        <div class="bg-white rounded-2xl p-3.5 shadow-xs border border-gray-100 text-xs text-gray-700 leading-relaxed">
+          <div class="font-bold text-red-600 mb-1">对话已清空</div>
+          输入新问题或上传图片开始提问吧。
+        </div>
+      `;
+    }
+
+    function appendBubble(role, text, imgSrc = '') {
+      const box = document.getElementById('chatMessages');
+      const isUser = role === 'user';
+      const escaped = (text || '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>');
+      const imgHtml = imgSrc ? `<img src="${imgSrc}" class="w-36 h-36 object-cover rounded-xl mb-1.5 border border-white/30" />` : '';
+
+      const div = document.createElement('div');
+      div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+      div.innerHTML = `
+        <div class="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed shadow-xs ${
+          isUser ? 'bg-red-600 text-white' : 'bg-white text-gray-800 border border-gray-100'
+        }">
+          ${imgHtml}
+          <div>${escaped}</div>
+        </div>
+      `;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      return div;
+    }
+
+    async function sendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text && !pendingImageBase64) return;
+
+      const userText = text || '请帮我识别并解释这张图片的内容';
+      const imgToSend = pendingImageBase64;
+      const mimeToSend = pendingImageMime;
+
+      appendBubble('user', userText, imgToSend);
+      chatHistory.push({ role: 'user', content: userText });
+
+      input.value = '';
+      clearChatImage();
+
+      const btn = document.getElementById('sendChatBtn');
+      btn.disabled = true;
+      btn.innerText = '...';
+      const loadingBubble = appendBubble('assistant', '正在思考与分析...');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: chatHistory,
+            imageBase64: imgToSend,
+            imageMimeType: mimeToSend,
+            lang: localStorage.getItem('dama_lang') || 'zh'
+          })
+        });
+        const data = await res.json();
+        loadingBubble.remove();
+
+        if (!res.ok || !data.reply) {
+          appendBubble('assistant', '出错了：' + (data.error || '服务暂不可用'));
+          return;
+        }
+
+        appendBubble('assistant', data.reply);
+        chatHistory.push({ role: 'assistant', content: data.reply });
+      } catch (err) {
+        loadingBubble.remove();
+        appendBubble('assistant', '网络异常，请稍后再试。');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '发送';
+      }
+    }
+  </script>
+</body>
+</html>
