@@ -22,7 +22,7 @@ function normalizeCompanyKey(rawName = '') {
   if (s.includes('magnum') || s.includes('万能')) return 'magnum';
   if (s.includes('toto') || s.includes('多多')) return 'toto';
   if (s.includes('damacai') || s.includes('da ma cai') || s.includes('大马彩') || s.includes('pmp')) return 'damacai';
-  if (s.includes('sabah') || s.includes('沙巴')) return 'sabah88';
+  if (s.includes('sabah') || s.includes('diriwan') || s.includes('沙巴')) return 'sabah88';
   if (s.includes('stc') || s.includes('sandakan') || s.includes('山打根')) return 'stc';
   if (s.includes('cashsweep') || s.includes('sarawak') || s.includes('砂拉越')) return 'cashsweep';
   return null;
@@ -49,59 +49,117 @@ function getSupabaseConfig() {
   };
 }
 
-// 尝试从公开 JSON 接口抓取最新开奖
-async function fetchFromJsonSources(todayStr) {
-  const urls = [
-    'https://api.4dnum.com/api/v1/results',
-    'https://4dresult.api.my/latest.json'
+// 从公开 4D 成绩汇总网页解析各家公司最新开奖号码（每家共 23 个 4 位号：1+1+1+10+10）
+function parse4DFromHtml(html, fallbackDate) {
+  const text = String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/ /gi, ' ')
+    .replace(/\s+/g, ' ');
+
+  const anchors = [
+    { key: 'magnum', patterns: [/Magnum\s*4D/i, /万能/i] },
+    { key: 'damacai', patterns: [/Da\s*Ma\s*Cai/i, /大马彩/i, /1\+3D/i] },
+    { key: 'toto', patterns: [/Sports\s*Toto/i, /Toto\s*4D/i, /多多/i] },
+    { key: 'sabah88', patterns: [/Sabah\s*88/i, /Diriwan/i, /沙巴/i] },
+    { key: 'stc', patterns: [/Sandakan\s*4D/i, /STC\s*4D/i, /山打根/i] },
+    { key: 'cashsweep', patterns: [/Special\s*CashSweep/i, /CashSweep/i, /砂拉越/i] }
   ];
 
-  for (const url of urls) {
+  // 定位每家公司在纯文本中的出现位置
+  const found = [];
+  for (const item of anchors) {
+    let bestIdx = -1;
+    for (const re of item.patterns) {
+      const m = re.exec(text);
+      if (m && (bestIdx === -1 || m.index < bestIdx)) {
+        bestIdx = m.index;
+      }
+    }
+    if (bestIdx !== -1) {
+      found.push({ key: item.key, index: bestIdx });
+    }
+  }
+
+  found.sort((a, b) => a.index - b.index);
+
+  const map = {};
+  COMPANIES.forEach(k => { map[k] = emptyBoard(fallbackDate, ''); });
+
+  let hitCount = 0;
+  for (let i = 0; i < found.length; i++) {
+    const start = found[i].index;
+    const end = i + 1 < found.length ? Math.min(found[i + 1].index, start + 2600) : start + 2600;
+    const chunk = text.slice(start, end);
+
+    // 提取期号（例如 5489/26 或 123/26）和日期（例如 21/11/2026 或 2026-11-21）
+    const drawNoMatch = chunk.match(/\b(\d{3,4}\/\d{2})\b/);
+    const isoDateMatch = chunk.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+    const dmyDateMatch = chunk.match(/\b(\d{2})\/(\d{2})\/(20\d{2})\b/);
+
+    let parsedDate = fallbackDate;
+    if (isoDateMatch) {
+      parsedDate = isoDateMatch[1];
+    } else if (dmyDateMatch) {
+      parsedDate = `${dmyDateMatch[3]}-${dmyDateMatch[2]}-${dmyDateMatch[1]}`;
+    }
+
+    // 过滤掉年份(2025/2026)和期号里的4位数字，按顺序提取23个4D开奖号码
+    const cleanedForNums = chunk
+      .replace(/\b\d{3,4}\/\d{2}\b/g, ' ')
+      .replace(/\b\d{2}\/\d{2}\/20\d{2}\b/g, ' ')
+      .replace(/\b20\d{2}-\d{2}-\d{2}\b/g, ' ')
+      .replace(/\b19:00\b/g, ' ');
+
+    const nums = cleanedForNums.match(/\b\d{4}\b/g) || [];
+    if (nums.length >= 23) {
+      map[found[i].key] = {
+        drawNo: drawNoMatch ? drawNoMatch[1] : '',
+        drawDate: parsedDate,
+        p1: nums[0],
+        p2: nums[1],
+        p3: nums[2],
+        special: nums.slice(3, 13),
+        consolation: nums.slice(13, 23)
+      };
+      hitCount++;
+    }
+  }
+
+  return hitCount > 0 ? map : null;
+}
+
+async function fetchLive4DResults(todayStr) {
+  const pages = [
+    'https://www.4d88.com/',
+    'https://www.check4d.org/',
+    'https://www.4dking.com/'
+  ];
+
+  for (const url of pages) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 5000);
+      const timer = setTimeout(() => controller.abort(), 6500);
       const r = await fetch(url, {
         signal: controller.signal,
-        headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' }
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml'
+        }
       });
       clearTimeout(timer);
       if (!r.ok) continue;
-      const json = await r.json();
-      const items = Array.isArray(json)
-        ? json
-        : (Array.isArray(json?.data) ? json.data : (Array.isArray(json?.results) ? json.results : []));
-
-      const map = {};
-      COMPANIES.forEach(k => { map[k] = emptyBoard(todayStr, ''); });
-
-      let hitCount = 0;
-      for (const item of items) {
-        const key = normalizeCompanyKey(item.company || item.name || item.code || item.id);
-        if (!key) continue;
-        const p1 = fmt4(item.p1 || item.first || item['1st']);
-        const p2 = fmt4(item.p2 || item.second || item['2nd']);
-        const p3 = fmt4(item.p3 || item.third || item['3rd']);
-        map[key] = {
-          drawNo: String(item.draw_no || item.drawNo || item.draw || ''),
-          drawDate: String(item.draw_date || item.drawDate || item.date || todayStr),
-          p1,
-          p2,
-          p3,
-          special: pad4List(item.special || item.specials, 10),
-          consolation: pad4List(item.consolation || item.consolations, 10)
-        };
-        if (p1 !== '----') hitCount++;
-      }
-
-      if (hitCount > 0) {
-        return { source: url, results: map };
+      const html = await r.text();
+      const parsed = parse4DFromHtml(html, todayStr);
+      if (parsed) {
+        return { source: url, results: parsed };
       }
     } catch (_) {}
   }
   return null;
 }
 
-// 自动把有效开奖按 (company_id, draw_date) 存入历史表，每天一条
 async function saveDailyHistory(resultsMap, fallbackDate) {
   const { url, key } = getSupabaseConfig();
   const rows = [];
@@ -135,7 +193,6 @@ async function saveDailyHistory(resultsMap, fallbackDate) {
   } catch (_) {}
 }
 
-// 读取各机构历史记录（按日期倒序）
 async function loadHistoryMap() {
   const { url, key } = getSupabaseConfig();
   const map = {};
@@ -186,8 +243,7 @@ module.exports = async function handler(req, res) {
   const results = {};
   COMPANIES.forEach(k => { results[k] = emptyBoard(todayStr, ''); });
 
-  // 1. 先尝试抓最新开奖
-  const fetched = await fetchFromJsonSources(todayStr);
+  const fetched = await fetchLive4DResults(todayStr);
   if (fetched && fetched.results) {
     for (const comp of COMPANIES) {
       if (fetched.results[comp]?.p1 !== '----') {
@@ -197,10 +253,8 @@ module.exports = async function handler(req, res) {
     await saveDailyHistory(results, todayStr);
   }
 
-  // 2. 读历史库（含今天刚存进去的 + 往期每天记录）
   const history = await loadHistoryMap();
 
-  // 3. 若某家机构当天还没抓到，优先用历史库里最新的一期显示（隔天自动更新时也始终有最新开奖号）
   for (const comp of COMPANIES) {
     if (results[comp].p1 === '----' && history[comp] && history[comp].length > 0) {
       results[comp] = { ...history[comp][0] };
