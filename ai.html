@@ -49,9 +49,10 @@
     <form id="chatForm" onsubmit="sendChatMessage(event)" class="flex items-end gap-1.5">
       <label class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center cursor-pointer shrink-0 text-base" title="拍照或选图">
         📷
-        <input type="file" id="chatImageInput" accept="image/*" capture="environment" onchange="handleChatImage(event)" class="hidden" />
+        <input type="file" id="chatImageInput" accept="image/*" onchange="handleChatImage(event)" class="hidden" />
       </label>
       <textarea id="chatInput" rows="1" placeholder="问点什么，或拍张照让我看看..."
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage(event);}"
                 class="flex-1 bg-gray-100 text-gray-800 text-xs rounded-2xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none max-h-28"></textarea>
       <button type="submit" id="sendChatBtn" class="px-3.5 h-9 rounded-full bg-gradient-to-r from-red-600 to-orange-600 text-white text-xs font-bold shrink-0 shadow-xs">发送</button>
     </form>
@@ -113,10 +114,16 @@
       `;
     }
 
+    function escapeHtmlSafe(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
     function appendBubble(role, text, imgSrc = '') {
       const box = document.getElementById('chatMessages');
       const isUser = role === 'user';
-      const escaped = (text || '').replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>');
+      const escaped = escapeHtmlSafe(text);
       const imgHtml = imgSrc ? `<img src="${imgSrc}" class="w-36 h-36 object-cover rounded-xl mb-1.5 border border-white/30" />` : '';
 
       const div = document.createElement('div');
@@ -132,6 +139,30 @@
       box.appendChild(div);
       box.scrollTop = box.scrollHeight;
       return div;
+    }
+
+    async function callAiEndpoint(payload) {
+      const isVercel = window.location.hostname.includes('vercel.app');
+      const endpoints = isVercel
+        ? ['/api/chat', '/.netlify/functions/chat']
+        : ['/.netlify/functions/chat', '/api/chat'];
+
+      let lastRes = null;
+      let lastRaw = '';
+
+      for (const url of endpoints) {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const raw = await res.text();
+        lastRes = res;
+        lastRaw = raw;
+        if (res.status !== 404) break;
+      }
+
+      return { res: lastRes, rawText: lastRaw };
     }
 
     async function sendChatMessage(e) {
@@ -156,21 +187,25 @@
       const loadingBubble = appendBubble('assistant', '正在思考与分析...');
 
       try {
-        const res = await fetch('/.netlify/functions/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: chatHistory,
-            imageBase64: imgToSend,
-            imageMimeType: mimeToSend,
-            lang: localStorage.getItem('dama_lang') || 'zh'
-          })
+        const { res, rawText } = await callAiEndpoint({
+          messages: chatHistory,
+          imageBase64: imgToSend,
+          imageMimeType: mimeToSend,
+          lang: localStorage.getItem('dama_lang') || 'zh'
         });
-        const data = await res.json();
+
         loadingBubble.remove();
 
+        let data = {};
+        try {
+          data = JSON.parse(rawText);
+        } catch (parseErr) {
+          appendBubble('assistant', `接口返回非JSON (HTTP ${res.status})：${rawText.slice(0, 120)}`);
+          return;
+        }
+
         if (!res.ok || !data.reply) {
-          appendBubble('assistant', '出错了：' + (data.error || '服务暂不可用'));
+          appendBubble('assistant', '出错了：' + (data.error || `HTTP ${res.status}`));
           return;
         }
 
@@ -178,7 +213,7 @@
         chatHistory.push({ role: 'assistant', content: data.reply });
       } catch (err) {
         loadingBubble.remove();
-        appendBubble('assistant', '网络异常，请稍后再试。');
+        appendBubble('assistant', '请求失败：' + (err.message || '网络异常，请稍后再试。'));
       } finally {
         btn.disabled = false;
         btn.innerText = '发送';
