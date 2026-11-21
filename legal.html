@@ -12,12 +12,12 @@
 <body class="bg-slate-50 text-slate-800 pb-20">
   <header class="bg-gradient-to-r from-red-600 to-amber-600 text-white p-4 shadow sticky top-0 z-20">
     <div class="max-w-3xl mx-auto flex items-center justify-between">
-      <a href="index.html" class="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">← 返回首页</a>
-      <h1 class="font-bold text-base">大马吉通 · 平台说明与合作</h1>
+      <a href="index.html" data-i18n="back_btn" class="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">← 返回首页</a>
+      <h1 data-i18n="nav_title" class="font-bold text-base">大马吉通 · 平台说明与合作</h1>
       <div class="space-x-1 text-xs">
-        <button onclick="setLang('cn')" class="px-2 py-1 rounded bg-white text-red-600 font-bold">CN</button>
-        <button onclick="setLang('en')" class="px-2 py-1 rounded bg-white/20">EN</button>
-        <button onclick="setLang('bm')" class="px-2 py-1 rounded bg-white/20">BM</button>
+        <button id="btn-cn" onclick="setLang('cn')" class="lang-btn px-2 py-1 rounded bg-white text-red-600 font-bold">CN</button>
+        <button id="btn-en" onclick="setLang('en')" class="lang-btn px-2 py-1 rounded bg-white/20">EN</button>
+        <button id="btn-bm" onclick="setLang('bm')" class="lang-btn px-2 py-1 rounded bg-white/20">BM</button>
       </div>
     </div>
   </header>
@@ -39,19 +39,19 @@
       </p>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div class="bg-white p-3 rounded-xl border border-amber-100">
-          <div class="font-bold text-slate-800">基础黄页入驻</div>
-          <div class="text-red-600 font-extrabold text-base my-1">免费 RM 0</div>
-          <div class="text-slate-500">自助上传图文宣传、展示联系方式与地址</div>
+          <div class="font-bold text-slate-800" data-i18n="pkg1_t">基础黄页入驻</div>
+          <div class="text-red-600 font-extrabold text-base my-1" data-i18n="pkg1_p">免费 RM 0</div>
+          <div class="text-slate-500" data-i18n="pkg1_d">自助上传图文宣传、展示联系方式与地址</div>
         </div>
         <div class="bg-white p-3 rounded-xl border-2 border-amber-400">
-          <div class="font-bold text-slate-800">同城分类置顶（热门）</div>
-          <div class="text-red-600 font-extrabold text-base my-1">RM 68 / 月</div>
-          <div class="text-slate-500">分类前 3 位固定曝光 + 官方认证标签 + WhatsApp 直达</div>
+          <div class="font-bold text-slate-800" data-i18n="pkg2_t">同城分类置顶（热门）</div>
+          <div class="text-red-600 font-extrabold text-base my-1" data-i18n="pkg2_p">RM 68 / 月</div>
+          <div class="text-slate-500" data-i18n="pkg2_d">分类前 3 位固定曝光 + 官方认证标签 + WhatsApp 直达</div>
         </div>
         <div class="bg-white p-3 rounded-xl border border-amber-100">
-          <div class="font-bold text-slate-800">全站首页 / 4D 页横幅</div>
-          <div class="text-red-600 font-extrabold text-base my-1">RM 188 / 月</div>
-          <div class="text-slate-500">全站高频页面黄金位置轮播展示</div>
+          <div class="font-bold text-slate-800" data-i18n="pkg3_t">全站首页 / 4D 页横幅</div>
+          <div class="text-red-600 font-extrabold text-base my-1" data-i18n="pkg3_p">RM 188 / 月</div>
+          <div class="text-slate-500" data-i18n="pkg3_d">全站高频页面黄金位置轮播展示</div>
         </div>
       </div>
     </section>
@@ -59,13 +59,13 @@
     <!-- 3. 隐私政策与广告披露 -->
     <section id="privacy" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-2">
       <h2 class="text-lg font-bold text-slate-800" data-i18n="priv_t">隐私政策与联盟广告披露 (Privacy Policy)</h2>
-      <p class="text-xs leading-relaxed text-slate-600">
+      <p class="text-xs leading-relaxed text-slate-600" data-i18n-html="priv_1">
         1. <strong>Cookie 与第三方广告</strong>：本网站使用 Google AdSense 及相关联盟营销合作伙伴（如 Involve Asia、Shopee Affiliate 等）投放个性化广告或商品推荐。第三方供应商可能使用 Cookie 根据用户过往访问记录展示相关广告。
       </p>
-      <p class="text-xs leading-relaxed text-slate-600">
+      <p class="text-xs leading-relaxed text-slate-600" data-i18n-html="priv_2">
         2. <strong>联盟佣金声明</strong>：本站部分生活好物、旅游预订、信用卡及车险推荐链接包含联盟追踪代码（Affiliate Links），您通过链接完成申请或购买不会产生任何额外费用，本站可能从中获得少量推广佣金以维持服务器免费运营。
       </p>
-      <p class="text-xs leading-relaxed text-slate-600">
+      <p class="text-xs leading-relaxed text-slate-600" data-i18n-html="priv_3">
         3. <strong>用户信息保护</strong>：商家及用户在发布分类信息时主动提交的公开联系方式仅用于页面展示，我们不会向无关第三方出售您的个人敏感数据。
       </p>
     </section>
@@ -73,10 +73,10 @@
     <!-- 4. 免责声明与服务条款 -->
     <section id="terms" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-2">
       <h2 class="text-lg font-bold text-slate-800" data-i18n="term_t">服务条款与开奖数据免责声明 (Terms of Service)</h2>
-      <p class="text-xs leading-relaxed text-slate-600">
+      <p class="text-xs leading-relaxed text-slate-600" data-i18n="term_1">
         1. 本站提供的万字开奖（4D）结果汇总自公开数据源，仅供信息查询与参考，最终派彩结果请一律以各官方机构（Magnum、Sports Toto、Da Ma Cai、Sabah 88、STC、CashSweep）正式公告为准。
       </p>
-      <p class="text-xs leading-relaxed text-slate-600">
+      <p class="text-xs leading-relaxed text-slate-600" data-i18n="term_2">
         2. 商家与用户自行发布的宣传图文内容由发布者本人承担真实性与合法性责任，严禁发布违法、欺诈或侵权信息，本站有权随时下架违规内容。
       </p>
     </section>
@@ -84,7 +84,7 @@
     <!-- 5. 联系我们 -->
     <section id="contact" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
       <h2 class="text-lg font-bold text-slate-800 mb-2" data-i18n="cont_t">联系我们 (Contact Us)</h2>
-      <p class="text-xs text-slate-600 leading-relaxed">
+      <p class="text-xs text-slate-600 leading-relaxed" data-i18n-html="cont_p">
         广告投放、商家认证置顶、商务合作或内容反馈，请通过以下方式联系大马吉通运营团队：<br />
         官方网站：<span class="font-medium text-slate-800">https://www.damajitong.com</span><br />
         商务邮箱：<span class="font-medium text-slate-800">damajitongofficial@gmail.com</span>
@@ -95,39 +95,102 @@
   <script>
     const DICT = {
       cn: {
+        back_btn: '← 返回首页',
+        nav_title: '大马吉通 · 平台说明与合作',
         about_t: '关于大马吉通 (DaMaJiTong.com)',
         about_p: '大马吉通（damajitong.com）是面向马来西亚本地居民与华社的一站式生活资讯与便民服务平台，提供三语实时新闻、万字开奖（4D）自动查询与历史归档、本地出行路线查询以及马来西亚本地商家黄页与分类信息服务。',
         ads_t: '商家入驻置顶 & 广告位招商',
         ads_p: '覆盖槟城（Penang）、怡保（Ipoh）、吉隆坡（KL）及全马高频本地流量。支持商家自主发布图文信息、首页推荐置顶、分类榜首认证及优惠券分发。',
+        pkg1_t: '基础黄页入驻',
+        pkg1_p: '免费 RM 0',
+        pkg1_d: '自助上传图文宣传、展示联系方式与地址',
+        pkg2_t: '同城分类置顶（热门）',
+        pkg2_p: 'RM 68 / 月',
+        pkg2_d: '分类前 3 位固定曝光 + 官方认证标签 + WhatsApp 直达',
+        pkg3_t: '全站首页 / 4D 页横幅',
+        pkg3_p: 'RM 188 / 月',
+        pkg3_d: '全站高频页面黄金位置轮播展示',
         priv_t: '隐私政策与联盟广告披露 (Privacy Policy)',
+        priv_1: '1. <strong>Cookie 与第三方广告</strong>：本网站使用 Google AdSense 及相关联盟营销合作伙伴（如 Involve Asia、Shopee Affiliate 等）投放个性化广告或商品推荐。第三方供应商可能使用 Cookie 根据用户过往访问记录展示相关广告。',
+        priv_2: '2. <strong>联盟佣金声明</strong>：本站部分生活好物、旅游预订、信用卡及车险推荐链接包含联盟追踪代码（Affiliate Links），您通过链接完成申请或购买不会产生任何额外费用，本站可能从中获得少量推广佣金以维持服务器免费运营。',
+        priv_3: '3. <strong>用户信息保护</strong>：商家及用户在发布分类信息时主动提交的公开联系方式仅用于页面展示，我们不会向无关第三方出售您的个人敏感数据。',
         term_t: '服务条款与开奖数据免责声明 (Terms of Service)',
-        cont_t: '联系我们 (Contact Us)'
+        term_1: '1. 本站提供的万字开奖（4D）结果汇总自公开数据源，仅供信息查询与参考，最终派彩结果请一律以各官方机构（Magnum、Sports Toto、Da Ma Cai、Sabah 88、STC、CashSweep）正式公告为准。',
+        term_2: '2. 商家与用户自行发布的宣传图文内容由发布者本人承担真实性与合法性责任，严禁发布违法、欺诈或侵权信息，本站有权随时下架违规内容。',
+        cont_t: '联系我们 (Contact Us)',
+        cont_p: '广告投放、商家认证置顶、商务合作或内容反馈，请通过以下方式联系大马吉通运营团队：<br />官方网站：<span class="font-medium text-slate-800">https://www.damajitong.com</span><br />商务邮箱：<span class="font-medium text-slate-800">damajitongofficial@gmail.com</span>'
       },
       en: {
+        back_btn: '← Home',
+        nav_title: 'DaMaJiTong · Info & Partnership',
         about_t: 'About DaMaJiTong (DaMaJiTong.com)',
-        about_p: 'DaMaJiTong is a trilingual Malaysian local portal offering real-time news, automated 4D draw results & history archives, local route navigation, and a business directory & classifieds platform.',
+        about_p: 'DaMaJiTong (damajitong.com) is a trilingual Malaysian local portal offering real-time news, automated 4D draw results & history archives, local route navigation, and a business directory & classifieds platform.',
         ads_t: 'Merchant Featured Listing & Advertising',
         ads_p: 'Reach high-intent local users across Penang, Ipoh, Kuala Lumpur, and nationwide Malaysia with featured listings, verified badges, and banner placements.',
+        pkg1_t: 'Basic Directory Listing',
+        pkg1_p: 'Free RM 0',
+        pkg1_d: 'Self-service photo & promo upload with contact and address display',
+        pkg2_t: 'Top Category Pin (Popular)',
+        pkg2_p: 'RM 68 / Month',
+        pkg2_d: 'Top 3 category exposure + Verified Badge + Direct WhatsApp button',
+        pkg3_t: 'Homepage / 4D Page Banner',
+        pkg3_p: 'RM 188 / Month',
+        pkg3_d: 'Prime rotating banner placement across high-traffic pages',
         priv_t: 'Privacy Policy & Affiliate Disclosure',
+        priv_1: '1. <strong>Cookies & Third-Party Ads</strong>: This site uses Google AdSense and affiliate partners (such as Involve Asia and Shopee Affiliate) to serve personalized ads and recommendations. Third-party vendors may use cookies based on prior visits.',
+        priv_2: '2. <strong>Affiliate Commission Disclosure</strong>: Certain lifestyle, travel, credit card, and motor insurance links contain affiliate tracking codes. Clicking or applying through these links incurs no extra cost to you, while we may earn a small commission to keep this platform free.',
+        priv_3: '3. <strong>User Data Protection</strong>: Public contact details submitted by merchants or users for classified listings are displayed solely for directory purposes. We never sell your sensitive personal data to unrelated third parties.',
         term_t: 'Terms of Service & Disclaimer',
-        cont_t: 'Contact Us'
+        term_1: '1. 4D lottery results provided on this site are aggregated from public sources for informational reference only. Please always verify final winning numbers against official operators (Magnum, Sports Toto, Da Ma Cai, Sabah 88, STC, CashSweep).',
+        term_2: '2. Merchants and users bear sole legal responsibility for the accuracy and legality of their self-published content. Illegal, fraudulent, or infringing listings are strictly prohibited and subject to immediate removal.',
+        cont_t: 'Contact Us',
+        cont_p: 'For advertising, verified merchant listings, business partnerships, or feedback, please contact the DaMaJiTong team:<br />Official Website: <span class="font-medium text-slate-800">https://www.damajitong.com</span><br />Business Email: <span class="font-medium text-slate-800">damajitongofficial@gmail.com</span>'
       },
       bm: {
+        back_btn: '← Utama',
+        nav_title: 'DaMaJiTong · Maklumat & Kerjasama',
         about_t: 'Mengenai DaMaJiTong (DaMaJiTong.com)',
-        about_p: 'DaMaJiTong ialah portal komuniti tempatan Malaysia dalam tiga bahasa yang menyediakan berita semasa, keputusan 4D automatik, panduan laluan serta direktori perniagaan tempatan.',
+        about_p: 'DaMaJiTong (damajitong.com) ialah portal komuniti tempatan Malaysia dalam tiga bahasa yang menyediakan berita semasa, keputusan 4D automatik & arkib sejarah, panduan laluan serta direktori perniagaan tempatan.',
         ads_t: 'Penyenaraian Perniagaan & Pengiklanan',
-        ads_p: 'Tingkatkan pendedahan perniagaan anda di Pulau Pinang, Ipoh, Kuala Lumpur dan seluruh Malaysia melalui iklan sepanduk dan penyenaraian teratas.',
+        ads_p: 'Tingkatkan pendedahan perniagaan anda di Pulau Pinang, Ipoh, Kuala Lumpur dan seluruh Malaysia melalui iklan sepanduk, lencana disahkan dan penyenaraian teratas.',
+        pkg1_t: 'Penyenaraian Direktori Asas',
+        pkg1_p: 'Percuma RM 0',
+        pkg1_d: 'Muat naik gambar & promosi layan diri beserta nombor telefon dan alamat',
+        pkg2_t: 'Pin Kategori Teratas (Popular)',
+        pkg2_p: 'RM 68 / Bulan',
+        pkg2_d: 'Paparan 3 teratas kategori + Lencana Disahkan + Butang WhatsApp Terus',
+        pkg3_t: 'Sepanduk Halaman Utama / 4D',
+        pkg3_p: 'RM 188 / Bulan',
+        pkg3_d: 'Paparan sepanduk bergilir di lokasi utama halaman trafik tinggi',
         priv_t: 'Dasar Privasi & Pendedahan Afiliasi',
+        priv_1: '1. <strong>Kuki & Iklan Pihak Ketiga</strong>: Laman web ini menggunakan Google AdSense dan rakan pemasaran afiliasi (seperti Involve Asia dan Shopee Affiliate) untuk memaparkan iklan atau cadangan produk yang relevan menggunakan kuki pelayar.',
+        priv_2: '2. <strong>Pendedahan Komisen Afiliasi</strong>: Sebahagian pautan tempahan pelancongan, kad kredit dan insurans kereta mengandungi kod penjejakan afiliasi. Anda tidak dikenakan sebarang caj tambahan, manakala pihak kami mungkin menerima komisen kecil bagi menampung kos operasi percuma.',
+        priv_3: '3. <strong>Perlindungan Data Pengguna</strong>: Maklumat hubungan awam yang dihantar oleh peniaga atau pengguna hanya dipaparkan untuk tujuan direktori. Kami tidak pernah menjual data peribadi sensitif anda kepada pihak ketiga.',
         term_t: 'Terma Perkhidmatan & Penafian',
-        cont_t: 'Hubungi Kami'
+        term_1: '1. Keputusan 4D yang dipaparkan dikumpul daripada sumber awam untuk rujukan maklumat sahaja. Sila rujuk pengumuman rasmi pengendali berlesen (Magnum, Sports Toto, Da Ma Cai, Sabah 88, STC, CashSweep) untuk pengesahan muktamad.',
+        term_2: '2. Peniaga dan pengguna bertanggungjawab sepenuhnya ke atas ketepatan dan kesahihan kandungan yang dimuat naik. Sebarang kandungan haram, penipuan atau melanggar hak cipta akan dipadam serta-merta.',
+        cont_t: 'Hubungi Kami',
+        cont_p: 'Untuk pertanyaan pengiklanan, penyenaraian disahkan, kerjasama perniagaan atau maklum balas, sila hubungi pasukan DaMaJiTong:<br />Laman Web Rasmi: <span class="font-medium text-slate-800">https://www.damajitong.com</span><br />E-mel Perniagaan: <span class="font-medium text-slate-800">damajitongofficial@gmail.com</span>'
       }
     };
+
     function setLang(l) {
       const m = DICT[l] || DICT.cn;
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const k = el.getAttribute('data-i18n');
         if (m[k]) el.textContent = m[k];
       });
+      document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const k = el.getAttribute('data-i18n-html');
+        if (m[k]) el.innerHTML = m[k];
+      });
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.className = 'lang-btn px-2 py-1 rounded bg-white/20';
+      });
+      const activeBtn = document.getElementById('btn-' + l);
+      if (activeBtn) {
+        activeBtn.className = 'lang-btn px-2 py-1 rounded bg-white text-red-600 font-bold';
+      }
     }
   </script>
 </body>
