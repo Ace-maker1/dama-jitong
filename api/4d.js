@@ -37,7 +37,11 @@ function fmt4(v) {
   return d.length === 4 ? d : '----';
 }
 
-// 尝试从公开第三方 4D JSON 接口抓取最新开奖
+function getMytDateStr() {
+  const now = new Date(Date.now() + 8 * 3600000);
+  return now.toISOString().slice(0, 10);
+}
+
 async function fetchFromPublic4DApi() {
   const sources = [
     'https://api.4dnum.com/api/v1/results',
@@ -69,7 +73,7 @@ async function fetchFromPublic4DApi() {
         if (!key) continue;
         map[key] = {
           drawNo: String(item.draw_no || item.drawNo || item.draw || ''),
-          drawDate: String(item.draw_date || item.drawDate || item.date || ''),
+          drawDate: String(item.draw_date || item.drawDate || item.date || getMytDateStr()),
           p1: fmt4(item.p1 || item.first || item['1st']),
           p2: fmt4(item.p2 || item.second || item['2nd']),
           p3: fmt4(item.p3 || item.third || item['3rd']),
@@ -87,20 +91,21 @@ async function fetchFromPublic4DApi() {
   return null;
 }
 
-// 从 Supabase results_4d 表读取兜底数据
-async function fetchFromSupabase() {
-  const supabaseUrl = process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co';
-  const supabaseKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+function getSupabaseConfig() {
+  return {
+    url: process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co',
+    key: process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
+  };
+}
 
+async function fetchFromSupabaseLatest() {
+  const { url, key } = getSupabaseConfig();
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 4500);
-    const r = await fetch(`${supabaseUrl}/rest/v1/results_4d?select=*`, {
+    const r = await fetch(`${url}/rest/v1/results_4d?select=*`, {
       signal: controller.signal,
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`
-      }
+      headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
     });
     clearTimeout(timer);
     if (!r.ok) return null;
@@ -110,11 +115,11 @@ async function fetchFromSupabase() {
     const map = {};
     COMPANIES.forEach(k => { map[k] = emptyBoard(); });
     for (const row of rows) {
-      const key = normalizeCompanyKey(row.company_id || row.company || row.name);
-      if (!key) continue;
-      map[key] = {
+      const comp = normalizeCompanyKey(row.company_id || row.company || row.name);
+      if (!comp) continue;
+      map[comp] = {
         drawNo: String(row.draw_no || ''),
-        drawDate: String(row.draw_date || ''),
+        drawDate: String(row.draw_date || getMytDateStr()),
         p1: fmt4(row.p1),
         p2: fmt4(row.p2),
         p3: fmt4(row.p3),
@@ -126,6 +131,80 @@ async function fetchFromSupabase() {
   } catch (_) {
     return null;
   }
+}
+
+// 自动把有效开奖结果归档到 results_4d_history（遇到同 company_id + draw_date 自动跳过）
+async function archiveResultsToHistory(resultsMap) {
+  const { url, key } = getSupabaseConfig();
+  const rows = [];
+  for (const comp of COMPANIES) {
+    const item = resultsMap?.[comp];
+    if (!item || !/^\d{4}$/.test(item.p1)) continue;
+    rows.push({
+      company_id: comp,
+      draw_no: item.drawNo || '',
+      draw_date: item.drawDate || getMytDateStr(),
+      p1: item.p1,
+      p2: item.p2,
+      p3: item.p3,
+      special: item.special,
+      consolation: item.consolation
+    });
+  }
+  if (rows.length === 0) return;
+
+  try {
+    await fetch(`${url}/rest/v1/results_4d_history?on_conflict=company_id,draw_date`, {
+      method: 'POST',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=ignore-duplicates'
+      },
+      body: JSON.stringify(rows)
+    });
+  } catch (_) {}
+}
+
+// 读取各机构最近 20 期历史记录
+async function fetchHistoryByCompany() {
+  const { url, key } = getSupabaseConfig();
+  const historyMap = {};
+  COMPANIES.forEach(k => { historyMap[k] = []; });
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4500);
+    const r = await fetch(
+      `${url}/rest/v1/results_4d_history?select=*&order=draw_date.desc,id.desc&limit=120`,
+      {
+        signal: controller.signal,
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+      }
+    );
+    clearTimeout(timer);
+    if (!r.ok) return historyMap;
+    const rows = await r.json();
+    if (!Array.isArray(rows)) return historyMap;
+
+    for (const row of rows) {
+      const comp = normalizeCompanyKey(row.company_id);
+      if (!comp || historyMap[comp].length >= 20) continue;
+      historyMap[comp].push({
+        id: row.id,
+        drawNo: String(row.draw_no || ''),
+        drawDate: String(row.draw_date || ''),
+        p1: fmt4(row.p1),
+        p2: fmt4(row.p2),
+        p3: fmt4(row.p3),
+        special: pad4List(row.special, 10),
+        consolation: pad4List(row.consolation, 10)
+      });
+    }
+  } catch (_) {}
+
+  return historyMap;
 }
 
 let cachePayload = null;
@@ -148,12 +227,23 @@ module.exports = async function handler(req, res) {
   COMPANIES.forEach(k => { emptyMap[k] = emptyBoard(); });
 
   const liveData = await fetchFromPublic4DApi();
-  const finalData = liveData || (await fetchFromSupabase()) || { source: 'none', results: emptyMap };
+  const finalData = liveData || (await fetchFromSupabaseLatest()) || { source: 'none', results: emptyMap };
+
+  await archiveResultsToHistory(finalData.results);
+  const history = await fetchHistoryByCompany();
+
+  // 如果最新接口没拿到数，但历史表里有最新一期，自动用历史最新一期兜底展示
+  for (const comp of COMPANIES) {
+    if (finalData.results[comp].p1 === '----' && history[comp]?.length > 0) {
+      finalData.results[comp] = { ...history[comp][0] };
+    }
+  }
 
   cachePayload = {
     ok: true,
     updatedAt: new Date().toISOString(),
-    ...finalData
+    ...finalData,
+    history
   };
   cacheTime = now;
 
