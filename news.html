@@ -9,7 +9,7 @@
 </head>
 <body>
   <div class="app-shell">
-    <!-- 顶部红色新闻渐变导航栏（清爽单行标题 + 横向频道标签） -->
+    <!-- 顶部红色新闻渐变导航栏（清爽单行标题 + 搜索栏 + 横向频道标签） -->
     <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3 py-2.5">
       <div class="flex items-center justify-between gap-2 mb-2">
         <div class="flex items-center gap-2 min-w-0">
@@ -32,6 +32,17 @@
         </div>
       </div>
 
+      <!-- 新闻搜索框 -->
+      <div class="relative mb-2">
+        <input type="text" id="newsSearchInput" oninput="onNewsSearchInput()" placeholder="搜新闻关键词（如：槟城、油价、汇率、英超）..."
+               class="w-full bg-white/95 text-gray-800 text-xs rounded-full pl-8 pr-7 py-1.5 focus:outline-none shadow-inner">
+        <span class="absolute left-3 top-1.5 text-gray-400 text-xs pointer-events-none">🔍</span>
+        <button type="button" id="clearNewsSearchBtn" onclick="clearNewsSearch()" class="hidden absolute right-2.5 top-1.5 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
+      </div>
+
+      <!-- 快捷热搜词胶囊 -->
+      <div id="hotNewsTags" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar mb-2 text-[10px]"></div>
+
       <!-- 新闻频道横向滑动标签栏（首项直达足坛球星专区） -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
         <a href="/football.html" id="starZoneChip" class="px-3 py-1 rounded-full text-xs font-black bg-emerald-500 hover:bg-emerald-400 text-white shrink-0 shadow-xs transition">⚽ 球星专区</a>
@@ -39,8 +50,14 @@
       </div>
     </header>
 
+    <!-- 搜索状态提示栏 -->
+    <div id="newsSearchBanner" class="hidden mx-3 mt-2.5 bg-amber-50 border border-amber-200 text-amber-900 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between">
+      <span id="newsSearchSummary"></span>
+      <button type="button" onclick="clearNewsSearch()" id="clearSearchBannerBtn" class="text-amber-700 font-bold hover:underline">清除搜索</button>
+    </div>
+
     <!-- 新闻列表主体 -->
-    <main class="flex-1 p-3 space-y-2.5" id="newsContainer"></main>
+    <main class="flex-1 p-3 pb-24 space-y-2.5" id="newsContainer"></main>
 
     <!-- 底部5键导航栏 -->
     <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
@@ -73,6 +90,12 @@
         back: '← 首页',
         title: '实时新闻头条',
         sub: '大马 · 新加坡 · 加密 · 股市 · 地缘 · 体育',
+        searchPlaceholder: '搜新闻（如：槟城、油价、汇率、比特币）...',
+        hotPrefix: '热搜：',
+        hotKeywords: ['槟城', '油价', '汇率', '比特币'],
+        clearSearch: '清除搜索',
+        foundInTopic: (kw, n) => `搜索“${kw}” · 当前频道匹配 ${n} 条`,
+        foundAcrossAll: (kw, n) => `当前频道无结果，已跨频道找到“${kw}”相关 ${n} 条`,
         starChip: '⚽ 球星专区',
         syncing: '后台刷新中...',
         empty: '暂时未拉取到最新内容，点击下方重试',
@@ -153,6 +176,12 @@
         back: '← Home',
         title: 'Live News Feed',
         sub: 'Malaysia · Singapore · Crypto · Stocks · World · Sports',
+        searchPlaceholder: 'Search news (e.g. Penang, fuel, Ringgit, BTC)...',
+        hotPrefix: 'Hot:',
+        hotKeywords: ['Penang', 'fuel', 'Ringgit', 'Bitcoin'],
+        clearSearch: 'Clear',
+        foundInTopic: (kw, n) => `Search "${kw}" · ${n} match(es) in tab`,
+        foundAcrossAll: (kw, n) => `No match in tab, found ${n} across all topics for "${kw}"`,
         starChip: '⚽ Football Stars',
         syncing: 'Updating...',
         empty: 'No headlines loaded right now, tap to retry',
@@ -231,6 +260,12 @@
         back: '← Utama',
         title: 'Berita Terkini',
         sub: 'Malaysia · Singapura · Kripto · Saham · Dunia · Sukan',
+        searchPlaceholder: 'Cari berita (cth: Penang, minyak, Ringgit, bola)...',
+        hotPrefix: 'Hot:',
+        hotKeywords: ['Penang', 'minyak', 'Ringgit', 'bola'],
+        clearSearch: 'Padam',
+        foundInTopic: (kw, n) => `Carian "${kw}" · ${n} berita sepadan`,
+        foundAcrossAll: (kw, n) => `Tiada dalam tab ini, ditemui ${n} merentas topik untuk "${kw}"`,
         starChip: '⚽ Bintang Bola',
         syncing: 'Mengemas kini...',
         empty: 'Tiada berita ditemui, tekan untuk cuba semula',
@@ -300,9 +335,20 @@
       }
     };
 
+    const NEWS_SYNONYMS = [
+      ['槟城', 'penang', 'pulau pinang', '北海', '大山脚'],
+      ['油价', 'ron95', 'ron97', '汽油', 'petrol', 'fuel', 'minyak'],
+      ['汇率', '马币', 'myr', 'ringgit', 'sgd', '新币', 'cny', '人民币'],
+      ['比特币', 'bitcoin', 'btc', '加密', 'crypto', 'kripto', 'ethereum', 'eth'],
+      ['英超', '欧冠', '足球', 'football', 'premier league', 'champions league', 'bola']
+    ];
+
     let currentNewsLang = localStorage.getItem('dama_lang') || 'zh';
     let currentTopicId = 'my';
+    let currentSearchQuery = '';
     let activeRequestId = 0;
+    let topicItemsCache = {};
+    let isLoadingCurrentTopic = false;
 
     function isSafeExternalUrl(url) {
       return /^https?:\/\//i.test((url || '').trim());
@@ -312,6 +358,53 @@
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), ms);
       return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+    }
+
+    function expandNewsTerms(rawKw) {
+      const kw = (rawKw || '').trim().toLowerCase();
+      if (!kw) return [];
+      const set = new Set([kw]);
+      for (const group of NEWS_SYNONYMS) {
+        if (group.some(g => g.includes(kw) || kw.includes(g))) {
+          group.forEach(g => set.add(g));
+        }
+      }
+      return Array.from(set);
+    }
+
+    function escapeRegex(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function highlightTitle(title, terms) {
+      if (!terms || terms.length === 0) return title;
+      const validTerms = terms.filter(t => t.length >= 2);
+      if (validTerms.length === 0) return title;
+      const pattern = new RegExp(`(${validTerms.map(escapeRegex).join('|')})`, 'gi');
+      return title.replace(pattern, '<mark class="bg-amber-200 text-gray-950 px-0.5 rounded">$1</mark>');
+    }
+
+    function onNewsSearchInput() {
+      const val = document.getElementById('newsSearchInput').value;
+      currentSearchQuery = val.trim();
+      document.getElementById('clearNewsSearchBtn').classList.toggle('hidden', !val.trim());
+      refreshNewsView();
+    }
+
+    function applyHotKeyword(kw) {
+      const input = document.getElementById('newsSearchInput');
+      input.value = kw;
+      currentSearchQuery = kw.trim();
+      document.getElementById('clearNewsSearchBtn').classList.remove('hidden');
+      refreshNewsView();
+    }
+
+    function clearNewsSearch() {
+      const input = document.getElementById('newsSearchInput');
+      input.value = '';
+      currentSearchQuery = '';
+      document.getElementById('clearNewsSearchBtn').classList.add('hidden');
+      refreshNewsView();
     }
 
     function switchNewsLang(lang) {
@@ -338,6 +431,8 @@
       document.getElementById('backHomeLink').innerText = t.back;
       document.getElementById('newsPageTitle').innerText = t.title;
       document.getElementById('newsPageSub').innerText = t.sub;
+      document.getElementById('newsSearchInput').placeholder = t.searchPlaceholder;
+      document.getElementById('clearSearchBannerBtn').innerText = t.clearSearch;
       document.getElementById('starZoneChip').innerText = t.starChip;
       document.getElementById('syncBadge').innerText = t.syncing;
       document.getElementById('navHome').innerText = t.navHome;
@@ -345,6 +440,14 @@
       document.getElementById('navPost').innerText = t.navPost;
       document.getElementById('navMap').innerText = t.navMap;
       document.getElementById('navBiz').innerText = t.navBiz;
+
+      const hotEl = document.getElementById('hotNewsTags');
+      if (hotEl) {
+        hotEl.innerHTML = `<span class="text-white/80 shrink-0 font-medium">${t.hotPrefix}</span>` +
+          (t.hotKeywords || []).map(kw =>
+            `<button type="button" onclick="applyHotKeyword('${kw}')" class="px-2 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold shrink-0 transition">#${kw}</button>`
+          ).join('');
+      }
 
       const tabsEl = document.getElementById('topicTabs');
       tabsEl.innerHTML = t.topics.map(tp => {
@@ -382,7 +485,7 @@
       `).join('');
     }
 
-    function renderNewsCards(items, topicLabel, readMoreText) {
+    function renderNewsCards(items, topicLabel, readMoreText, searchTerms = []) {
       const seen = new Set();
       const uniqueItems = items.filter(it => {
         if (!isSafeExternalUrl(it.link)) return false;
@@ -392,28 +495,103 @@
         return true;
       });
 
-      return uniqueItems.slice(0, 25).map((item, idx) => `
+      return uniqueItems.slice(0, 25).map((item, idx) => {
+        const displayTitle = searchTerms.length > 0 ? highlightTitle(item.title, searchTerms) : item.title;
+        return `
         <a href="${item.link}" target="_blank" rel="noopener noreferrer"
            class="block bg-white rounded-2xl p-3.5 shadow-2xs border border-gray-100 card-hover">
           <div class="flex justify-between gap-3">
             <div class="flex-1 min-w-0 flex flex-col justify-between">
               <div>
                 <div class="flex items-center gap-1.5 mb-1.5">
-                  ${idx < 3 ? `<span class="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded">HOT ${idx + 1}</span>` : ''}
+                  ${idx < 3 && searchTerms.length === 0 ? `<span class="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 rounded">HOT ${idx + 1}</span>` : ''}
                   <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded truncate max-w-[160px]">${item.realSource || item.source}</span>
                   <span class="text-[11px] text-gray-400 shrink-0">${timeAgo(item.pubDate, currentNewsLang)}</span>
                 </div>
-                <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${item.title}</h2>
+                <h2 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${displayTitle}</h2>
               </div>
               <div class="flex items-center justify-between text-[11px]">
-                <span class="text-gray-400">${topicLabel}</span>
+                <span class="text-gray-400">${item._topicLabel || topicLabel}</span>
                 <span class="text-red-600 font-bold">${readMoreText}</span>
               </div>
             </div>
             ${item.thumbnail ? `<img src="${item.thumbnail}" loading="lazy" onerror="this.style.display='none'" class="w-20 h-20 rounded-xl object-cover shrink-0 border border-gray-100" />` : ''}
           </div>
         </a>
-      `).join('');
+      `;
+      }).join('');
+    }
+
+    function refreshNewsView() {
+      const t = NEWS_I18N[currentNewsLang];
+      const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
+      const box = document.getElementById('newsContainer');
+      const banner = document.getElementById('newsSearchBanner');
+      const summaryEl = document.getElementById('newsSearchSummary');
+      const cacheKey = `dmjt_v6_news_${currentNewsLang}_${topic.id}`;
+
+      let currentItems = topicItemsCache[cacheKey] || [];
+      if (currentItems.length === 0) {
+        try {
+          const cachedRaw = localStorage.getItem(cacheKey);
+          if (cachedRaw) currentItems = JSON.parse(cachedRaw) || [];
+        } catch (e) {}
+      }
+
+      const terms = expandNewsTerms(currentSearchQuery);
+      if (terms.length === 0) {
+        banner.classList.add('hidden');
+        if (currentItems.length > 0) {
+          box.innerHTML = renderNewsCards(currentItems, topic.label, t.readMore, []);
+        } else if (!isLoadingCurrentTopic) {
+          box.innerHTML = `
+            <div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100">
+              <div class="text-gray-400 text-sm">${t.empty}</div>
+              <button onclick="loadLiveNews()" class="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs">${t.retry}</button>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      const matchFn = (it) => {
+        const blob = `${it.title || ''} ${it.realSource || ''} ${it.source || ''}`.toLowerCase();
+        return terms.some(term => blob.includes(term));
+      };
+
+      let matched = currentItems.filter(matchFn);
+      let usedCrossTopic = false;
+
+      if (matched.length === 0) {
+        const allCached = [];
+        t.topics.forEach(tp => {
+          const k = `dmjt_v6_news_${currentNewsLang}_${tp.id}`;
+          let arr = topicItemsCache[k];
+          if (!arr) {
+            try { arr = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { arr = []; }
+          }
+          (arr || []).forEach(it => allCached.push({ ...it, _topicLabel: tp.label }));
+        });
+        matched = allCached.filter(matchFn);
+        if (matched.length > 0) usedCrossTopic = true;
+      }
+
+      banner.classList.remove('hidden');
+      summaryEl.innerText = usedCrossTopic
+        ? t.foundAcrossAll(currentSearchQuery, matched.length)
+        : t.foundInTopic(currentSearchQuery, matched.length);
+
+      if (matched.length === 0) {
+        box.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100">
+            <div class="text-gray-400 text-sm">${t.empty}</div>
+            <button onclick="clearNewsSearch()" class="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs">${t.clearSearch}</button>
+          </div>
+        `;
+        return;
+      }
+
+      box.innerHTML = renderNewsCards(matched, topic.label, t.readMore, terms);
     }
 
     async function fetchFeedFast(feedObj) {
@@ -461,6 +639,7 @@
 
     async function loadLiveNews() {
       const reqId = ++activeRequestId;
+      isLoadingCurrentTopic = true;
       const t = NEWS_I18N[currentNewsLang];
       const topic = t.topics.find(item => item.id === currentTopicId) || t.topics[0];
       const box = document.getElementById('newsContainer');
@@ -473,7 +652,8 @@
         if (cachedRaw) {
           const cachedItems = JSON.parse(cachedRaw);
           if (Array.isArray(cachedItems) && cachedItems.length > 0) {
-            box.innerHTML = renderNewsCards(cachedItems, topic.label, t.readMore);
+            topicItemsCache[cacheKey] = cachedItems;
+            refreshNewsView();
             hasCache = true;
           }
         }
@@ -497,22 +677,19 @@
           return new Date(b.pubDate || 0) - new Date(a.pubDate || 0);
         });
 
-        box.innerHTML = renderNewsCards(collected, topic.label, t.readMore);
+        topicItemsCache[cacheKey] = collected.slice(0, 25);
         try {
-          localStorage.setItem(cacheKey, JSON.stringify(collected.slice(0, 25)));
+          localStorage.setItem(cacheKey, JSON.stringify(topicItemsCache[cacheKey]));
         } catch (e) {}
+        refreshNewsView();
       }));
 
       if (reqId !== activeRequestId) return;
+      isLoadingCurrentTopic = false;
       syncBadge.classList.add('hidden');
 
       if (collected.length === 0 && !hasCache) {
-        box.innerHTML = `
-          <div class="bg-white rounded-2xl p-8 text-center space-y-3 border border-gray-100">
-            <div class="text-gray-400 text-sm">${t.empty}</div>
-            <button onclick="loadLiveNews()" class="bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs">${t.retry}</button>
-          </div>
-        `;
+        refreshNewsView();
       }
     }
 
