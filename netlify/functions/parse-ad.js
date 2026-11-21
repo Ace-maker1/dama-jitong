@@ -143,7 +143,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: "qwen/qwen3.8-27b",
         temperature: 0.1,
-        max_completion_tokens: 1500,
+       max_completion_tokens: 800,
         response_format: { type: "json_object" },
         messages: [
           {
