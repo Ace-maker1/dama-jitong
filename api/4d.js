@@ -17,17 +17,6 @@ function getMytDateStr(offsetDays = 0) {
   return d.toISOString().slice(0, 10);
 }
 
-function normalizeCompanyKey(rawName = '') {
-  const s = String(rawName).toLowerCase();
-  if (s.includes('magnum') || s.includes('万能')) return 'magnum';
-  if (s.includes('toto') || s.includes('多多')) return 'toto';
-  if (s.includes('damacai') || s.includes('da ma cai') || s.includes('大马彩') || s.includes('pmp')) return 'damacai';
-  if (s.includes('sabah') || s.includes('diriwan') || s.includes('沙巴')) return 'sabah88';
-  if (s.includes('stc') || s.includes('sandakan') || s.includes('山打根')) return 'stc';
-  if (s.includes('cashsweep') || s.includes('sarawak') || s.includes('砂拉越')) return 'cashsweep';
-  return null;
-}
-
 function fmt4(v) {
   const d = String(v || '').replace(/\D/g, '').slice(0, 4);
   return d.length === 4 ? d : '----';
@@ -49,118 +38,165 @@ function getSupabaseConfig() {
   };
 }
 
-// 从公开 4D 成绩汇总网页解析各家公司最新开奖号码（每家共 23 个 4 位号：1+1+1+10+10）
-function parse4DFromHtml(html, fallbackDate) {
-  const text = String(html || '')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/ /gi, ' ')
-    .replace(/\s+/g, ' ');
+const HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/html, */*',
+  'Accept-Language': 'en-US,en;q=0.9'
+};
 
-  const anchors = [
-    { key: 'magnum', patterns: [/Magnum\s*4D/i, /万能/i] },
-    { key: 'damacai', patterns: [/Da\s*Ma\s*Cai/i, /大马彩/i, /1\+3D/i] },
-    { key: 'toto', patterns: [/Sports\s*Toto/i, /Toto\s*4D/i, /多多/i] },
-    { key: 'sabah88', patterns: [/Sabah\s*88/i, /Diriwan/i, /沙巴/i] },
-    { key: 'stc', patterns: [/Sandakan\s*4D/i, /STC\s*4D/i, /山打根/i] },
-    { key: 'cashsweep', patterns: [/Special\s*CashSweep/i, /CashSweep/i, /砂拉越/i] }
-  ];
-
-  // 定位每家公司在纯文本中的出现位置
-  const found = [];
-  for (const item of anchors) {
-    let bestIdx = -1;
-    for (const re of item.patterns) {
-      const m = re.exec(text);
-      if (m && (bestIdx === -1 || m.index < bestIdx)) {
-        bestIdx = m.index;
-      }
-    }
-    if (bestIdx !== -1) {
-      found.push({ key: item.key, index: bestIdx });
-    }
+async function fetchWithTimeout(url, options = {}, ms = 6500) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal, headers: { ...HEADERS, ...(options.headers || {}) } });
+  } finally {
+    clearTimeout(timer);
   }
-
-  found.sort((a, b) => a.index - b.index);
-
-  const map = {};
-  COMPANIES.forEach(k => { map[k] = emptyBoard(fallbackDate, ''); });
-
-  let hitCount = 0;
-  for (let i = 0; i < found.length; i++) {
-    const start = found[i].index;
-    const end = i + 1 < found.length ? Math.min(found[i + 1].index, start + 2600) : start + 2600;
-    const chunk = text.slice(start, end);
-
-    // 提取期号（例如 5489/26 或 123/26）和日期（例如 21/11/2026 或 2026-11-21）
-    const drawNoMatch = chunk.match(/\b(\d{3,4}\/\d{2})\b/);
-    const isoDateMatch = chunk.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
-    const dmyDateMatch = chunk.match(/\b(\d{2})\/(\d{2})\/(20\d{2})\b/);
-
-    let parsedDate = fallbackDate;
-    if (isoDateMatch) {
-      parsedDate = isoDateMatch[1];
-    } else if (dmyDateMatch) {
-      parsedDate = `${dmyDateMatch[3]}-${dmyDateMatch[2]}-${dmyDateMatch[1]}`;
-    }
-
-    // 过滤掉年份(2025/2026)和期号里的4位数字，按顺序提取23个4D开奖号码
-    const cleanedForNums = chunk
-      .replace(/\b\d{3,4}\/\d{2}\b/g, ' ')
-      .replace(/\b\d{2}\/\d{2}\/20\d{2}\b/g, ' ')
-      .replace(/\b20\d{2}-\d{2}-\d{2}\b/g, ' ')
-      .replace(/\b19:00\b/g, ' ');
-
-    const nums = cleanedForNums.match(/\b\d{4}\b/g) || [];
-    if (nums.length >= 23) {
-      map[found[i].key] = {
-        drawNo: drawNoMatch ? drawNoMatch[1] : '',
-        drawDate: parsedDate,
-        p1: nums[0],
-        p2: nums[1],
-        p3: nums[2],
-        special: nums.slice(3, 13),
-        consolation: nums.slice(13, 23)
-      };
-      hitCount++;
-    }
-  }
-
-  return hitCount > 0 ? map : null;
 }
 
-async function fetchLive4DResults(todayStr) {
-  const pages = [
-    'https://www.4d88.com/',
-    'https://www.check4d.org/',
-    'https://www.4dking.com/'
-  ];
-
-  for (const url of pages) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 6500);
-      const r = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml'
+// 1. 大马彩 Da Ma Cai 官方 JSON 接口
+async function fetchDaMaCai(todayStr) {
+  try {
+    const r = await fetchWithTimeout('https://www.damacai.com.my/callpassresult?pastdate=' + todayStr.replace(/-/g, ''));
+    if (r.ok) {
+      const text = await r.text();
+      const json = JSON.parse(text);
+      const link = json?.link;
+      if (link) {
+        const r2 = await fetchWithTimeout(link);
+        if (r2.ok) {
+          const d = await r2.json();
+          const p1 = fmt4(d['1st'] || d.first);
+          if (p1 !== '----') {
+            return {
+              drawNo: String(d.drawno || ''),
+              drawDate: todayStr,
+              p1,
+              p2: fmt4(d['2nd'] || d.second),
+              p3: fmt4(d['3rd'] || d.third),
+              special: pad4List(d.starter || d.special, 10),
+              consolation: pad4List(d.consolation, 10)
+            };
+          }
         }
-      });
-      clearTimeout(timer);
-      if (!r.ok) continue;
-      const html = await r.text();
-      const parsed = parse4DFromHtml(html, todayStr);
-      if (parsed) {
-        return { source: url, results: parsed };
       }
-    } catch (_) {}
-  }
+    }
+  } catch (_) {}
+
+  // 备用：抓取大马彩公开结果页 HTML
+  try {
+    const r = await fetchWithTimeout('https://www.damacai.com.my/past-draw-result');
+    if (r.ok) {
+      const html = await r.text();
+      const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      const drawNoMatch = text.match(/draw\s*no\.?\s*[:\-]?\s*(\d{3,4}\/\d{2})/i);
+      const dmyMatch = text.match(/draw\s*date\s*[:\-]?\s*(\d{2})\/(\d{2})\/(20\d{2})/i);
+      const drawDate = dmyMatch ? `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}` : todayStr;
+      const p1 = text.match(/1st\s*prize\s*(\d{4})/i)?.[1] || '----';
+      const p2 = text.match(/2nd\s*prize\s*(\d{4})/i)?.[1] || '----';
+      const p3 = text.match(/3rd\s*prize\s*(\d{4})/i)?.[1] || '----';
+      const starterSec = text.match(/starter\s*prizes([\s\S]*?)consolation\s*prizes/i)?.[1] || '';
+      const consSec = text.match(/consolation\s*prizes([\s\S]*?)(?:1st\s*prize\s*\d{3}|1\+3d\s*jackpot)/i)?.[1] || '';
+      if (p1 !== '----') {
+        return {
+          drawNo: drawNoMatch ? drawNoMatch[1] : '',
+          drawDate,
+          p1,
+          p2,
+          p3,
+          special: pad4List(starterSec.match(/\d{4}/g), 10),
+          consolation: pad4List(consSec.match(/\d{4}/g), 10)
+        };
+      }
+    }
+  } catch (_) {}
   return null;
 }
 
-async function saveDailyHistory(resultsMap, fallbackDate) {
+// 2. 从公开综合 4D 镜像页提取其余各家（Magnum / Toto / Sabah88 / STC / CashSweep）
+async function fetchFromMirrorPages(todayStr) {
+  const mirrors = [
+    'https://4d88.com/',
+    'https://www.4d88.com/',
+    'https://www.check4d.com/',
+    'https://www.check4d.org/',
+    'https://www.4dmoon.com/',
+    'https://www.gdlotto.net/4d-results/'
+  ];
+
+  const anchors = [
+    { key: 'magnum', re: /Magnum\s*4D/i },
+    { key: 'damacai', re: /Da\s*Ma\s*Cai/i },
+    { key: 'toto', re: /Sports\s*Toto/i },
+    { key: 'sabah88', re: /Sabah\s*88|Diriwan/i },
+    { key: 'stc', re: /Sandakan\s*4D|STC\s*4D/i },
+    { key: 'cashsweep', re: /CashSweep|Sarawak/i }
+  ];
+
+  for (const url of mirrors) {
+    try {
+      const r = await fetchWithTimeout(url, {}, 6500);
+      if (!r.ok) continue;
+      const html = await r.text();
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/ /g, ' ')
+        .replace(/\s+/g, ' ');
+
+      const positions = anchors
+        .map(a => ({ key: a.key, idx: text.search(a.re) }))
+        .filter(x => x.idx !== -1)
+        .sort((a, b) => a.idx - b.idx);
+
+      if (positions.length === 0) continue;
+
+      const foundMap = {};
+      let count = 0;
+
+      for (let i = 0; i < positions.length; i++) {
+        const start = positions[i].idx;
+        const end = i + 1 < positions.length ? Math.min(positions[i + 1].idx, start + 2400) : start + 2400;
+        const chunk = text.slice(start, end);
+
+        const drawNo = chunk.match(/\b(\d{3,4}\/\d{2})\b/)?.[1] || '';
+        const dmy = chunk.match(/\b(\d{2})\/(\d{2})\/(20\d{2})\b/);
+        const iso = chunk.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+        const drawDate = iso ? iso[1] : (dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : todayStr);
+
+        const cleanNums = chunk
+          .replace(/\b\d{3,4}\/\d{2}\b/g, ' ')
+          .replace(/\b\d{2}\/\d{2}\/20\d{2}\b/g, ' ')
+          .replace(/\b20\d{2}-\d{2}-\d{2}\b/g, ' ')
+          .replace(/\b19:00\b/g, ' ')
+          .match(/\b\d{4}\b/g) || [];
+
+        if (cleanNums.length >= 23) {
+          foundMap[positions[i].key] = {
+            drawNo,
+            drawDate,
+            p1: cleanNums[0],
+            p2: cleanNums[1],
+            p3: cleanNums[2],
+            special: cleanNums.slice(3, 13),
+            consolation: cleanNums.slice(13, 23)
+          };
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        return { source: url, results: foundMap };
+      }
+    } catch (_) {}
+  }
+
+  return null;
+}
+
+// 自动写入 Supabase 历史库（按 company_id + draw_date 每天自动更新）
+async function upsertHistory(resultsMap, fallbackDate) {
   const { url, key } = getSupabaseConfig();
   const rows = [];
   for (const comp of COMPANIES) {
@@ -193,29 +229,25 @@ async function saveDailyHistory(resultsMap, fallbackDate) {
   } catch (_) {}
 }
 
+// 读取各机构历史记录（近 30 期）
 async function loadHistoryMap() {
   const { url, key } = getSupabaseConfig();
   const map = {};
   COMPANIES.forEach(k => { map[k] = []; });
 
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4500);
-    const r = await fetch(
+    const r = await fetchWithTimeout(
       `${url}/rest/v1/results_4d_history?select=*&order=draw_date.desc,id.desc&limit=180`,
-      {
-        signal: controller.signal,
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-      }
+      { headers: { 'apikey': key, 'Authorization': `Bearer ${key}` } },
+      4500
     );
-    clearTimeout(timer);
     if (!r.ok) return map;
     const rows = await r.json();
     if (!Array.isArray(rows)) return map;
 
     for (const row of rows) {
-      const comp = normalizeCompanyKey(row.company_id);
-      if (!comp || map[comp].length >= 30) continue;
+      const comp = String(row.company_id || '').toLowerCase();
+      if (!map[comp] || map[comp].length >= 30) continue;
       map[comp].push({
         drawNo: String(row.draw_no || ''),
         drawDate: String(row.draw_date || ''),
@@ -243,20 +275,31 @@ module.exports = async function handler(req, res) {
   const results = {};
   COMPANIES.forEach(k => { results[k] = emptyBoard(todayStr, ''); });
 
-  const fetched = await fetchLive4DResults(todayStr);
-  if (fetched && fetched.results) {
+  // 并发抓取综合镜像 + 大马彩官方接口
+  const [mirrorData, dmcData] = await Promise.all([
+    fetchFromMirrorPages(todayStr),
+    fetchDaMaCai(todayStr)
+  ]);
+
+  if (mirrorData?.results) {
     for (const comp of COMPANIES) {
-      if (fetched.results[comp]?.p1 !== '----') {
-        results[comp] = fetched.results[comp];
+      if (mirrorData.results[comp]?.p1 !== '----') {
+        results[comp] = mirrorData.results[comp];
       }
     }
-    await saveDailyHistory(results, todayStr);
   }
 
-  const history = await loadHistoryMap();
+  if (dmcData && dmcData.p1 !== '----') {
+    results.damacai = dmcData;
+  }
 
+  // 自动保存到每天历史表
+  await upsertHistory(results, todayStr);
+
+  // 读取历史库，若某家当天尚未出号则自动显示最近一期历史号
+  const history = await loadHistoryMap();
   for (const comp of COMPANIES) {
-    if (results[comp].p1 === '----' && history[comp] && history[comp].length > 0) {
+    if (results[comp].p1 === '----' && history[comp]?.length > 0) {
       results[comp] = { ...history[comp][0] };
     }
   }
@@ -264,7 +307,7 @@ module.exports = async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     today: todayStr,
-    source: fetched ? fetched.source : 'history_or_pending',
+    source: [mirrorData?.source, dmcData ? 'damacai-official' : null].filter(Boolean).join(' + ') || 'history_fallback',
     results,
     history
   });
