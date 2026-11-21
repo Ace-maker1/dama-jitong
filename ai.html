@@ -144,12 +144,14 @@
     async function callAiEndpoint(payload) {
       const isNetlify = window.location.hostname.includes('netlify.app');
       const endpoint = isNetlify ? '/.netlify/functions/chat' : '/api/chat';
+
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const rawText = await res.text();
+
       return { res, rawText };
     }
 
