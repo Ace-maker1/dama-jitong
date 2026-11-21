@@ -1,43 +1,37 @@
-let cachedModels = null;
-let cachedAt = 0;
-
-async function pickGroqModel(apiKey, preferVision) {
-  const now = Date.now();
-  if (!cachedModels || now - cachedAt > 5 * 60 * 1000) {
+async function getCandidateModels(apiKey, preferVision) {
+  let list = [];
+  try {
     const r = await fetch('https://api.groq.com/openai/v1/models', {
       headers: { 'Authorization': `Bearer ${apiKey}` }
     });
     if (r.ok) {
       const json = await r.json();
-      cachedModels = Array.isArray(json.data)
+      list = Array.isArray(json.data)
         ? json.data
             .map(m => m.id)
-            .filter(id => id && !id.includes('whisper') && !id.includes('guard') && !id.includes('tts'))
+            .filter(id =>
+              id &&
+              !id.includes('whisper') &&
+              !id.includes('guard') &&
+              !id.includes('tts') &&
+              !id.includes('orpheus') &&
+              !id.includes('safeguard')
+            )
         : [];
-      cachedAt = now;
     }
-  }
+  } catch (_) {}
 
-  const list = cachedModels || [];
-  const preferred = preferVision
-    ? [
-        'meta-llama/llama-4-scout-17b-16e-instruct',
-        'meta-llama/llama-4-maverick-17b-128e-instruct',
-        'llama-3.2-90b-vision-preview',
-        'llama-3.2-11b-vision-preview'
-      ]
-    : [
-        'llama-3.3-70b-versatile',
-        'meta-llama/llama-4-scout-17b-16e-instruct',
-        'llama-3.1-8b-instant',
-        'qwen/qwen3-32b',
-        'gemma2-9b-it'
-      ];
+  const priority = preferVision
+    ? ['vision', 'llama-4', 'scout', 'maverick', 'qwen', 'llama-3.3', 'llama-3.1', 'llama', 'gemma', 'deepseek', 'mistral', 'kimi', 'gpt']
+    : ['llama-3.3', 'llama-4', 'qwen', 'llama-3.1', 'deepseek', 'gemma', 'mistral', 'kimi', 'gpt', 'llama'];
 
-  for (const id of preferred) {
-    if (list.includes(id)) return id;
-  }
-  return list[0] || 'llama-3.1-8b-instant';
+  const scored = [...list].sort((a, b) => {
+    const ia = priority.findIndex(k => a.toLowerCase().includes(k));
+    const ib = priority.findIndex(k => b.toLowerCase().includes(k));
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+
+  return scored.length > 0 ? scored : ['llama-3.1-8b-instant'];
 }
 
 module.exports = async function handler(req, res) {
@@ -102,33 +96,37 @@ module.exports = async function handler(req, res) {
       })
     ];
 
-    const model = await pickGroqModel(apiKey, hasImage);
+    const candidates = await getCandidateModels(apiKey, hasImage);
+    let lastError = 'AI upstream request failed';
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: formattedMessages,
-        temperature: 0.5,
-        max_tokens: 512
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data?.error?.message || 'AI upstream request failed'
+    for (const model of candidates.slice(0, 6)) {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: formattedMessages,
+          temperature: 0.5,
+          max_tokens: 512
+        })
       });
+
+      const data = await response.json();
+      if (response.ok) {
+        const replyText = data?.choices?.[0]?.message?.content?.trim()
+          || '抱歉，这次没有生成回复，请换一种说法再试一次。';
+        return res.status(200).json({ reply: replyText, model });
+      }
+
+      lastError = data?.error?.message || `HTTP ${response.status}`;
     }
 
-    const replyText = data?.choices?.[0]?.message?.content?.trim()
-      || '抱歉，这次没有生成回复，请换一种说法再试一次。';
-
-    return res.status(200).json({ reply: replyText });
+    return res.status(400).json({
+      error: `${lastError}（可用模型列表: ${candidates.join(', ') || '空'}）`
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
