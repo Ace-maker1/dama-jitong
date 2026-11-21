@@ -114,16 +114,53 @@
       `;
     }
 
-    function escapeHtmlSafe(str) {
+    function escapeText(str) {
       const div = document.createElement('div');
       div.textContent = str || '';
-      return div.innerHTML.replace(/\n/g, '<br>');
+      return div.innerHTML;
+    }
+
+    function formatInlineMarkdown(escapedLine) {
+      return escapedLine
+        .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-gray-100 text-red-600 font-mono text-[11px]">$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+    }
+
+    function formatMessageHtml(str, isUser = false) {
+      const safe = escapeText(str || '').replace(/\r\n/g, '\n');
+      if (isUser) {
+        return safe.replace(/\n/g, '<br>');
+      }
+      const lines = safe.split('\n');
+      const out = [];
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          out.push('<div class="h-1.5"></div>');
+          continue;
+        }
+        const headingMatch = trimmed.match(/^#{1,6}\s*(.*)$/);
+        if (headingMatch) {
+          const title = headingMatch[1].replace(/\s*#+\s*$/, '').trim();
+          if (title) {
+            out.push(`<div class="font-bold text-gray-900 mt-1.5 mb-0.5">${formatInlineMarkdown(title)}</div>`);
+          }
+          continue;
+        }
+        const bulletMatch = trimmed.match(/^[\*\-•]\s+(.*)$/);
+        if (bulletMatch) {
+          out.push(`<div class="flex items-start gap-1.5 pl-1 my-0.5"><span class="text-red-500 font-bold">•</span><span class="flex-1">${formatInlineMarkdown(bulletMatch[1])}</span></div>`);
+          continue;
+        }
+        out.push(`<div>${formatInlineMarkdown(line)}</div>`);
+      }
+      return out.join('');
     }
 
     function appendBubble(role, text, imgSrc = '') {
       const box = document.getElementById('chatMessages');
       const isUser = role === 'user';
-      const escaped = escapeHtmlSafe(text);
+      const formatted = formatMessageHtml(text, isUser);
       const imgHtml = imgSrc ? `<img src="${imgSrc}" class="w-36 h-36 object-cover rounded-xl mb-1.5 border border-white/30" />` : '';
 
       const div = document.createElement('div');
@@ -133,7 +170,7 @@
           isUser ? 'bg-red-600 text-white' : 'bg-white text-gray-800 border border-gray-100'
         }">
           ${imgHtml}
-          <div>${escaped}</div>
+          <div class="space-y-0.5">${formatted}</div>
         </div>
       `;
       box.appendChild(div);
@@ -144,15 +181,20 @@
     async function callAiEndpoint(payload) {
       const isNetlify = window.location.hostname.includes('netlify.app');
       const endpoint = isNetlify ? '/.netlify/functions/chat' : '/api/chat';
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const rawText = await res.text();
-
-      return { res, rawText };
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        const rawText = await res.text();
+        return { res, rawText };
+      } finally {
+        clearTimeout(timer);
+      }
     }
 
     async function sendChatMessage(e) {
@@ -190,7 +232,8 @@
         try {
           data = JSON.parse(rawText);
         } catch (parseErr) {
-          appendBubble('assistant', `接口返回非JSON (HTTP ${res.status})：${rawText.slice(0, 120)}`);
+          const snippet = (rawText || '').trim().slice(0, 120) || '空响应';
+          appendBubble('assistant', `接口返回非JSON (HTTP ${res.status})：${snippet}`);
           return;
         }
 
@@ -203,7 +246,8 @@
         chatHistory.push({ role: 'assistant', content: data.reply });
       } catch (err) {
         loadingBubble.remove();
-        appendBubble('assistant', '请求失败：' + (err.message || '网络异常，请稍后再试。'));
+        const msg = err && err.name === 'AbortError' ? '请求超时，请稍后再试。' : (err.message || '网络异常，请稍后再试。');
+        appendBubble('assistant', '请求失败：' + msg);
       } finally {
         btn.disabled = false;
         btn.innerText = '发送';
