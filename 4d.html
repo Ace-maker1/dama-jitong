@@ -35,7 +35,10 @@
       <!-- 开彩状态 & 距离下期开彩倒计时条 -->
       <div class="bg-black/25 rounded-xl px-3 py-1.5 flex items-center justify-between text-[11px]">
         <span id="drawStatusBadge" class="font-bold text-amber-200">⏱️ 每逢周三 · 周六 · 周日 19:00 MYT 开彩</span>
-        <span id="drawCountdown" class="font-mono font-black text-white bg-black/30 px-2 py-0.5 rounded">--:--:--</span>
+        <div class="flex items-center gap-1.5">
+          <span id="drawCountdown" class="font-mono font-black text-white bg-black/30 px-2 py-0.5 rounded">--:--:--</span>
+          <button type="button" onclick="syncLatest4D(true)" id="refresh4dBtn" class="bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded text-[10px] font-bold">刷新</button>
+        </div>
       </div>
     </header>
 
@@ -99,10 +102,10 @@
       <!-- 开奖成绩公告板卡片 -->
       <section id="boardCard" class="bg-white rounded-2xl overflow-hidden shadow-sm border-2 border-amber-400">
         <!-- 卡片头部 -->
-        <div id="boardHeader" class="bg-amber-500 text-slate-950 px-4 py-2.5 flex items-center justify-between">
-          <div>
-            <h2 id="boardCompanyName" class="font-black text-base leading-tight">万能 Magnum 4D</h2>
-            <p id="boardDrawMeta" class="text-[11px] font-semibold opacity-85">开彩日：每周三、六、日 · 19:00 MYT</p>
+        <div id="boardHeader" class="bg-amber-500 text-slate-950 px-4 py-2.5 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <h2 id="boardCompanyName" class="font-black text-base leading-tight truncate">万能 Magnum 4D</h2>
+            <p id="boardDrawMeta" class="text-[11px] font-semibold opacity-85 truncate">开彩日：每周三、六、日 · 19:00 MYT</p>
           </div>
           <a id="boardOfficialLink" href="https://www.magnum4d.my/en/" target="_blank" rel="noopener noreferrer"
              class="bg-black/85 text-white text-[11px] font-bold px-3 py-1.5 rounded-full hover:bg-black transition shrink-0">
@@ -322,44 +325,96 @@
       }
     ];
 
-    // 默认数据（支持从 Supabase `results_4d` 表自动覆盖更新）
-    let liveResultsStore = {
-      magnum: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-      toto: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-      damacai: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-      sabah88: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-      stc: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-      cashsweep: { p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') }
-    };
+    function makeEmptyStore() {
+      return {
+        magnum: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+        toto: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+        damacai: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+        sabah88: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+        stc: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
+        cashsweep: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') }
+      };
+    }
 
+    let liveResultsStore = makeEmptyStore();
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let currentCompId = 'magnum';
 
-    // 若你在 Supabase 建了 results_4d 表，自动同步最新号码
-    (async function syncSupabase4D() {
+    function applyIncomingResults(rowsOrMap) {
+      let hasAny = false;
+      if (Array.isArray(rowsOrMap)) {
+        rowsOrMap.forEach(row => {
+          if (row.company_id && liveResultsStore[row.company_id]) {
+            liveResultsStore[row.company_id] = {
+              drawNo: row.draw_no || '',
+              drawDate: row.draw_date || '',
+              p1: row.p1 || '----',
+              p2: row.p2 || '----',
+              p3: row.p3 || '----',
+              special: Array.isArray(row.special) && row.special.length === 10 ? row.special : Array(10).fill('----'),
+              consolation: Array.isArray(row.consolation) && row.consolation.length === 10 ? row.consolation : Array(10).fill('----')
+            };
+            if (row.p1 && row.p1 !== '----') hasAny = true;
+          }
+        });
+      } else if (rowsOrMap && typeof rowsOrMap === 'object') {
+        Object.keys(rowsOrMap).forEach(k => {
+          if (liveResultsStore[k]) {
+            const r = rowsOrMap[k];
+            liveResultsStore[k] = {
+              drawNo: r.drawNo || '',
+              drawDate: r.drawDate || '',
+              p1: r.p1 || '----',
+              p2: r.p2 || '----',
+              p3: r.p3 || '----',
+              special: Array.isArray(r.special) && r.special.length === 10 ? r.special : Array(10).fill('----'),
+              consolation: Array.isArray(r.consolation) && r.consolation.length === 10 ? r.consolation : Array(10).fill('----')
+            };
+            if (r.p1 && r.p1 !== '----') hasAny = true;
+          }
+        });
+      }
+      if (hasAny) {
+        renderBoard();
+        checkMy4D();
+      }
+      return hasAny;
+    }
+
+    async function syncLatest4D(manual = false) {
+      const btn = document.getElementById('refresh4dBtn');
+      if (manual && btn) {
+        btn.disabled = true;
+        btn.innerText = '...';
+      }
       try {
-        if (!window.supabase) return;
-        const client = window.supabase.createClient(
-          'https://uhgukdqggvyaepkvlugg.supabase.co',
-          'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
-        );
-        const { data } = await client.from('results_4d').select('*');
-        if (Array.isArray(data) && data.length > 0) {
-          data.forEach(row => {
-            if (row.company_id && liveResultsStore[row.company_id]) {
-              liveResultsStore[row.company_id] = {
-                p1: row.p1 || '----',
-                p2: row.p2 || '----',
-                p3: row.p3 || '----',
-                special: Array.isArray(row.special) && row.special.length === 10 ? row.special : Array(10).fill('----'),
-                consolation: Array.isArray(row.consolation) && row.consolation.length === 10 ? row.consolation : Array(10).fill('----')
-              };
-            }
-          });
-          renderBoard();
+        const res = await fetch('/api/4d', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.results && applyIncomingResults(json.results)) {
+            return;
+          }
         }
-      } catch (e) {}
-    })();
+      } catch (_) {}
+
+      try {
+        if (window.supabase) {
+          const client = window.supabase.createClient(
+            'https://uhgukdqggvyaepkvlugg.supabase.co',
+            'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
+          );
+          const { data } = await client.from('results_4d').select('*');
+          if (Array.isArray(data) && data.length > 0) {
+            applyIncomingResults(data);
+          }
+        }
+      } catch (_) {} finally {
+        if (manual && btn) {
+          btn.disabled = false;
+          btn.innerText = '刷新';
+        }
+      }
+    }
 
     function getMytNow() {
       const now = new Date();
@@ -390,7 +445,6 @@
       badgeEl.innerText = t.nextDraw;
       badgeEl.className = 'font-bold text-amber-200';
 
-      // 计算下一个周三/周六/周日 19:00:00 MYT
       let target = new Date(myt);
       target.setHours(19, 0, 0, 0);
       if (myt >= target) {
@@ -423,132 +477,4 @@
 
       const t = I18N_4D[lang];
       document.getElementById('backHomeBtn').innerText = t.back;
-      document.getElementById('pageTitle').innerText = t.title;
-      document.getElementById('pageSub').innerText = t.sub;
-      document.getElementById('liveStreamTitle').innerText = t.liveStreamTitle;
-      document.getElementById('checkerTitle').innerText = t.checkerTitle;
-      document.getElementById('checkerSub').innerText = t.checkerSub;
-      document.getElementById('checkBtn').innerText = t.checkBtn;
-      document.getElementById('boardOfficialLink').innerText = t.officialBtn;
-      document.getElementById('lbl1st').innerText = t.lbl1st;
-      document.getElementById('lbl2nd').innerText = t.lbl2nd;
-      document.getElementById('lbl3rd').innerText = t.lbl3rd;
-      document.getElementById('lblSpecial').innerText = t.lblSpecial;
-      document.getElementById('lblConsolation').innerText = t.lblConsolation;
-      document.getElementById('boardNotice').innerText = t.notice;
-      document.getElementById('navHome').innerText = t.navHome;
-      document.getElementById('navNews').innerText = t.navNews;
-      document.getElementById('nav4d').innerText = t.nav4d;
-      document.getElementById('navMap').innerText = t.navMap;
-      document.getElementById('navBiz').innerText = t.navBiz;
-
-      updateDrawCountdown();
-      renderCompanyTabs();
-      renderBoard();
-    }
-
-    function selectCompany(id) {
-      currentCompId = id;
-      renderCompanyTabs();
-      renderBoard();
-      checkMy4D();
-    }
-
-    function renderCompanyTabs() {
-      const wrap = document.getElementById('companyTabs');
-      wrap.innerHTML = COMPANIES.map(c => {
-        const active = c.id === currentCompId;
-        const label = c[currentLang] || c.en;
-        return `
-          <button onclick="selectCompany('${c.id}')"
-                  class="px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition ${active ? 'bg-slate-900 text-amber-400 shadow-xs' : 'bg-white text-slate-700 border border-slate-200'}">
-            ${label}
-          </button>
-        `;
-      }).join('');
-    }
-
-    function renderBoard() {
-      const comp = COMPANIES.find(c => c.id === currentCompId) || COMPANIES[0];
-      const data = liveResultsStore[comp.id];
-      const card = document.getElementById('boardCard');
-      const header = document.getElementById('boardHeader');
-
-      card.className = `bg-white rounded-2xl overflow-hidden shadow-sm border-2 ${comp.borderCol}`;
-      header.className = `${comp.headerBg} px-4 py-2.5 flex items-center justify-between`;
-      document.getElementById('boardCompanyName').innerText = comp[currentLang] || comp.en;
-      document.getElementById('boardDrawMeta').innerText =
-        currentLang === 'en' ? comp.metaEn : (currentLang === 'ms' ? comp.metaMs : comp.metaZh);
-      document.getElementById('boardOfficialLink').href = comp.url;
-
-      document.getElementById('num1st').innerText = data.p1;
-      document.getElementById('num2nd').innerText = data.p2;
-      document.getElementById('num3rd').innerText = data.p3;
-
-      document.getElementById('gridSpecial').innerHTML = data.special.map(n =>
-        `<div class="bg-slate-50 border border-slate-200/80 rounded-lg py-1.5">${n}</div>`
-      ).join('');
-
-      document.getElementById('gridConsolation').innerHTML = data.consolation.map(n =>
-        `<div class="bg-slate-50 border border-slate-200/80 rounded-lg py-1.5">${n}</div>`
-      ).join('');
-    }
-
-    function checkMy4D() {
-      const t = I18N_4D[currentLang];
-      const input = document.getElementById('my4dInput').value.trim();
-      const msgBox = document.getElementById('checkResultMsg');
-
-      if (!input) {
-        msgBox.classList.add('hidden');
-        return;
-      }
-      if (input.length < 4) {
-        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-slate-100 text-slate-600';
-        msgBox.innerText = t.enter4Digits;
-        msgBox.classList.remove('hidden');
-        return;
-      }
-
-      const data = liveResultsStore[currentCompId];
-      if (data.p1 === '----') {
-        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200';
-        msgBox.innerText = t.pendingNumbers;
-        msgBox.classList.remove('hidden');
-        return;
-      }
-
-      const allPrizes = [
-        { name: '1ST', num: data.p1 },
-        { name: '2ND', num: data.p2 },
-        { name: '3RD', num: data.p3 },
-        ...data.special.map(n => ({ name: 'SPECIAL', num: n })),
-        ...data.consolation.map(n => ({ name: 'CONSOLATION', num: n }))
-      ];
-
-      const exact = allPrizes.find(p => p.num === input);
-      if (exact) {
-        msgBox.className = 'mt-2 text-xs font-black px-3 py-2 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300';
-        msgBox.innerText = t.hitExact(exact.name);
-        msgBox.classList.remove('hidden');
-        return;
-      }
-
-      const sortedInput = input.split('').sort().join('');
-      const box = allPrizes.find(p => /^\d{4}$/.test(p.num) && p.num.split('').sort().join('') === sortedInput);
-      if (box) {
-        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-300';
-        msgBox.innerText = t.hitBox(box.num, box.name);
-        msgBox.classList.remove('hidden');
-        return;
-      }
-
-      msgBox.className = 'mt-2 text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 text-slate-600';
-      msgBox.innerText = t.noHit;
-      msgBox.classList.remove('hidden');
-    }
-
-    switch4DLang(currentLang);
-  </script>
-</body>
-</html>
+      document.getElementById
