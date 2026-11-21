@@ -1,119 +1,196 @@
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
+const DEFAULT_CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Content-Type": "application/json; charset=utf-8",
 };
 
-function extractJsonObject(text) {
-  if (!text || typeof text !== 'string') {
-    throw new Error('Empty model response');
-  }
-  const cleaned = text
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (_) {
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start !== -1 && end !== -1 && end > start) {
-      return JSON.parse(cleaned.slice(start, end + 1));
-    }
-    throw new Error('Invalid JSON from model');
-  }
+function buildResponse(statusCode, payload, extraHeaders = {}) {
+  return {
+    statusCode,
+    headers: {
+      ...DEFAULT_CORS_HEADERS,
+      ...extraHeaders,
+    },
+    body: JSON.stringify(payload),
+  };
 }
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: CORS_HEADERS, body: '' };
-  }
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+function normalizeBase64Image(imageBase64, mimeType) {
+  const safeMime =
+    typeof mimeType === "string" && mimeType.trim().length > 0
+      ? mimeType.trim()
+      : "image/jpeg";
+
+  if (typeof imageBase64 !== "string" || imageBase64.trim().length === 0) {
+    return null;
   }
 
-  const rawKey = process.env.GEMINI_API_KEY || '';
-  const cleanKey = rawKey.replace(/[^A-Za-z0-9_-]/g, '');
-  if (!cleanKey) {
-    return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ success: false, error: '未配置有效的 GEMINI_API_KEY' }),
-    };
+  const trimmed = imageBase64.trim();
+  if (trimmed.startsWith("data:")) {
+    return trimmed;
   }
+
+  return `data:${safeMime};base64,${trimmed}`;
+}
+
+function extractJsonObject(rawText) {
+  if (typeof rawText !== "string" || rawText.trim().length === 0) {
+    return null;
+  }
+
+  const fencedMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fencedMatch && fencedMatch[1]) {
+    try {
+      return JSON.parse(fencedMatch[1].trim());
+    } catch (_) {
+      // 继续尝试直接提取花括号对象
+    }
+  }
+
+  const braceMatch = rawText.match(/\{[\s\S]*\}/);
+  if (braceMatch && braceMatch[0]) {
+    try {
+      return JSON.parse(braceMatch[0].trim());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function normalizeParsedFields(parsed) {
+  const safeObj = parsed && typeof parsed === "object" ? parsed : {};
+  const toCleanString = (val) => (typeof val === "string" ? val.trim() : "");
+
+  return {
+    businessName: toCleanString(safeObj.businessName),
+    phone: toCleanString(safeObj.phone),
+    promoTagline: toCleanString(safeObj.promoTagline),
+    address: toCleanString(safeObj.address),
+    businessHours: toCleanString(safeObj.businessHours),
+    category: toCleanString(safeObj.category),
+    descZh: toCleanString(safeObj.descZh),
+    descEn: toCleanString(safeObj.descEn),
+    descBm: toCleanString(safeObj.descBm),
+  };
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod === "OPTIONS") {
+    return buildResponse(200, { ok: true });
+  }
+
+  if (event.httpMethod !== "POST") {
+    return buildResponse(405, {
+      error: "Method Not Allowed. Please use POST.",
+    });
+  }
+
+  const apiKey =
+    process.env.SILICONFLOW_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    "";
+
+  if (!apiKey.trim()) {
+    return buildResponse(500, {
+      error: "Missing API key in Netlify environment variables (SILICONFLOW_API_KEY).",
+    });
+  }
+
+  let bodyData = {};
+  try {
+    bodyData = JSON.parse(event.body || "{}");
+  } catch (parseErr) {
+    return buildResponse(400, {
+      error: "Invalid JSON request body.",
+      detail: parseErr.message,
+    });
+  }
+
+  const dataUrl = normalizeBase64Image(bodyData.imageBase64, bodyData.mimeType);
+  if (!dataUrl) {
+    return buildResponse(400, {
+      error: "Missing or invalid imageBase64 field.",
+    });
+  }
+
+  const promptText = [
+    "请仔细识别这张商家宣传海报、广告图或名片中的关键信息，",
+    "并严格只返回纯 JSON 对象（不要输出任何解释性文字或 markdown 标记），字段结构如下：",
+    "{",
+    '  "businessName": "商家或店铺名称",',
+    '  "phone": "联系电话或WhatsApp号码",',
+    '  "promoTagline": "促销优惠或主打标语",',
+    '  "address": "详细地址",',
+    '  "businessHours": "营业时间",',
+    '  "category": "行业类别",',
+    '  "descZh": "中文简介",',
+    '  "descEn": "English description",',
+    '  "descBm": "Ringkasan Bahasa Melayu"',
+    "}",
+    '如果某个字段在图片中没有出现，请填为空字符串 ""。',
+  ].join("\n");
 
   try {
-    const { imageBase64, mimeType = 'image/jpeg', extraNotes = '' } = JSON.parse(event.body || '{}');
-
-    if (!imageBase64 && !extraNotes.trim()) {
-      return {
-        statusCode: 400,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({ success: false, error: '请上传图片或输入简要说明' }),
-      };
-    }
-
-    const prompt =
-      '你是马来西亚本地生活门户平台「大马吉通 (DaMaJitong)」的智能填表与文案助手。\n' +
-      '请识别图片中的商家宣传海报、价目表、名片或门店照片（并结合补充说明：' + extraNotes + '），提取关键信息并撰写符合马来西亚本地习惯的中、英、巫三语推广文案。\n' +
-      '没提到的字段留空字符串 ""，不要瞎编。\n' +
-      '请严格只输出合法 JSON（不要 markdown 代码块包裹），字段如下：\n' +
-      '{\n' +
-      '  "businessName": "店铺或服务名称",\n' +
-      '  "category": "推荐分类（如餐饮美食、五金装修、汽车维修、美容美发、生活服务、二手买卖、招聘求职）",\n' +
-      '  "phone": "联系电话或 WhatsApp",\n' +
-      '  "address": "地址或区域",\n' +
-      '  "businessHours": "营业时间",\n' +
-      '  "promoTagline": "一句吸睛置顶标语（20字内）",\n' +
-      '  "descZh": "中文介绍与卖点",\n' +
-      '  "descEn": "English description and highlights",\n' +
-      '  "descBm": "Penerangan dan kelebihan dalam Bahasa Melayu"\n' +
-      '}';
-
-    const parts = [];
-    if (imageBase64) {
-      parts.push({ inline_data: { mime_type: mimeType, data: imageBase64 } });
-    }
-    parts.push({ text: prompt });
-
-    const host = ['generativelanguage', 'googleapis', 'com'].join('.');
-    const endpoint = 'https://' + host + '/v1beta/models/gemini-2.5-flash-lite:generateContent';
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
+    const apiResponse = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': cleanKey,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey.trim()}`,
       },
       body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { responseMimeType: 'application/json' },
+        model: "Qwen/Qwen2.5-VL-7B-Instruct",
+        temperature: 0.1,
+        max_tokens: 1500,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: dataUrl,
+                },
+              },
+              {
+                type: "text",
+                text: promptText,
+              },
+            ],
+          },
+        ],
       }),
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      const apiMsg = data?.error?.message || ('Gemini API HTTP ' + res.status);
-      throw new Error(apiMsg);
+    const resultJson = await apiResponse.json();
+
+    if (!apiResponse.ok) {
+      return buildResponse(apiResponse.status, {
+        error:
+          resultJson?.error?.message ||
+          resultJson?.message ||
+          "Vision API request failed.",
+      });
     }
 
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    const parsed = extractJsonObject(rawText);
+    const modelContent =
+      resultJson?.choices?.[0]?.message?.content || "";
 
-    return {
-      statusCode: 200,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ success: true, data: parsed }),
-    };
+    const extractedObj = extractJsonObject(modelContent);
+    if (!extractedObj) {
+      return buildResponse(500, {
+        error: "Failed to parse JSON from model output.",
+        raw: modelContent,
+      });
+    }
+
+    const finalData = normalizeParsedFields(extractedObj);
+    return buildResponse(200, finalData);
   } catch (err) {
-    console.error('parse-ad error:', err);
-    return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ success: false, error: err.message || 'AI 识别失败，请稍后重试' }),
-    };
+    return buildResponse(500, {
+      error: err.message || "Unexpected server error in parse-ad.",
+    });
   }
-}
+};
