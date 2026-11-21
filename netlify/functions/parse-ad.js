@@ -79,11 +79,12 @@ function normalizeParsedFields(parsed) {
 
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return buildResponse(200, { ok: true });
+    return buildResponse(200, { success: true, ok: true });
   }
 
   if (event.httpMethod !== "POST") {
     return buildResponse(405, {
+      success: false,
       error: "Method Not Allowed. Please use POST.",
     });
   }
@@ -95,6 +96,7 @@ exports.handler = async (event) => {
 
   if (!apiKey.trim()) {
     return buildResponse(500, {
+      success: false,
       error: "Missing API key in Netlify environment variables (GROQ_API_KEY).",
     });
   }
@@ -104,6 +106,7 @@ exports.handler = async (event) => {
     bodyData = JSON.parse(event.body || "{}");
   } catch (parseErr) {
     return buildResponse(400, {
+      success: false,
       error: "Invalid JSON request body.",
       detail: parseErr.message,
     });
@@ -112,6 +115,7 @@ exports.handler = async (event) => {
   const dataUrl = normalizeBase64Image(bodyData.imageBase64, bodyData.mimeType);
   if (!dataUrl) {
     return buildResponse(400, {
+      success: false,
       error: "Missing or invalid imageBase64 field.",
     });
   }
@@ -143,7 +147,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: "qwen/qwen3.8-27b",
         temperature: 0.1,
-       max_completion_tokens: 800,
+        max_completion_tokens: 800,
         response_format: { type: "json_object" },
         messages: [
           {
@@ -169,6 +173,7 @@ exports.handler = async (event) => {
 
     if (!apiResponse.ok) {
       return buildResponse(apiResponse.status, {
+        success: false,
         error:
           resultJson?.error?.message ||
           resultJson?.message ||
@@ -182,15 +187,20 @@ exports.handler = async (event) => {
     const extractedObj = extractJsonObject(modelContent);
     if (!extractedObj) {
       return buildResponse(500, {
+        success: false,
         error: "Failed to parse JSON from model output.",
         raw: modelContent,
       });
     }
 
     const finalData = normalizeParsedFields(extractedObj);
-    return buildResponse(200, finalData);
+    return buildResponse(200, {
+      success: true,
+      data: finalData,
+    });
   } catch (err) {
     return buildResponse(500, {
+      success: false,
       error: err.message || "Unexpected server error in parse-ad.",
     });
   }
