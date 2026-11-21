@@ -89,13 +89,13 @@ exports.handler = async (event) => {
   }
 
   const apiKey =
-    process.env.SILICONFLOW_API_KEY ||
+    process.env.GROQ_API_KEY ||
     process.env.GEMINI_API_KEY ||
     "";
 
   if (!apiKey.trim()) {
     return buildResponse(500, {
-      error: "Missing API key in Netlify environment variables (SILICONFLOW_API_KEY).",
+      error: "Missing API key in Netlify environment variables (GROQ_API_KEY).",
     });
   }
 
@@ -134,16 +134,17 @@ exports.handler = async (event) => {
   ].join("\n");
 
   try {
-    const apiResponse = await fetch("https://api.siliconflow.cn/v1/chat/completions", {
+    const apiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey.trim()}`,
       },
       body: JSON.stringify({
-        model: "Qwen/Qwen2.5-VL-7B-Instruct",
+        model: "qwen/qwen3.8-27b",
         temperature: 0.1,
-        max_tokens: 1500,
+        max_completion_tokens: 1500,
+        response_format: { type: "json_object" },
         messages: [
           {
             role: "user",
@@ -171,7 +172,7 @@ exports.handler = async (event) => {
         error:
           resultJson?.error?.message ||
           resultJson?.message ||
-          "Vision API request failed.",
+          "Groq Vision API request failed.",
       });
     }
 
