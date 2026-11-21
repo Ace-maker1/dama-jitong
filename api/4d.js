@@ -1,5 +1,14 @@
 const COMPANIES = ['magnum', 'toto', 'damacai', 'sabah88', 'stc', 'cashsweep'];
 
+const OPERATOR_SLUGS = {
+  magnum: ['magnum', 'magnum4d'],
+  toto: ['toto', 'sportstoto'],
+  damacai: ['damacai', 'pmp'],
+  sabah88: ['sabah88', 'sabah', 'diriwan'],
+  stc: ['stc', 'sandakan'],
+  cashsweep: ['cashsweep', 'sarawak']
+};
+
 function emptyBoard(drawDate = '', drawNo = '') {
   return {
     drawNo,
@@ -24,17 +33,20 @@ function getMytDateStr(offsetDays = 0) {
 }
 
 function normalizeCompanyKey(raw = '') {
-  const s = String(raw).toLowerCase().trim();
-  if (s === 'magnum' || s.includes('magnum') || s.includes('万能')) return 'magnum';
-  if (s === 'toto' || s.includes('toto') || s.includes('多多')) return 'toto';
-  if (s === 'damacai' || s.includes('damacai') || s.includes('da ma cai') || s.includes('大马彩') || s.includes('pmp')) return 'damacai';
-  if (s === 'sabah88' || s.includes('sabah') || s.includes('diriwan') || s.includes('沙巴')) return 'sabah88';
-  if (s === 'stc' || s.includes('stc') || s.includes('sandakan') || s.includes('山打根')) return 'stc';
-  if (s === 'cashsweep' || s.includes('cashsweep') || s.includes('sarawak') || s.includes('砂拉越')) return 'cashsweep';
+  const s = String(raw || '').toLowerCase().trim();
+  if (s.includes('magnum')) return 'magnum';
+  if (s.includes('toto')) return 'toto';
+  if (s.includes('damacai') || s.includes('da_ma_cai') || s.includes('pmp')) return 'damacai';
+  if (s.includes('sabah') || s.includes('diriwan')) return 'sabah88';
+  if (s.includes('stc') || s.includes('sandakan')) return 'stc';
+  if (s.includes('cashsweep') || s.includes('sarawak')) return 'cashsweep';
   return null;
 }
 
 function fmt4(v) {
+  if (v && typeof v === 'object') {
+    v = v.number ?? v.num ?? v.value ?? v.code ?? '';
+  }
   const d = String(v ?? '').replace(/\D/g, '').slice(0, 4);
   return d.length === 4 ? d : '----';
 }
@@ -48,18 +60,69 @@ function pad4List(arr, count = 10) {
   return out;
 }
 
-function getSupabaseConfig() {
+// 兼容多种字段结构的开奖对象标准化
+function normalizeDrawRecord(item, fallbackDate = '') {
+  if (!item || typeof item !== 'object') return null;
+
+  const p1 = fmt4(
+    item.p1 ?? item.first ?? item['1st'] ?? item.prize_1 ?? item.prizes?.first ?? item.prizes?.['1st'] ?? item.numbers?.[0]
+  );
+  const p2 = fmt4(
+    item.p2 ?? item.second ?? item['2nd'] ?? item.prize_2 ?? item.prizes?.second ?? item.prizes?.['2nd'] ?? item.numbers?.[1]
+  );
+  const p3 = fmt4(
+    item.p3 ?? item.third ?? item['3rd'] ?? item.prize_3 ?? item.prizes?.third ?? item.prizes?.['3rd'] ?? item.numbers?.[2]
+  );
+
+  const rawSpecial =
+    item.special ?? item.specials ?? item.starter ?? item.starters ??
+    item.prizes?.special ?? item.prizes?.starter ??
+    (Array.isArray(item.numbers) ? item.numbers.slice(3, 13) : []);
+
+  const rawConsolation =
+    item.consolation ?? item.consolations ??
+    item.prizes?.consolation ??
+    (Array.isArray(item.numbers) ? item.numbers.slice(13, 23) : []);
+
+  if (p1 === '----' && p2 === '----' && p3 === '----') return null;
+
   return {
-    url: process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co',
-    key: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
+    drawNo: String(item.draw_no ?? item.drawNo ?? item.draw ?? ''),
+    drawDate: String(item.date ?? item.draw_date ?? item.drawDate ?? fallbackDate).slice(0, 10),
+    p1,
+    p2,
+    p3,
+    special: pad4List(rawSpecial, 10),
+    consolation: pad4List(rawConsolation, 10)
   };
 }
 
-async function fetchJsonSafe(url, options = {}, ms = 5000) {
+function extractItemsArray(payload) {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.results)) return payload.results;
+  if (Array.isArray(payload.draws)) return payload.draws;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (payload.results && typeof payload.results === 'object') {
+    return Object.entries(payload.results).map(([k, v]) => ({ operator: k, ...(v || {}) }));
+  }
+  if (payload.operator || payload.p1 || payload.first || payload['1st']) {
+    return [payload];
+  }
+  return [];
+}
+
+async function fetchJsonSafe(url, ms = 6000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
-    const r = await fetch(url, { ...options, signal: controller.signal });
+    const r = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'DaMaJiTong-4D/1.0'
+      }
+    });
     if (!r.ok) return null;
     return await r.json();
   } catch (_) {
@@ -69,180 +132,35 @@ async function fetchJsonSafe(url, options = {}, ms = 5000) {
   }
 }
 
-// 若配置了自定义可靠数据源接口（环境变量 FOUR_D_FEED_URL），优先自动拉取
-async function fetchCustomFeed(todayStr) {
-  const feedUrl = process.env.FOUR_D_FEED_URL;
-  if (!feedUrl) return null;
-
-  const headers = { Accept: 'application/json' };
-  if (process.env.FOUR_D_FEED_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.FOUR_D_FEED_TOKEN}`;
-  }
-
-  const data = await fetchJsonSafe(feedUrl, { headers }, 6000);
-  if (!data) return null;
-
-  const map = {};
-  COMPANIES.forEach(k => { map[k] = emptyBoard(todayStr, ''); });
-
-  const list = Array.isArray(data)
-    ? data
-    : (Array.isArray(data.results) ? data.results : (Array.isArray(data.data) ? data.data : []));
-
-  for (const item of list) {
-    const key = normalizeCompanyKey(item.company_id || item.company || item.name || item.code);
-    if (!key) continue;
-    map[key] = {
-      drawNo: String(item.draw_no || item.drawNo || ''),
-      drawDate: String(item.draw_date || item.drawDate || todayStr),
-      p1: fmt4(item.p1 ?? item.first ?? item['1st']),
-      p2: fmt4(item.p2 ?? item.second ?? item['2nd']),
-      p3: fmt4(item.p3 ?? item.third ?? item['3rd']),
-      special: pad4List(item.special ?? item.specials, 10),
-      consolation: pad4List(item.consolation ?? item.consolations, 10)
-    };
-  }
-
-  return map;
-}
-
-// 写入 / 更新历史记录表 results_4d_history（按 company_id + draw_date 每天一条）
-async function upsertHistoryRows(records, fallbackDate) {
-  const { url, key } = getSupabaseConfig();
-  const rows = [];
-
-  for (const rec of records) {
-    const comp = normalizeCompanyKey(rec.company_id || rec.company);
-    if (!comp) continue;
-    const p1 = fmt4(rec.p1);
-    if (p1 === '----') continue;
-
-    rows.push({
-      company_id: comp,
-      draw_no: String(rec.draw_no || rec.drawNo || ''),
-      draw_date: String(rec.draw_date || rec.drawDate || fallbackDate),
-      p1,
-      p2: fmt4(rec.p2),
-      p3: fmt4(rec.p3),
-      special: pad4List(rec.special, 10),
-      consolation: pad4List(rec.consolation, 10)
-    });
-  }
-
-  if (rows.length === 0) return { ok: false, count: 0 };
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
-  try {
-    const r = await fetch(`${url}/rest/v1/results_4d_history?on_conflict=company_id,draw_date`, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates,return=representation'
-      },
-      body: JSON.stringify(rows)
-    });
-    if (!r.ok) {
-      const errText = await r.text().catch(() => '');
-      return { ok: false, count: 0, error: errText };
-    }
-    const saved = await r.json().catch(() => rows);
-    return { ok: true, count: Array.isArray(saved) ? saved.length : rows.length };
-  } catch (err) {
-    return { ok: false, count: 0, error: err.message };
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// 从 results_4d_history 读取最近历史（按日期倒序）
-async function loadHistoryMap() {
-  const { url, key } = getSupabaseConfig();
-  const map = {};
-  COMPANIES.forEach(k => { map[k] = []; });
-
-  const rows = await fetchJsonSafe(
-    `${url}/rest/v1/results_4d_history?select=*&order=draw_date.desc,id.desc&limit=180`,
-    {
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`
+async function fetchOperatorHistoryFromApi(comp, todayStr) {
+  const slugs = OPERATOR_SLUGS[comp] || [comp];
+  for (const slug of slugs) {
+    const json = await fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${slug}?limit=15`, 5500);
+    const list = extractItemsArray(json);
+    const boards = [];
+    for (const item of list) {
+      const board = normalizeDrawRecord({ operator: comp, ...item }, todayStr);
+      if (board && board.p1 !== '----') {
+        boards.push(board);
       }
-    },
-    5000
-  );
-
-  if (!Array.isArray(rows)) return map;
-
-  for (const row of rows) {
-    const comp = normalizeCompanyKey(row.company_id);
-    if (!comp || map[comp].length >= 30) continue;
-    map[comp].push({
-      drawNo: String(row.draw_no || ''),
-      drawDate: String(row.draw_date || ''),
-      p1: fmt4(row.p1),
-      p2: fmt4(row.p2),
-      p3: fmt4(row.p3),
-      special: pad4List(row.special, 10),
-      consolation: pad4List(row.consolation, 10)
-    });
+    }
+    if (boards.length > 0) {
+      boards.sort((a, b) => String(b.drawDate).localeCompare(String(a.drawDate)));
+      return boards;
+    }
   }
-
-  return map;
+  return [];
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
   res.setHeader('Cache-Control', 'no-store');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  const todayStr = getMytDateStr(0);
-
-  // POST：供自动化脚本/数据源推送或批量归档开奖结果
-  if (req.method === 'POST') {
-    const syncSecret = process.env.FOUR_D_SYNC_KEY;
-    if (syncSecret) {
-      const provided =
-        req.headers['x-api-key'] ||
-        (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-      if (provided !== syncSecret) {
-        return res.status(401).json({ ok: false, error: 'Unauthorized' });
-      }
-    }
-
-    try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-      const incoming = Array.isArray(body.results)
-        ? body.results
-        : (Array.isArray(body) ? body : [body]);
-
-      const saveRes = await upsertHistoryRows(incoming, todayStr);
-      const history = await loadHistoryMap();
-
-      return res.status(200).json({
-        ok: saveRes.ok,
-        savedCount: saveRes.count,
-        today: todayStr,
-        history,
-        error: saveRes.error || undefined
-      });
-    } catch (err) {
-      return res.status(400).json({ ok: false, error: err.message || 'Invalid JSON' });
-    }
-  }
 
   if (req.method !== 'GET') {
     return res.status(405).json({ ok: false, error: 'Method Not Allowed' });
   }
 
+  const todayStr = getMytDateStr(0);
   const results = {};
   const history = {};
   COMPANIES.forEach(k => {
@@ -251,29 +169,41 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    // 1. 如果配置了稳定 JSON Feed，自动拉取并写入历史
-    const feedMap = await fetchCustomFeed(todayStr);
-    if (feedMap) {
-      const feedArray = COMPANIES.map(k => ({ company_id: k, ...feedMap[k] }));
-      await upsertHistoryRows(feedArray, todayStr);
-    }
+    // 并发拉取最新全盘结果 + 6家各自历史多期
+    const [latestJson, ...opHistories] = await Promise.all([
+      fetchJsonSafe('https://4dlivetoday.com/api/v1/latest', 6000),
+      ...COMPANIES.map(comp => fetchOperatorHistoryFromApi(comp, todayStr))
+    ]);
 
-    // 2. 从历史表读取最新与往期记录
-    const loaded = await loadHistoryMap();
-    for (const comp of COMPANIES) {
-      history[comp] = loaded[comp] || [];
-      if (feedMap && feedMap[comp] && feedMap[comp].p1 !== '----') {
-        results[comp] = feedMap[comp];
-      } else if (history[comp].length > 0) {
-        // 自动显示最新一期（隔天自动更新为最新入库期次）
-        results[comp] = { ...history[comp][0] };
+    COMPANIES.forEach((comp, idx) => {
+      if (Array.isArray(opHistories[idx]) && opHistories[idx].length > 0) {
+        history[comp] = opHistories[idx];
+        results[comp] = { ...opHistories[idx][0] };
+      }
+    });
+
+    const latestItems = extractItemsArray(latestJson);
+    for (const item of latestItems) {
+      const comp = normalizeCompanyKey(item.operator || item.operator_name || item.company || item.name);
+      if (!comp) continue;
+      const board = normalizeDrawRecord(item, todayStr);
+      if (!board || board.p1 === '----') continue;
+
+      results[comp] = board;
+      const existsIdx = history[comp].findIndex(h => h.drawDate === board.drawDate && h.drawNo === board.drawNo);
+      if (existsIdx === -1) {
+        history[comp].unshift(board);
+      } else {
+        history[comp][existsIdx] = board;
       }
     }
+
+    const hitCount = COMPANIES.filter(c => results[c].p1 !== '----').length;
 
     return res.status(200).json({
       ok: true,
       today: todayStr,
-      source: feedMap ? 'custom-feed + supabase-history' : 'supabase-history',
+      source: hitCount > 0 ? '4dlivetoday.com/api/v1' : 'pending',
       results,
       history
     });
