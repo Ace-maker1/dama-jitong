@@ -9,7 +9,11 @@ async function pickGroqModel(apiKey, preferVision) {
     });
     if (r.ok) {
       const json = await r.json();
-      cachedModels = Array.isArray(json.data) ? json.data.map(m => m.id).filter(Boolean) : [];
+      cachedModels = Array.isArray(json.data)
+        ? json.data
+            .map(m => m.id)
+            .filter(id => id && !id.includes('whisper') && !id.includes('guard') && !id.includes('tts'))
+        : [];
       cachedAt = now;
     }
   }
@@ -110,7 +114,7 @@ module.exports = async function handler(req, res) {
         model,
         messages: formattedMessages,
         temperature: 0.5,
-        max_tokens: 1200
+        max_tokens: 512
       })
     });
 
