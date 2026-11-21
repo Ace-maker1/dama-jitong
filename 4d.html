@@ -771,6 +771,18 @@
 
     switch4DLang(currentLang);
     syncLatest4D(false);
+    let lastCheckedDateStr = getMytNow().toISOString().slice(0, 10);
+    setInterval(() => {
+      const nowDateStr = getMytNow().toISOString().slice(0, 10);
+      if (nowDateStr !== lastCheckedDateStr) {
+        lastCheckedDateStr = nowDateStr;
+        selectedHistoryIdx = -1;
+        syncLatest4D(false);
+      }
+    }, 60000);
+
+    switch4DLang(currentLang);
+    syncLatest4D(false);
   </script>
 </body>
 </html>
