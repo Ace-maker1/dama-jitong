@@ -1,3 +1,41 @@
+let cachedModels = null;
+let cachedAt = 0;
+
+async function pickGroqModel(apiKey, preferVision) {
+  const now = Date.now();
+  if (!cachedModels || now - cachedAt > 5 * 60 * 1000) {
+    const r = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    if (r.ok) {
+      const json = await r.json();
+      cachedModels = Array.isArray(json.data) ? json.data.map(m => m.id).filter(Boolean) : [];
+      cachedAt = now;
+    }
+  }
+
+  const list = cachedModels || [];
+  const preferred = preferVision
+    ? [
+        'meta-llama/llama-4-scout-17b-16e-instruct',
+        'meta-llama/llama-4-maverick-17b-128e-instruct',
+        'llama-3.2-90b-vision-preview',
+        'llama-3.2-11b-vision-preview'
+      ]
+    : [
+        'llama-3.3-70b-versatile',
+        'meta-llama/llama-4-scout-17b-16e-instruct',
+        'llama-3.1-8b-instant',
+        'qwen/qwen3-32b',
+        'gemma2-9b-it'
+      ];
+
+  for (const id of preferred) {
+    if (list.includes(id)) return id;
+  }
+  return list[0] || 'llama-3.1-8b-instant';
+}
+
 module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     return res.status(200).json({
@@ -60,9 +98,7 @@ module.exports = async function handler(req, res) {
       })
     ];
 
-    const model = hasImage
-      ? 'meta-llama/llama-4-scout-17b-16e-instruct'
-      : 'meta-llama/llama-4-scout-17b-16e-instruct';
+    const model = await pickGroqModel(apiKey, hasImage);
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
