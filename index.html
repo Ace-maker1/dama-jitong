@@ -993,20 +993,73 @@
       renderPosts();
     }
 
-    function getCategoryVisual(cat) {
+    function getCategoryVisual(cat, post = {}) {
       const t = I18N[currentLang];
+      const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''} ${post.desc_en || ''} ${post.desc_ms || ''} ${post.category || ''}`.toLowerCase();
+
+      if (/美食|饮食|吃饭|餐厅|茶室|咖啡|火锅|烧烤|宵夜|小吃|kopitiam|food|restaurant|cafe|makan/.test(text)) {
+        return {
+          img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
+          bg: 'from-red-600 to-rose-600',
+          icon: '🍜',
+          label: t.cardLabels['本地优惠']
+        };
+      }
+      if (/汽车|车行|修车|保养|冷气|轮胎|洗车|kereta|car|auto|service/.test(text)) {
+        return {
+          img: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=400&q=80',
+          bg: 'from-red-600 to-rose-600',
+          icon: '🔧',
+          label: t.cardLabels['本地优惠']
+        };
+      }
+      if (/酒店|民宿|客房|住宿|hotel|homestay|resort|stay/.test(text)) {
+        return {
+          img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80',
+          bg: 'from-blue-600 to-indigo-600',
+          icon: '🏨',
+          label: t.cardLabels['找房子']
+        };
+      }
+
       const map = {
-        '找房子': { bg: 'from-blue-600 to-indigo-600', icon: '🏢', label: t.cardLabels['找房子'] },
-        '找工作': { bg: 'from-emerald-600 to-teal-600', icon: '💼', label: t.cardLabels['找工作'] },
-        '二手闲置': { bg: 'from-amber-500 to-orange-600', icon: '📦', label: t.cardLabels['二手闲置'] },
-        '本地优惠': { bg: 'from-red-600 to-rose-600', icon: '🔥', label: t.cardLabels['本地优惠'] }
+        '找房子': {
+          img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80',
+          bg: 'from-blue-600 to-indigo-600',
+          icon: '🏢',
+          label: t.cardLabels['找房子']
+        },
+        '找工作': {
+          img: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=400&q=80',
+          bg: 'from-emerald-600 to-teal-600',
+          icon: '💼',
+          label: t.cardLabels['找工作']
+        },
+        '二手闲置': {
+          img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80',
+          bg: 'from-amber-500 to-orange-600',
+          icon: '📦',
+          label: t.cardLabels['二手闲置']
+        },
+        '本地优惠': {
+          img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+          bg: 'from-red-600 to-rose-600',
+          icon: '🔥',
+          label: t.cardLabels['本地优惠']
+        }
       };
-      return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: 'Info' };
+
+      return map[cat] || {
+        img: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=400&q=80',
+        bg: 'from-gray-600 to-gray-800',
+        icon: '📌',
+        label: 'Info'
+      };
     }
 
     function createPostCardHTML(post) {
       const t = I18N[currentLang];
-      const vis = getCategoryVisual(post.category);
+      const vis = getCategoryVisual(post.category, post);
       const dateStr = new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' });
       const displayCat = t.cats[post.category] || post.category;
       const displayCity = getRegionDisplayName(post.city, currentLang);
@@ -1026,9 +1079,9 @@
 
       const rightMediaHTML = post.image_url
         ? `<img src="${post.image_url}" alt="${localizedTitle}" class="w-24 h-24 rounded-xl object-cover shrink-0 border border-gray-100 shadow-xs" />`
-        : `<div class="w-24 h-24 rounded-xl bg-gradient-to-br ${vis.bg} text-white shrink-0 flex flex-col items-center justify-center p-2 text-center shadow-inner">
-             <span class="text-2xl mb-1">${vis.icon}</span>
-             <span class="text-[11px] font-bold tracking-wide opacity-95">${vis.label}</span>
+        : `<div class="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-gray-100 shadow-xs bg-gradient-to-br ${vis.bg}">
+             <img src="${vis.img}" alt="${vis.label}" loading="lazy" onerror="this.style.display='none'" class="w-full h-full object-cover" />
+             <span class="absolute bottom-1 right-1 bg-black/65 text-white text-[10px] leading-none px-1.5 py-1 rounded-md backdrop-blur-[1px]">${vis.label}</span>
            </div>`;
 
       return `
