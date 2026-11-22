@@ -7,8 +7,8 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="DamaJitong 大马吉通">
-  <link rel="icon" type="image/png" href="/icon.png?v=4">
-  <link rel="apple-touch-icon" href="/icon.png?v=4">
+  <link rel="icon" type="image/png" sizes="1024x1024" href="/icon.png?v=4">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="/icon.png?v=4">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -27,7 +27,7 @@
     <div class="flex items-center justify-between gap-2 mb-2">
       <!-- 左侧 Logo + 全马 13 州 3 直辖区选择 -->
       <div class="flex items-center space-x-2 shrink-0">
-       <img src="/icon.png?v=4" alt="大马吉通" class="w-8 h-8 rounded-xl object-cover shadow-sm bg-[#F8F6F0]">
+        <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-8 h-8 rounded-xl object-cover shadow-sm bg-[#F8F6F0]">
         <div>
           <div class="flex items-center space-x-1">
             <span id="brandTitle" class="font-extrabold text-sm tracking-tight">大马吉通</span>
@@ -174,7 +174,7 @@
   <!-- 纯净版“我的”页面 -->
   <main id="profileTab" class="flex-1 pb-24 hidden px-4 pt-5">
     <div class="bg-white rounded-2xl p-5 shadow-sm mb-4 flex items-center space-x-4">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-2xl font-black shadow">吉</div>
+      <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-14 h-14 rounded-2xl object-cover shadow bg-[#F8F6F0] shrink-0" />
       <div>
         <h2 id="profileWelcome" class="font-bold text-gray-800 text-lg">欢迎来到大马吉通</h2>
         <p id="profileSub" class="text-xs text-gray-500 mt-0.5">马来西亚本地生活 · 免费分类信息平台</p>
