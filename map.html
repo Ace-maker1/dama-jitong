@@ -90,7 +90,7 @@
   <!-- 全屏 Google 风格地图画布 -->
   <div id="map"></div>
 
-  <!-- 实时导航模式：顶部深色指引卡片（仿 Google Maps 导航绿/深蓝横幅） -->
+  <!-- 实时导航模式：顶部深色指引卡片 -->
   <div id="liveNavBanner" class="hidden fixed top-3 inset-x-3 max-w-xl mx-auto z-40 bg-[#0f5338] text-white rounded-2xl p-3.5 shadow-2xl border border-emerald-400/30">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
@@ -126,9 +126,8 @@
     </div>
   </div>
 
-  <!-- 顶部 Google Maps 风格悬浮搜索区 -->
+  <!-- 顶部悬浮搜索区 -->
   <div id="topFloatingUI" class="fixed top-3 inset-x-3 max-w-xl mx-auto z-30 space-y-2 pointer-events-none">
-    <!-- 主白色悬浮胶囊搜索框 -->
     <div class="bg-white rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.18)] border border-gray-200/80 px-2.5 py-1.5 flex items-center gap-1.5 pointer-events-auto">
       <a href="/" id="backHomeBtn" title="返回首页" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-700 font-bold shrink-0 transition">
         ←
@@ -143,7 +142,6 @@
       <button onclick="planRoute()" id="searchRouteBtn" class="bg-[#1a73e8] hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-full shrink-0 transition">
         搜索
       </button>
-      <!-- 三语切换紧凑胶囊 -->
       <div class="flex items-center bg-gray-100 rounded-full p-0.5 text-[10px] font-bold shrink-0">
         <button onclick="switchLang('zh')" id="lang-zh" class="lang-btn bg-white text-[#1a73e8] px-1.5 py-0.5 rounded-full shadow-2xs">中</button>
         <button onclick="switchLang('en')" id="lang-en" class="lang-btn text-gray-500 px-1.5 py-0.5 rounded-full">EN</button>
@@ -151,10 +149,8 @@
       </div>
     </div>
 
-    <!-- 实时智能联想下拉框 -->
     <div id="autoSuggestDropdown" class="hidden bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-64 overflow-y-auto divide-y divide-gray-100 pointer-events-auto"></div>
 
-    <!-- Google Maps 风格白色悬浮分类胶囊栏 -->
     <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 pointer-events-auto">
       <button onclick="toggleOriginEditor()" id="originPillBtn" class="bg-white hover:bg-gray-50 text-[#202124] shadow-[0_1px_5px_rgba(0,0,0,0.14)] border border-gray-200/70 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 shrink-0">
         <span class="w-2 h-2 rounded-full bg-[#1a73e8]"></span>
@@ -170,7 +166,6 @@
       <button onclick="quickNearby('MR DIY')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🛠️ MR.DIY</button>
     </div>
 
-    <!-- 可展开的起点与城市微调面板（默认收起，保持地图大视野） -->
     <div id="originDrawer" class="hidden bg-white rounded-2xl shadow-xl border border-gray-200 p-3 space-y-2 pointer-events-auto">
       <div class="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
         <span class="w-2.5 h-2.5 rounded-full bg-[#1a73e8] shrink-0"></span>
@@ -178,7 +173,6 @@
         <button onclick="locateMe(true)" id="gpsBtn" class="text-[11px] text-[#1a73e8] font-bold shrink-0 px-2 py-0.5 bg-blue-50 rounded-lg">📍 定位</button>
         <button onclick="swapLocations()" id="swapBtn" class="text-[11px] text-gray-600 px-2 py-0.5 bg-white rounded-lg border shrink-0">⇅ 互换</button>
       </div>
-      <!-- 城市快捷跳转 -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
         <span id="cityLabel" class="text-[11px] text-gray-400 shrink-0">城市：</span>
         <button onclick="switchCity(3.1390, 101.6869, 'Kuala Lumpur')" id="cityBtn-kl" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">吉隆坡 KL</button>
@@ -188,7 +182,6 @@
         <button onclick="switchCity(2.1896, 102.2501, 'Melaka')" id="cityBtn-mk" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">马六甲 Melaka</button>
         <button onclick="switchCity(5.9804, 116.0735, 'Kota Kinabalu')" id="cityBtn-kk" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">亚庇 KK</button>
       </div>
-      <!-- 已收藏 & 历史搜索 -->
       <div id="favoritesBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
         <span id="favTitleLabel" class="text-[11px] text-amber-600 font-bold shrink-0">⭐ 已收藏：</span>
         <div id="favoritesList" class="flex items-center gap-1.5"></div>
@@ -200,7 +193,6 @@
       </div>
     </div>
 
-    <!-- 附近多门店匹配悬浮列表 -->
     <div id="nearbyResultsBox" class="hidden bg-white rounded-2xl shadow-2xl border border-gray-200 p-3 space-y-1.5 pointer-events-auto">
       <div class="flex items-center justify-between">
         <span id="nearbyResultsTitle" class="text-xs font-bold text-[#202124]">📍 匹配目的地（优先营业中 · 从近到远）</span>
@@ -209,10 +201,9 @@
       <div id="nearbyResultsList" class="divide-y divide-gray-100 max-h-52 overflow-y-auto"></div>
     </div>
 
-    <!-- 未命中推荐框 -->
     <div id="fallbackSuggestBox" class="hidden bg-white rounded-2xl shadow-2xl border border-rose-200 p-3 space-y-2 pointer-events-auto">
       <div class="flex items-center justify-between">
-        <span id="fallbackTitle" class="text-xs font-bold text-rose-700">💡 未直接命中，请选择下方推荐地点或直接点击地图：</span>
+        <span id="fallbackTitle" class="text-xs font-bold text-rose-700">💡 站内未收录，直接用外部地图搜或点选地点：</span>
         <button onclick="document.getElementById('fallbackSuggestBox').classList.add('hidden')" class="text-xs text-gray-400">✕</button>
       </div>
       <p id="fallbackHint" class="text-[11px] text-gray-500 leading-relaxed"></p>
@@ -220,7 +211,7 @@
     </div>
   </div>
 
-  <!-- 右侧 Google Maps 风格悬浮圆形功能按钮组（图层切换 + 我的位置） -->
+  <!-- 右侧悬浮按钮组 -->
   <div id="rightFloatingControls" class="fixed right-3 bottom-28 z-20 flex flex-col gap-2.5">
     <button onclick="toggleMapLayer()" id="layerToggleBtn" title="切换卫星图/标准地图"
             class="w-11 h-11 rounded-full bg-white hover:bg-gray-50 active:scale-95 shadow-[0_2px_10px_rgba(0,0,0,0.2)] border border-gray-200/80 flex flex-col items-center justify-center text-[#3c4043] transition">
@@ -233,21 +224,17 @@
     </button>
   </div>
 
-  <!-- 底部提示小胶囊（未规划路线时显示） -->
   <div id="bottomIdleHint" class="fixed bottom-4 inset-x-3 max-w-md mx-auto z-20 bg-white/95 backdrop-blur rounded-2xl shadow-lg border border-gray-200/80 px-4 py-2.5 flex items-center justify-between">
     <span id="mapBadge" class="text-xs text-gray-600 font-medium">💡 直接点击地图任意位置即可设为目的地</span>
     <a href="/" class="text-xs font-bold text-[#1a73e8] shrink-0 ml-2">返回分类</a>
   </div>
 
-  <!-- 底部 Google Maps 风格路线详情抽屉卡片 -->
   <div id="resultPanel" class="hidden fixed bottom-0 inset-x-0 max-w-xl mx-auto z-30 bg-white rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.18)] border-t border-gray-200 transition-all">
-    <!-- 顶部拖拽把手与收起按钮 -->
     <div onclick="toggleDrawerExpand()" class="pt-2.5 pb-1 flex flex-col items-center cursor-pointer">
       <div class="w-10 h-1 rounded-full bg-gray-300"></div>
     </div>
 
     <div class="px-4 pb-4 space-y-3 max-h-[72vh] overflow-y-auto">
-      <!-- 出行方式切换（驾车 / 公交 / 步行） -->
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-full text-xs font-bold">
           <button id="mode-driving" onclick="setTravelMode('driving')" class="mode-tab bg-[#1a73e8] text-white px-3 py-1 rounded-full shadow-2xs transition">🚗 驾车</button>
@@ -257,7 +244,6 @@
         <button onclick="closeResultPanel()" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs font-bold">✕</button>
       </div>
 
-      <!-- 时间、距离、营业状态与主导航按钮 -->
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 flex-wrap">
@@ -274,7 +260,6 @@
         </button>
       </div>
 
-      <!-- 快捷操作栏：Google Maps 外部导航 / Waze / Grab / 收藏 / 营业时间 -->
       <div class="grid grid-cols-5 gap-1.5 pt-1">
         <a id="googleMapsLink" href="#" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-[#1a73e8] border border-blue-200/80 py-2 px-1 rounded-xl text-center transition">
           <div class="text-xs font-bold">🗺️ Google</div>
@@ -298,13 +283,11 @@
         </a>
       </div>
 
-      <!-- 公共交通贴士（仅公交模式显示） -->
       <div id="transitGuideBox" class="hidden bg-blue-50 rounded-2xl p-3 border border-blue-200 space-y-1">
         <div class="font-bold text-xs text-blue-900" id="transitBoxTitle">🚇 本地公交 / 轨道交通乘车贴士</div>
         <div id="transitAdviceBody" class="text-[11px] text-blue-800 leading-relaxed space-y-1"></div>
       </div>
 
-      <!-- 逐向转弯步骤明细（可折叠） -->
       <div class="border-t border-gray-100 pt-2">
         <button onclick="toggleStepsList()" class="w-full flex items-center justify-between py-1 text-left">
           <span id="stepsHeader" class="font-bold text-xs text-gray-700">📋 查看逐向转弯路线明细</span>
@@ -318,151 +301,52 @@
   <script>
     const i18n = {
       zh: {
-        gpsLabel: '我的当前位置 (GPS)',
-        originDefault: '我的位置',
-        modeDriving: '🚗 驾车',
-        modeTransit: '🚇 公交',
-        modeWalking: '🚶 步行',
-        startPh: '输入起点或点击右侧 GPS 定位',
-        endPh: '在这里搜索大马地点、门店、机场...',
-        searchBtn: '搜索',
-        searchingBtn: '搜索中',
-        gpsBtn: '📍 定位',
-        swapBtn: '⇅ 互换',
-        cityLabel: '城市：',
-        chipAirport: '✈️ 机场',
-        chipMcd: '🍔 麦当劳',
-        chipPetrol: '⛽ 加油站',
-        chipWatsons: '💊 屈臣氏',
-        chipHospital: '🏥 医院',
-        nearbyResultsTitle: '📍 匹配目的地（优先营业中 · 从近到远）',
-        nearestBadge: '最近',
-        approxMin: (m) => `约 ${m} 分钟`,
-        favTitle: '⭐ 已收藏：',
-        histTitle: '🕒 最近：',
-        clearHist: '清空',
-        saveFavSub: '存地点',
-        savedFavSub: '已收藏',
-        mapBadge: '💡 直接点击地图任意位置即可设为目的地',
-        startNavText: '开始导航',
-        stopNav: '结束',
-        voiceOn: '🔊 语音开启',
-        voiceOff: '🔇 语音静音',
-        lockedText: '🎯 锁定视角',
-        freeText: '🔓 自由拖动',
-        wazeSub: '实时避堵',
-        gmapSub: '外部导航',
-        callTitle: '📞 营业',
-        stepsHeader: '📋 查看逐向转弯路线明细',
-        layerSat: '卫星',
-        layerMap: '街道',
-        speechLang: 'zh-CN',
-        startVoiceMsg: '开始导航。',
-        status247: '🟢 24小时营业',
-        statusOpenUntil: (t) => `🟢 营业中 (至 ${t})`,
-        statusOpen: '🟢 营业中',
-        statusClosed: (t) => t ? `🔴 已打烊 (${t} 开门)` : '🔴 已打烊',
-        statusCheck: '🟡 建议确认营业时间',
-        fallbackTitle: '💡 未直接命中，请选择下方推荐地点或直接点击地图：',
-        fallbackHint: '可直接点选下方热门地点，或输入更完整的街道/城市名（如“槟城 Gurney”、“KLCC”）：'
+        gpsLabel: '我的当前位置 (GPS)', originDefault: '我的位置', modeDriving: '🚗 驾车', modeTransit: '🚇 公交', modeWalking: '🚶 步行',
+        startPh: '输入起点或点击右侧 GPS 定位', endPh: '在这里搜索大马地点、门店、机场...', searchBtn: '搜索', searchingBtn: '搜索中',
+        gpsBtn: '📍 定位', swapBtn: '⇅ 互换', cityLabel: '城市：', chipAirport: '✈️ 机场', chipMcd: '🍔 麦当劳',
+        chipPetrol: '⛽ 加油站', chipWatsons: '💊 屈臣氏', chipHospital: '🏥 医院',
+        nearbyResultsTitle: '📍 匹配目的地（优先营业中 · 从近到远）', nearestBadge: '最近', approxMin: (m) => `约 ${m} 分钟`,
+        favTitle: '⭐ 已收藏：', histTitle: '🕒 最近：', clearHist: '清空', saveFavSub: '存地点', savedFavSub: '已收藏',
+        mapBadge: '💡 直接点击地图任意位置即可设为目的地', startNavText: '开始导航', stopNav: '结束',
+        voiceOn: '🔊 语音开启', voiceOff: '🔇 语音静音', lockedText: '🎯 锁定视角', freeText: '🔓 自由拖动',
+        wazeSub: '实时避堵', gmapSub: '外部导航', callTitle: '📞 营业', stepsHeader: '📋 查看逐向转弯路线明细',
+        layerSat: '卫星', layerMap: '街道', speechLang: 'zh-CN', startVoiceMsg: '开始导航。',
+        status247: '🟢 24小时营业', statusOpenUntil: (t) => `🟢 营业中 (至 ${t})`, statusOpen: '🟢 营业中',
+        statusClosed: (t) => t ? `🔴 已打烊 (${t} 开门)` : '🔴 已打烊', statusCheck: '🟡 建议确认营业时间',
+        fallbackTitle: '💡 站内未收录，直接用外部地图搜或点选地点：',
+        fallbackHint: '可直接点选下方外部导航搜该店，或选择附近城市/点图：'
       },
       en: {
-        gpsLabel: 'My Current Location (GPS)',
-        originDefault: 'Your location',
-        modeDriving: '🚗 Drive',
-        modeTransit: '🚇 Transit',
-        modeWalking: '🚶 Walk',
-        startPh: 'Start point or tap GPS',
-        endPh: 'Search Malaysia places, shops, airports...',
-        searchBtn: 'Search',
-        searchingBtn: '...',
-        gpsBtn: '📍 GPS',
-        swapBtn: '⇅ Swap',
-        cityLabel: 'City:',
-        chipAirport: '✈️ Airport',
-        chipMcd: '🍔 McDonald\'s',
-        chipPetrol: '⛽ Petrol',
-        chipWatsons: '💊 Watsons',
-        chipHospital: '🏥 Hospital',
-        nearbyResultsTitle: '📍 Matched places (Open first · Closest)',
-        nearestBadge: 'Nearest',
-        approxMin: (m) => `~${m} min`,
-        favTitle: '⭐ Saved:',
-        histTitle: '🕒 Recent:',
-        clearHist: 'Clear',
-        saveFavSub: 'Save',
-        savedFavSub: 'Saved',
-        mapBadge: '💡 Tap anywhere on the map to set destination',
-        startNavText: 'Start',
-        stopNav: 'Exit',
-        voiceOn: '🔊 Voice On',
-        voiceOff: '🔇 Muted',
-        lockedText: '🎯 Centered',
-        freeText: '🔓 Recenter',
-        wazeSub: 'Live Traffic',
-        gmapSub: 'Open App',
-        callTitle: '📞 Hours',
-        stepsHeader: '📋 Turn-by-turn directions',
-        layerSat: 'Satellite',
-        layerMap: 'Map',
-        speechLang: 'en-US',
-        startVoiceMsg: 'Starting navigation. ',
-        status247: '🟢 Open 24 Hours',
-        statusOpenUntil: (t) => `🟢 Open (till ${t})`,
-        statusOpen: '🟢 Open Now',
-        statusClosed: (t) => t ? `🔴 Closed (Opens ${t})` : '🔴 Closed',
-        statusCheck: '🟡 Check Hours',
-        fallbackTitle: '💡 No exact match. Pick a place below or tap map:',
-        fallbackHint: 'Choose from popular Malaysia destinations below or enter a fuller street/city name:'
+        gpsLabel: 'My Current Location (GPS)', originDefault: 'Your location', modeDriving: '🚗 Drive', modeTransit: '🚇 Transit', modeWalking: '🚶 Walk',
+        startPh: 'Start point or tap GPS', endPh: 'Search Malaysia places, shops, airports...', searchBtn: 'Search', searchingBtn: '...',
+        gpsBtn: '📍 GPS', swapBtn: '⇅ Swap', cityLabel: 'City:', chipAirport: '✈️ Airport', chipMcd: '🍔 McDonald\'s',
+        chipPetrol: '⛽ Petrol', chipWatsons: '💊 Watsons', chipHospital: '🏥 Hospital',
+        nearbyResultsTitle: '📍 Matched places (Open first · Closest)', nearestBadge: 'Nearest', approxMin: (m) => `~${m} min`,
+        favTitle: '⭐ Saved:', histTitle: '🕒 Recent:', clearHist: 'Clear', saveFavSub: 'Save', savedFavSub: 'Saved',
+        mapBadge: '💡 Tap anywhere on the map to set destination', startNavText: 'Start', stopNav: 'Exit',
+        voiceOn: '🔊 Voice On', voiceOff: '🔇 Muted', lockedText: '🎯 Centered', freeText: '🔓 Recenter',
+        wazeSub: 'Live Traffic', gmapSub: 'Open App', callTitle: '📞 Hours', stepsHeader: '📋 Turn-by-turn directions',
+        layerSat: 'Satellite', layerMap: 'Map', speechLang: 'en-US', startVoiceMsg: 'Starting navigation. ',
+        status247: '🟢 Open 24 Hours', statusOpenUntil: (t) => `🟢 Open (till ${t})`, statusOpen: '🟢 Open Now',
+        statusClosed: (t) => t ? `🔴 Closed (Opens ${t})` : '🔴 Closed', statusCheck: '🟡 Check Hours',
+        fallbackTitle: '💡 Not in free DB. Search on external map or pick below:',
+        fallbackHint: 'Search directly in Google Maps / Waze or pick a nearby location:'
       },
       ms: {
-        gpsLabel: 'Lokasi Semasa Saya (GPS)',
-        originDefault: 'Lokasi anda',
-        modeDriving: '🚗 Pandu',
-        modeTransit: '🚇 Bas/MRT',
-        modeWalking: '🚶 Jalan',
-        startPh: 'Lokasi mula atau tekan GPS',
-        endPh: 'Cari lokasi, kedai, lapangan terbang...',
-        searchBtn: 'Cari',
-        searchingBtn: '...',
-        gpsBtn: '📍 GPS',
-        swapBtn: '⇅ Tukar',
-        cityLabel: 'Bandar:',
-        chipAirport: '✈️ Lapangan Terbang',
-        chipMcd: '🍔 McDonald\'s',
-        chipPetrol: '⛽ Stesen Minyak',
-        chipWatsons: '💊 Watsons',
-        chipHospital: '🏥 Hospital',
-        nearbyResultsTitle: '📍 Lokasi sepadan (Dibuka dahulu · Terdekat)',
-        nearestBadge: 'Terdekat',
-        approxMin: (m) => `~${m} min`,
-        favTitle: '⭐ Disimpan:',
-        histTitle: '🕒 Sejarah:',
-        clearHist: 'Padam',
-        saveFavSub: 'Simpan',
-        savedFavSub: 'Disimpan',
-        mapBadge: '💡 Tekan mana-mana lokasi di peta sebagai destinasi',
-        startNavText: 'Mula',
-        stopNav: 'Tamat',
-        voiceOn: '🔊 Suara Aktif',
-        voiceOff: '🔇 Senyap',
-        lockedText: '🎯 Dikunci',
-        freeText: '🔓 Pusatkan',
-        wazeSub: 'Trafik',
-        gmapSub: 'Buka App',
-        callTitle: '📞 Operasi',
-        stepsHeader: '📋 Langkah panduan arah',
-        layerSat: 'Satelit',
-        layerMap: 'Peta',
-        speechLang: 'ms-MY',
-        startVoiceMsg: 'Memulakan navigasi. ',
-        status247: '🟢 Buka 24 Jam',
-        statusOpenUntil: (t) => `🟢 Dibuka (hingga ${t})`,
-        statusOpen: '🟢 Dibuka',
-        statusClosed: (t) => t ? `🔴 Tutup (Buka ${t})` : '🔴 Tutup',
-        statusCheck: '🟡 Semak Masa',
-        fallbackTitle: '💡 Tiada padanan tepat. Pilih lokasi cadangan atau tekan peta:',
-        fallbackHint: 'Pilih destinasi popular di bawah atau masukkan nama jalan/bandar yang lebih lengkap:'
+        gpsLabel: 'Lokasi Semasa Saya (GPS)', originDefault: 'Lokasi anda', modeDriving: '🚗 Pandu', modeTransit: '🚇 Bas/MRT', modeWalking: '🚶 Jalan',
+        startPh: 'Lokasi mula atau tekan GPS', endPh: 'Cari lokasi, kedai, lapangan terbang...', searchBtn: 'Cari', searchingBtn: '...',
+        gpsBtn: '📍 GPS', swapBtn: '⇅ Tukar', cityLabel: 'Bandar:', chipAirport: '✈️ Lapangan Terbang', chipMcd: '🍔 McDonald\'s',
+        chipPetrol: '⛽ Stesen Minyak', chipWatsons: '💊 Watsons', chipHospital: '🏥 Hospital',
+        nearbyResultsTitle: '📍 Lokasi sepadan (Dibuka dahulu · Terdekat)', nearestBadge: 'Terdekat', approxMin: (m) => `~${m} min`,
+        favTitle: '⭐ Disimpan:', histTitle: '🕒 Sejarah:', clearHist: 'Padam', saveFavSub: 'Simpan', savedFavSub: 'Disimpan',
+        mapBadge: '💡 Tekan mana-mana lokasi di peta sebagai destinasi', startNavText: 'Mula', stopNav: 'Tamat',
+        voiceOn: '🔊 Suara Aktif', voiceOff: '🔇 Senyap', lockedText: '🎯 Dikunci', freeText: '🔓 Pusatkan',
+        wazeSub: 'Trafik', gmapSub: 'Buka App', callTitle: '📞 Operasi', stepsHeader: '📋 Langkah panduan arah',
+        layerSat: 'Satelit', layerMap: 'Peta', speechLang: 'ms-MY', startVoiceMsg: 'Memulakan navigasi. ',
+        status247: '🟢 Buka 24 Jam', statusOpenUntil: (t) => `🟢 Dibuka (hingga ${t})`, statusOpen: '🟢 Dibuka',
+        statusClosed: (t) => t ? `🔴 Tutup (Buka ${t})` : '🔴 Tutup', statusCheck: '🟡 Semak Masa',
+        fallbackTitle: '💡 Tiada dalam peta percuma. Cari di peta luar atau pilih di bawah:',
+        fallbackHint: 'Buka terus di Google Maps / Waze atau pilih lokasi berdekatan:'
       }
     };
 
@@ -589,22 +473,17 @@
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
 
-    // 初始化全屏地图（Zoom 控件放在右下角，避开顶部悬浮搜索框）
     const map = L.map('map', { zoomControl: false }).setView([3.1390, 101.6869], 14);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Google Maps 风格高清晰街道底图 + 备用免费底图自动降级（0 成本抗高并发）
     const streetLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-      attribution: '© Map Data',
-      maxZoom: 20
+      attribution: '© Map Data', maxZoom: 20
     });
     const fallbackStreetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO',
-      maxZoom: 19
+      attribution: '© OpenStreetMap © CARTO', maxZoom: 19
     });
     const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-      attribution: '© Satellite Data',
-      maxZoom: 20
+      attribution: '© Satellite Data', maxZoom: 20
     });
 
     let tileErrorCount = 0;
@@ -636,17 +515,9 @@
       }
     }
 
-    function toggleOriginEditor() {
-      document.getElementById('originDrawer').classList.toggle('hidden');
-    }
-
-    function toggleStepsList() {
-      document.getElementById('stepsList').classList.toggle('hidden');
-    }
-
-    function toggleDrawerExpand() {
-      document.getElementById('stepsList').classList.toggle('hidden');
-    }
+    function toggleOriginEditor() { document.getElementById('originDrawer').classList.toggle('hidden'); }
+    function toggleStepsList() { document.getElementById('stepsList').classList.toggle('hidden'); }
+    function toggleDrawerExpand() { document.getElementById('stepsList').classList.toggle('hidden'); }
 
     function closeResultPanel() {
       document.getElementById('resultPanel').classList.add('hidden');
@@ -678,59 +549,40 @@
       const nameLower = `${tags.name || ''} ${tags.brand || ''} ${fallbackName}`.toLowerCase();
       const amenity = (tags.amenity || '').toLowerCase();
       const shop = (tags.shop || '').toLowerCase();
-
       const myDate = getMalaysiaNow();
       const curMins = myDate.getHours() * 60 + myDate.getMinutes();
       const dayIdx = myDate.getDay();
 
-      if (/24\/7|24\s*hours/i.test(rawOh)) {
-        return { state: 'open', text: t.status247, badgeClass: 'bg-emerald-100 text-emerald-700' };
-      }
+      if (/24\/7|24\s*hours/i.test(rawOh)) return { state: 'open', text: t.status247, badgeClass: 'bg-emerald-100 text-emerald-700' };
 
       const timeMatch = rawOh.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
       if (timeMatch) {
         const openH = parseInt(timeMatch[1], 10);
         const openM = parseInt(timeMatch[2], 10);
-        let closeH = parseInt(timeMatch[3], 10);
+        const closeH = parseInt(timeMatch[3], 10);
         const closeM = parseInt(timeMatch[4], 10);
         const openStr = `${String(openH).padStart(2, '0')}:${String(openM).padStart(2, '0')}`;
         const closeStr = `${String(closeH).padStart(2, '0')}:${String(closeM).padStart(2, '0')}`;
-
         const openMins = openH * 60 + openM;
         let closeMins = closeH * 60 + closeM;
         if (closeMins <= openMins) closeMins += 24 * 60;
         const adjustedCur = curMins < openMins && closeMins > 24 * 60 ? curMins + 24 * 60 : curMins;
-
-        if (adjustedCur >= openMins && adjustedCur < closeMins) {
-          return { state: 'open', text: t.statusOpenUntil(closeStr), badgeClass: 'bg-emerald-100 text-emerald-700' };
-        } else {
-          return { state: 'closed', text: t.statusClosed(openStr), badgeClass: 'bg-rose-100 text-rose-700' };
-        }
+        if (adjustedCur >= openMins && adjustedCur < closeMins) return { state: 'open', text: t.statusOpenUntil(closeStr), badgeClass: 'bg-emerald-100 text-emerald-700' };
+        return { state: 'closed', text: t.statusClosed(openStr), badgeClass: 'bg-rose-100 text-rose-700' };
       }
 
-      if (
-        amenity === 'fuel' ||
-        amenity === 'hospital' ||
-        /7-eleven|7 eleven|kk super mart|petronas|shell|caltex|bhp|petron|hospital|airport|klia|lapangan terbang/i.test(nameLower)
-      ) {
+      if (amenity === 'fuel' || amenity === 'hospital' || /7-eleven|7 eleven|kk super mart|petronas|shell|caltex|bhp|petron|hospital|airport|klia|lapangan terbang/i.test(nameLower)) {
         return { state: 'open', text: t.status247, badgeClass: 'bg-emerald-100 text-emerald-700' };
       }
-
       if (amenity === 'bank' || /maybank|cimb|public bank|rhb|hong leong|ambank|bank/i.test(nameLower)) {
         const isWeekday = dayIdx >= 1 && dayIdx <= 5;
-        if (isWeekday && curMins >= 9 * 60 + 15 && curMins < 16 * 60 + 30) {
-          return { state: 'open', text: t.statusOpenUntil('16:30'), badgeClass: 'bg-emerald-100 text-emerald-700' };
-        }
+        if (isWeekday && curMins >= 9 * 60 + 15 && curMins < 16 * 60 + 30) return { state: 'open', text: t.statusOpenUntil('16:30'), badgeClass: 'bg-emerald-100 text-emerald-700' };
         return { state: 'closed', text: t.statusClosed('09:15'), badgeClass: 'bg-rose-100 text-rose-700' };
       }
-
       if (shop === 'mall' || /mall|pavilion|mid valley|sunway|gurney|queensbay|komtar|watsons|guardian|mr\.?\s*diy/i.test(nameLower)) {
-        if (curMins >= 10 * 60 && curMins < 22 * 60) {
-          return { state: 'open', text: t.statusOpenUntil('22:00'), badgeClass: 'bg-emerald-100 text-emerald-700' };
-        }
+        if (curMins >= 10 * 60 && curMins < 22 * 60) return { state: 'open', text: t.statusOpenUntil('22:00'), badgeClass: 'bg-emerald-100 text-emerald-700' };
         return { state: 'closed', text: t.statusClosed('10:00'), badgeClass: 'bg-rose-100 text-rose-700' };
       }
-
       return { state: 'unknown', text: t.statusCheck, badgeClass: 'bg-gray-100 text-gray-600' };
     }
 
@@ -761,7 +613,6 @@
         activeBtn.classList.add('bg-white', 'text-[#1a73e8]', 'shadow-2xs');
         activeBtn.classList.remove('text-gray-500');
       }
-
       const t = i18n[lang];
       const startVal = document.getElementById('startInput').value;
       if (!startVal || startVal.includes('(GPS)')) {
@@ -769,7 +620,6 @@
         document.getElementById('originPillText').innerText = t.originDefault;
         if (startCoords) startCoords.name = t.gpsLabel;
       }
-
       document.getElementById('mode-driving').innerText = t.modeDriving;
       document.getElementById('mode-transit').innerText = t.modeTransit;
       document.getElementById('mode-walking').innerText = t.modeWalking;
@@ -799,9 +649,7 @@
       document.getElementById('layerText').innerText = isSatellite ? t.layerMap : t.layerSat;
 
       if (endCoords) {
-        const matchedAp = MY_AIRPORTS.find(ap =>
-          Math.abs(ap.lat - endCoords.lat) < 0.01 && Math.abs(ap.lng - endCoords.lng) < 0.01
-        );
+        const matchedAp = MY_AIRPORTS.find(ap => Math.abs(ap.lat - endCoords.lat) < 0.01 && Math.abs(ap.lng - endCoords.lng) < 0.01);
         if (matchedAp) {
           endCoords.name = `${matchedAp[lang] || matchedAp.en} · ${matchedAp.fullAddr.split(',')[0]}`;
           document.getElementById('endInput').value = endCoords.name;
@@ -810,7 +658,6 @@
           document.getElementById('endInput').value = endCoords.name;
         }
       }
-
       renderSavedAndHistory();
       if (startCoords && endCoords) calculateAndRenderRoute();
     }
@@ -837,7 +684,7 @@
       '新山关卡': 'JB Sentral CIQ Johor Bahru', '鸡场街': 'Jonker Street Melaka'
     };
 
-    async function fetchWithTimeout(url, options = {}, timeoutMs = 3500) {
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -859,7 +706,7 @@
       if (/[\u4e00-\u9fa5]/.test(q)) {
         try {
           const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(q)}`;
-          const res = await fetchWithTimeout(url, {}, 3000);
+          const res = await fetchWithTimeout(url, {}, 2500);
           const json = await res.json();
           const enText = (json[0] || []).map(item => item[0]).join('').trim();
           if (enText) return enText;
@@ -931,11 +778,8 @@
 
     function updateLiveUserDot(lat, lng) {
       const icon = L.divIcon({ className: '', html: '<div class="gmap-blue-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] });
-      if (userLiveMarker) {
-        userLiveMarker.setLatLng([lat, lng]);
-      } else {
-        userLiveMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
-      }
+      if (userLiveMarker) userLiveMarker.setLatLng([lat, lng]);
+      else userLiveMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
     }
 
     function hideSuggestions() {
@@ -976,92 +820,44 @@
       if (clearBtn) clearBtn.classList.toggle('hidden', q.length === 0);
 
       const box = document.getElementById('autoSuggestDropdown');
-      if (!q) {
-        hideSuggestions();
-        return;
-      }
+      if (!q) { hideSuggestions(); return; }
 
       const lower = q.toLowerCase();
       const refLat = startCoords ? startCoords.lat : map.getCenter().lat;
       const refLng = startCoords ? startCoords.lng : map.getCenter().lng;
 
-      const cityMatches = MY_CITIES_DB.filter(c =>
-        c.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower))
-      ).slice(0, 3);
-
+      const cityMatches = MY_CITIES_DB.filter(c => c.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower))).slice(0, 3);
       const favs = getSavedList(STORAGE_FAV_KEY).filter(f => f.label.toLowerCase().includes(lower) || f.name.toLowerCase().includes(lower));
       const hist = getSavedList(STORAGE_HIST_KEY).filter(h => h.name.toLowerCase().includes(lower));
-
       const dictMatches = AUTOCOMPLETE_DICT.filter(item =>
         item.keys.some(k => k.startsWith(lower) || lower.startsWith(k) || k.includes(lower)) ||
-        item.zh.toLowerCase().includes(lower) ||
-        item.en.toLowerCase().includes(lower) ||
-        item.ms.toLowerCase().includes(lower)
+        item.zh.toLowerCase().includes(lower) || item.en.toLowerCase().includes(lower) || item.ms.toLowerCase().includes(lower)
       ).slice(0, 3);
 
       let html = '';
-
       favs.slice(0, 2).forEach(f => {
         const displayFav = localizeKnownPlaceName(f.name, currentLang);
-        html += `
-          <div onclick="pickSuggestion('${displayFav.replace(/'/g, "\\'")}', ${f.lat}, ${f.lng})"
-               class="px-3.5 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs shrink-0">⭐</span>
-              <span class="text-xs font-bold text-gray-800 truncate">${f.label} · ${displayFav}</span>
-            </div>
-            <span class="text-[10px] text-amber-600 shrink-0">已收藏</span>
-          </div>`;
+        html += `<div onclick="pickSuggestion('${displayFav.replace(/'/g, "\\'")}', ${f.lat}, ${f.lng})" class="px-3.5 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs shrink-0">⭐</span><span class="text-xs font-bold text-gray-800 truncate">${f.label} · ${displayFav}</span></div><span class="text-[10px] text-amber-600 shrink-0">已收藏</span></div>`;
       });
-
       cityMatches.forEach(c => {
         const displayName = c[currentLang] || c.en;
         const km = (map.distance([refLat, refLng], [c.lat, c.lng]) / 1000).toFixed(1);
-        html += `
-          <div onclick="pickSuggestion('${displayName.replace(/'/g, "\\'")}', ${c.lat}, ${c.lng})"
-               class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs shrink-0">🏙️</span>
-              <span class="text-xs font-bold text-gray-800 truncate">${displayName}</span>
-            </div>
-            <span class="text-[10px] font-bold text-[#1a73e8] bg-blue-50 px-2 py-0.5 rounded-full shrink-0">${km} km</span>
-          </div>`;
+        html += `<div onclick="pickSuggestion('${displayName.replace(/'/g, "\\'")}', ${c.lat}, ${c.lng})" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs shrink-0">🏙️</span><span class="text-xs font-bold text-gray-800 truncate">${displayName}</span></div><span class="text-[10px] font-bold text-[#1a73e8] bg-blue-50 px-2 py-0.5 rounded-full shrink-0">${km} km</span></div>`;
       });
-
       dictMatches.forEach(item => {
         const label = item[currentLang] || item.en;
         const clickCall = item.lat != null
           ? `pickSuggestion('${label.replace(/'/g, "\\'")}', ${item.lat}, ${item.lng}, '${(item.addr || '').replace(/'/g, "\\'")}')`
           : `pickSuggestion('${item.query.replace(/'/g, "\\'")}')`;
-        html += `
-          <div onclick="${clickCall}"
-               class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">${item.icon}</span>
-              <span class="text-xs font-bold text-gray-800 truncate">${label}</span>
-            </div>
-            <span class="text-[10px] text-gray-400 shrink-0">↗</span>
-          </div>`;
+        html += `<div onclick="${clickCall}" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">${item.icon}</span><span class="text-xs font-bold text-gray-800 truncate">${label}</span></div><span class="text-[10px] text-gray-400 shrink-0">↗</span></div>`;
       });
-
       hist.slice(0, 2).forEach(h => {
         const displayHist = localizeKnownPlaceName(h.name, currentLang);
-        html += `
-          <div onclick="pickSuggestion('${displayHist.replace(/'/g, "\\'")}', ${h.lat}, ${h.lng})"
-               class="px-3.5 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="w-7 h-7 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs shrink-0">🕒</span>
-              <span class="text-xs text-gray-700 truncate">${displayHist}</span>
-            </div>
-          </div>`;
+        html += `<div onclick="pickSuggestion('${displayHist.replace(/'/g, "\\'")}', ${h.lat}, ${h.lng})" class="px-3.5 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs shrink-0">🕒</span><span class="text-xs text-gray-700 truncate">${displayHist}</span></div></div>`;
       });
 
-      if (html) {
-        box.innerHTML = html;
-        box.classList.remove('hidden');
-      } else {
-        box.classList.add('hidden');
-      }
+      if (html) { box.innerHTML = html; box.classList.remove('hidden'); }
+      else { box.classList.add('hidden'); }
 
       clearTimeout(suggestTimer);
       if (q.length >= 2) {
@@ -1069,7 +865,7 @@
           try {
             const normQ = await normalizeSearchQuery(q.split(',')[0].trim() || q);
             const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(normQ)}&lat=${refLat}&lon=${refLng}&limit=6`;
-            const res = await fetchWithTimeout(url, {}, 3500);
+            const res = await fetchWithTimeout(url, {}, 3000);
             if (!res.ok) return;
             const data = await res.json();
             const feats = (data && data.features) || [];
@@ -1083,35 +879,18 @@
                 const title = p.name || normQ;
                 const sub = [p.street, p.district || p.city, p.state].filter(Boolean).join(', ');
                 const km = (map.distance([refLat, refLng], [lat, lng]) / 1000).toFixed(1);
-                return `
-                  <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')"
-                       class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <span class="w-7 h-7 rounded-full bg-red-50 text-[#ea4335] flex items-center justify-center text-xs shrink-0">📍</span>
-                      <div class="min-w-0">
-                        <div class="text-xs font-bold text-gray-800 truncate">${title}</div>
-                        <div class="text-[10px] text-gray-400 truncate">${sub || 'Malaysia'}</div>
-                      </div>
-                    </div>
-                    <span class="text-[10px] font-bold text-gray-500 shrink-0">${km} km</span>
-                  </div>`;
+                return `<div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-red-50 text-[#ea4335] flex items-center justify-center text-xs shrink-0">📍</span><div class="min-w-0"><div class="text-xs font-bold text-gray-800 truncate">${title}</div><div class="text-[10px] text-gray-400 truncate">${sub || 'Malaysia'}</div></div></div><span class="text-[10px] font-bold text-gray-500 shrink-0">${km} km</span></div>`;
               }).join('');
-
-            if (remoteHtml) {
-              box.innerHTML = html + remoteHtml;
-              box.classList.remove('hidden');
-            }
+            if (remoteHtml) { box.innerHTML = html + remoteHtml; box.classList.remove('hidden'); }
           } catch (e) {}
-        }, 280);
+        }, 260);
       }
     }
 
     document.addEventListener('click', function(e) {
       const endEl = document.getElementById('endInput');
       const dropEl = document.getElementById('autoSuggestDropdown');
-      if (endEl && dropEl && !endEl.contains(e.target) && !dropEl.contains(e.target)) {
-        hideSuggestions();
-      }
+      if (endEl && dropEl && !endEl.contains(e.target) && !dropEl.contains(e.target)) hideSuggestions();
     });
 
     function quickNearby(brandName) {
@@ -1138,13 +917,7 @@
       if (isNavigating) return;
       hideSuggestions();
       clearPreviousRouteUI();
-      endCoords = {
-        lat: e.latlng.lat,
-        lng: e.latlng.lng,
-        name: `Pin (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`,
-        status: null,
-        phone: ''
-      };
+      endCoords = { lat: e.latlng.lat, lng: e.latlng.lng, name: `Pin (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`, status: null, phone: '' };
       document.getElementById('endInput').value = endCoords.name;
       document.getElementById('clearEndBtn').classList.remove('hidden');
       if (!startCoords) {
@@ -1161,48 +934,25 @@
       let candidates = [];
 
       const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(cleanedRaw);
-      const matchedAirports = MY_AIRPORTS.filter(ap =>
-        isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw) || primaryPart.toLowerCase().includes(kw))
-      );
-
+      const matchedAirports = MY_AIRPORTS.filter(ap => isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw) || primaryPart.toLowerCase().includes(kw)));
       if (matchedAirports.length > 0) {
-        candidates = matchedAirports.map(ap => {
-          const straightKm = map.distance([refLat, refLng], [ap.lat, ap.lng]) / 1000;
-          return {
-            lat: ap.lat, lng: ap.lng,
-            name: ap[currentLang] || ap.en,
-            fullAddr: ap.fullAddr,
-            straightKm,
-            status: { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' },
-            phone: ap.phone
-          };
-        });
+        candidates = matchedAirports.map(ap => ({
+          lat: ap.lat, lng: ap.lng, name: ap[currentLang] || ap.en, fullAddr: ap.fullAddr,
+          straightKm: map.distance([refLat, refLng], [ap.lat, ap.lng]) / 1000,
+          status: { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' }, phone: ap.phone
+        }));
       }
 
       if (candidates.length === 0) {
-        const matchedDict = AUTOCOMPLETE_DICT.filter(d =>
-          d.lat != null && (
-            d.query.toLowerCase() === rawLower ||
-            d.query.toLowerCase() === primaryPart.toLowerCase() ||
-            d.zh.toLowerCase().includes(primaryPart.toLowerCase()) ||
-            d.en.toLowerCase().includes(primaryPart.toLowerCase()) ||
-            d.ms.toLowerCase().includes(primaryPart.toLowerCase())
-          )
-        );
+        const matchedDict = AUTOCOMPLETE_DICT.filter(d => d.lat != null && (
+          d.query.toLowerCase() === rawLower || d.query.toLowerCase() === primaryPart.toLowerCase() ||
+          d.zh.toLowerCase().includes(primaryPart.toLowerCase()) || d.en.toLowerCase().includes(primaryPart.toLowerCase()) || d.ms.toLowerCase().includes(primaryPart.toLowerCase())
+        ));
         if (matchedDict.length > 0) {
           candidates = matchedDict.map(d => {
             const name = d[currentLang] || d.en;
-            const straightKm = map.distance([refLat, refLng], [d.lat, d.lng]) / 1000;
-            const st = d.is24
-              ? { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' }
-              : evaluateOpeningStatus({}, name);
-            return {
-              lat: d.lat, lng: d.lng, name,
-              fullAddr: d.addr || 'Malaysia',
-              straightKm,
-              status: st.state !== 'unknown' ? st : null,
-              phone: ''
-            };
+            const st = d.is24 ? { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' } : evaluateOpeningStatus({}, name);
+            return { lat: d.lat, lng: d.lng, name, fullAddr: d.addr || 'Malaysia', straightKm: map.distance([refLat, refLng], [d.lat, d.lng]) / 1000, status: st.state !== 'unknown' ? st : null, phone: '' };
           });
         }
       }
@@ -1210,33 +960,24 @@
       if (candidates.length === 0) {
         const matchedCities = MY_CITIES_DB.filter(c => c.keys.some(k => k === rawLower || k === primaryPart.toLowerCase()));
         if (matchedCities.length > 0) {
-          candidates = matchedCities.map(c => {
-            const straightKm = map.distance([refLat, refLng], [c.lat, c.lng]) / 1000;
-            return {
-              lat: c.lat, lng: c.lng,
-              name: c[currentLang] || c.en,
-              fullAddr: 'Malaysia',
-              straightKm,
-              status: null,
-              phone: ''
-            };
-          });
+          candidates = matchedCities.map(c => ({
+            lat: c.lat, lng: c.lng, name: c[currentLang] || c.en, fullAddr: 'Malaysia',
+            straightKm: map.distance([refLat, refLng], [c.lat, c.lng]) / 1000, status: null, phone: ''
+          }));
         }
       }
 
-      // 并发调用 Photon + Nominatim（带 3.5 秒超时保护，避免卡死“搜索中”）
       if (candidates.length === 0) {
         const query = await normalizeSearchQuery(primaryPart);
         const langParam = getAcceptLangHeader();
-
         const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${refLat}&lon=${refLng}&limit=10`;
         const deg = 0.6;
         const vb = `${refLng - deg},${refLat + deg},${refLng + deg},${refLat - deg}`;
         const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&accept-language=${langParam}&extratags=1&countrycodes=my&limit=10&viewbox=${vb}&bounded=0&q=${encodeURIComponent(query)}`;
 
         const [photonResult, nomResult] = await Promise.allSettled([
-          fetchWithTimeout(photonUrl, {}, 3500).then(r => r.ok ? r.json() : null),
-          fetchWithTimeout(nomUrl, {}, 3500).then(r => r.ok ? r.json() : null)
+          fetchWithTimeout(photonUrl, {}, 3000).then(r => r.ok ? r.json() : null),
+          fetchWithTimeout(nomUrl, {}, 3000).then(r => r.ok ? r.json() : null)
         ]);
 
         if (photonResult.status === 'fulfilled' && photonResult.value && Array.isArray(photonResult.value.features)) {
@@ -1245,32 +986,16 @@
             if (p.countrycode && p.countrycode.toUpperCase() !== 'MY') return;
             const [lng, lat] = f.geometry.coordinates;
             const name = p.name || query;
-            const addrParts = [p.street, p.district || p.city, p.state].filter(Boolean);
-            const fullAddr = addrParts.join(', ') || (currentLang === 'zh' ? '附近门店' : 'Nearby');
-            const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
-            candidates.push({
-              lat, lng, name, fullAddr, straightKm,
-              status: evaluateOpeningStatus({ name, amenity: p.osm_value, shop: p.osm_value }, name),
-              phone: ''
-            });
+            const fullAddr = [p.street, p.district || p.city, p.state].filter(Boolean).join(', ') || (currentLang === 'zh' ? '附近门店' : 'Nearby');
+            candidates.push({ lat, lng, name, fullAddr, straightKm: map.distance([refLat, refLng], [lat, lng]) / 1000, status: evaluateOpeningStatus({ name, amenity: p.osm_value, shop: p.osm_value }, name), phone: '' });
           });
         }
-
         if (nomResult.status === 'fulfilled' && Array.isArray(nomResult.value)) {
           nomResult.value.forEach(item => {
             const lat = parseFloat(item.lat);
             const lng = parseFloat(item.lon);
-            const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
             const parts = item.display_name.split(',').map(s => s.trim());
-            const tags = item.extratags || {};
-            candidates.push({
-              lat, lng,
-              name: parts[0],
-              fullAddr: parts.slice(1, 4).join(', '),
-              straightKm,
-              status: evaluateOpeningStatus(tags, parts[0]),
-              phone: tags.phone || ''
-            });
+            candidates.push({ lat, lng, name: parts[0], fullAddr: parts.slice(1, 4).join(', '), straightKm: map.distance([refLat, refLng], [lat, lng]) / 1000, status: evaluateOpeningStatus(item.extratags || {}, parts[0]), phone: (item.extratags || {}).phone || '' });
           });
         }
       }
@@ -1279,40 +1004,31 @@
 
       const deduped = [];
       candidates.sort((a, b) => a.straightKm - b.straightKm).forEach(item => {
-        const exists = deduped.some(d => map.distance([d.lat, d.lng], [item.lat, item.lng]) < 80);
-        if (!exists) deduped.push(item);
+        if (!deduped.some(d => map.distance([d.lat, d.lng], [item.lat, item.lng]) < 80)) deduped.push(item);
       });
       const preSorted = deduped.slice(0, 8);
 
       const calcModeMins = (km, baseSecs) => {
         if (currentMode === 'walking') return Math.max(3, Math.round(km * 12));
         const driveMins = baseSecs != null ? Math.max(2, Math.round(baseSecs / 60)) : Math.max(3, Math.round(km * 1.6));
-        if (currentMode === 'transit') return Math.max(8, Math.round(driveMins * 1.45 + 10));
-        return driveMins;
+        return currentMode === 'transit' ? Math.max(8, Math.round(driveMins * 1.45 + 10)) : driveMins;
       };
 
       try {
         const coordsStr = [`${refLng},${refLat}`, ...preSorted.map(p => `${p.lng},${p.lat}`)].join(';');
         const profile = currentMode === 'walking' ? 'foot' : 'driving';
-        const tableUrl = `https://router.project-osrm.org/table/v1/${profile}/${coordsStr}?sources=0&annotations=distance,duration`;
-        const tableRes = await fetchWithTimeout(tableUrl, {}, 3500);
+        const tableRes = await fetchWithTimeout(`https://router.project-osrm.org/table/v1/${profile}/${coordsStr}?sources=0&annotations=distance,duration`, {}, 3000);
         const tableData = await tableRes.json();
-
         if (tableData && tableData.distances && tableData.distances[0]) {
           const dists = tableData.distances[0];
           const durs = tableData.durations[0];
           preSorted.forEach((item, idx) => {
-            const dMeters = dists[idx + 1];
-            const dSecs = durs[idx + 1];
-            item.distKm = dMeters != null ? (dMeters / 1000) : item.straightKm;
-            item.durationMin = calcModeMins(item.distKm, dSecs);
+            item.distKm = dists[idx + 1] != null ? (dists[idx + 1] / 1000) : item.straightKm;
+            item.durationMin = calcModeMins(item.distKm, durs[idx + 1]);
           });
         }
       } catch (e) {
-        preSorted.forEach(item => {
-          item.distKm = item.straightKm;
-          item.durationMin = calcModeMins(item.straightKm, null);
-        });
+        preSorted.forEach(item => { item.distKm = item.straightKm; item.durationMin = calcModeMins(item.straightKm, null); });
       }
 
       preSorted.sort((a, b) => {
@@ -1321,7 +1037,6 @@
         if (aClosed !== bClosed) return aClosed - bClosed;
         return a.distKm - b.distKm;
       });
-
       return preSorted;
     }
 
@@ -1333,9 +1048,7 @@
 
       document.getElementById('fallbackTitle').innerText = t.fallbackTitle;
       document.getElementById('fallbackHint').innerText = cleanTerm
-        ? (currentLang === 'zh'
-            ? `站内免费地图未收录“${cleanTerm}”，可直接用下方外部导航搜该店，或点选附近地点：`
-            : `Not found in free map DB for "${cleanTerm}". Open Google/Waze directly or pick below:`)
+        ? (currentLang === 'zh' ? `站内免费地图未收录“${cleanTerm}”，可直接点下方用 Google / Waze 搜该店，或点选附近地点：` : `Not found in free DB for "${cleanTerm}". Open Google / Waze directly or pick below:`)
         : t.fallbackHint;
 
       const extButtons = cleanTerm
@@ -1352,10 +1065,7 @@
         : '';
 
       const sortedPopular = MY_CITIES_DB.slice(0, 8).map(p => ({
-        label: p[currentLang] || p.en,
-        name: p[currentLang] || p.en,
-        lat: p.lat,
-        lng: p.lng,
+        label: p[currentLang] || p.en, name: p[currentLang] || p.en, lat: p.lat, lng: p.lng,
         km: (map.distance([refLat, refLng], [p.lat, p.lng]) / 1000).toFixed(0)
       })).sort((a, b) => Number(a.km) - Number(b.km));
 
@@ -1391,10 +1101,7 @@
       const type = step.maneuver?.type || '';
       const mod = step.maneuver?.modifier || '';
       const road = step.name || (currentLang === 'zh' ? '前方道路' : (currentLang === 'ms' ? 'jalan hadapan' : 'road ahead'));
-      const dist = step.distance >= 1000
-        ? `${(step.distance / 1000).toFixed(1)} km`
-        : `${Math.max(10, Math.round(step.distance))} m`;
-
+      const dist = step.distance >= 1000 ? `${(step.distance / 1000).toFixed(1)} km` : `${Math.max(10, Math.round(step.distance))} m`;
       let icon = '⬆️';
       if (type === 'depart') icon = '🚀';
       else if (type === 'arrive') icon = '🏁';
@@ -1412,7 +1119,6 @@
         if (mod.includes('uturn')) return { icon, text: `Make a U-turn onto ${road}`, dist };
         return { icon, text: `Continue straight on ${road}`, dist };
       }
-
       if (currentLang === 'ms') {
         if (type === 'depart') return { icon, text: `Mula perjalanan di ${road}`, dist };
         if (type === 'arrive') return { icon, text: `Tiba di destinasi (${road})`, dist: 'Tiba' };
@@ -1422,7 +1128,6 @@
         if (mod.includes('uturn')) return { icon, text: `Pusingan U ke ${road}`, dist };
         return { icon, text: `Terus ke hadapan di ${road}`, dist };
       }
-
       if (type === 'depart') return { icon, text: `从起点出发，沿「${road}」前行`, dist };
       if (type === 'arrive') return { icon, text: `抵达目的地「${road}」`, dist: '已到达' };
       if (type === 'roundabout' || type === 'rotary') return { icon, text: `进入环岛，驶出进入「${road}」`, dist };
@@ -1485,8 +1190,7 @@
           endCoords = {
             lat: nearest.lat, lng: nearest.lng,
             name: `${nearest.name}${nearest.fullAddr && nearest.fullAddr !== '附近门店' && nearest.fullAddr !== 'Nearby' && nearest.fullAddr !== 'Malaysia' ? ' · ' + nearest.fullAddr.split(',')[0] : ''}`,
-            status: nearest.status,
-            phone: nearest.phone
+            status: nearest.status, phone: nearest.phone
           };
 
           if (matches.length > 0) {
@@ -1537,10 +1241,7 @@
       }).addTo(map);
 
       const endPinIcon = L.divIcon({
-        className: '',
-        html: '<div class="gmap-pin-end"></div>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 30]
+        className: '', html: '<div class="gmap-pin-end"></div>', iconSize: [30, 30], iconAnchor: [15, 30]
       });
       endMarker = L.marker([endCoords.lat, endCoords.lng], { icon: endPinIcon })
         .addTo(map)
@@ -1550,13 +1251,13 @@
       let routeData = null;
 
       try {
-        const res1 = await fetchWithTimeout(`https://router.project-osrm.org/route/v1/${primaryProfile}/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`, {}, 4000);
+        const res1 = await fetchWithTimeout(`https://router.project-osrm.org/route/v1/${primaryProfile}/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`, {}, 3500);
         routeData = await res1.json();
       } catch (e) {}
 
       if (!routeData || !routeData.routes || routeData.routes.length === 0) {
         try {
-          const res2 = await fetchWithTimeout(`https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`, {}, 4000);
+          const res2 = await fetchWithTimeout(`https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`, {}, 3500);
           routeData = await res2.json();
         } catch (e) {}
       }
@@ -1592,18 +1293,11 @@
       if (currentMode === 'walking') durationMin = Math.max(3, Math.round(distKm * 12));
       if (currentMode === 'transit') durationMin = Math.max(8, Math.round(durationMin * 1.45 + 10));
 
-      // 经典 Google Maps 蓝路线 + 深蓝描边
       const mainColor = currentMode === 'walking' ? '#4285f4' : (currentMode === 'transit' ? '#7c3aed' : '#1a73e8');
       const borderColor = currentMode === 'walking' ? '#1967d2' : (currentMode === 'transit' ? '#4c1d95' : '#174ea6');
 
-      routeOutline = L.geoJSON(route.geometry, {
-        style: { color: borderColor, weight: 9, opacity: 0.95 }
-      }).addTo(map);
-
-      routeLine = L.geoJSON(route.geometry, {
-        style: { color: mainColor, weight: 6, opacity: 1, dashArray: currentMode === 'walking' ? '8, 10' : null }
-      }).addTo(map);
-
+      routeOutline = L.geoJSON(route.geometry, { style: { color: borderColor, weight: 9, opacity: 0.95 } }).addTo(map);
+      routeLine = L.geoJSON(route.geometry, { style: { color: mainColor, weight: 6, opacity: 1, dashArray: currentMode === 'walking' ? '8, 10' : null } }).addTo(map);
       map.fitBounds(routeLine.getBounds(), { paddingTopLeft: [40, 130], paddingBottomRight: [40, 260] });
 
       const fuelCost = (distKm * 0.08 * currentRon95).toFixed(2);
@@ -1635,14 +1329,9 @@
       }
 
       document.getElementById('saveFavSubTag').innerText = i18n[currentLang].saveFavSub;
-
-      if (currentLang === 'en') {
-        document.getElementById('routeSubInfo').innerText = `Est. Petrol RM ${fuelCost} · Grab Ref ~RM ${grabEst}`;
-      } else if (currentLang === 'ms') {
-        document.getElementById('routeSubInfo').innerText = `Anggaran Petrol RM ${fuelCost} · Grab ~RM ${grabEst}`;
-      } else {
-        document.getElementById('routeSubInfo').innerText = `自驾预估油费 RM ${fuelCost} · Grab 参考约 RM ${grabEst}`;
-      }
+      if (currentLang === 'en') document.getElementById('routeSubInfo').innerText = `Est. Petrol RM ${fuelCost} · Grab Ref ~RM ${grabEst}`;
+      else if (currentLang === 'ms') document.getElementById('routeSubInfo').innerText = `Anggaran Petrol RM ${fuelCost} · Grab ~RM ${grabEst}`;
+      else document.getElementById('routeSubInfo').innerText = `自驾预估油费 RM ${fuelCost} · Grab 参考约 RM ${grabEst}`;
 
       const transitBox = document.getElementById('transitGuideBox');
       if (currentMode === 'transit') {
@@ -1668,8 +1357,7 @@
       });
 
       document.getElementById('stepCountBadge').innerText = `${currentSteps.length} steps ▾`;
-      const stepsContainer = document.getElementById('stepsList');
-      stepsContainer.innerHTML = currentSteps.map((st, i) => `
+      document.getElementById('stepsList').innerHTML = currentSteps.map((st, i) => `
         <div onclick="focusStep(${i})" class="py-2.5 px-1.5 hover:bg-blue-50/60 rounded-xl cursor-pointer flex items-center justify-between gap-2.5 transition">
           <div class="flex items-center gap-2.5 min-w-0">
             <span class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm shrink-0">${st.icon}</span>
@@ -1682,13 +1370,8 @@
       openResultPanel();
     }
 
-    function getSavedList(key) {
-      try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; }
-    }
-
-    function setSavedList(key, list) {
-      try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) {}
-    }
+    function getSavedList(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; } }
+    function setSavedList(key, list) { try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) {} }
 
     function addToHistory(place) {
       if (!place || !place.name) return;
@@ -1700,10 +1383,7 @@
       renderSavedAndHistory();
     }
 
-    function clearHistory() {
-      setSavedList(STORAGE_HIST_KEY, []);
-      renderSavedAndHistory();
-    }
+    function clearHistory() { setSavedList(STORAGE_HIST_KEY, []); renderSavedAndHistory(); }
 
     function saveCurrentToFavorites() {
       if (!endCoords) return;
@@ -1713,13 +1393,11 @@
       );
       if (customLabel === null) return;
       const label = customLabel.trim() || endCoords.name;
-
       let favs = getSavedList(STORAGE_FAV_KEY);
       favs = favs.filter(item => item.label !== label);
       favs.unshift({ label, name: endCoords.name, lat: endCoords.lat, lng: endCoords.lng });
       if (favs.length > 12) favs = favs.slice(0, 12);
       setSavedList(STORAGE_FAV_KEY, favs);
-
       document.getElementById('saveFavSubTag').innerText = i18n[currentLang].savedFavSub;
       renderSavedAndHistory();
     }
@@ -1750,18 +1428,11 @@
       const favs = getSavedList(STORAGE_FAV_KEY);
       const favBar = document.getElementById('favoritesBar');
       const favList = document.getElementById('favoritesList');
-
       if (favs.length > 0) {
         favBar.classList.remove('hidden');
         favList.innerHTML = favs.map((f, idx) => {
           const displayFav = localizeKnownPlaceName(f.name, currentLang);
-          return `
-            <div onclick="useSavedPlace(${f.lat}, ${f.lng}, '${displayFav.replace(/'/g, "\\'")}')"
-                 class="inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-semibold px-2 py-0.5 rounded-full cursor-pointer shrink-0">
-              <span>📌 ${f.label}</span>
-              <button onclick="removeFavorite(${idx}, event)" class="text-amber-500 hover:text-rose-600 ml-0.5">×</button>
-            </div>
-          `;
+          return `<div onclick="useSavedPlace(${f.lat}, ${f.lng}, '${displayFav.replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[11px] font-semibold px-2 py-0.5 rounded-full cursor-pointer shrink-0"><span>📌 ${f.label}</span><button onclick="removeFavorite(${idx}, event)" class="text-amber-500 hover:text-rose-600 ml-0.5">×</button></div>`;
         }).join('');
       } else {
         favBar.classList.add('hidden');
@@ -1770,17 +1441,11 @@
       const hist = getSavedList(STORAGE_HIST_KEY);
       const histBar = document.getElementById('historyBar');
       const histList = document.getElementById('historyList');
-
       if (hist.length > 0) {
         histBar.classList.remove('hidden');
         histList.innerHTML = hist.map(h => {
           const displayHist = localizeKnownPlaceName(h.name, currentLang);
-          return `
-            <button onclick="useSavedPlace(${h.lat}, ${h.lng}, '${displayHist.replace(/'/g, "\\'")}')"
-                    class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-[11px] px-2 py-0.5 rounded-full shrink-0 max-w-[140px] truncate">
-              ${displayHist}
-            </button>
-          `;
+          return `<button onclick="useSavedPlace(${h.lat}, ${h.lng}, '${displayHist.replace(/'/g, "\\'")}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-[11px] px-2 py-0.5 rounded-full shrink-0 max-w-[140px] truncate">${displayHist}</button>`;
         }).join('');
       } else {
         histBar.classList.add('hidden');
@@ -1801,10 +1466,7 @@
         document.getElementById('clearEndBtn').classList.remove('hidden');
 
         const endPinIcon = L.divIcon({
-          className: '',
-          html: '<div class="gmap-pin-end"></div>',
-          iconSize: [30, 30],
-          iconAnchor: [15, 30]
+          className: '', html: '<div class="gmap-pin-end"></div>', iconSize: [30, 30], iconAnchor: [15, 30]
         });
         if (endMarker) map.removeLayer(endMarker);
         endMarker = L.marker([lat, lng], { icon: endPinIcon }).addTo(map).bindPopup(`<b>${dest}</b>`).openPopup();
@@ -1820,9 +1482,7 @@
         document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
         openResultPanel();
 
-        if (startCoords) {
-          calculateAndRenderRoute();
-        }
+        if (startCoords) calculateAndRenderRoute();
       }
     })();
 
@@ -1843,9 +1503,7 @@
         const targetLang = i18n[currentLang].speechLang;
         const hasTargetVoice = voices.some(v => v.lang.toLowerCase().includes(targetLang.slice(0, 2).toLowerCase()));
         utter.lang = hasTargetVoice ? targetLang : 'en-US';
-        utter.volume = 1.0;
-        utter.rate = 1.0;
-        utter.pitch = 1.0;
+        utter.volume = 1.0; utter.rate = 1.0; utter.pitch = 1.0;
         window.speechSynthesis.speak(utter);
       } catch (e) {}
     }
@@ -1859,15 +1517,11 @@
     function recenterCamera() {
       cameraLocked = true;
       document.getElementById('recenterBtn').innerText = i18n[currentLang].lockedText;
-
-      if (userLiveMarker) {
-        map.flyTo(userLiveMarker.getLatLng(), 18, { duration: 0.6 });
-      } else if (currentSteps[currentStepIdx]?.location) {
+      if (userLiveMarker) map.flyTo(userLiveMarker.getLatLng(), 18, { duration: 0.6 });
+      else if (currentSteps[currentStepIdx]?.location) {
         const loc = currentSteps[currentStepIdx].location;
         map.flyTo([loc[1], loc[0]], 18, { duration: 0.6 });
-      } else if (startCoords) {
-        map.flyTo([startCoords.lat, startCoords.lng], 18, { duration: 0.6 });
-      }
+      } else if (startCoords) map.flyTo([startCoords.lat, startCoords.lng], 18, { duration: 0.6 });
     }
 
     function manualStep(delta) {
@@ -1877,51 +1531,37 @@
         updateBannerStep(currentSteps[currentStepIdx]);
         speakText(currentSteps[currentStepIdx].text);
         const loc = currentSteps[currentStepIdx].location;
-        if (loc) {
-          cameraLocked = true;
-          map.flyTo([loc[1], loc[0]], 18, { duration: 0.6 });
-        }
+        if (loc) { cameraLocked = true; map.flyTo([loc[1], loc[0]], 18, { duration: 0.6 }); }
       }
     }
 
     async function startLiveNav() {
       if (!currentSteps.length) return;
-
-      isNavigating = true;
-      cameraLocked = true;
-      currentStepIdx = 0;
-
+      isNavigating = true; cameraLocked = true; currentStepIdx = 0;
       document.getElementById('liveNavBanner').classList.remove('hidden');
       document.getElementById('topFloatingUI').classList.add('hidden');
       document.getElementById('resultPanel').classList.add('hidden');
       document.getElementById('rightFloatingControls').style.bottom = '2rem';
-
       updateBannerStep(currentSteps[0]);
       speakText(`${i18n[currentLang].startVoiceMsg}${currentSteps[0].text}`);
-
       if (startCoords) {
         updateLiveUserDot(startCoords.lat, startCoords.lng);
         map.flyTo([startCoords.lat, startCoords.lng], 18, { duration: 0.8 });
       }
-
       if ('wakeLock' in navigator) {
         try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
       }
-
       if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(
           (pos) => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             updateLiveUserDot(lat, lng);
-
             if (cameraLocked) map.setView([lat, lng], 18, { animate: true });
-
             for (let i = currentStepIdx + 1; i < currentSteps.length; i++) {
               const loc = currentSteps[i].location;
               if (!loc) continue;
-              const d = map.distance([lat, lng], [loc[1], loc[0]]);
-              if (d < 65) {
+              if (map.distance([lat, lng], [loc[1], loc[0]]) < 65) {
                 currentStepIdx = i;
                 updateBannerStep(currentSteps[i]);
                 speakText(currentSteps[i].text);
@@ -1944,19 +1584,12 @@
 
     function stopLiveNav() {
       isNavigating = false;
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-      if (wakeLock !== null) {
-        try { wakeLock.release(); wakeLock = null; } catch (e) {}
-      }
+      if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+      if (wakeLock !== null) { try { wakeLock.release(); wakeLock = null; } catch (e) {} }
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-
       document.getElementById('liveNavBanner').classList.add('hidden');
       document.getElementById('topFloatingUI').classList.remove('hidden');
       openResultPanel();
-
       if (routeLine) map.fitBounds(routeLine.getBounds(), { paddingTopLeft: [40, 130], paddingBottomRight: [40, 260] });
     }
   </script>
