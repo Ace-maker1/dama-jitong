@@ -1547,7 +1547,10 @@
       }
 
       document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
-      document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
+      const gmapDest = (endCoords.name && !endCoords.name.startsWith('Pin ('))
+        ? encodeURIComponent(endCoords.name)
+        : `${endCoords.lat},${endCoords.lng}`;
+      document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${gmapDest}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
 
       if (routeLine) map.removeLayer(routeLine);
       if (routeOutline) map.removeLayer(routeOutline);
@@ -1776,11 +1779,25 @@
         endCoords = { lat, lng, name: dest, status: null, phone: '' };
         document.getElementById('endInput').value = dest;
         document.getElementById('clearEndBtn').classList.remove('hidden');
-        if (!startCoords) {
-          startCoords = { lat: 5.4141, lng: 100.3288, name: 'George Town, Penang' };
-          document.getElementById('startInput').value = startCoords.name;
-        }
-        calculateAndRenderRoute();
+
+        const endPinIcon = L.divIcon({
+          className: '',
+          html: '<div class="gmap-pin-end"></div>',
+          iconSize: [30, 30],
+          iconAnchor: [15, 30]
+        });
+        if (endMarker) map.removeLayer(endMarker);
+        endMarker = L.marker([lat, lng], { icon: endPinIcon }).addTo(map).bindPopup(`<b>${dest}</b>`);
+        map.setView([lat, lng], 16);
+
+        // 等待真实 GPS 返回后再算路；若 1.8 秒内未获取到定位，再用默认坐标兜底
+        setTimeout(() => {
+          if (!startCoords) {
+            startCoords = { lat: 5.4141, lng: 100.3288, name: 'George Town, Penang' };
+            document.getElementById('startInput').value = startCoords.name;
+          }
+          calculateAndRenderRoute();
+        }, 1800);
       }
     })();
 
