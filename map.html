@@ -837,6 +837,16 @@
       '新山关卡': 'JB Sentral CIQ Johor Bahru', '鸡场街': 'Jonker Street Melaka'
     };
 
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 3500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     async function normalizeSearchQuery(rawQuery) {
       let q = rawQuery.trim();
       const lowerQ = q.toLowerCase();
@@ -1053,7 +1063,6 @@
         box.classList.add('hidden');
       }
 
-      // 纯免费 Photon 实时地址联想（0 成本，无 API Key）
       clearTimeout(suggestTimer);
       if (q.length >= 2) {
         suggestTimer = setTimeout(async () => {
@@ -1144,16 +1153,6 @@
       }
       calculateAndRenderRoute();
     });
-
-    async function fetchWithTimeout(url, options = {}, timeoutMs = 3500) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        return await fetch(url, { ...options, signal: controller.signal });
-      } finally {
-        clearTimeout(timer);
-      }
-    }
 
     async function searchPlacesNear(rawQuery, refLat, refLng) {
       const cleanedRaw = rawQuery.trim();
@@ -1329,10 +1328,30 @@
     function showFallbackSuggestions(refLat, refLng) {
       const t = i18n[currentLang];
       const box = document.getElementById('fallbackSuggestBox');
-      document.getElementById('fallbackTitle').innerText = t.fallbackTitle;
-      document.getElementById('fallbackHint').innerText = t.fallbackHint;
+      const rawInput = (document.getElementById('endInput')?.value || '').trim();
+      const cleanTerm = rawInput.split(',')[0].trim() || rawInput;
 
-      const sortedPopular = MY_CITIES_DB.slice(0, 10).map(p => ({
+      document.getElementById('fallbackTitle').innerText = t.fallbackTitle;
+      document.getElementById('fallbackHint').innerText = cleanTerm
+        ? (currentLang === 'zh'
+            ? `站内免费地图未收录“${cleanTerm}”，可直接用下方外部导航搜该店，或点选附近地点：`
+            : `Not found in free map DB for "${cleanTerm}". Open Google/Waze directly or pick below:`)
+        : t.fallbackHint;
+
+      const extButtons = cleanTerm
+        ? `
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanTerm + ' Malaysia')}" target="_blank"
+             class="bg-[#1a73e8] text-white text-[11px] font-bold px-3 py-1.5 rounded-full shadow-xs">
+            🗺️ Google 搜“${cleanTerm}”
+          </a>
+          <a href="https://waze.com/ul?q=${encodeURIComponent(cleanTerm + ' Malaysia')}&navigate=yes" target="_blank"
+             class="bg-sky-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full shadow-xs">
+            🚙 Waze 搜“${cleanTerm}”
+          </a>
+        `
+        : '';
+
+      const sortedPopular = MY_CITIES_DB.slice(0, 8).map(p => ({
         label: p[currentLang] || p.en,
         name: p[currentLang] || p.en,
         lat: p.lat,
@@ -1340,7 +1359,7 @@
         km: (map.distance([refLat, refLng], [p.lat, p.lng]) / 1000).toFixed(0)
       })).sort((a, b) => Number(a.km) - Number(b.km));
 
-      document.getElementById('fallbackChips').innerHTML = sortedPopular.map(p => `
+      document.getElementById('fallbackChips').innerHTML = extButtons + sortedPopular.map(p => `
         <button onclick="pickPopularFallback(${p.lat}, ${p.lng}, '${p.name.replace(/'/g, "\\'")}')"
                 class="bg-gray-50 hover:bg-blue-50 border border-gray-200 text-gray-800 text-[11px] font-medium px-2.5 py-1 rounded-full transition">
           📍 ${p.label} <span class="text-[#1a73e8] font-bold">(${p.km}km)</span>
@@ -1542,7 +1561,12 @@
         } catch (e) {}
       }
 
-      document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
+      const cleanDestName = (endCoords.name && !endCoords.name.startsWith('Pin ('))
+        ? endCoords.name.split('·')[0].trim()
+        : '';
+      document.getElementById('wazeDeepLink').href = cleanDestName
+        ? `https://waze.com/ul?q=${encodeURIComponent(cleanDestName + ' Malaysia')}&navigate=yes`
+        : `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
       const gmapDest = (endCoords.name && !endCoords.name.startsWith('Pin ('))
         ? encodeURIComponent(endCoords.name)
         : `${endCoords.lat},${endCoords.lng}`;
@@ -1792,7 +1816,7 @@
         document.getElementById('routeSubInfo').innerText = currentLang === 'zh'
           ? '开启定位或点击左上角“我的位置”即可查看路线与距离'
           : 'Enable GPS or tap "Your location" above to calculate route';
-        document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+        document.getElementById('wazeDeepLink').href = `https://waze.com/ul?q=${encodeURIComponent(dest + ' Malaysia')}&navigate=yes`;
         document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
         openResultPanel();
 
