@@ -299,9 +299,11 @@
       const regionInfo = DMJT_API.getRegionInfo(p.city);
       const targetLat = mapMeta.lat != null ? mapMeta.lat : regionInfo.lat;
       const targetLng = mapMeta.lng != null ? mapMeta.lng : regionInfo.lng;
-      const mapUrl = mapMeta.lat != null && mapMeta.lng != null
-        ? `/map.html?dest=${encodeURIComponent(mapMeta.addr || localizedTitle)}&lat=${targetLat}&lng=${targetLng}`
-        : `/map.html?dest=${encodeURIComponent(mapMeta.destQuery)}&lat=${targetLat}&lng=${targetLng}`;
+      const cleanShopTitle = localizedTitle.replace(/^【[^】]*】\s*/, '').replace(/^\[[^\]]*\]\s*/, '').trim();
+      const combinedDest = mapMeta.addr
+        ? (mapMeta.addr.toLowerCase().includes(cleanShopTitle.toLowerCase()) ? mapMeta.addr : `${cleanShopTitle}, ${mapMeta.addr}`)
+        : mapMeta.destQuery;
+      const mapUrl = `/map.html?dest=${encodeURIComponent(combinedDest)}&lat=${targetLat}&lng=${targetLng}`;
       document.getElementById('goMapBtn').href = mapUrl;
       document.getElementById('bottomMapBtn').href = mapUrl;
 
