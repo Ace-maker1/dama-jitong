@@ -86,14 +86,19 @@
           <input type="text" id="mName" required placeholder="例如：槟城老字号炒粿条 / KL 极速冷气维修" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
         </div>
 
-        <!-- 精准门店地址 / 所在茶室或路名 + 一键抓当前 GPS -->
+        <!-- 精准门店地址 / 所在茶室或路名 + 一键抓当前 GPS + AI/联想候选点选 -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label id="mLabelExactAddr" class="block text-xs font-bold text-gray-700">精准门店地址 / 路名（导航必用）*</label>
             <button type="button" onclick="captureMerchantGps()" id="mGpsBtn" class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">📍 抓当前定位</button>
           </div>
-          <input type="text" id="mExactAddress" required placeholder="例如：KK83 烧腊 (Kafe Pak Ngah), Jalan Burma, Penang" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
+          <input type="text" id="mExactAddress" required oninput="onExactAddressInput(this.value)" placeholder="例如：KK83 烧腊 (Kafe Pak Ngah), Jalan Burma, Penang" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
           <div id="mGpsStatus" class="text-[10px] text-emerald-700 mt-1 hidden"></div>
+          <!-- AI 识图候选地址 & 实时联想候选列表（点一下即可直接选用，免手动打字） -->
+          <div id="mAddressCandidatesBox" class="hidden mt-2 bg-amber-50/70 border border-amber-200/80 rounded-xl p-2 space-y-1.5">
+            <div id="mAddressCandidatesTitle" class="text-[11px] font-bold text-amber-900">💡 识别到的候选地址（点一下直接选用）：</div>
+            <div id="mAddressCandidatesList" class="space-y-1"></div>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
@@ -171,7 +176,7 @@
           </div>
 
           <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-1">
-            <div id="payReceiverTitle" class="font-bold text-amber-900">💳 站长官方收款方式：</div>
+            <div id="payReceiverTitle" class="font-bold text-amber-900">💳 官方收款方式：</div>
             <div id="receiverInfo" class="text-amber-800"></div>
           </div>
 
@@ -185,7 +190,7 @@
           </div>
 
           <button type="submit" id="paySubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow">
-            ✅ 提交付款凭证（后台秒审置顶）
+            ✅ 提交付款凭证（审核后秒置顶）
           </button>
         </form>
       </div>
@@ -209,7 +214,7 @@
         aiBtnIdle: '✨ 识别图片并自动填表',
         aiBtnNeedImg: '✨ 先选图，再点 AI 自动填表',
         aiBtnLoading: '🤖 AI 正在识别海报并生成三语文案...',
-        aiSuccess: '✅ 已自动填入表单与中/英/巫三语文案，请核对后提交！',
+        aiSuccess: '✅ 已自动填入表单与候选地址，点选下方候选地址即可锁定！',
         aiFail: '⚠️ 识别失败，请检查网络或手动填写，谢谢。',
         labelName: '店铺 / 公司名称 *',
         phName: '例如：槟城老字号炒粿条 / KL 极速冷气维修',
@@ -257,7 +262,7 @@
         aiBtnIdle: '✨ AI Scan Image & Auto-Fill',
         aiBtnNeedImg: '✨ Select Image First for AI Auto-Fill',
         aiBtnLoading: '🤖 AI scanning flyer & generating 3 languages...',
-        aiSuccess: '✅ Form & trilingual copy filled automatically. Please review and submit!',
+        aiSuccess: '✅ Form & address suggestions filled. Tap a suggestion below to select!',
         aiFail: '⚠️ AI scan failed. Please retry or fill manually.',
         labelName: 'Shop / Company Name *',
         phName: 'e.g. Penang Char Koay Teow / KL Aircond Service',
@@ -305,7 +310,7 @@
         aiBtnIdle: '✨ Imbas Gambar & Isi Automatik AI',
         aiBtnNeedImg: '✨ Pilih Gambar Dahulu untuk Auto-Isi AI',
         aiBtnLoading: '🤖 AI sedang mengimbas & menjana 3 bahasa...',
-        aiSuccess: '✅ Borang & teks 3 bahasa telah diisi. Sila semak dan hantar!',
+        aiSuccess: '✅ Borang & cadangan alamat diisi. Tekan pilihan di bawah untuk pilih!',
         aiFail: '⚠️ Gagal mengimbas. Sila cuba lagi atau isi manual.',
         labelName: 'Nama Kedai / Syarikat *',
         phName: 'Cth: Nasi Kandar Penang / Servis Aircond KL',
@@ -344,31 +349,150 @@
     let merchantFile = null;
     let aiGeneratedTrilingual = null;
     let capturedMerchantCoords = null;
+    let addrSuggestTimer = null;
     const mTranslateCache = {};
 
-    function captureMerchantGps() {
+    function renderAddressCandidates(items) {
+      const box = document.getElementById('mAddressCandidatesBox');
+      const list = document.getElementById('mAddressCandidatesList');
+      if (!box || !list) return;
+      if (!items || items.length === 0) {
+        box.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+      }
+      list.innerHTML = items.map((it) => {
+        const safeAddr = (it.addr || '').replace(/'/g, "\\'").replace(/"/g, '"');
+        const latArg = typeof it.lat === 'number' ? it.lat : 'null';
+        const lngArg = typeof it.lng === 'number' ? it.lng : 'null';
+        return `
+          <button type="button" onclick="selectMerchantCandidate('${safeAddr}', ${latArg}, ${lngArg})"
+                  class="w-full text-left bg-white hover:bg-amber-100/70 border border-amber-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 flex items-center justify-between gap-2 transition">
+            <span class="truncate font-medium">${it.label || it.addr}</span>
+            <span class="text-[10px] font-bold text-amber-700 shrink-0">选用 ›</span>
+          </button>
+        `;
+      }).join('');
+      box.classList.remove('hidden');
+    }
+
+    function selectMerchantCandidate(addr, lat, lng) {
+      if (addr) {
+        document.getElementById('mExactAddress').value = addr;
+        matchCityOption(addr);
+      }
+      if (typeof lat === 'number' && !Number.isNaN(lat) && typeof lng === 'number' && !Number.isNaN(lng)) {
+        capturedMerchantCoords = { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
+        const statusEl = document.getElementById('mGpsStatus');
+        const btn = document.getElementById('mGpsBtn');
+        if (btn) btn.innerText = '✅ 已锁坐标';
+        if (statusEl) {
+          statusEl.textContent = `已锁定坐标 (${capturedMerchantCoords.lat}, ${capturedMerchantCoords.lng})`;
+          statusEl.classList.remove('hidden');
+        }
+      }
+      document.getElementById('mAddressCandidatesBox')?.classList.add('hidden');
+    }
+
+    async function buildAiAndMapCandidates(d) {
+      const shopName = (d.businessName || document.getElementById('mName').value || '').trim();
+      const cityVal = document.getElementById('mCity').value || '';
+      const rawAddr = (d.address || '').trim();
+      const list = [];
+
+      if (rawAddr) {
+        list.push({
+          label: `📍 AI 识别地址：${rawAddr}`,
+          addr: rawAddr,
+          lat: capturedMerchantCoords?.lat,
+          lng: capturedMerchantCoords?.lng
+        });
+      }
+      if (shopName && rawAddr && !rawAddr.toLowerCase().includes(shopName.toLowerCase())) {
+        list.push({
+          label: `🏪 店名+地址：${shopName}, ${rawAddr}`,
+          addr: `${shopName}, ${rawAddr}`,
+          lat: capturedMerchantCoords?.lat,
+          lng: capturedMerchantCoords?.lng
+        });
+      }
+      if (shopName) {
+        const q = cityVal ? `${shopName}, ${cityVal}, Malaysia` : `${shopName}, Malaysia`;
+        list.push({
+          label: `🔎 门店检索词：${q}`,
+          addr: q,
+          lat: capturedMerchantCoords?.lat,
+          lng: capturedMerchantCoords?.lng
+        });
+      }
+
+      const searchSeed = rawAddr || shopName;
+      if (searchSeed) {
+        try {
+          const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchSeed + ' Malaysia')}&limit=3`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            (data.features || []).forEach((f) => {
+              const p = f.properties || {};
+              const [lng, lat] = f.geometry.coordinates || [];
+              const parts = [p.name, p.street, p.district || p.city, p.state].filter(Boolean);
+              const full = parts.join(', ');
+              if (full && !list.some(x => x.addr.toLowerCase() === full.toLowerCase())) {
+                list.push({ label: `🗺️ 地图匹配：${full}`, addr: full, lat, lng });
+              }
+            });
+          }
+        } catch (e) {}
+      }
+
+      renderAddressCandidates(list.slice(0, 4));
+    }
+
+    function onExactAddressInput(val) {
+      const q = (val || '').trim();
+      clearTimeout(addrSuggestTimer);
+      if (q.length < 3) return;
+      addrSuggestTimer = setTimeout(async () => {
+        try {
+          const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q + ' Malaysia')}&limit=3`;
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const data = await res.json();
+          const items = (data.features || []).map((f) => {
+            const p = f.properties || {};
+            const [lng, lat] = f.geometry.coordinates || [];
+            const full = [p.name, p.street, p.district || p.city, p.state].filter(Boolean).join(', ');
+            return full ? { label: `🗺️ ${full}`, addr: full, lat, lng } : null;
+          }).filter(Boolean);
+          if (items.length > 0) renderAddressCandidates(items);
+        } catch (e) {}
+      }, 320);
+    }
+
+    function captureMerchantGps(silent = false) {
       const statusEl = document.getElementById('mGpsStatus');
       const btn = document.getElementById('mGpsBtn');
       if (!navigator.geolocation) {
-        alert('当前设备不支持定位');
+        if (!silent) alert('当前设备不支持定位');
         return;
       }
-      btn.innerText = '⏳ 定位中...';
+      if (btn) btn.innerText = '⏳ 定位中...';
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           capturedMerchantCoords = {
             lat: Number(pos.coords.latitude.toFixed(6)),
             lng: Number(pos.coords.longitude.toFixed(6))
           };
-          btn.innerText = '✅ 已抓定位';
+          if (btn) btn.innerText = '✅ 已抓定位';
           if (statusEl) {
             statusEl.textContent = `已锁定门店 GPS (${capturedMerchantCoords.lat}, ${capturedMerchantCoords.lng})`;
             statusEl.classList.remove('hidden');
           }
         },
         () => {
-          btn.innerText = '📍 抓当前定位';
-          alert('无法获取定位，请允许浏览器定位或填写完整门店地址/路名');
+          if (btn) btn.innerText = '📍 抓当前定位';
+          if (!silent) alert('无法获取定位，请允许浏览器定位或填写完整门店地址/路名');
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
@@ -489,6 +613,7 @@
       btn.dataset.loading = '1';
       txt.innerText = t.aiBtnLoading;
       statusEl.classList.add('hidden');
+      if (!capturedMerchantCoords) captureMerchantGps(true);
 
       try {
         const { imageBase64, mimeType } = await compressFileToBase64(merchantFile);
@@ -532,6 +657,7 @@
 
         matchCityOption(`${d.address || ''} ${d.descZh || ''} ${d.descEn || ''}`);
         matchIndustryOption(`${d.category || ''} ${d.businessName || ''}`);
+        await buildAiAndMapCandidates(d);
 
         statusEl.textContent = t.aiSuccess;
         statusEl.className = 'text-[11px] text-emerald-700 font-semibold mt-1';
@@ -702,6 +828,7 @@
       aiGeneratedTrilingual = null;
       document.getElementById('aiFillStatus').classList.add('hidden');
       refreshAiButtonState();
+      if (!capturedMerchantCoords) captureMerchantGps(true);
 
       const reader = new FileReader();
       reader.onload = (ev) => {
