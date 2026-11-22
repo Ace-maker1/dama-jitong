@@ -3,459 +3,466 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>大马吉通 · 站内原生导航 (CN/EN/BM) | 全马极速检索·营业状态·语音带路</title>
+  <title>大马吉通 · 地图与导航 (CN/EN/BM) | 全马检索·实时路况·语音带路</title>
+  <link rel="icon" type="image/png" href="/icon.png?v=4" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; }
-    #mapWrap { height: 46vh; min-height: 310px; width: 100%; position: relative; transition: height 0.3s ease; }
-    body.nav-active #mapWrap { height: 64vh; min-height: 400px; }
-    #map { height: 100%; width: 100%; z-index: 1; }
+    body {
+      font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      overscroll-behavior: none;
+    }
+    #map {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      background: #e5e3df;
+    }
+    .leaflet-control-zoom {
+      border: none !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18) !important;
+      border-radius: 12px !important;
+      overflow: hidden;
+      margin-right: 12px !important;
+      margin-bottom: 16px !important;
+    }
+    .leaflet-control-zoom a {
+      width: 38px !important;
+      height: 38px !important;
+      line-height: 38px !important;
+      color: #3c4043 !important;
+      font-weight: bold !important;
+      border-bottom: 1px solid #f1f3f4 !important;
+    }
+    .leaflet-control-attribution {
+      font-size: 9px !important;
+      background: rgba(255,255,255,0.75) !important;
+      padding: 1px 5px !important;
+    }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    @keyframes pulse-ring {
-      0% { transform: scale(0.8); opacity: 0.9; }
-      100% { transform: scale(2.4); opacity: 0; }
+
+    @keyframes gmap-pulse {
+      0% { transform: scale(0.85); opacity: 0.85; }
+      100% { transform: scale(2.6); opacity: 0; }
     }
-    .nav-car-dot {
-      width: 22px; height: 22px; background: #059669; border: 3px solid #fff;
-      border-radius: 50%; box-shadow: 0 0 12px rgba(5,150,105,0.9); position: relative;
-      display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;
+    .gmap-blue-dot {
+      width: 20px; height: 20px;
+      background: #1a73e8;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 1px 6px rgba(26,115,232,0.75);
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 10px;
     }
-    .nav-car-dot::after {
-      content: ''; position: absolute; inset: -8px; border-radius: 50%;
-      background: rgba(5,150,105,0.35); animation: pulse-ring 1.5s infinite;
+    .gmap-blue-dot::after {
+      content: '';
+      position: absolute;
+      inset: -9px;
+      border-radius: 50%;
+      background: rgba(26,115,232,0.28);
+      animation: gmap-pulse 1.8s infinite;
+    }
+    .gmap-pin-end {
+      width: 30px; height: 30px;
+      background: #ea4335;
+      border: 3px solid #ffffff;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gmap-pin-end::after {
+      content: '';
+      width: 10px; height: 10px;
+      background: #8b1a10;
+      border-radius: 50%;
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 pb-24">
+<body class="bg-[#e5e3df] text-[#202124] overflow-hidden select-none">
 
-  <!-- 顶部导航栏（含三语切换按钮） -->
-  <header class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-3 py-2.5 shadow-md sticky top-0 z-30">
-    <div class="max-w-2xl mx-auto flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2">
-        <a href="/" id="backHomeBtn" class="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-xl text-xs font-medium transition shrink-0">← 首页</a>
-        <div>
-          <h1 id="headerTitle" class="font-bold text-sm sm:text-base leading-tight">大马吉通 · 站内原生导航</h1>
-          <p id="headerSub" class="text-[10px] sm:text-[11px] text-emerald-100">全马极速检索 · 实时营业状态 · 语音带路</p>
+  <!-- 全屏 Google 风格地图画布 -->
+  <div id="map"></div>
+
+  <!-- 实时导航模式：顶部深色指引卡片（仿 Google Maps 导航绿/深蓝横幅） -->
+  <div id="liveNavBanner" class="hidden fixed top-3 inset-x-3 max-w-xl mx-auto z-40 bg-[#0f5338] text-white rounded-2xl p-3.5 shadow-2xl border border-emerald-400/30">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div id="liveTurnIcon" class="w-12 h-12 rounded-xl bg-white/15 text-white flex items-center justify-center text-2xl font-black shrink-0">
+          ⬆️
         </div>
-      </div>
-
-      <!-- CN / EN / BM 三语切换器 -->
-      <div class="flex items-center gap-1 bg-black/20 p-1 rounded-full text-[11px] font-bold shrink-0">
-        <button onclick="switchLang('zh')" id="lang-zh" class="lang-btn bg-white text-emerald-700 px-2 py-0.5 rounded-full transition">CN</button>
-        <button onclick="switchLang('en')" id="lang-en" class="lang-btn text-white/90 px-2 py-0.5 rounded-full transition">EN</button>
-        <button onclick="switchLang('ms')" id="lang-ms" class="lang-btn text-white/90 px-2 py-0.5 rounded-full transition">BM</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- 导航中顶部实时路口指引横幅 -->
-  <div id="liveNavBanner" class="hidden sticky top-[52px] z-30 bg-slate-900 text-white px-3 py-3 shadow-2xl border-b border-slate-700">
-    <div class="max-w-2xl mx-auto space-y-2">
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div id="liveTurnIcon" class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl font-black shrink-0 shadow">
-            ⬆️
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span id="liveStepDist" class="text-xs font-black text-emerald-400">--</span>
-              <span id="liveStepProgress" class="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">1 / 1</span>
-            </div>
-            <div id="liveStepText" class="text-sm font-bold leading-snug mt-0.5">--</div>
-          </div>
-        </div>
-        <button onclick="stopLiveNav()" id="stopNavBtn" class="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0">
-          结束导航
-        </button>
-      </div>
-
-      <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
-        <div class="flex items-center gap-2">
-          <button id="voiceToggleBtn" onclick="toggleVoice()" class="bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2.5 py-1 rounded-lg font-semibold">
-            🔊 语音已开启
-          </button>
-          <button id="recenterBtn" onclick="recenterCamera()" class="bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 px-2.5 py-1 rounded-lg font-semibold">
-            🎯 视角锁定中 (18x)
-          </button>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <button onclick="manualStep(-1)" class="bg-slate-800 px-2 py-1 rounded text-slate-300">◀ 上一步</button>
-          <button onclick="manualStep(1)" class="bg-slate-800 px-2 py-1 rounded text-emerald-300 font-bold">下一步 ▶</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 城市快捷切换（三语同步） -->
-  <div id="cityBar" class="bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-    <span id="cityLabel" class="text-xs text-slate-400 shrink-0 font-medium">城市：</span>
-    <button onclick="locateMe(true)" id="quickNearMeCityBtn" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shrink-0">📍 我附近</button>
-    <button id="cityBtn-kl" onclick="switchCity(3.1390, 101.6869, 'Kuala Lumpur')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">吉隆坡 KL</button>
-    <button id="cityBtn-pg" onclick="switchCity(5.4141, 100.3288, 'Penang')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">槟城 Penang</button>
-    <button id="cityBtn-jb" onclick="switchCity(1.4927, 103.7414, 'Johor Bahru')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">新山 JB</button>
-    <button id="cityBtn-mk" onclick="switchCity(2.1896, 102.2501, 'Melaka')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">马六甲 Melaka</button>
-    <button id="cityBtn-ip" onclick="switchCity(4.5975, 101.0901, 'Ipoh')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">怡保 Ipoh</button>
-    <button id="cityBtn-kk" onclick="switchCity(5.9804, 116.0735, 'Kota Kinabalu')" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 shrink-0">亚庇 KK</button>
-  </div>
-
-  <!-- 起终点、附近连锁搜索、收藏夹与历史记录面板 -->
-  <div id="searchBox" class="p-3 bg-white shadow-sm border-b border-slate-200">
-    <div class="max-w-2xl mx-auto space-y-2">
-      <!-- 出行模式切换 Tab -->
-      <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold">
-        <button id="mode-driving" onclick="setTravelMode('driving')" class="mode-tab bg-white text-emerald-700 py-1.5 rounded-lg shadow-sm transition">
-          🚗 驾车
-        </button>
-        <button id="mode-transit" onclick="setTravelMode('transit')" class="mode-tab text-slate-600 py-1.5 rounded-lg transition">
-          🚇 公交
-        </button>
-        <button id="mode-walking" onclick="setTravelMode('walking')" class="mode-tab text-slate-600 py-1.5 rounded-lg transition">
-          🚶 步行
-        </button>
-      </div>
-
-      <!-- 起点输入 -->
-      <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-emerald-500 focus-within:bg-white">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-        <input id="startInput" type="text" placeholder="输入起点或点击右侧定位" class="bg-transparent w-full text-sm focus:outline-none" />
-        <button onclick="locateMe(true)" id="gpsBtn" class="text-xs text-emerald-600 font-semibold shrink-0 px-2 py-0.5 bg-emerald-50 rounded">📍 重新定位</button>
-      </div>
-
-      <!-- 目的地 / 搜附近门店输入 + 实时智能联想下拉框 -->
-      <div class="relative">
-        <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 focus-within:border-rose-500 focus-within:bg-white">
-          <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-          <input id="endInput" type="text" autocomplete="off"
-                 oninput="handleEndInput(this.value)"
-                 onkeydown="if(event.key==='Enter'){ hideSuggestions(); planRoute(); }"
-                 placeholder="输入任何大马地名、门牌地址、门店或机场..." class="bg-transparent w-full text-sm focus:outline-none" />
-          <button onclick="clearEndInput()" id="clearEndBtn" class="hidden text-xs text-slate-400 hover:text-slate-600 px-1">✕</button>
-          <button onclick="swapLocations()" id="swapBtn" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-0.5 bg-white rounded border shrink-0">⇅ 互换</button>
-        </div>
-
-        <!-- 实时智能联想下拉菜单 -->
-        <div id="autoSuggestDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-64 overflow-y-auto divide-y divide-slate-100"></div>
-      </div>
-
-      <!-- 搜附近常用连锁店 & 机场快捷栏 -->
-      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-        <span id="nearbyLabel" class="text-[11px] text-amber-600 font-bold shrink-0">🔍 搜最近：</span>
-        <button id="chipAirport" onclick="quickNearby('机场')" class="text-[11px] bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 px-2 py-0.5 rounded font-semibold shrink-0">✈️ 机场</button>
-        <button onclick="quickNearby('KFC')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍗 KFC</button>
-        <button id="chipMcd" onclick="quickNearby('McDonald\'s')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🍔 麦当劳</button>
-        <button onclick="quickNearby('7-Eleven')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🏪 7-11</button>
-        <button id="chipPetrol" onclick="quickNearby('Petronas')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">⛽ 加油站</button>
-        <button id="chipWatsons" onclick="quickNearby('Watsons')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">💊 屈臣氏</button>
-        <button id="chipHospital" onclick="quickNearby('Hospital')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🏥 医院</button>
-        <button onclick="quickNearby('MR DIY')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded shrink-0">🛠️ MR.DIY</button>
-      </div>
-
-      <!-- 附近多门店匹配结果列表 -->
-      <div id="nearbyResultsBox" class="hidden bg-amber-50/90 border border-amber-200 rounded-xl p-2.5 space-y-1.5">
-        <div class="flex items-center justify-between">
-          <span id="nearbyResultsTitle" class="text-xs font-bold text-amber-900">📍 匹配的目的地（优先营业中 · 从近到远）：</span>
-          <button id="closeNearbyBtn" onclick="document.getElementById('nearbyResultsBox').classList.add('hidden')" class="text-[11px] text-slate-400 hover:text-slate-600">关闭 ✕</button>
-        </div>
-        <div id="nearbyResultsList" class="divide-y divide-amber-200/60 max-h-60 overflow-y-auto"></div>
-      </div>
-
-      <!-- 冷门词未直接命中时的智能推荐 & 手动点选引导框 -->
-      <div id="fallbackSuggestBox" class="hidden bg-rose-50/90 border border-rose-200 rounded-xl p-3 space-y-2">
-        <div class="flex items-center justify-between">
-          <span id="fallbackTitle" class="text-xs font-bold text-rose-800">💡 未直接匹配到精准门牌，请选择下方相近地点或直接点击地图：</span>
-          <button onclick="document.getElementById('fallbackSuggestBox').classList.add('hidden')" class="text-[11px] text-slate-400">✕</button>
-        </div>
-        <p id="fallbackHint" class="text-[11px] text-rose-700 leading-relaxed"></p>
-        <div id="fallbackChips" class="flex flex-wrap gap-1.5 pt-0.5"></div>
-      </div>
-
-      <!-- 主搜索按钮 -->
-      <button id="searchRouteBtn" onclick="planRoute()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 rounded-xl text-sm shadow transition">
-        🧭 全马智能搜索并规划路线
-      </button>
-
-      <!-- 我的收藏夹 & 最近搜索历史 -->
-      <div id="savedAndHistoryWrap" class="pt-1 space-y-1.5">
-        <div id="favoritesBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <span id="favTitleLabel" class="text-[11px] text-amber-600 font-bold shrink-0">⭐ 已收藏：</span>
-          <div id="favoritesList" class="flex items-center gap-1.5"></div>
-        </div>
-
-        <div id="historyBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <span id="histTitleLabel" class="text-[11px] text-slate-400 font-medium shrink-0">🕒 最近搜索：</span>
-          <div id="historyList" class="flex items-center gap-1.5"></div>
-          <button onclick="clearHistory()" id="clearHistBtn" class="text-[10px] text-rose-400 hover:text-rose-600 shrink-0 px-1.5">清空</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 站内原生高清地图容器 -->
-  <div id="mapWrap">
-    <div id="map"></div>
-    <div id="mapBadge" class="absolute bottom-2 left-2 z-20 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg text-[11px] text-slate-700 shadow border border-slate-200">
-      💡 提示：直接点击地图任意位置即可设为目的地
-    </div>
-  </div>
-
-  <!-- 站内原生导航详情 + 营业状态 + 收藏按钮 + Waze / Google / Grab 一键唤起栏 -->
-  <div id="resultPanel" class="max-w-2xl mx-auto p-3 space-y-3 hidden">
-    <div class="bg-white rounded-2xl p-4 shadow-sm border-2 border-emerald-500">
-      <div class="flex items-start justify-between gap-2">
-        <div>
-          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-            <span id="nativeTag" class="inline-block text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">⭐ 大马吉通站内导航</span>
-            <span id="destOpenBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded"></span>
-            <button onclick="saveCurrentToFavorites()" id="saveFavBtn" class="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-800 px-2 py-0.5 rounded transition">
-              <span>⭐</span> <span>收藏此地址</span>
-            </button>
-          </div>
-          <div id="destDisplayTitle" class="text-xs font-bold text-slate-700 mb-0.5 truncate max-w-[210px] sm:max-w-xs">--</div>
+        <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <span id="routeDistBadge" class="text-lg font-black text-slate-900">-- km</span>
-            <span id="routeTimeBadge" class="text-xs font-bold bg-slate-100 text-slate-800 px-2.5 py-0.5 rounded-full">-- min</span>
+            <span id="liveStepDist" class="text-sm font-black text-emerald-300">--</span>
+            <span id="liveStepProgress" class="text-[10px] bg-black/25 text-emerald-100 px-2 py-0.5 rounded-full">1 / 1</span>
           </div>
-          <p id="routeSubInfo" class="text-xs text-slate-500 mt-1">--</p>
+          <div id="liveStepText" class="text-sm font-bold leading-snug mt-0.5 line-clamp-2">--</div>
         </div>
-        <button onclick="startLiveNav()" id="startNavBtn" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-4 py-3.5 rounded-xl shadow-lg flex items-center gap-1.5 shrink-0">
-          <span>▶️</span> <span>开始站内导航</span>
+      </div>
+      <button onclick="stopLiveNav()" id="stopNavBtn" class="bg-[#ea4335] hover:bg-red-600 active:scale-95 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow shrink-0">
+        结束
+      </button>
+    </div>
+
+    <div class="flex items-center justify-between pt-2.5 mt-2.5 border-t border-white/15 text-[11px]">
+      <div class="flex items-center gap-1.5">
+        <button id="voiceToggleBtn" onclick="toggleVoice()" class="bg-black/25 hover:bg-black/35 text-white px-2.5 py-1 rounded-lg font-medium">
+          🔊 语音开启
+        </button>
+        <button id="recenterBtn" onclick="recenterCamera()" class="bg-white/20 text-white px-2.5 py-1 rounded-lg font-medium">
+          🎯 锁定视角
         </button>
       </div>
-
-      <!-- 一键唤起外部 App（Waze App / Google Maps / Grab / 电话确认） -->
-      <div class="mt-3 pt-3 border-t border-slate-100">
-        <div id="extAppsLabel" class="text-[11px] text-slate-400 mb-2">一键唤起手机导航 App 实时避堵或确认营业：</div>
-        <div class="grid grid-cols-4 gap-1.5">
-          <a id="wazeDeepLink" href="#" target="_blank" class="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
-            🧭 Waze<br><span id="wazeSubTag" class="text-[9px] font-normal text-sky-600">App导航</span>
-          </a>
-          <a id="googleMapsLink" href="#" target="_blank" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
-            🗺️ Google<br><span id="gmapSubTag" class="text-[9px] font-normal text-blue-600">Maps导航</span>
-          </a>
-          <a id="grabDeepLink" href="https://grab.onelink.me/2695613898" target="_blank" class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
-            🚕 Grab<br><span id="grabPriceTag" class="text-[9px] font-normal text-emerald-600">RM --</span>
-          </a>
-          <a id="callOrCheckLink" href="#" target="_blank" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[11px] font-bold py-2 px-1 rounded-xl text-center transition">
-            <span id="callTitleTag">📞 查营业</span><br><span id="callSubTag" class="text-[9px] font-normal text-amber-600">电话/时间</span>
-          </a>
-        </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="manualStep(-1)" class="bg-black/25 px-2.5 py-1 rounded-lg text-emerald-100">◀ 上一步</button>
+        <button onclick="manualStep(1)" class="bg-white text-[#0f5338] px-2.5 py-1 rounded-lg font-bold">下一步 ▶</button>
       </div>
-    </div>
-
-    <!-- 公共交通 / 本地防迷路贴士卡片 -->
-    <div id="transitGuideBox" class="hidden bg-blue-50 rounded-2xl p-4 border border-blue-200 space-y-1.5">
-      <div class="font-bold text-sm text-blue-900" id="transitBoxTitle">🚇 本地公交 / 轨道交通乘车贴士</div>
-      <div id="transitAdviceBody" class="text-xs text-blue-800 leading-relaxed space-y-1"></div>
-    </div>
-
-    <!-- 站内逐向转弯步骤列表 -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-      <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-slate-100">
-        <h3 id="stepsHeader" class="font-bold text-sm text-slate-800">📋 站内逐步路线明细</h3>
-        <span id="stepCountBadge" class="text-[11px] text-slate-400">0 steps</span>
-      </div>
-      <div id="stepsList" class="divide-y divide-slate-100 max-h-96 overflow-y-auto pr-1"></div>
     </div>
   </div>
 
-  <!-- 底部常驻导航栏 -->
-  <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 py-2 px-6 flex justify-around items-center z-30 text-xs">
-    <a href="/" class="flex flex-col items-center text-slate-500 hover:text-emerald-600">
-      <span class="text-lg">🏠</span>
-      <span id="navHome">分类首页</span>
-    </a>
-    <a href="/map.html" class="flex flex-col items-center text-emerald-600 font-bold">
-      <span class="text-lg">🧭</span>
-      <span id="navMap">站内导航</span>
-    </a>
-    <a href="/" class="flex flex-col items-center text-slate-500 hover:text-emerald-600">
-      <span class="text-lg">➕</span>
-      <span id="navPost">发布信息</span>
-    </a>
-  </nav>
+  <!-- 顶部 Google Maps 风格悬浮搜索区 -->
+  <div id="topFloatingUI" class="fixed top-3 inset-x-3 max-w-xl mx-auto z-30 space-y-2 pointer-events-none">
+    <!-- 主白色悬浮胶囊搜索框 -->
+    <div class="bg-white rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.18)] border border-gray-200/80 px-2.5 py-1.5 flex items-center gap-1.5 pointer-events-auto">
+      <a href="/" id="backHomeBtn" title="返回首页" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-700 font-bold shrink-0 transition">
+        ←
+      </a>
+      <img src="/icon.png?v=4" alt="DMJT" class="w-6 h-6 rounded-md object-cover shrink-0" />
+      <input id="endInput" type="text" autocomplete="off"
+             oninput="handleEndInput(this.value)"
+             onkeydown="if(event.key==='Enter'){ hideSuggestions(); planRoute(); }"
+             placeholder="在这里搜索大马地点、门店、机场..."
+             class="bg-transparent w-full text-sm text-[#202124] placeholder-gray-400 focus:outline-none px-1" />
+      <button onclick="clearEndInput()" id="clearEndBtn" class="hidden w-7 h-7 rounded-full hover:bg-gray-100 text-gray-500 text-xs font-bold shrink-0">✕</button>
+      <button onclick="planRoute()" id="searchRouteBtn" class="bg-[#1a73e8] hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-full shrink-0 transition">
+        搜索
+      </button>
+      <!-- 三语切换紧凑胶囊 -->
+      <div class="flex items-center bg-gray-100 rounded-full p-0.5 text-[10px] font-bold shrink-0">
+        <button onclick="switchLang('zh')" id="lang-zh" class="lang-btn bg-white text-[#1a73e8] px-1.5 py-0.5 rounded-full shadow-2xs">中</button>
+        <button onclick="switchLang('en')" id="lang-en" class="lang-btn text-gray-500 px-1.5 py-0.5 rounded-full">EN</button>
+        <button onclick="switchLang('ms')" id="lang-ms" class="lang-btn text-gray-500 px-1.5 py-0.5 rounded-full">BM</button>
+      </div>
+    </div>
+
+    <!-- 实时智能联想下拉框 -->
+    <div id="autoSuggestDropdown" class="hidden bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-64 overflow-y-auto divide-y divide-gray-100 pointer-events-auto"></div>
+
+    <!-- Google Maps 风格白色悬浮分类胶囊栏 -->
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 pointer-events-auto">
+      <button onclick="toggleOriginEditor()" id="originPillBtn" class="bg-white hover:bg-gray-50 text-[#202124] shadow-[0_1px_5px_rgba(0,0,0,0.14)] border border-gray-200/70 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 shrink-0">
+        <span class="w-2 h-2 rounded-full bg-[#1a73e8]"></span>
+        <span id="originPillText" class="max-w-[110px] truncate">我的位置</span>
+      </button>
+      <button id="chipAirport" onclick="quickNearby('机场')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">✈️ 机场</button>
+      <button onclick="quickNearby('KFC')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🍗 KFC</button>
+      <button id="chipMcd" onclick="quickNearby('McDonald\'s')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🍔 麦当劳</button>
+      <button id="chipPetrol" onclick="quickNearby('Petronas')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">⛽ 加油站</button>
+      <button onclick="quickNearby('7-Eleven')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🏪 7-11</button>
+      <button id="chipWatsons" onclick="quickNearby('Watsons')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">💊 屈臣氏</button>
+      <button id="chipHospital" onclick="quickNearby('Hospital')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🏥 医院</button>
+      <button onclick="quickNearby('MR DIY')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🛠️ MR.DIY</button>
+    </div>
+
+    <!-- 可展开的起点与城市微调面板（默认收起，保持地图大视野） -->
+    <div id="originDrawer" class="hidden bg-white rounded-2xl shadow-xl border border-gray-200 p-3 space-y-2 pointer-events-auto">
+      <div class="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#1a73e8] shrink-0"></span>
+        <input id="startInput" type="text" placeholder="输入起点或点击右侧 GPS 定位" class="bg-transparent w-full text-xs text-gray-800 focus:outline-none" />
+        <button onclick="locateMe(true)" id="gpsBtn" class="text-[11px] text-[#1a73e8] font-bold shrink-0 px-2 py-0.5 bg-blue-50 rounded-lg">📍 定位</button>
+        <button onclick="swapLocations()" id="swapBtn" class="text-[11px] text-gray-600 px-2 py-0.5 bg-white rounded-lg border shrink-0">⇅ 互换</button>
+      </div>
+      <!-- 城市快捷跳转 -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <span id="cityLabel" class="text-[11px] text-gray-400 shrink-0">城市：</span>
+        <button onclick="switchCity(3.1390, 101.6869, 'Kuala Lumpur')" id="cityBtn-kl" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">吉隆坡 KL</button>
+        <button onclick="switchCity(5.4141, 100.3288, 'Penang')" id="cityBtn-pg" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">槟城 Penang</button>
+        <button onclick="switchCity(1.4927, 103.7414, 'Johor Bahru')" id="cityBtn-jb" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">新山 JB</button>
+        <button onclick="switchCity(4.5975, 101.0901, 'Ipoh')" id="cityBtn-ip" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">怡保 Ipoh</button>
+        <button onclick="switchCity(2.1896, 102.2501, 'Melaka')" id="cityBtn-mk" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">马六甲 Melaka</button>
+        <button onclick="switchCity(5.9804, 116.0735, 'Kota Kinabalu')" id="cityBtn-kk" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 hover:bg-blue-50 text-gray-700 shrink-0">亚庇 KK</button>
+      </div>
+      <!-- 已收藏 & 历史搜索 -->
+      <div id="favoritesBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+        <span id="favTitleLabel" class="text-[11px] text-amber-600 font-bold shrink-0">⭐ 已收藏：</span>
+        <div id="favoritesList" class="flex items-center gap-1.5"></div>
+      </div>
+      <div id="historyBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+        <span id="histTitleLabel" class="text-[11px] text-gray-400 shrink-0">🕒 最近：</span>
+        <div id="historyList" class="flex items-center gap-1.5"></div>
+        <button onclick="clearHistory()" id="clearHistBtn" class="text-[10px] text-rose-500 shrink-0 px-1">清空</button>
+      </div>
+    </div>
+
+    <!-- 附近多门店匹配悬浮列表 -->
+    <div id="nearbyResultsBox" class="hidden bg-white rounded-2xl shadow-2xl border border-gray-200 p-3 space-y-1.5 pointer-events-auto">
+      <div class="flex items-center justify-between">
+        <span id="nearbyResultsTitle" class="text-xs font-bold text-[#202124]">📍 匹配目的地（优先营业中 · 从近到远）</span>
+        <button id="closeNearbyBtn" onclick="document.getElementById('nearbyResultsBox').classList.add('hidden')" class="text-xs text-gray-400 hover:text-gray-700 px-1">✕</button>
+      </div>
+      <div id="nearbyResultsList" class="divide-y divide-gray-100 max-h-52 overflow-y-auto"></div>
+    </div>
+
+    <!-- 未命中推荐框 -->
+    <div id="fallbackSuggestBox" class="hidden bg-white rounded-2xl shadow-2xl border border-rose-200 p-3 space-y-2 pointer-events-auto">
+      <div class="flex items-center justify-between">
+        <span id="fallbackTitle" class="text-xs font-bold text-rose-700">💡 未直接命中，请选择下方推荐地点或直接点击地图：</span>
+        <button onclick="document.getElementById('fallbackSuggestBox').classList.add('hidden')" class="text-xs text-gray-400">✕</button>
+      </div>
+      <p id="fallbackHint" class="text-[11px] text-gray-500 leading-relaxed"></p>
+      <div id="fallbackChips" class="flex flex-wrap gap-1.5"></div>
+    </div>
+  </div>
+
+  <!-- 右侧 Google Maps 风格悬浮圆形功能按钮组（图层切换 + 我的位置） -->
+  <div id="rightFloatingControls" class="fixed right-3 bottom-28 z-20 flex flex-col gap-2.5">
+    <button onclick="toggleMapLayer()" id="layerToggleBtn" title="切换卫星图/标准地图"
+            class="w-11 h-11 rounded-full bg-white hover:bg-gray-50 active:scale-95 shadow-[0_2px_10px_rgba(0,0,0,0.2)] border border-gray-200/80 flex flex-col items-center justify-center text-[#3c4043] transition">
+      <span id="layerIcon" class="text-base leading-none">🛰️</span>
+      <span id="layerText" class="text-[9px] font-bold mt-0.5">卫星</span>
+    </button>
+    <button onclick="locateMe(true)" title="定位到我的位置"
+            class="w-11 h-11 rounded-full bg-white hover:bg-gray-50 active:scale-95 shadow-[0_2px_10px_rgba(0,0,0,0.2)] border border-gray-200/80 flex items-center justify-center text-[#1a73e8] text-lg transition">
+      🎯
+    </button>
+  </div>
+
+  <!-- 底部提示小胶囊（未规划路线时显示） -->
+  <div id="bottomIdleHint" class="fixed bottom-4 inset-x-3 max-w-md mx-auto z-20 bg-white/95 backdrop-blur rounded-2xl shadow-lg border border-gray-200/80 px-4 py-2.5 flex items-center justify-between">
+    <span id="mapBadge" class="text-xs text-gray-600 font-medium">💡 直接点击地图任意位置即可设为目的地</span>
+    <a href="/" class="text-xs font-bold text-[#1a73e8] shrink-0 ml-2">返回分类</a>
+  </div>
+
+  <!-- 底部 Google Maps 风格路线详情抽屉卡片 -->
+  <div id="resultPanel" class="hidden fixed bottom-0 inset-x-0 max-w-xl mx-auto z-30 bg-white rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.18)] border-t border-gray-200 transition-all">
+    <!-- 顶部拖拽把手与收起按钮 -->
+    <div onclick="toggleDrawerExpand()" class="pt-2.5 pb-1 flex flex-col items-center cursor-pointer">
+      <div class="w-10 h-1 rounded-full bg-gray-300"></div>
+    </div>
+
+    <div class="px-4 pb-4 space-y-3 max-h-[72vh] overflow-y-auto">
+      <!-- 出行方式切换（驾车 / 公交 / 步行） -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-full text-xs font-bold">
+          <button id="mode-driving" onclick="setTravelMode('driving')" class="mode-tab bg-[#1a73e8] text-white px-3 py-1 rounded-full shadow-2xs transition">🚗 驾车</button>
+          <button id="mode-transit" onclick="setTravelMode('transit')" class="mode-tab text-gray-600 px-3 py-1 rounded-full transition">🚇 公交</button>
+          <button id="mode-walking" onclick="setTravelMode('walking')" class="mode-tab text-gray-600 px-3 py-1 rounded-full transition">🚶 步行</button>
+        </div>
+        <button onclick="closeResultPanel()" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs font-bold">✕</button>
+      </div>
+
+      <!-- 时间、距离、营业状态与主导航按钮 -->
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="routeTimeBadge" class="text-2xl font-black text-[#188038]">-- min</span>
+            <span id="routeDistBadge" class="text-sm font-bold text-gray-600">(-- km)</span>
+            <span id="destOpenBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
+          </div>
+          <div id="destDisplayTitle" class="text-xs font-bold text-[#202124] mt-0.5 truncate">--</div>
+          <p id="routeSubInfo" class="text-[11px] text-gray-500 mt-0.5">--</p>
+        </div>
+
+        <button onclick="startLiveNav()" id="startNavBtn" class="bg-[#1a73e8] hover:bg-blue-700 active:scale-95 text-white font-bold text-xs px-4 py-3 rounded-full shadow-md flex items-center gap-1.5 shrink-0">
+          <span>🧭</span> <span id="startNavText">开始导航</span>
+        </button>
+      </div>
+
+      <!-- 快捷操作栏：Google Maps 外部导航 / Waze / Grab / 收藏 / 营业时间 -->
+      <div class="grid grid-cols-5 gap-1.5 pt-1">
+        <a id="googleMapsLink" href="#" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-[#1a73e8] border border-blue-200/80 py-2 px-1 rounded-xl text-center transition">
+          <div class="text-xs font-bold">🗺️ Google</div>
+          <div id="gmapSubTag" class="text-[9px] text-blue-600">外部导航</div>
+        </a>
+        <a id="wazeDeepLink" href="#" target="_blank" class="bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 py-2 px-1 rounded-xl text-center transition">
+          <div class="text-xs font-bold">🚙 Waze</div>
+          <div id="wazeSubTag" class="text-[9px] text-sky-600">实时避堵</div>
+        </a>
+        <a id="grabDeepLink" href="https://grab.onelink.me/2695613898" target="_blank" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 py-2 px-1 rounded-xl text-center transition">
+          <div class="text-xs font-bold">🚕 Grab</div>
+          <div id="grabPriceTag" class="text-[9px] text-emerald-600">~RM --</div>
+        </a>
+        <button onclick="saveCurrentToFavorites()" id="saveFavBtn" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 py-2 px-1 rounded-xl text-center transition">
+          <div class="text-xs font-bold">⭐ 收藏</div>
+          <div id="saveFavSubTag" class="text-[9px] text-amber-600">存地点</div>
+        </button>
+        <a id="callOrCheckLink" href="#" target="_blank" class="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 py-2 px-1 rounded-xl text-center transition">
+          <div id="callTitleTag" class="text-xs font-bold">📞 营业</div>
+          <div id="callSubTag" class="text-[9px] text-gray-500">时间/电话</div>
+        </a>
+      </div>
+
+      <!-- 公共交通贴士（仅公交模式显示） -->
+      <div id="transitGuideBox" class="hidden bg-blue-50 rounded-2xl p-3 border border-blue-200 space-y-1">
+        <div class="font-bold text-xs text-blue-900" id="transitBoxTitle">🚇 本地公交 / 轨道交通乘车贴士</div>
+        <div id="transitAdviceBody" class="text-[11px] text-blue-800 leading-relaxed space-y-1"></div>
+      </div>
+
+      <!-- 逐向转弯步骤明细（可折叠） -->
+      <div class="border-t border-gray-100 pt-2">
+        <button onclick="toggleStepsList()" class="w-full flex items-center justify-between py-1 text-left">
+          <span id="stepsHeader" class="font-bold text-xs text-gray-700">📋 查看逐向转弯路线明细</span>
+          <span id="stepCountBadge" class="text-[11px] text-[#1a73e8] font-semibold">0 steps ▾</span>
+        </button>
+        <div id="stepsList" class="hidden divide-y divide-gray-100 max-h-56 overflow-y-auto mt-1"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const i18n = {
       zh: {
-        backHome: '← 首页',
-        headerTitle: '大马吉通 · 站内原生导航',
-        headerSub: '全马极速检索 · 实时营业状态 · 语音带路',
-        cityLabel: '城市：',
-        nearMeCity: '📍 我附近',
-        cityKL: '吉隆坡 KL', cityPG: '槟城 Penang', cityJB: '新山 JB',
-        cityMK: '马六甲 Melaka', cityIP: '怡保 Ipoh', cityKK: '亚庇 KK',
         gpsLabel: '我的当前位置 (GPS)',
+        originDefault: '我的位置',
         modeDriving: '🚗 驾车',
         modeTransit: '🚇 公交',
         modeWalking: '🚶 步行',
-        startPh: '输入起点或点击右侧定位',
-        endPh: '输入任何大马地名、门牌地址、门店或机场...',
-        gpsBtn: '📍 重新定位',
+        startPh: '输入起点或点击右侧 GPS 定位',
+        endPh: '在这里搜索大马地点、门店、机场...',
+        searchBtn: '搜索',
+        searchingBtn: '搜索中',
+        gpsBtn: '📍 定位',
         swapBtn: '⇅ 互换',
-        nearbyLabel: '🔍 搜最近：',
+        cityLabel: '城市：',
         chipAirport: '✈️ 机场',
         chipMcd: '🍔 麦当劳',
         chipPetrol: '⛽ 加油站',
         chipWatsons: '💊 屈臣氏',
         chipHospital: '🏥 医院',
-        nearbyResultsTitle: '📍 匹配的目的地（优先营业中 · 从近到远）：',
-        closeNearby: '关闭 ✕',
+        nearbyResultsTitle: '📍 匹配目的地（优先营业中 · 从近到远）',
         nearestBadge: '最近',
         approxMin: (m) => `约 ${m} 分钟`,
-        searchBtn: '🧭 全马智能搜索并规划路线',
-        searchingBtn: '⏳ 正在极速检索全马路网...',
         favTitle: '⭐ 已收藏：',
-        histTitle: '🕒 最近搜索：',
+        histTitle: '🕒 最近：',
         clearHist: '清空',
-        saveFavBtn: '收藏此地址',
-        savedFavDone: '已收藏 ✓',
-        mapBadge: '💡 提示：直接点击地图任意位置即可设为目的地',
-        nativeTag: '⭐ 大马吉通站内导航',
-        startNav: '开始站内导航',
-        stopNav: '结束导航',
-        voiceOn: '🔊 语音已开启',
-        voiceOff: '🔇 语音已静音',
-        lockedText: '🎯 视角锁定中 (18x)',
-        freeText: '🔓 自由拖动 (点此回正)',
-        extApps: '一键唤起手机导航 App 实时避堵或确认营业：',
-        wazeSub: 'App导航',
-        gmapSub: 'Maps导航',
-        callTitle: '📞 查营业',
-        stepsHeader: '📋 站内逐步路线明细',
-        navHome: '分类首页',
-        navMap: '站内导航',
-        navPost: '发布信息',
+        saveFavSub: '存地点',
+        savedFavSub: '已收藏',
+        mapBadge: '💡 直接点击地图任意位置即可设为目的地',
+        startNavText: '开始导航',
+        stopNav: '结束',
+        voiceOn: '🔊 语音开启',
+        voiceOff: '🔇 语音静音',
+        lockedText: '🎯 锁定视角',
+        freeText: '🔓 自由拖动',
+        wazeSub: '实时避堵',
+        gmapSub: '外部导航',
+        callTitle: '📞 营业',
+        stepsHeader: '📋 查看逐向转弯路线明细',
+        layerSat: '卫星',
+        layerMap: '街道',
         speechLang: 'zh-CN',
         startVoiceMsg: '开始导航。',
         status247: '🟢 24小时营业',
         statusOpenUntil: (t) => `🟢 营业中 (至 ${t})`,
         statusOpen: '🟢 营业中',
         statusClosed: (t) => t ? `🔴 已打烊 (${t} 开门)` : '🔴 已打烊',
-        statusCheck: '🟡 建议先电话确认',
-        fallbackTitle: '💡 未直接命中该词，请选择下方推荐地点或直接点击地图：',
-        fallbackHint: '您可以直接点击下方全马热门地点，或补充完整街道/城市名（如“槟城 Gurney”、“KLCC”），也可以直接在下方地图上点选目标位置：'
+        statusCheck: '🟡 建议确认营业时间',
+        fallbackTitle: '💡 未直接命中，请选择下方推荐地点或直接点击地图：',
+        fallbackHint: '可直接点选下方热门地点，或输入更完整的街道/城市名（如“槟城 Gurney”、“KLCC”）：'
       },
       en: {
-        backHome: '← Home',
-        headerTitle: 'DamaJitong · In-App Navigation',
-        headerSub: 'Fast All-MY Search · Live Open Status · Voice Nav',
-        cityLabel: 'City:',
-        nearMeCity: '📍 Near Me',
-        cityKL: 'Kuala Lumpur', cityPG: 'Penang', cityJB: 'Johor Bahru',
-        cityMK: 'Melaka', cityIP: 'Ipoh', cityKK: 'Kota Kinabalu',
         gpsLabel: 'My Current Location (GPS)',
+        originDefault: 'Your location',
         modeDriving: '🚗 Drive',
         modeTransit: '🚇 Transit',
         modeWalking: '🚶 Walk',
         startPh: 'Start point or tap GPS',
-        endPh: 'Enter any Malaysia address, shop, landmark or airport...',
-        gpsBtn: '📍 My GPS',
+        endPh: 'Search Malaysia places, shops, airports...',
+        searchBtn: 'Search',
+        searchingBtn: '...',
+        gpsBtn: '📍 GPS',
         swapBtn: '⇅ Swap',
-        nearbyLabel: '🔍 Nearest:',
+        cityLabel: 'City:',
         chipAirport: '✈️ Airport',
         chipMcd: '🍔 McDonald\'s',
         chipPetrol: '⛽ Petrol',
         chipWatsons: '💊 Watsons',
         chipHospital: '🏥 Hospital',
-        nearbyResultsTitle: '📍 Matched destinations (Open first · Closest):',
-        closeNearby: 'Close ✕',
+        nearbyResultsTitle: '📍 Matched places (Open first · Closest)',
         nearestBadge: 'Nearest',
         approxMin: (m) => `~${m} min`,
-        searchBtn: '🧭 Search All Malaysia & Get Route',
-        searchingBtn: '⏳ Searching Malaysia road network...',
         favTitle: '⭐ Saved:',
         histTitle: '🕒 Recent:',
         clearHist: 'Clear',
-        saveFavBtn: 'Save Place',
-        savedFavDone: 'Saved ✓',
-        mapBadge: '💡 Tip: Tap anywhere on the map to set destination',
-        nativeTag: '⭐ DamaJitong In-App Nav',
-        startNav: 'Start Nav',
-        stopNav: 'Stop Nav',
+        saveFavSub: 'Save',
+        savedFavSub: 'Saved',
+        mapBadge: '💡 Tap anywhere on the map to set destination',
+        startNavText: 'Start',
+        stopNav: 'Exit',
         voiceOn: '🔊 Voice On',
         voiceOff: '🔇 Muted',
-        lockedText: '🎯 Locked (18x)',
-        freeText: '🔓 Free Pan (Recenter)',
-        extApps: 'Launch phone navigation apps or check open hours:',
-        wazeSub: 'Open App',
+        lockedText: '🎯 Centered',
+        freeText: '🔓 Recenter',
+        wazeSub: 'Live Traffic',
         gmapSub: 'Open App',
         callTitle: '📞 Hours',
-        stepsHeader: '📋 Turn-by-Turn Directions',
-        navHome: 'Home',
-        navMap: 'Navigation',
-        navPost: 'Post Ad',
+        stepsHeader: '📋 Turn-by-turn directions',
+        layerSat: 'Satellite',
+        layerMap: 'Map',
         speechLang: 'en-US',
         startVoiceMsg: 'Starting navigation. ',
         status247: '🟢 Open 24 Hours',
-        statusOpenUntil: (t) => `🟢 Open Now (till ${t})`,
+        statusOpenUntil: (t) => `🟢 Open (till ${t})`,
         statusOpen: '🟢 Open Now',
-        statusClosed: (t) => t ? `🔴 Closed (Opens ${t})` : '🔴 Closed Now',
-        statusCheck: '🟡 Check Hours Before Going',
-        fallbackTitle: '💡 No exact match found. Pick a suggested place or tap map:',
-        fallbackHint: 'Choose from popular Malaysia destinations below, enter a fuller street/city name, or tap directly on the map below:'
+        statusClosed: (t) => t ? `🔴 Closed (Opens ${t})` : '🔴 Closed',
+        statusCheck: '🟡 Check Hours',
+        fallbackTitle: '💡 No exact match. Pick a place below or tap map:',
+        fallbackHint: 'Choose from popular Malaysia destinations below or enter a fuller street/city name:'
       },
       ms: {
-        backHome: '← Utama',
-        headerTitle: 'DamaJitong · Navigasi Terus',
-        headerSub: 'Carian Pantas Seluruh MY · Status Buka · Suara',
-        cityLabel: 'Bandar:',
-        nearMeCity: '📍 Dekat Saya',
-        cityKL: 'Kuala Lumpur', cityPG: 'Pulau Pinang', cityJB: 'Johor Bahru',
-        cityMK: 'Melaka', cityIP: 'Ipoh', cityKK: 'Kota Kinabalu',
         gpsLabel: 'Lokasi Semasa Saya (GPS)',
+        originDefault: 'Lokasi anda',
         modeDriving: '🚗 Pandu',
         modeTransit: '🚇 Bas/MRT',
         modeWalking: '🚶 Jalan',
         startPh: 'Lokasi mula atau tekan GPS',
-        endPh: 'Masukkan alamat, kedai, mercu tanda atau lapangan terbang...',
-        gpsBtn: '📍 Lokasi Saya',
+        endPh: 'Cari lokasi, kedai, lapangan terbang...',
+        searchBtn: 'Cari',
+        searchingBtn: '...',
+        gpsBtn: '📍 GPS',
         swapBtn: '⇅ Tukar',
-        nearbyLabel: '🔍 Terdekat:',
+        cityLabel: 'Bandar:',
         chipAirport: '✈️ Lapangan Terbang',
         chipMcd: '🍔 McDonald\'s',
         chipPetrol: '⛽ Stesen Minyak',
         chipWatsons: '💊 Watsons',
         chipHospital: '🏥 Hospital',
-        nearbyResultsTitle: '📍 Lokasi sepadan (Dibuka dahulu · Terdekat):',
-        closeNearby: 'Tutup ✕',
+        nearbyResultsTitle: '📍 Lokasi sepadan (Dibuka dahulu · Terdekat)',
         nearestBadge: 'Terdekat',
         approxMin: (m) => `~${m} min`,
-        searchBtn: '🧭 Cari Seluruh Malaysia & Laluan',
-        searchingBtn: '⏳ Mencari laluan seluruh Malaysia...',
         favTitle: '⭐ Disimpan:',
         histTitle: '🕒 Sejarah:',
         clearHist: 'Padam',
-        saveFavBtn: 'Simpan Lokasi',
-        savedFavDone: 'Disimpan ✓',
-        mapBadge: '💡 Tip: Tekan mana-mana lokasi di peta sebagai destinasi',
-        nativeTag: '⭐ Navigasi Terus DamaJitong',
-        startNav: 'Mula Navigasi',
+        saveFavSub: 'Simpan',
+        savedFavSub: 'Disimpan',
+        mapBadge: '💡 Tekan mana-mana lokasi di peta sebagai destinasi',
+        startNavText: 'Mula',
         stopNav: 'Tamat',
         voiceOn: '🔊 Suara Aktif',
         voiceOff: '🔇 Senyap',
-        lockedText: '🎯 Dikunci (18x)',
-        freeText: '🔓 Bebas (Pusatkan)',
-        extApps: 'Buka aplikasi navigasi telefon atau semak waktu operasi:',
-        wazeSub: 'Buka App',
+        lockedText: '🎯 Dikunci',
+        freeText: '🔓 Pusatkan',
+        wazeSub: 'Trafik',
         gmapSub: 'Buka App',
         callTitle: '📞 Operasi',
-        stepsHeader: '📋 Langkah Panduan Arah',
-        navHome: 'Utama',
-        navMap: 'Navigasi',
-        navPost: 'Iklan',
+        stepsHeader: '📋 Langkah panduan arah',
+        layerSat: 'Satelit',
+        layerMap: 'Peta',
         speechLang: 'ms-MY',
         startVoiceMsg: 'Memulakan navigasi. ',
         status247: '🟢 Buka 24 Jam',
-        statusOpenUntil: (t) => `🟢 Dibuka (sehingga ${t})`,
-        statusOpen: '🟢 Dibuka Sekarang',
-        statusClosed: (t) => t ? `🔴 Tutup (Buka ${t})` : '🔴 Tutup Sekarang',
-        statusCheck: '🟡 Sahkan Waktu Operasi',
+        statusOpenUntil: (t) => `🟢 Dibuka (hingga ${t})`,
+        statusOpen: '🟢 Dibuka',
+        statusClosed: (t) => t ? `🔴 Tutup (Buka ${t})` : '🔴 Tutup',
+        statusCheck: '🟡 Semak Masa',
         fallbackTitle: '💡 Tiada padanan tepat. Pilih lokasi cadangan atau tekan peta:',
-        fallbackHint: 'Pilih destinasi popular di bawah, masukkan nama jalan/bandar yang lebih lengkap, atau tekan terus pada peta:'
+        fallbackHint: 'Pilih destinasi popular di bawah atau masukkan nama jalan/bandar yang lebih lengkap:'
       }
     };
 
@@ -469,6 +476,7 @@
     let userLiveMarker = null;
     let nearbyMarkersLayer = null;
     let routeLine = null;
+    let routeOutline = null;
     let currentSteps = [];
     let currentStepIdx = 0;
     let watchId = null;
@@ -477,6 +485,7 @@
     let cameraLocked = true;
     let wakeLock = null;
     let activeSearchSeq = 0;
+    let isSatellite = false;
 
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
@@ -580,6 +589,77 @@
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
 
+    // 初始化全屏地图（Zoom 控件放在右下角，避开顶部悬浮搜索框）
+    const map = L.map('map', { zoomControl: false }).setView([3.1390, 101.6869], 14);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Google Maps 风格高清晰街道底图 + 备用免费底图自动降级（0 成本抗高并发）
+    const streetLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      attribution: '© Map Data',
+      maxZoom: 20
+    });
+    const fallbackStreetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO',
+      maxZoom: 19
+    });
+    const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      attribution: '© Satellite Data',
+      maxZoom: 20
+    });
+
+    let tileErrorCount = 0;
+    streetLayer.on('tileerror', () => {
+      tileErrorCount++;
+      if (tileErrorCount > 6 && !isSatellite && map.hasLayer(streetLayer)) {
+        map.removeLayer(streetLayer);
+        fallbackStreetLayer.addTo(map);
+      }
+    });
+    streetLayer.addTo(map);
+    nearbyMarkersLayer = L.layerGroup().addTo(map);
+
+    function toggleMapLayer() {
+      const t = i18n[currentLang];
+      isSatellite = !isSatellite;
+      if (isSatellite) {
+        map.removeLayer(streetLayer);
+        map.removeLayer(fallbackStreetLayer);
+        satelliteLayer.addTo(map);
+        document.getElementById('layerIcon').innerText = '🗺️';
+        document.getElementById('layerText').innerText = t.layerMap;
+      } else {
+        map.removeLayer(satelliteLayer);
+        if (tileErrorCount > 6) fallbackStreetLayer.addTo(map);
+        else streetLayer.addTo(map);
+        document.getElementById('layerIcon').innerText = '🛰️';
+        document.getElementById('layerText').innerText = t.layerSat;
+      }
+    }
+
+    function toggleOriginEditor() {
+      document.getElementById('originDrawer').classList.toggle('hidden');
+    }
+
+    function toggleStepsList() {
+      document.getElementById('stepsList').classList.toggle('hidden');
+    }
+
+    function toggleDrawerExpand() {
+      document.getElementById('stepsList').classList.toggle('hidden');
+    }
+
+    function closeResultPanel() {
+      document.getElementById('resultPanel').classList.add('hidden');
+      document.getElementById('bottomIdleHint').classList.remove('hidden');
+      document.getElementById('rightFloatingControls').style.bottom = '7rem';
+    }
+
+    function openResultPanel() {
+      document.getElementById('bottomIdleHint').classList.add('hidden');
+      document.getElementById('resultPanel').classList.remove('hidden');
+      document.getElementById('rightFloatingControls').style.bottom = '15.5rem';
+    }
+
     function getAcceptLangHeader() {
       if (currentLang === 'ms') return 'ms,en';
       if (currentLang === 'en') return 'en';
@@ -651,7 +731,7 @@
         return { state: 'closed', text: t.statusClosed('10:00'), badgeClass: 'bg-rose-100 text-rose-700' };
       }
 
-      return { state: 'unknown', text: t.statusCheck, badgeClass: 'bg-slate-100 text-slate-600' };
+      return { state: 'unknown', text: t.statusCheck, badgeClass: 'bg-gray-100 text-gray-600' };
     }
 
     function localizeKnownPlaceName(raw, lang) {
@@ -673,31 +753,20 @@
       currentLang = lang;
       localStorage.setItem('dama_lang', lang);
       document.querySelectorAll('.lang-btn').forEach(b => {
-        b.classList.remove('bg-white', 'text-emerald-700');
-        b.classList.add('text-white/90');
+        b.classList.remove('bg-white', 'text-[#1a73e8]', 'shadow-2xs');
+        b.classList.add('text-gray-500');
       });
       const activeBtn = document.getElementById(`lang-${lang}`);
       if (activeBtn) {
-        activeBtn.classList.add('bg-white', 'text-emerald-700');
-        activeBtn.classList.remove('text-white/90');
+        activeBtn.classList.add('bg-white', 'text-[#1a73e8]', 'shadow-2xs');
+        activeBtn.classList.remove('text-gray-500');
       }
 
       const t = i18n[lang];
-      document.getElementById('backHomeBtn').innerText = t.backHome;
-      document.getElementById('headerTitle').innerText = t.headerTitle;
-      document.getElementById('headerSub').innerText = t.headerSub;
-      document.getElementById('cityLabel').innerText = t.cityLabel;
-      document.getElementById('quickNearMeCityBtn').innerText = t.nearMeCity;
-      document.getElementById('cityBtn-kl').innerText = t.cityKL;
-      document.getElementById('cityBtn-pg').innerText = t.cityPG;
-      document.getElementById('cityBtn-jb').innerText = t.cityJB;
-      document.getElementById('cityBtn-mk').innerText = t.cityMK;
-      document.getElementById('cityBtn-ip').innerText = t.cityIP;
-      document.getElementById('cityBtn-kk').innerText = t.cityKK;
-
       const startVal = document.getElementById('startInput').value;
-      if (startVal.includes('(GPS)')) {
+      if (!startVal || startVal.includes('(GPS)')) {
         document.getElementById('startInput').value = t.gpsLabel;
+        document.getElementById('originPillText').innerText = t.originDefault;
         if (startCoords) startCoords.name = t.gpsLabel;
       }
 
@@ -706,33 +775,28 @@
       document.getElementById('mode-walking').innerText = t.modeWalking;
       document.getElementById('startInput').placeholder = t.startPh;
       document.getElementById('endInput').placeholder = t.endPh;
+      document.getElementById('searchRouteBtn').innerText = t.searchBtn;
       document.getElementById('gpsBtn').innerText = t.gpsBtn;
       document.getElementById('swapBtn').innerText = t.swapBtn;
-      document.getElementById('nearbyLabel').innerText = t.nearbyLabel;
+      document.getElementById('cityLabel').innerText = t.cityLabel;
       document.getElementById('chipAirport').innerText = t.chipAirport;
       document.getElementById('chipMcd').innerText = t.chipMcd;
       document.getElementById('chipPetrol').innerText = t.chipPetrol;
       document.getElementById('chipWatsons').innerText = t.chipWatsons;
       document.getElementById('chipHospital').innerText = t.chipHospital;
-      document.getElementById('closeNearbyBtn').innerText = t.closeNearby;
-      document.getElementById('searchRouteBtn').innerText = t.searchBtn;
       document.getElementById('favTitleLabel').innerText = t.favTitle;
       document.getElementById('histTitleLabel').innerText = t.histTitle;
       document.getElementById('clearHistBtn').innerText = t.clearHist;
       document.getElementById('mapBadge').innerText = t.mapBadge;
-      document.getElementById('nativeTag').innerText = t.nativeTag;
-      document.getElementById('startNavBtn').innerHTML = `<span>▶️</span> <span>${t.startNav}</span>`;
+      document.getElementById('startNavText').innerText = t.startNavText;
       document.getElementById('stopNavBtn').innerText = t.stopNav;
       document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? t.voiceOn : t.voiceOff;
       document.getElementById('recenterBtn').innerText = cameraLocked ? t.lockedText : t.freeText;
-      document.getElementById('extAppsLabel').innerText = t.extApps;
       document.getElementById('wazeSubTag').innerText = t.wazeSub;
       document.getElementById('gmapSubTag').innerText = t.gmapSub;
       document.getElementById('callTitleTag').innerText = t.callTitle;
       document.getElementById('stepsHeader').innerText = t.stepsHeader;
-      document.getElementById('navHome').innerText = t.navHome;
-      document.getElementById('navMap').innerText = t.navMap;
-      document.getElementById('navPost').innerText = t.navPost;
+      document.getElementById('layerText').innerText = isSatellite ? t.layerMap : t.layerSat;
 
       if (endCoords) {
         const matchedAp = MY_AIRPORTS.find(ap =>
@@ -745,79 +809,39 @@
           endCoords.name = localizeKnownPlaceName(endCoords.name, lang);
           document.getElementById('endInput').value = endCoords.name;
         }
-        if (endCoords.status && endCoords.status.state === 'open') {
-          endCoords.status.text = t.status247;
-        }
       }
 
       renderSavedAndHistory();
-      const curEnd = document.getElementById('endInput').value.trim();
-      if (curEnd && !document.getElementById('autoSuggestDropdown').classList.contains('hidden')) {
-        handleEndInput(curEnd);
-      }
       if (startCoords && endCoords) calculateAndRenderRoute();
     }
-
-    const map = L.map('map').setView([3.1390, 101.6869], 14);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '© Esri © OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(map);
-    nearbyMarkersLayer = L.layerGroup().addTo(map);
 
     map.on('dragstart', function() {
       if (isNavigating) {
         cameraLocked = false;
         document.getElementById('recenterBtn').innerText = i18n[currentLang].freeText;
-        document.getElementById('recenterBtn').className = 'bg-amber-500/30 border border-amber-400 text-amber-200 px-2.5 py-1 rounded-lg font-semibold';
       }
     });
 
     const cnAliasMap = {
-      'mcdonalds': "McDonald's",
-      'mcdonald': "McDonald's",
-      'mcd': "McDonald's",
-      '麦当劳': "McDonald's",
-      '肯德基': 'KFC',
-      '星巴克': 'Starbucks',
-      '蜜雪冰城': 'Mixue',
-      '屈臣氏': 'Watsons',
-      '加油站': 'Petronas',
-      '油站': 'Petronas',
-      'stesen minyak': 'Petronas',
-      '711': '7-Eleven',
-      '7-11': '7-Eleven',
-      '便利店': '7-Eleven',
-      'kedai serbaneka': '7-Eleven',
-      '医院': 'Hospital',
-      '诊所': 'Klinik',
-      '银行': 'Maybank',
-      '商场': 'Mall',
-      '双子塔': 'Petronas Twin Towers Kuala Lumpur',
-      '吉隆坡双子塔': 'Petronas Twin Towers Kuala Lumpur',
-      '茨厂街': 'Petaling Street Kuala Lumpur',
-      '武吉免登': 'Bukit Bintang Kuala Lumpur',
-      '柏威年': 'Pavilion Kuala Lumpur',
-      '亚罗街': 'Jalan Alor Kuala Lumpur',
-      '黑风洞': 'Batu Caves Selangor',
-      '云顶': 'Genting Highlands',
-      '槟城光大': 'KOMTAR George Town Penang',
-      '光大': 'KOMTAR George Town Penang',
-      '升旗山': 'Penang Hill Lower Station',
-      '极乐寺': 'Kek Lok Si Temple Penang',
-      '姓氏桥': 'Clan Jetties of Penang',
-      '新山关卡': 'JB Sentral CIQ Johor Bahru',
-      '鸡场街': 'Jonker Street Melaka',
-      '马六甲红屋': 'Dutch Square Melaka'
+      'mcdonalds': "McDonald's", 'mcdonald': "McDonald's", 'mcd': "McDonald's", '麦当劳': "McDonald's",
+      '肯德基': 'KFC', '星巴克': 'Starbucks', '蜜雪冰城': 'Mixue', '屈臣氏': 'Watsons',
+      '加油站': 'Petronas', '油站': 'Petronas', 'stesen minyak': 'Petronas',
+      '711': '7-Eleven', '7-11': '7-Eleven', '便利店': '7-Eleven',
+      '医院': 'Hospital', '诊所': 'Klinik', '银行': 'Maybank', '商场': 'Mall',
+      '双子塔': 'Petronas Twin Towers Kuala Lumpur', '吉隆坡双子塔': 'Petronas Twin Towers Kuala Lumpur',
+      '茨厂街': 'Petaling Street Kuala Lumpur', '武吉免登': 'Bukit Bintang Kuala Lumpur',
+      '柏威年': 'Pavilion Kuala Lumpur', '亚罗街': 'Jalan Alor Kuala Lumpur',
+      '黑风洞': 'Batu Caves Selangor', '云顶': 'Genting Highlands',
+      '槟城光大': 'KOMTAR George Town Penang', '光大': 'KOMTAR George Town Penang',
+      '升旗山': 'Penang Hill Lower Station', '极乐寺': 'Kek Lok Si Temple Penang',
+      '新山关卡': 'JB Sentral CIQ Johor Bahru', '鸡场街': 'Jonker Street Melaka'
     };
 
     async function normalizeSearchQuery(rawQuery) {
       let q = rawQuery.trim();
       const lowerQ = q.toLowerCase();
       for (const [alias, target] of Object.entries(cnAliasMap)) {
-        if (lowerQ === alias.toLowerCase()) {
-          return target;
-        }
+        if (lowerQ === alias.toLowerCase()) return target;
         if (alias.length >= 2 && new RegExp(`(^|\\s|[^a-zA-Z0-9])${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|\\s|[^a-zA-Z0-9])`, 'i').test(q)) {
           return q.replace(new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), target);
         }
@@ -844,27 +868,25 @@
     function setTravelMode(mode) {
       currentMode = mode;
       document.querySelectorAll('.mode-tab').forEach(btn => {
-        btn.classList.remove('bg-white', 'text-emerald-700', 'shadow-sm');
-        btn.classList.add('text-slate-600');
+        btn.classList.remove('bg-[#1a73e8]', 'text-white', 'shadow-2xs');
+        btn.classList.add('text-gray-600');
       });
       const active = document.getElementById(`mode-${mode}`);
-      active.classList.add('bg-white', 'text-emerald-700', 'shadow-sm');
-      active.classList.remove('text-slate-600');
-      const endText = document.getElementById('endInput').value.trim();
-      if (endText && (!endCoords || !endCoords.name.includes(endText))) {
-        planRoute();
-      } else if (startCoords && endCoords) {
-        calculateAndRenderRoute();
-      }
+      active.classList.add('bg-[#1a73e8]', 'text-white', 'shadow-2xs');
+      active.classList.remove('text-gray-600');
+      if (startCoords && endCoords) calculateAndRenderRoute();
     }
 
     function switchCity(lat, lng, label) {
-      map.setView([lat, lng], 14);
+      map.flyTo([lat, lng], 14, { duration: 0.7 });
       startCoords = { lat, lng, name: label };
       document.getElementById('startInput').value = label;
+      document.getElementById('originPillText').innerText = label;
       if (startMarker) map.removeLayer(startMarker);
-      startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
-      document.getElementById('mapBadge').innerText = `📍 ${label}`;
+      startMarker = L.circleMarker([lat, lng], {
+        radius: 7, fillColor: '#1a73e8', color: '#fff', weight: 2.5, fillOpacity: 1
+      }).addTo(map).bindPopup(`📍 ${label}`);
+      document.getElementById('originDrawer').classList.add('hidden');
     }
 
     function locateMe(setAsStart = false, silent = false) {
@@ -881,15 +903,14 @@
             const label = i18n[currentLang].gpsLabel;
             startCoords = { lat, lng, name: label };
             document.getElementById('startInput').value = label;
-            if (startMarker) map.removeLayer(startMarker);
-            startMarker = L.marker([lat, lng]).addTo(map).bindPopup(`🟢 ${label}`);
+            document.getElementById('originPillText').innerText = i18n[currentLang].originDefault;
           }
-          if (!endCoords) map.setView([lat, lng], 15);
+          if (!endCoords) map.flyTo([lat, lng], 15, { duration: 0.7 });
           if (startCoords && endCoords) calculateAndRenderRoute();
         },
         () => {
           if (!silent) {
-            alert(currentLang === 'zh' ? '请允许浏览器获取定位权限，或点击上方城市按钮切换所在城市。' : 'Please allow location permission or select your city above.');
+            alert(currentLang === 'zh' ? '请允许浏览器定位权限，或点击左上角“我的位置”切换所在城市。' : 'Please allow GPS permission or tap "Your location" above to pick a city.');
           }
         },
         { enableHighAccuracy: true, timeout: 7000 }
@@ -899,7 +920,7 @@
     locateMe(true, true);
 
     function updateLiveUserDot(lat, lng) {
-      const icon = L.divIcon({ className: '', html: '<div class="nav-car-dot">▲</div>', iconSize: [22, 22], iconAnchor: [11, 11] });
+      const icon = L.divIcon({ className: '', html: '<div class="gmap-blue-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] });
       if (userLiveMarker) {
         userLiveMarker.setLatLng([lat, lng]);
       } else {
@@ -932,71 +953,17 @@
             statusClass = statusObj.badgeClass;
           }
         }
-        selectNearbyCandidate(
-          lat,
-          lng,
-          queryOrName,
-          addr,
-          statusText,
-          statusClass,
-          phone
-        );
+        selectNearbyCandidate(lat, lng, queryOrName, addr, statusText, statusClass, phone);
       } else {
         document.getElementById('endInput').value = queryOrName;
         planRoute();
       }
     }
 
-    // 调用后端 Google Places API (New) 安全代理
-    async function queryGooglePlaces(rawQuery, refLat, refLng) {
-      try {
-        const res = await fetch('/api/places', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: rawQuery,
-            lat: refLat,
-            lng: refLng,
-            lang: currentLang
-          })
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!Array.isArray(data.places)) return null;
-
-        const t = i18n[currentLang];
-        return data.places.map(p => {
-          const straightKm = map.distance([refLat, refLng], [p.lat, p.lng]) / 1000;
-          let status = null;
-          if (p.openNow === true) {
-            status = { state: 'open', text: t.statusOpen, badgeClass: 'bg-emerald-100 text-emerald-700' };
-          } else if (p.openNow === false) {
-            status = { state: 'closed', text: t.statusClosed(''), badgeClass: 'bg-rose-100 text-rose-700' };
-          } else {
-            status = evaluateOpeningStatus({}, p.name);
-          }
-          return {
-            lat: p.lat,
-            lng: p.lng,
-            name: p.name,
-            fullAddr: p.address,
-            straightKm,
-            status,
-            phone: p.phone || ''
-          };
-        });
-      } catch (e) {
-        return null;
-      }
-    }
-
     function handleEndInput(val) {
       const q = (val || '').trim();
       const clearBtn = document.getElementById('clearEndBtn');
-      if (clearBtn) {
-        if (q.length > 0) clearBtn.classList.remove('hidden');
-        else clearBtn.classList.add('hidden');
-      }
+      if (clearBtn) clearBtn.classList.toggle('hidden', q.length === 0);
 
       const box = document.getElementById('autoSuggestDropdown');
       if (!q) {
@@ -1028,12 +995,12 @@
         const displayFav = localizeKnownPlaceName(f.name, currentLang);
         html += `
           <div onclick="pickSuggestion('${displayFav.replace(/'/g, "\\'")}', ${f.lat}, ${f.lng})"
-               class="px-3 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="text-sm shrink-0">⭐</span>
-              <span class="text-xs font-bold text-amber-800 truncate">${f.label} · ${displayFav}</span>
+               class="px-3.5 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs shrink-0">⭐</span>
+              <span class="text-xs font-bold text-gray-800 truncate">${f.label} · ${displayFav}</span>
             </div>
-            <span class="text-[10px] text-amber-600 shrink-0">${currentLang === 'zh' ? '已收藏' : 'Saved'}</span>
+            <span class="text-[10px] text-amber-600 shrink-0">已收藏</span>
           </div>`;
       });
 
@@ -1042,12 +1009,12 @@
         const km = (map.distance([refLat, refLng], [c.lat, c.lng]) / 1000).toFixed(1);
         html += `
           <div onclick="pickSuggestion('${displayName.replace(/'/g, "\\'")}', ${c.lat}, ${c.lng})"
-               class="px-3 py-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="text-sm shrink-0">🏙️</span>
-              <span class="text-xs font-bold text-slate-800 truncate">${displayName}</span>
+               class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs shrink-0">🏙️</span>
+              <span class="text-xs font-bold text-gray-800 truncate">${displayName}</span>
             </div>
-            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0">${km} km</span>
+            <span class="text-[10px] font-bold text-[#1a73e8] bg-blue-50 px-2 py-0.5 rounded-full shrink-0">${km} km</span>
           </div>`;
       });
 
@@ -1058,12 +1025,12 @@
           : `pickSuggestion('${item.query.replace(/'/g, "\\'")}')`;
         html += `
           <div onclick="${clickCall}"
-               class="px-3 py-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="text-sm shrink-0">${item.icon}</span>
-              <span class="text-xs font-bold text-slate-800 truncate">${label}</span>
+               class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs shrink-0">${item.icon}</span>
+              <span class="text-xs font-bold text-gray-800 truncate">${label}</span>
             </div>
-            <span class="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded shrink-0">${currentLang === 'zh' ? '搜附近' : 'Go'}</span>
+            <span class="text-[10px] text-gray-400 shrink-0">↗</span>
           </div>`;
       });
 
@@ -1071,12 +1038,11 @@
         const displayHist = localizeKnownPlaceName(h.name, currentLang);
         html += `
           <div onclick="pickSuggestion('${displayHist.replace(/'/g, "\\'")}', ${h.lat}, ${h.lng})"
-               class="px-3 py-2.5 hover:bg-slate-50 cursor-pointer flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="text-sm shrink-0">🕒</span>
-              <span class="text-xs text-slate-700 truncate">${displayHist}</span>
+               class="px-3.5 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-7 h-7 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs shrink-0">🕒</span>
+              <span class="text-xs text-gray-700 truncate">${displayHist}</span>
             </div>
-            <span class="text-[10px] text-slate-400 shrink-0">${currentLang === 'zh' ? '历史' : 'Recent'}</span>
           </div>`;
       });
 
@@ -1087,46 +1053,18 @@
         box.classList.add('hidden');
       }
 
+      // 纯免费 Photon 实时地址联想（0 成本，无 API Key）
       clearTimeout(suggestTimer);
       if (q.length >= 2) {
         suggestTimer = setTimeout(async () => {
           try {
-            // 优先请求 Google Places API
-            const gResults = await queryGooglePlaces(q, refLat, refLng);
-            if (document.getElementById('endInput').value.trim() !== q) return;
-
-            if (gResults && gResults.length > 0) {
-              const googleHtml = gResults.slice(0, 6).map(p => {
-                const km = p.straightKm.toFixed(1);
-                const stText = p.status ? p.status.text : '';
-                const stClass = p.status ? p.status.badgeClass : '';
-                return `
-                  <div onclick="pickSuggestion('${p.name.replace(/'/g, "\\'")}', ${p.lat}, ${p.lng}, '${p.fullAddr.replace(/'/g, "\\'")}', '${stText.replace(/'/g, "\\'")}', '${stClass}', '${(p.phone || '').replace(/'/g, "\\'")}')"
-                       class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
-                    <div class="min-w-0 flex-1">
-                      <div class="text-xs font-bold text-slate-800 truncate">📍 ${p.name}</div>
-                      <div class="text-[10px] text-slate-400 truncate">${p.fullAddr}</div>
-                    </div>
-                    <div class="text-right shrink-0">
-                      <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">${km} km</span>
-                    </div>
-                  </div>`;
-              }).join('');
-
-              box.innerHTML = googleHtml + html;
-              box.classList.remove('hidden');
-              return;
-            }
-
-            // Google 暂未返回时退回 Photon 免费实时联想
             const normQ = await normalizeSearchQuery(q);
-            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(normQ)}&lat=${refLat}&lon=${refLng}&limit=5`;
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(normQ)}&lat=${refLat}&lon=${refLng}&limit=6`;
             const res = await fetch(url);
             if (!res.ok) return;
             const data = await res.json();
             const feats = (data && data.features) || [];
-            if (feats.length === 0) return;
-            if (document.getElementById('endInput').value.trim() !== q) return;
+            if (feats.length === 0 || document.getElementById('endInput').value.trim() !== q) return;
 
             const remoteHtml = feats
               .filter(f => (f.properties?.countrycode || 'MY').toUpperCase() === 'MY')
@@ -1138,12 +1076,15 @@
                 const km = (map.distance([refLat, refLng], [lat, lng]) / 1000).toFixed(1);
                 return `
                   <div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')"
-                       class="px-3 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
-                    <div class="min-w-0">
-                      <div class="text-xs font-bold text-slate-800 truncate">📍 ${title}</div>
-                      <div class="text-[10px] text-slate-400 truncate">${sub || 'Malaysia'}</div>
+                       class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <span class="w-7 h-7 rounded-full bg-red-50 text-[#ea4335] flex items-center justify-center text-xs shrink-0">📍</span>
+                      <div class="min-w-0">
+                        <div class="text-xs font-bold text-gray-800 truncate">${title}</div>
+                        <div class="text-[10px] text-gray-400 truncate">${sub || 'Malaysia'}</div>
+                      </div>
                     </div>
-                    <span class="text-[10px] font-bold text-slate-500 shrink-0">${km} km</span>
+                    <span class="text-[10px] font-bold text-gray-500 shrink-0">${km} km</span>
                   </div>`;
               }).join('');
 
@@ -1152,7 +1093,7 @@
               box.classList.remove('hidden');
             }
           } catch (e) {}
-        }, 300);
+        }, 280);
       }
     }
 
@@ -1177,6 +1118,7 @@
       const e = document.getElementById('endInput').value;
       document.getElementById('startInput').value = e;
       document.getElementById('endInput').value = s;
+      document.getElementById('originPillText').innerText = e || i18n[currentLang].originDefault;
       const temp = startCoords;
       startCoords = endCoords;
       endCoords = temp;
@@ -1195,9 +1137,12 @@
         phone: ''
       };
       document.getElementById('endInput').value = endCoords.name;
-      if (endMarker) map.removeLayer(endMarker);
-      endMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup('🔴 Destination').openPopup();
-      if (startCoords) calculateAndRenderRoute();
+      document.getElementById('clearEndBtn').classList.remove('hidden');
+      if (!startCoords) {
+        const c = map.getCenter();
+        startCoords = { lat: c.lat, lng: c.lng, name: i18n[currentLang].originDefault };
+      }
+      calculateAndRenderRoute();
     });
 
     async function searchPlacesNear(rawQuery, refLat, refLng) {
@@ -1213,8 +1158,7 @@
         candidates = matchedAirports.map(ap => {
           const straightKm = map.distance([refLat, refLng], [ap.lat, ap.lng]) / 1000;
           return {
-            lat: ap.lat,
-            lng: ap.lng,
+            lat: ap.lat, lng: ap.lng,
             name: ap[currentLang] || ap.en,
             fullAddr: ap.fullAddr,
             straightKm,
@@ -1222,14 +1166,6 @@
             phone: ap.phone
           };
         });
-      }
-
-      // 优先请求 Google Places API (New)，获得与 Google Maps / Grab 一致的检索准确度
-      if (candidates.length === 0) {
-        const gPlaces = await queryGooglePlaces(rawQuery, refLat, refLng);
-        if (gPlaces && gPlaces.length > 0) {
-          candidates = gPlaces;
-        }
       }
 
       if (candidates.length === 0) {
@@ -1249,9 +1185,7 @@
               ? { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' }
               : evaluateOpeningStatus({}, name);
             return {
-              lat: d.lat,
-              lng: d.lng,
-              name,
+              lat: d.lat, lng: d.lng, name,
               fullAddr: d.addr || 'Malaysia',
               straightKm,
               status: st.state !== 'unknown' ? st : null,
@@ -1267,8 +1201,7 @@
           candidates = matchedCities.map(c => {
             const straightKm = map.distance([refLat, refLng], [c.lat, c.lng]) / 1000;
             return {
-              lat: c.lat,
-              lng: c.lng,
+              lat: c.lat, lng: c.lng,
               name: c[currentLang] || c.en,
               fullAddr: 'Malaysia',
               straightKm,
@@ -1279,6 +1212,7 @@
         }
       }
 
+      // 并发调用三路 100% 免费开源地理接口（Photon + Overpass + Nominatim）
       if (candidates.length === 0) {
         const query = await normalizeSearchQuery(rawQuery);
         const cleanKw = query.replace(/["'\\]/g, '').trim();
@@ -1412,8 +1346,8 @@
 
       document.getElementById('fallbackChips').innerHTML = sortedPopular.map(p => `
         <button onclick="pickPopularFallback(${p.lat}, ${p.lng}, '${p.name.replace(/'/g, "\\'")}')"
-                class="bg-white hover:bg-rose-100 border border-rose-200 text-slate-800 text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-2xs transition">
-          📍 ${p.label} <span class="text-rose-600 font-bold">(${p.km}km)</span>
+                class="bg-gray-50 hover:bg-blue-50 border border-gray-200 text-gray-800 text-[11px] font-medium px-2.5 py-1 rounded-full transition">
+          📍 ${p.label} <span class="text-[#1a73e8] font-bold">(${p.km}km)</span>
         </button>
       `).join('');
 
@@ -1428,8 +1362,7 @@
     function selectNearbyCandidate(lat, lng, name, fullAddr, statusText = '', statusClass = '', phone = '') {
       activeSearchSeq++;
       endCoords = {
-        lat,
-        lng,
+        lat, lng,
         name: `${name}${fullAddr && fullAddr !== '附近门店' && fullAddr !== 'Nearby' && fullAddr !== 'Malaysia' ? ' · ' + fullAddr.split(',')[0] : ''}`,
         status: statusText ? { state: statusClass.includes('emerald') ? 'open' : 'closed', text: statusText, badgeClass: statusClass } : null,
         phone
@@ -1495,7 +1428,7 @@
       clearPreviousRouteUI();
 
       if (!endText && !endCoords) {
-        alert(currentLang === 'zh' ? '请先输入目的地或点击快捷按钮（如 机场 / 麦当劳）！' : 'Please enter destination or tap a quick button!');
+        alert(currentLang === 'zh' ? '请先输入目的地或点击快捷分类（如 机场 / 麦当劳）！' : 'Please enter destination or tap a category!');
         return;
       }
 
@@ -1505,9 +1438,9 @@
       try {
         const mapCenter = map.getCenter();
         if (!startText) {
-          startCoords = { lat: mapCenter.lat, lng: mapCenter.lng, name: 'Map Center' };
-          document.getElementById('startInput').value = currentLang === 'zh' ? '当前地图中心' : 'Map Center';
-        } else if (!startText.includes('(GPS)') && !startText.includes('Map Center') && !startText.includes('地图中心')) {
+          startCoords = { lat: mapCenter.lat, lng: mapCenter.lng, name: t.originDefault };
+          document.getElementById('startInput').value = t.originDefault;
+        } else if (!startText.includes('(GPS)') && startText !== t.originDefault) {
           const startList = await searchPlacesNear(startText, mapCenter.lat, mapCenter.lng);
           if (seq !== activeSearchSeq) return;
           if (startList.length > 0) startCoords = startList[0];
@@ -1527,7 +1460,7 @@
           nearbyMarkersLayer.clearLayers();
           matches.forEach((m) => {
             const dot = L.circleMarker([m.lat, m.lng], {
-              radius: 7, fillColor: m.status?.state === 'closed' ? '#e11d48' : '#f59e0b',
+              radius: 7, fillColor: m.status?.state === 'closed' ? '#ea4335' : '#fbbc04',
               color: '#fff', weight: 2, fillOpacity: 0.95
             }).bindPopup(`<b>${m.name}</b><br>${m.status?.text || ''}<br>${m.distKm.toFixed(1)} km`);
             nearbyMarkersLayer.addLayer(dot);
@@ -1535,43 +1468,43 @@
 
           const nearest = matches[0];
           endCoords = {
-            lat: nearest.lat,
-            lng: nearest.lng,
+            lat: nearest.lat, lng: nearest.lng,
             name: `${nearest.name}${nearest.fullAddr && nearest.fullAddr !== '附近门店' && nearest.fullAddr !== 'Nearby' && nearest.fullAddr !== 'Malaysia' ? ' · ' + nearest.fullAddr.split(',')[0] : ''}`,
             status: nearest.status,
             phone: nearest.phone
           };
 
-          const nearbyBox = document.getElementById('nearbyResultsBox');
-          const nearbyList = document.getElementById('nearbyResultsList');
-          document.getElementById('nearbyResultsTitle').innerText = t.nearbyResultsTitle;
-          nearbyBox.classList.remove('hidden');
-          nearbyList.innerHTML = matches.map((m, idx) => `
-            <div onclick="selectNearbyCandidate(${m.lat}, ${m.lng}, '${m.name.replace(/'/g, "\\'")}', '${m.fullAddr.replace(/'/g, "\\'")}', '${(m.status?.text || '').replace(/'/g, "\\'")}', '${m.status?.badgeClass || ''}', '${(m.phone || '').replace(/'/g, "\\'")}')"
-                 class="py-2 px-1.5 hover:bg-amber-100/70 rounded-lg cursor-pointer flex items-center justify-between gap-2 transition">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1 flex-wrap">
-                  ${idx === 0 ? `<span class="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded font-bold">${t.nearestBadge}</span>` : ''}
-                  <span class="text-xs font-bold text-slate-800 truncate">${m.name}</span>
+          if (matches.length > 1) {
+            const nearbyBox = document.getElementById('nearbyResultsBox');
+            const nearbyList = document.getElementById('nearbyResultsList');
+            document.getElementById('nearbyResultsTitle').innerText = t.nearbyResultsTitle;
+            nearbyBox.classList.remove('hidden');
+            nearbyList.innerHTML = matches.map((m, idx) => `
+              <div onclick="selectNearbyCandidate(${m.lat}, ${m.lng}, '${m.name.replace(/'/g, "\\'")}', '${m.fullAddr.replace(/'/g, "\\'")}', '${(m.status?.text || '').replace(/'/g, "\\'")}', '${m.status?.badgeClass || ''}', '${(m.phone || '').replace(/'/g, "\\'")}')"
+                   class="py-2 px-1.5 hover:bg-blue-50 rounded-xl cursor-pointer flex items-center justify-between gap-2 transition">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1 flex-wrap">
+                    ${idx === 0 ? `<span class="text-[10px] bg-[#1a73e8] text-white px-1.5 py-0.2 rounded font-bold">${t.nearestBadge}</span>` : ''}
+                    <span class="text-xs font-bold text-gray-800 truncate">${m.name}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    ${m.status ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded ${m.status.badgeClass}">${m.status.text}</span>` : ''}
+                    <span class="text-[10px] text-gray-500 truncate">${m.fullAddr}</span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  ${m.status ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded ${m.status.badgeClass}">${m.status.text}</span>` : ''}
-                  <span class="text-[10px] text-slate-500 truncate">${m.fullAddr}</span>
+                <div class="text-right shrink-0">
+                  <div class="text-xs font-black text-[#1a73e8]">${m.distKm.toFixed(1)} km</div>
+                  <div class="text-[10px] text-gray-400">${t.approxMin(m.durationMin)}</div>
                 </div>
               </div>
-              <div class="text-right shrink-0">
-                <div class="text-xs font-black text-amber-700">${m.distKm.toFixed(1)} km</div>
-                <div class="text-[10px] text-slate-400">${t.approxMin(m.durationMin)}</div>
-              </div>
-            </div>
-          `).join('');
+            `).join('');
+          }
         }
 
         addToHistory(endCoords);
         await calculateAndRenderRoute();
       } catch (err) {
         console.error(err);
-        alert('Error calculating route, please try again!');
       } finally {
         btn.innerText = i18n[currentLang].searchBtn;
         btn.disabled = false;
@@ -1583,8 +1516,20 @@
 
       if (startMarker) map.removeLayer(startMarker);
       if (endMarker) map.removeLayer(endMarker);
-      startMarker = L.marker([startCoords.lat, startCoords.lng]).addTo(map).bindPopup(`🟢 ${startCoords.name}`);
-      endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup(`🔴 ${endCoords.name}${endCoords.status?.text ? '<br>' + endCoords.status.text : ''}`).openPopup();
+
+      startMarker = L.circleMarker([startCoords.lat, startCoords.lng], {
+        radius: 7, fillColor: '#1a73e8', color: '#ffffff', weight: 2.5, fillOpacity: 1
+      }).addTo(map);
+
+      const endPinIcon = L.divIcon({
+        className: '',
+        html: '<div class="gmap-pin-end"></div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+      });
+      endMarker = L.marker([endCoords.lat, endCoords.lng], { icon: endPinIcon })
+        .addTo(map)
+        .bindPopup(`<b>${endCoords.name}</b>${endCoords.status?.text ? '<br>' + endCoords.status.text : ''}`);
 
       const primaryProfile = currentMode === 'walking' ? 'foot' : 'driving';
       let routeData = null;
@@ -1604,15 +1549,17 @@
       document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
       document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&origin=${startCoords.lat},${startCoords.lng}&destination=${endCoords.lat},${endCoords.lng}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
 
+      if (routeLine) map.removeLayer(routeLine);
+      if (routeOutline) map.removeLayer(routeOutline);
+
       if (!routeData || !routeData.routes || routeData.routes.length === 0) {
         const straightKm = (map.distance([startCoords.lat, startCoords.lng], [endCoords.lat, endCoords.lng]) / 1000).toFixed(1);
-        if (routeLine) map.removeLayer(routeLine);
-        routeLine = L.polyline([[startCoords.lat, startCoords.lng], [endCoords.lat, endCoords.lng]], { color: '#059669', weight: 5, dashArray: '10, 10' }).addTo(map);
-        map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
-        document.getElementById('destDisplayTitle').innerText = `📍 ${endCoords.name}`;
-        document.getElementById('routeDistBadge').innerText = `~${straightKm} km`;
+        routeLine = L.polyline([[startCoords.lat, startCoords.lng], [endCoords.lat, endCoords.lng]], { color: '#1a73e8', weight: 6, dashArray: '10, 10' }).addTo(map);
+        map.fitBounds(routeLine.getBounds(), { paddingTopLeft: [40, 130], paddingBottomRight: [40, 260] });
+        document.getElementById('destDisplayTitle').innerText = endCoords.name;
+        document.getElementById('routeDistBadge').innerText = `(~${straightKm} km)`;
         document.getElementById('routeTimeBadge').innerText = `${Math.round(straightKm * 1.5)} min`;
-        document.getElementById('resultPanel').classList.remove('hidden');
+        openResultPanel();
         return;
       }
 
@@ -1622,23 +1569,30 @@
       if (currentMode === 'walking') durationMin = Math.max(3, Math.round(distKm * 12));
       if (currentMode === 'transit') durationMin = Math.max(8, Math.round(durationMin * 1.45 + 10));
 
-      if (routeLine) map.removeLayer(routeLine);
-      const lineColor = currentMode === 'walking' ? '#2563eb' : (currentMode === 'transit' ? '#7c3aed' : '#059669');
-      routeLine = L.geoJSON(route.geometry, {
-        style: { color: lineColor, weight: 7, opacity: 0.9, dashArray: currentMode === 'walking' ? '8, 8' : null }
+      // 经典 Google Maps 蓝路线 + 深蓝描边
+      const mainColor = currentMode === 'walking' ? '#4285f4' : (currentMode === 'transit' ? '#7c3aed' : '#1a73e8');
+      const borderColor = currentMode === 'walking' ? '#1967d2' : (currentMode === 'transit' ? '#4c1d95' : '#174ea6');
+
+      routeOutline = L.geoJSON(route.geometry, {
+        style: { color: borderColor, weight: 9, opacity: 0.95 }
       }).addTo(map);
-      map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
+
+      routeLine = L.geoJSON(route.geometry, {
+        style: { color: mainColor, weight: 6, opacity: 1, dashArray: currentMode === 'walking' ? '8, 10' : null }
+      }).addTo(map);
+
+      map.fitBounds(routeLine.getBounds(), { paddingTopLeft: [40, 130], paddingBottomRight: [40, 260] });
 
       const fuelCost = (distKm * 0.08 * currentRon95).toFixed(2);
       const grabEst = Math.max(5, Math.round(4 + distKm * 1.35));
-      document.getElementById('destDisplayTitle').innerText = `📍 ${endCoords.name}`;
-      document.getElementById('routeDistBadge').innerText = `${distKm} km`;
+      document.getElementById('destDisplayTitle').innerText = endCoords.name;
+      document.getElementById('routeDistBadge').innerText = `(${distKm} km)`;
       document.getElementById('routeTimeBadge').innerText = `${durationMin} min`;
       document.getElementById('grabPriceTag').innerText = `~RM ${grabEst}`;
 
       const openBadge = document.getElementById('destOpenBadge');
       if (endCoords.status && endCoords.status.text) {
-        openBadge.className = `inline-block text-[10px] font-bold px-2 py-0.5 rounded ${endCoords.status.badgeClass}`;
+        openBadge.className = `inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${endCoords.status.badgeClass}`;
         openBadge.innerText = endCoords.status.text;
         openBadge.classList.remove('hidden');
       } else {
@@ -1654,11 +1608,10 @@
       } else {
         callLink.href = `https://www.google.com/search?q=${encodeURIComponent(endCoords.name + ' Malaysia opening hours')}`;
         callLink.target = '_blank';
-        callSub.innerText = currentLang === 'zh' ? '电话/时间' : 'Hours';
+        callSub.innerText = currentLang === 'zh' ? '时间/电话' : 'Hours';
       }
 
-      const saveBtn = document.getElementById('saveFavBtn');
-      saveBtn.innerHTML = `<span>⭐</span> <span>${i18n[currentLang].saveFavBtn}</span>`;
+      document.getElementById('saveFavSubTag').innerText = i18n[currentLang].saveFavSub;
 
       if (currentLang === 'en') {
         document.getElementById('routeSubInfo').innerText = `Est. Petrol RM ${fuelCost} · Grab Ref ~RM ${grabEst}`;
@@ -1673,13 +1626,13 @@
         transitBox.classList.remove('hidden');
         if (currentLang === 'en') {
           document.getElementById('transitBoxTitle').innerText = '🚇 Malaysia Public Transit Guide';
-          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Use KLIA Ekspres, LRT/MRT/Monorail or Rapid KL bus (Touch 'n Go / PayWave accepted).</p><p>• <b>Penang:</b> Rapid Penang bus (e.g. 401E to Airport) requires exact cash fare.</p>`;
+          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> KLIA Ekspres, LRT/MRT/Monorail or Rapid KL bus (Touch 'n Go / PayWave).</p><p>• <b>Penang:</b> Rapid Penang bus (e.g. 401E to Airport) requires exact cash fare.</p>`;
         } else if (currentLang === 'ms') {
           document.getElementById('transitBoxTitle').innerText = '🚇 Panduan Pengangkutan Awam Malaysia';
-          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> Gunakan KLIA Ekspres, LRT/MRT atau bas Rapid KL (Kad Touch 'n Go / PayWave diterima).</p><p>• <b>Pulau Pinang:</b> Bas Rapid Penang memerlukan wang tunai secukupnya.</p>`;
+          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>KL/Selangor:</b> KLIA Ekspres, LRT/MRT atau bas Rapid KL (Kad Touch 'n Go / PayWave).</p><p>• <b>Pulau Pinang:</b> Bas Rapid Penang memerlukan wang tunai secukupnya.</p>`;
         } else {
           document.getElementById('transitBoxTitle').innerText = '🚇 大马本地公交 / 机场快线乘车贴士';
-          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>吉隆坡/雪兰莪：</b>前往机场可搭 <b>KLIA Ekspres 快铁</b> 或机场大巴；市区搭乘 LRT/MRT 支持 Touch 'n Go 或 Visa/Master 拍卡。</p><p>• <b>槟城地区：</b>前往槟城机场可搭 Rapid Penang 401E 路巴士，需自备零钱投币（不设找零）。</p>`;
+          document.getElementById('transitAdviceBody').innerHTML = `<p>• <b>吉隆坡/雪兰莪：</b>前往机场可搭 <b>KLIA Ekspres 快铁</b>；市区 LRT/MRT 支持 Touch 'n Go 或 Visa/Master 拍卡。</p><p>• <b>槟城地区：</b>前往槟城机场可搭 Rapid Penang 401E 路巴士，需自备零钱投币。</p>`;
         }
       } else {
         transitBox.classList.add('hidden');
@@ -1688,33 +1641,22 @@
       const rawSteps = route.legs[0]?.steps || [];
       currentSteps = rawSteps.map((s, idx) => {
         const t = translateStep(s);
-        return {
-          index: idx,
-          icon: t.icon,
-          text: t.text,
-          dist: t.dist,
-          location: s.maneuver?.location
-        };
+        return { index: idx, icon: t.icon, text: t.text, dist: t.dist, location: s.maneuver?.location };
       });
 
-      document.getElementById('stepCountBadge').innerText = `${currentSteps.length} steps`;
+      document.getElementById('stepCountBadge').innerText = `${currentSteps.length} steps ▾`;
       const stepsContainer = document.getElementById('stepsList');
       stepsContainer.innerHTML = currentSteps.map((st, i) => `
-        <div onclick="focusStep(${i})" class="py-2.5 px-2 hover:bg-slate-50 rounded-xl cursor-pointer flex items-center justify-between gap-3 transition">
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-base shrink-0">${st.icon}</span>
-            <div>
-              <div class="text-xs font-bold text-slate-800">${st.text}</div>
-              <div class="text-[11px] text-slate-400">#${i + 1}</div>
-            </div>
+        <div onclick="focusStep(${i})" class="py-2.5 px-1.5 hover:bg-blue-50/60 rounded-xl cursor-pointer flex items-center justify-between gap-2.5 transition">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm shrink-0">${st.icon}</span>
+            <div class="text-xs font-medium text-gray-800 leading-snug">${st.text}</div>
           </div>
-          <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded shrink-0">${st.dist}</span>
+          <span class="text-[11px] font-bold text-[#1a73e8] bg-blue-50 px-2 py-0.5 rounded-full shrink-0">${st.dist}</span>
         </div>
       `).join('');
 
-      const panel = document.getElementById('resultPanel');
-      panel.classList.remove('hidden');
-      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      openResultPanel();
     }
 
     function getSavedList(key) {
@@ -1755,7 +1697,7 @@
       if (favs.length > 12) favs = favs.slice(0, 12);
       setSavedList(STORAGE_FAV_KEY, favs);
 
-      document.getElementById('saveFavBtn').innerHTML = `<span>✅</span> <span>${i18n[currentLang].savedFavDone}</span>`;
+      document.getElementById('saveFavSubTag').innerText = i18n[currentLang].savedFavSub;
       renderSavedAndHistory();
     }
 
@@ -1769,14 +1711,14 @@
 
     function useSavedPlace(lat, lng, name) {
       clearPreviousRouteUI();
+      document.getElementById('originDrawer').classList.add('hidden');
       const display = localizeKnownPlaceName(name, currentLang);
       endCoords = { lat, lng, name: display, status: null, phone: '' };
       document.getElementById('endInput').value = display;
       document.getElementById('clearEndBtn').classList.remove('hidden');
       if (!startCoords) {
         const c = map.getCenter();
-        startCoords = { lat: c.lat, lng: c.lng, name: currentLang === 'zh' ? '当前地图中心' : 'Map Center' };
-        document.getElementById('startInput').value = startCoords.name;
+        startCoords = { lat: c.lat, lng: c.lng, name: i18n[currentLang].originDefault };
       }
       calculateAndRenderRoute();
     }
@@ -1812,7 +1754,7 @@
           const displayHist = localizeKnownPlaceName(h.name, currentLang);
           return `
             <button onclick="useSavedPlace(${h.lat}, ${h.lng}, '${displayHist.replace(/'/g, "\\'")}')"
-                    class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] px-2 py-0.5 rounded-full shrink-0 max-w-[140px] truncate">
+                    class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-[11px] px-2 py-0.5 rounded-full shrink-0 max-w-[140px] truncate">
               ${displayHist}
             </button>
           `;
@@ -1845,7 +1787,7 @@
     function focusStep(idx) {
       const st = currentSteps[idx];
       if (st && st.location) {
-        map.setView([st.location[1], st.location[0]], 18);
+        map.flyTo([st.location[1], st.location[0]], 18, { duration: 0.6 });
         L.popup().setLatLng([st.location[1], st.location[0]]).setContent(`<b>${st.icon} ${st.text}</b><br><span style="color:#666;font-size:12px;">${st.dist}</span>`).openOn(map);
       }
     }
@@ -1863,23 +1805,18 @@
         utter.rate = 1.0;
         utter.pitch = 1.0;
         window.speechSynthesis.speak(utter);
-      } catch (e) {
-        console.warn('Speech error:', e);
-      }
+      } catch (e) {}
     }
 
     function toggleVoice() {
       voiceEnabled = !voiceEnabled;
       document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? i18n[currentLang].voiceOn : i18n[currentLang].voiceOff;
-      if (voiceEnabled && currentSteps[currentStepIdx]) {
-        speakText(currentSteps[currentStepIdx].text);
-      }
+      if (voiceEnabled && currentSteps[currentStepIdx]) speakText(currentSteps[currentStepIdx].text);
     }
 
     function recenterCamera() {
       cameraLocked = true;
       document.getElementById('recenterBtn').innerText = i18n[currentLang].lockedText;
-      document.getElementById('recenterBtn').className = 'bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 px-2.5 py-1 rounded-lg font-semibold';
 
       if (userLiveMarker) {
         map.flyTo(userLiveMarker.getLatLng(), 18, { duration: 0.6 });
@@ -1912,22 +1849,18 @@
       cameraLocked = true;
       currentStepIdx = 0;
 
-      document.body.classList.add('nav-active');
       document.getElementById('liveNavBanner').classList.remove('hidden');
-      document.getElementById('searchBox').classList.add('hidden');
-      document.getElementById('cityBar').classList.add('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementById('topFloatingUI').classList.add('hidden');
+      document.getElementById('resultPanel').classList.add('hidden');
+      document.getElementById('rightFloatingControls').style.bottom = '2rem';
 
       updateBannerStep(currentSteps[0]);
       speakText(`${i18n[currentLang].startVoiceMsg}${currentSteps[0].text}`);
 
-      setTimeout(() => {
-        map.invalidateSize();
-        if (startCoords) {
-          updateLiveUserDot(startCoords.lat, startCoords.lng);
-          map.flyTo([startCoords.lat, startCoords.lng], 18, { duration: 0.8 });
-        }
-      }, 150);
+      if (startCoords) {
+        updateLiveUserDot(startCoords.lat, startCoords.lng);
+        map.flyTo([startCoords.lat, startCoords.lng], 18, { duration: 0.8 });
+      }
 
       if ('wakeLock' in navigator) {
         try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
@@ -1940,9 +1873,7 @@
             const lng = pos.coords.longitude;
             updateLiveUserDot(lat, lng);
 
-            if (cameraLocked) {
-              map.setView([lat, lng], 18, { animate: true });
-            }
+            if (cameraLocked) map.setView([lat, lng], 18, { animate: true });
 
             for (let i = currentStepIdx + 1; i < currentSteps.length; i++) {
               const loc = currentSteps[i].location;
@@ -1980,15 +1911,11 @@
       }
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
-      document.body.classList.remove('nav-active');
       document.getElementById('liveNavBanner').classList.add('hidden');
-      document.getElementById('searchBox').classList.remove('hidden');
-      document.getElementById('cityBar').classList.remove('hidden');
+      document.getElementById('topFloatingUI').classList.remove('hidden');
+      openResultPanel();
 
-      setTimeout(() => {
-        map.invalidateSize();
-        if (routeLine) map.fitBounds(routeLine.getBounds(), { padding: [35, 35] });
-      }, 150);
+      if (routeLine) map.fitBounds(routeLine.getBounds(), { paddingTopLeft: [40, 130], paddingBottomRight: [40, 260] });
     }
   </script>
 </body>
