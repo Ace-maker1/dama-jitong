@@ -295,6 +295,15 @@
           <label id="labelTitle" class="block text-xs font-bold text-gray-700 mb-1">信息标题 *</label>
           <input type="text" id="postTitle" required placeholder="例如：【屋主直租】槟城 Gurney 海景套房" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
         </div>
+        <!-- 准确地址 / 门店路名 + 一键抓当前 GPS -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label id="labelExactAddr" class="block text-xs font-bold text-gray-700">准确地址 / 店名路名（导航更准）</label>
+            <button type="button" onclick="capturePostGps('post')" id="postGpsBtn" class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">📍 抓当前定位</button>
+          </div>
+          <input type="text" id="postExactAddress" placeholder="例如：KK83 烧腊 Kafe Pak Ngah, Jalan Burma" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+          <div id="postGpsStatus" class="text-[10px] text-emerald-700 mt-1 hidden"></div>
+        </div>
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label id="labelPrice" class="block text-xs font-bold text-gray-700 mb-1">价格 / 薪资 *</label>
@@ -318,6 +327,52 @@
     const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let capturedPostCoords = null;
+
+    function capturePostGps() {
+      const statusEl = document.getElementById('postGpsStatus');
+      const btn = document.getElementById('postGpsBtn');
+      if (!navigator.geolocation) {
+        alert('当前设备不支持定位');
+        return;
+      }
+      btn.innerText = '⏳ 定位中...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          capturedPostCoords = {
+            lat: Number(pos.coords.latitude.toFixed(6)),
+            lng: Number(pos.coords.longitude.toFixed(6))
+          };
+          btn.innerText = '✅ 已抓定位';
+          if (statusEl) {
+            statusEl.textContent = `已锁定当前位置坐标 (${capturedPostCoords.lat}, ${capturedPostCoords.lng})`;
+            statusEl.classList.remove('hidden');
+          }
+        },
+        () => {
+          btn.innerText = '📍 抓当前定位';
+          alert('无法获取定位，请允许浏览器定位或手动填写准确店名/街道地址');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function packLocationIntoDesc(rawDesc, exactAddr, coords) {
+      const cleanDesc = (rawDesc || '').replace(/\[\[MAP:[^\]]+\]\]/g, '').trim();
+      const addrPart = (exactAddr || '').trim();
+      const lines = [];
+      if (addrPart) lines.push(`📍 地址：${addrPart}`);
+      if (cleanDesc) lines.push(cleanDesc);
+      const bodyText = lines.join('\n');
+      if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+        return `${bodyText}\n[[MAP:${coords.lat},${coords.lng}|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+      }
+      if (addrPart) {
+        return `${bodyText}\n[[MAP:,|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+      }
+      return bodyText;
+    }
 
     const SPAM_BLOCK_WORDS = [
       '918kiss', 'mega888', 'pussy888', 'xe88', 'jili', 'scr888', 'winbox', 'bk8', '12play',
@@ -1178,7 +1233,14 @@
     }
 
     function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
-    function openPostModal() { document.getElementById('postModal').classList.remove('hidden'); }
+    function openPostModal() {
+      capturedPostCoords = null;
+      const statusEl = document.getElementById('postGpsStatus');
+      const btn = document.getElementById('postGpsBtn');
+      if (statusEl) statusEl.classList.add('hidden');
+      if (btn) btn.innerText = '📍 抓当前定位';
+      document.getElementById('postModal').classList.remove('hidden');
+    }
     function closePostModal() {
       document.getElementById('postModal').classList.add('hidden');
       clearSelectedImage();
@@ -1211,7 +1273,12 @@
       const t = I18N[currentLang];
 
       const rawTitle = document.getElementById('postTitle').value.trim();
-      const rawDesc = document.getElementById('postDesc').value.trim();
+      const exactAddr = (document.getElementById('postExactAddress')?.value || '').trim();
+      const rawDesc = packLocationIntoDesc(
+        document.getElementById('postDesc').value.trim(),
+        exactAddr,
+        capturedPostCoords
+      );
       const rawPrice = document.getElementById('postPrice').value.trim();
       const normalizedWa = normalizeMalaysiaWhatsapp(document.getElementById('postWhatsapp').value.trim());
 
@@ -1309,6 +1376,7 @@
       dailyLog[todayKey] = (dailyLog[todayKey] || 0) + 1;
       try { localStorage.setItem(DAILY_POST_LOG_KEY, JSON.stringify(dailyLog)); } catch (err) {}
 
+      capturedPostCoords = null;
       document.getElementById('postForm').reset();
       closePostModal();
       await fetchPosts();
