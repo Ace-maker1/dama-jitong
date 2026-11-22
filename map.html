@@ -299,6 +299,10 @@
   </div>
 
   <script>
+    const GOOGLE_PLACES_API_KEY = 'AIzaSyAmfOfbCjhsZc51i-Ezn5qarPMduEVgw_4';
+    const GOOGLE_GEOCODING_API_KEY = 'AIzaSyAy6rlS8FxgnB9580Z_8ziGoYiip9FKrZI';
+    const GEO_CACHE_KEY = 'dmjt_google_place_cache_v1';
+
     const i18n = {
       zh: {
         gpsLabel: '我的当前位置 (GPS)', originDefault: '我的位置', modeDriving: '🚗 驾车', modeTransit: '🚇 公交', modeWalking: '🚶 步行',
@@ -313,7 +317,7 @@
         layerSat: '卫星', layerMap: '街道', speechLang: 'zh-CN', startVoiceMsg: '开始导航。',
         status247: '🟢 24小时营业', statusOpenUntil: (t) => `🟢 营业中 (至 ${t})`, statusOpen: '🟢 营业中',
         statusClosed: (t) => t ? `🔴 已打烊 (${t} 开门)` : '🔴 已打烊', statusCheck: '🟡 建议确认营业时间',
-        fallbackTitle: '💡 站内未收录，直接用外部地图搜或点选地点：',
+        fallbackTitle: '💡 未直接命中，直接用外部地图搜或点选地点：',
         fallbackHint: '可直接点选下方外部导航搜该店，或选择附近城市/点图：'
       },
       en: {
@@ -329,7 +333,7 @@
         layerSat: 'Satellite', layerMap: 'Map', speechLang: 'en-US', startVoiceMsg: 'Starting navigation. ',
         status247: '🟢 Open 24 Hours', statusOpenUntil: (t) => `🟢 Open (till ${t})`, statusOpen: '🟢 Open Now',
         statusClosed: (t) => t ? `🔴 Closed (Opens ${t})` : '🔴 Closed', statusCheck: '🟡 Check Hours',
-        fallbackTitle: '💡 Not in free DB. Search on external map or pick below:',
+        fallbackTitle: '💡 No exact match. Search on external map or pick below:',
         fallbackHint: 'Search directly in Google Maps / Waze or pick a nearby location:'
       },
       ms: {
@@ -345,7 +349,7 @@
         layerSat: 'Satelit', layerMap: 'Peta', speechLang: 'ms-MY', startVoiceMsg: 'Memulakan navigasi. ',
         status247: '🟢 Buka 24 Jam', statusOpenUntil: (t) => `🟢 Dibuka (hingga ${t})`, statusOpen: '🟢 Dibuka',
         statusClosed: (t) => t ? `🔴 Tutup (Buka ${t})` : '🔴 Tutup', statusCheck: '🟡 Semak Masa',
-        fallbackTitle: '💡 Tiada dalam peta percuma. Cari di peta luar atau pilih di bawah:',
+        fallbackTitle: '💡 Tiada padanan tepat. Cari di peta luar atau pilih di bawah:',
         fallbackHint: 'Buka terus di Google Maps / Waze atau pilih lokasi berdekatan:'
       }
     };
@@ -355,6 +359,7 @@
     let currentRon95 = 2.05;
     let startCoords = null;
     let endCoords = null;
+    let urlLockedDest = null;
     let startMarker = null;
     let endMarker = null;
     let userLiveMarker = null;
@@ -373,6 +378,17 @@
 
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
+
+    function getGeoCache() {
+      try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || '{}'); } catch (e) { return {}; }
+    }
+    function setGeoCacheEntry(key, val) {
+      try {
+        const c = getGeoCache();
+        c[key] = val;
+        localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(c));
+      } catch (e) {}
+    }
 
     (async function syncLiveFuelPrice() {
       try {
@@ -496,6 +512,100 @@
     });
     streetLayer.addTo(map);
     nearbyMarkersLayer = L.layerGroup().addTo(map);
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 3500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function searchGooglePlaces(queryText, refLat, refLng, maxResults = 6) {
+      const q = (queryText || '').trim();
+      if (!q || !GOOGLE_PLACES_API_KEY) return [];
+      const cacheKey = `gplaces::${q.toLowerCase()}::${maxResults}`;
+      const cached = getGeoCache()[cacheKey];
+      if (Array.isArray(cached) && cached.length > 0) {
+        return cached.map(item => ({
+          ...item,
+          straightKm: map.distance([refLat, refLng], [item.lat, item.lng]) / 1000
+        }));
+      }
+
+      const body = {
+        textQuery: q.toLowerCase().includes('malaysia') ? q : `${q}, Malaysia`,
+        languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+        regionCode: 'MY',
+        maxResultCount: maxResults,
+        locationBias: {
+          circle: {
+            center: { latitude: refLat, longitude: refLng },
+            radius: 30000.0
+          }
+        }
+      };
+
+      const res = await fetchWithTimeout('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.currentOpeningHours'
+        },
+        body: JSON.stringify(body)
+      }, 3500);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const list = (data.places || []).map((pl) => {
+        const lat = pl.location?.latitude;
+        const lng = pl.location?.longitude;
+        if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+        const name = pl.displayName?.text || q;
+        const fullAddr = pl.formattedAddress || 'Malaysia';
+        const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
+        const openNow = pl.currentOpeningHours?.openNow;
+        let status = evaluateOpeningStatus({ name }, name);
+        if (typeof openNow === 'boolean') {
+          status = openNow
+            ? { state: 'open', text: i18n[currentLang].statusOpen, badgeClass: 'bg-emerald-100 text-emerald-700' }
+            : { state: 'closed', text: i18n[currentLang].statusClosed(''), badgeClass: 'bg-rose-100 text-rose-700' };
+        }
+        return {
+          lat, lng, name, fullAddr, straightKm,
+          status,
+          phone: pl.nationalPhoneNumber || ''
+        };
+      }).filter(Boolean);
+
+      if (list.length > 0) setGeoCacheEntry(cacheKey, list);
+      return list;
+    }
+
+    async function geocodeGoogleAddress(addressText) {
+      const q = (addressText || '').trim();
+      if (!q || !GOOGLE_GEOCODING_API_KEY) return null;
+      const cacheKey = `geocode::${q.toLowerCase()}`;
+      const cached = getGeoCache()[cacheKey];
+      if (cached && typeof cached.lat === 'number' && typeof cached.lng === 'number') return cached;
+
+      const fullQuery = q.toLowerCase().includes('malaysia') ? q : `${q}, Malaysia`;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullQuery)}®ion=my&key=${encodeURIComponent(GOOGLE_GEOCODING_API_KEY)}`;
+      const res = await fetchWithTimeout(url, {}, 3000);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const first = data.results && data.results[0];
+      if (!first?.geometry?.location) return null;
+      const out = {
+        lat: first.geometry.location.lat,
+        lng: first.geometry.location.lng,
+        name: first.formatted_address || q
+      };
+      setGeoCacheEntry(cacheKey, out);
+      return out;
+    }
 
     function toggleMapLayer() {
       const t = i18n[currentLang];
@@ -684,16 +794,6 @@
       '新山关卡': 'JB Sentral CIQ Johor Bahru', '鸡场街': 'Jonker Street Melaka'
     };
 
-    async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        return await fetch(url, { ...options, signal: controller.signal });
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
     async function normalizeSearchQuery(rawQuery) {
       let q = rawQuery.trim();
       const lowerQ = q.toLowerCase();
@@ -702,15 +802,6 @@
         if (alias.length >= 2 && new RegExp(`(^|\\s|[^a-zA-Z0-9])${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|\\s|[^a-zA-Z0-9])`, 'i').test(q)) {
           return q.replace(new RegExp(alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), target);
         }
-      }
-      if (/[\u4e00-\u9fa5]/.test(q)) {
-        try {
-          const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(q)}`;
-          const res = await fetchWithTimeout(url, {}, 2500);
-          const json = await res.json();
-          const enText = (json[0] || []).map(item => item[0]).join('').trim();
-          if (enText) return enText;
-        } catch (e) {}
       }
       return q;
     }
@@ -788,6 +879,7 @@
     }
 
     function clearEndInput() {
+      urlLockedDest = null;
       document.getElementById('endInput').value = '';
       document.getElementById('clearEndBtn').classList.add('hidden');
       hideSuggestions();
@@ -864,7 +956,19 @@
         suggestTimer = setTimeout(async () => {
           try {
             const normQ = await normalizeSearchQuery(q.split(',')[0].trim() || q);
-            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(normQ)}&lat=${refLat}&lon=${refLng}&limit=6`;
+            const gPlaces = await searchGooglePlaces(normQ, refLat, refLng, 5);
+            if (document.getElementById('endInput').value.trim() !== q) return;
+            if (gPlaces.length > 0) {
+              const gHtml = gPlaces.map(gp => {
+                const km = (map.distance([refLat, refLng], [gp.lat, gp.lng]) / 1000).toFixed(1);
+                return `<div onclick="pickSuggestion('${gp.name.replace(/'/g, "\\'")}', ${gp.lat}, ${gp.lng}, '${gp.fullAddr.replace(/'/g, "\\'")}', '${(gp.status?.text || '').replace(/'/g, "\\'")}', '${gp.status?.badgeClass || ''}', '${(gp.phone || '').replace(/'/g, "\\'")}')" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-blue-50 text-[#1a73e8] flex items-center justify-center text-xs shrink-0">📍</span><div class="min-w-0"><div class="text-xs font-bold text-gray-800 truncate">${gp.name}</div><div class="text-[10px] text-gray-400 truncate">${gp.fullAddr}</div></div></div><span class="text-[10px] font-bold text-[#1a73e8] shrink-0">${km} km</span></div>`;
+              }).join('');
+              box.innerHTML = html + gHtml;
+              box.classList.remove('hidden');
+              return;
+            }
+
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(normQ)}&lat=${refLat}&lon=${refLng}&limit=5`;
             const res = await fetchWithTimeout(url, {}, 3000);
             if (!res.ok) return;
             const data = await res.json();
@@ -883,7 +987,7 @@
               }).join('');
             if (remoteHtml) { box.innerHTML = html + remoteHtml; box.classList.remove('hidden'); }
           } catch (e) {}
-        }, 260);
+        }, 320);
       }
     }
 
@@ -894,6 +998,7 @@
     });
 
     function quickNearby(brandName) {
+      urlLockedDest = null;
       hideSuggestions();
       clearPreviousRouteUI();
       document.getElementById('endInput').value = brandName;
@@ -915,6 +1020,7 @@
 
     map.on('click', function(e) {
       if (isNavigating) return;
+      urlLockedDest = null;
       hideSuggestions();
       clearPreviousRouteUI();
       endCoords = { lat: e.latlng.lat, lng: e.latlng.lng, name: `Pin (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`, status: null, phone: '' };
@@ -934,7 +1040,10 @@
       let candidates = [];
 
       const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(cleanedRaw);
-      const matchedAirports = MY_AIRPORTS.filter(ap => isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw) || primaryPart.toLowerCase().includes(kw)));
+      const matchedAirports = MY_AIRPORTS.filter(ap => isGenericAirport || ap.keywords.some(kw => {
+        if (kw.length <= 4) return rawLower === kw || primaryPart.toLowerCase() === kw;
+        return rawLower.includes(kw) || primaryPart.toLowerCase().includes(kw);
+      }));
       if (matchedAirports.length > 0) {
         candidates = matchedAirports.map(ap => ({
           lat: ap.lat, lng: ap.lng, name: ap[currentLang] || ap.en, fullAddr: ap.fullAddr,
@@ -964,6 +1073,27 @@
             lat: c.lat, lng: c.lng, name: c[currentLang] || c.en, fullAddr: 'Malaysia',
             straightKm: map.distance([refLat, refLng], [c.lat, c.lng]) / 1000, status: null, phone: ''
           }));
+        }
+      }
+
+      if (candidates.length === 0) {
+        const normQuery = await normalizeSearchQuery(cleanedRaw);
+        const gMatches = await searchGooglePlaces(normQuery, refLat, refLng, 8);
+        if (gMatches.length > 0) {
+          candidates = gMatches;
+        } else {
+          const geoHit = await geocodeGoogleAddress(normQuery);
+          if (geoHit) {
+            candidates = [{
+              lat: geoHit.lat,
+              lng: geoHit.lng,
+              name: geoHit.name.split(',')[0].trim() || cleanedRaw,
+              fullAddr: geoHit.name,
+              straightKm: map.distance([refLat, refLng], [geoHit.lat, geoHit.lng]) / 1000,
+              status: null,
+              phone: ''
+            }];
+          }
         }
       }
 
@@ -1048,7 +1178,7 @@
 
       document.getElementById('fallbackTitle').innerText = t.fallbackTitle;
       document.getElementById('fallbackHint').innerText = cleanTerm
-        ? (currentLang === 'zh' ? `站内免费地图未收录“${cleanTerm}”，可直接点下方用 Google / Waze 搜该店，或点选附近地点：` : `Not found in free DB for "${cleanTerm}". Open Google / Waze directly or pick below:`)
+        ? (currentLang === 'zh' ? `站内未直接命中“${cleanTerm}”，可直接点下方用 Google / Waze 搜该店，或点选附近地点：` : `Not found directly for "${cleanTerm}". Open Google / Waze or pick below:`)
         : t.fallbackHint;
 
       const extButtons = cleanTerm
@@ -1086,12 +1216,14 @@
 
     function selectNearbyCandidate(lat, lng, name, fullAddr, statusText = '', statusClass = '', phone = '') {
       activeSearchSeq++;
+      urlLockedDest = null;
       endCoords = {
         lat, lng,
         name: `${name}${fullAddr && fullAddr !== '附近门店' && fullAddr !== 'Nearby' && fullAddr !== 'Malaysia' ? ' · ' + fullAddr.split(',')[0] : ''}`,
         status: statusText ? { state: statusClass.includes('emerald') ? 'open' : 'closed', text: statusText, badgeClass: statusClass } : null,
         phone
       };
+      setGeoCacheEntry(`dest::${endCoords.name.toLowerCase()}`, { lat, lng, name: endCoords.name });
       document.getElementById('endInput').value = endCoords.name;
       addToHistory(endCoords);
       calculateAndRenderRoute();
@@ -1169,7 +1301,9 @@
         const refLat = startCoords ? startCoords.lat : mapCenter.lat;
         const refLng = startCoords ? startCoords.lng : mapCenter.lng;
 
-        if (!endText.startsWith('Pin (')) {
+        if (urlLockedDest && endText === urlLockedDest.name) {
+          endCoords = { ...urlLockedDest };
+        } else if (!endText.startsWith('Pin (')) {
           const matches = await searchPlacesNear(endText, refLat, refLng);
           if (seq !== activeSearchSeq) return;
           if (matches.length === 0) {
@@ -1192,6 +1326,7 @@
             name: `${nearest.name}${nearest.fullAddr && nearest.fullAddr !== '附近门店' && nearest.fullAddr !== 'Nearby' && nearest.fullAddr !== 'Malaysia' ? ' · ' + nearest.fullAddr.split(',')[0] : ''}`,
             status: nearest.status, phone: nearest.phone
           };
+          setGeoCacheEntry(`dest::${endCoords.name.toLowerCase()}`, { lat: endCoords.lat, lng: endCoords.lng, name: endCoords.name });
 
           if (matches.length > 0) {
             const nearbyBox = document.getElementById('nearbyResultsBox');
@@ -1262,16 +1397,8 @@
         } catch (e) {}
       }
 
-      const cleanDestName = (endCoords.name && !endCoords.name.startsWith('Pin ('))
-        ? endCoords.name.split('·')[0].trim()
-        : '';
-      document.getElementById('wazeDeepLink').href = cleanDestName
-        ? `https://waze.com/ul?q=${encodeURIComponent(cleanDestName + ' Malaysia')}&navigate=yes`
-        : `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
-      const gmapDest = (endCoords.name && !endCoords.name.startsWith('Pin ('))
-        ? encodeURIComponent(endCoords.name)
-        : `${endCoords.lat},${endCoords.lng}`;
-      document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${gmapDest}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
+      document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
+      document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${endCoords.lat},${endCoords.lng}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
 
       if (routeLine) map.removeLayer(routeLine);
       if (routeOutline) map.removeLayer(routeOutline);
@@ -1411,6 +1538,7 @@
     }
 
     function useSavedPlace(lat, lng, name) {
+      urlLockedDest = null;
       clearPreviousRouteUI();
       document.getElementById('originDrawer').classList.add('hidden');
       const display = localizeKnownPlaceName(name, currentLang);
@@ -1461,7 +1589,8 @@
       const lat = parseFloat(params.get('lat'));
       const lng = parseFloat(params.get('lng'));
       if (dest && !Number.isNaN(lat) && !Number.isNaN(lng)) {
-        endCoords = { lat, lng, name: dest, status: null, phone: '' };
+        urlLockedDest = { lat, lng, name: dest, status: null, phone: '' };
+        endCoords = { ...urlLockedDest };
         document.getElementById('endInput').value = dest;
         document.getElementById('clearEndBtn').classList.remove('hidden');
 
@@ -1478,8 +1607,8 @@
         document.getElementById('routeSubInfo').innerText = currentLang === 'zh'
           ? '开启定位或点击左上角“我的位置”即可查看路线与距离'
           : 'Enable GPS or tap "Your location" above to calculate route';
-        document.getElementById('wazeDeepLink').href = `https://waze.com/ul?q=${encodeURIComponent(dest + ' Malaysia')}&navigate=yes`;
-        document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
+        document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+        document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
         openResultPanel();
 
         if (startCoords) calculateAndRenderRoute();
