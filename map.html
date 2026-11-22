@@ -849,7 +849,7 @@
       if (/[\u4e00-\u9fa5]/.test(q)) {
         try {
           const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=en&dt=t&q=${encodeURIComponent(q)}`;
-          const res = await fetch(url);
+          const res = await fetchWithTimeout(url, {}, 3000);
           const json = await res.json();
           const enText = (json[0] || []).map(item => item[0]).join('').trim();
           if (enText) return enText;
@@ -1058,9 +1058,9 @@
       if (q.length >= 2) {
         suggestTimer = setTimeout(async () => {
           try {
-            const normQ = await normalizeSearchQuery(q);
+            const normQ = await normalizeSearchQuery(q.split(',')[0].trim() || q);
             const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(normQ)}&lat=${refLat}&lon=${refLng}&limit=6`;
-            const res = await fetch(url);
+            const res = await fetchWithTimeout(url, {}, 3500);
             if (!res.ok) return;
             const data = await res.json();
             const feats = (data && data.features) || [];
@@ -1145,13 +1145,25 @@
       calculateAndRenderRoute();
     });
 
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 3500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     async function searchPlacesNear(rawQuery, refLat, refLng) {
-      const rawLower = rawQuery.trim().toLowerCase();
+      const cleanedRaw = rawQuery.trim();
+      const rawLower = cleanedRaw.toLowerCase();
+      const primaryPart = cleanedRaw.split(',')[0].trim() || cleanedRaw;
       let candidates = [];
 
-      const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(rawQuery.trim());
+      const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(cleanedRaw);
       const matchedAirports = MY_AIRPORTS.filter(ap =>
-        isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw))
+        isGenericAirport || ap.keywords.some(kw => rawLower.includes(kw) || primaryPart.toLowerCase().includes(kw))
       );
 
       if (matchedAirports.length > 0) {
@@ -1172,9 +1184,10 @@
         const matchedDict = AUTOCOMPLETE_DICT.filter(d =>
           d.lat != null && (
             d.query.toLowerCase() === rawLower ||
-            d.zh.toLowerCase().includes(rawLower) ||
-            d.en.toLowerCase().includes(rawLower) ||
-            d.ms.toLowerCase().includes(rawLower)
+            d.query.toLowerCase() === primaryPart.toLowerCase() ||
+            d.zh.toLowerCase().includes(primaryPart.toLowerCase()) ||
+            d.en.toLowerCase().includes(primaryPart.toLowerCase()) ||
+            d.ms.toLowerCase().includes(primaryPart.toLowerCase())
           )
         );
         if (matchedDict.length > 0) {
@@ -1196,7 +1209,7 @@
       }
 
       if (candidates.length === 0) {
-        const matchedCities = MY_CITIES_DB.filter(c => c.keys.some(k => k === rawLower));
+        const matchedCities = MY_CITIES_DB.filter(c => c.keys.some(k => k === rawLower || k === primaryPart.toLowerCase()));
         if (matchedCities.length > 0) {
           candidates = matchedCities.map(c => {
             const straightKm = map.distance([refLat, refLng], [c.lat, c.lng]) / 1000;
@@ -1212,22 +1225,19 @@
         }
       }
 
-      // 并发调用三路 100% 免费开源地理接口（Photon + Overpass + Nominatim）
+      // 并发调用 Photon + Nominatim（带 3.5 秒超时保护，避免卡死“搜索中”）
       if (candidates.length === 0) {
-        const query = await normalizeSearchQuery(rawQuery);
-        const cleanKw = query.replace(/["'\\]/g, '').trim();
+        const query = await normalizeSearchQuery(primaryPart);
         const langParam = getAcceptLangHeader();
 
-        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${refLat}&lon=${refLng}&limit=12`;
-        const deg = 0.5;
+        const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${refLat}&lon=${refLng}&limit=10`;
+        const deg = 0.6;
         const vb = `${refLng - deg},${refLat + deg},${refLng + deg},${refLat - deg}`;
-        const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&accept-language=${langParam}&extratags=1&countrycodes=my&limit=12&viewbox=${vb}&bounded=0&q=${encodeURIComponent(query)}`;
-        const ovQuery = `[out:json][timeout:6];(node["name"~"${cleanKw}",i](around:15000,${refLat},${refLng});way["name"~"${cleanKw}",i](around:15000,${refLat},${refLng});node["brand"~"${cleanKw}",i](around:15000,${refLat},${refLng});way["brand"~"${cleanKw}",i](around:15000,${refLat},${refLng}););out center 15;`;
+        const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&accept-language=${langParam}&extratags=1&countrycodes=my&limit=10&viewbox=${vb}&bounded=0&q=${encodeURIComponent(query)}`;
 
-        const [photonResult, ovResult, nomResult] = await Promise.allSettled([
-          fetch(photonUrl).then(r => r.ok ? r.json() : null),
-          fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(ovQuery) }).then(r => r.ok ? r.json() : null),
-          fetch(nomUrl).then(r => r.ok ? r.json() : null)
+        const [photonResult, nomResult] = await Promise.allSettled([
+          fetchWithTimeout(photonUrl, {}, 3500).then(r => r.ok ? r.json() : null),
+          fetchWithTimeout(nomUrl, {}, 3500).then(r => r.ok ? r.json() : null)
         ]);
 
         if (photonResult.status === 'fulfilled' && photonResult.value && Array.isArray(photonResult.value.features)) {
@@ -1244,20 +1254,6 @@
               status: evaluateOpeningStatus({ name, amenity: p.osm_value, shop: p.osm_value }, name),
               phone: ''
             });
-          });
-        }
-
-        if (ovResult.status === 'fulfilled' && ovResult.value && ovResult.value.elements) {
-          ovResult.value.elements.forEach(el => {
-            const lat = el.lat || (el.center && el.center.lat);
-            const lng = el.lon || (el.center && el.center.lon);
-            if (!lat || !lng) return;
-            const tags = el.tags || {};
-            const name = tags.name || tags.brand || query;
-            const addrParts = [tags['addr:street'], tags['addr:suburb'], tags['addr:city']].filter(Boolean);
-            const fullAddr = addrParts.join(', ') || (currentLang === 'zh' ? '附近门店' : 'Nearby');
-            const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
-            candidates.push({ lat, lng, name, fullAddr, straightKm, status: evaluateOpeningStatus(tags, name), phone: tags.phone || '' });
           });
         }
 
@@ -1300,7 +1296,7 @@
         const coordsStr = [`${refLng},${refLat}`, ...preSorted.map(p => `${p.lng},${p.lat}`)].join(';');
         const profile = currentMode === 'walking' ? 'foot' : 'driving';
         const tableUrl = `https://router.project-osrm.org/table/v1/${profile}/${coordsStr}?sources=0&annotations=distance,duration`;
-        const tableRes = await fetch(tableUrl);
+        const tableRes = await fetchWithTimeout(tableUrl, {}, 3500);
         const tableData = await tableRes.json();
 
         if (tableData && tableData.distances && tableData.distances[0]) {
@@ -1474,7 +1470,7 @@
             phone: nearest.phone
           };
 
-          if (matches.length > 1) {
+          if (matches.length > 0) {
             const nearbyBox = document.getElementById('nearbyResultsBox');
             const nearbyList = document.getElementById('nearbyResultsList');
             document.getElementById('nearbyResultsTitle').innerText = t.nearbyResultsTitle;
@@ -1535,13 +1531,13 @@
       let routeData = null;
 
       try {
-        const res1 = await fetch(`https://router.project-osrm.org/route/v1/${primaryProfile}/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`);
+        const res1 = await fetchWithTimeout(`https://router.project-osrm.org/route/v1/${primaryProfile}/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`, {}, 4000);
         routeData = await res1.json();
       } catch (e) {}
 
       if (!routeData || !routeData.routes || routeData.routes.length === 0) {
         try {
-          const res2 = await fetch(`https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`);
+          const res2 = await fetchWithTimeout(`https://router.project-osrm.org/route/v1/driving/${startCoords.lng},${startCoords.lat};${endCoords.lng},${endCoords.lat}?overview=full&geometries=geojson&steps=true`, {}, 4000);
           routeData = await res2.json();
         } catch (e) {}
       }
@@ -1805,6 +1801,7 @@
         }
       }
     })();
+
     function focusStep(idx) {
       const st = currentSteps[idx];
       if (st && st.location) {
