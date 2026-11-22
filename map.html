@@ -299,9 +299,8 @@
   </div>
 
   <script>
-    const GOOGLE_PLACES_API_KEY = 'AIzaSyAmfOfbCjhsZc51i-Ezn5qarPMduEVgw_4';
-    const GOOGLE_GEOCODING_API_KEY = 'AIzaSyAy6rlS8FxgnB9580Z_8ziGoYiip9FKrZI';
-    const GEO_CACHE_KEY = 'dmjt_google_place_cache_v1';
+    const GEO_PROXY_ENDPOINT = '/.netlify/functions/geo-proxy';
+    const GEO_CACHE_KEY = 'dmjt_google_place_cache_v2';
 
     const i18n = {
       zh: {
@@ -513,7 +512,7 @@
     streetLayer.addTo(map);
     nearbyMarkersLayer = L.layerGroup().addTo(map);
 
-    async function fetchWithTimeout(url, options = {}, timeoutMs = 3500) {
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -523,9 +522,19 @@
       }
     }
 
+    async function callGeoProxy(payload, timeoutMs = 4000) {
+      const res = await fetchWithTimeout(GEO_PROXY_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }, timeoutMs);
+      if (!res.ok) return null;
+      return await res.json();
+    }
+
     async function searchGooglePlaces(queryText, refLat, refLng, maxResults = 6) {
       const q = (queryText || '').trim();
-      if (!q || !GOOGLE_PLACES_API_KEY) return [];
+      if (!q) return [];
       const cacheKey = `gplaces::${q.toLowerCase()}::${maxResults}`;
       const cached = getGeoCache()[cacheKey];
       if (Array.isArray(cached) && cached.length > 0) {
@@ -535,30 +544,18 @@
         }));
       }
 
-      const body = {
+      const data = await callGeoProxy({
+        action: 'places_search',
         textQuery: q.toLowerCase().includes('malaysia') ? q : `${q}, Malaysia`,
         languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
         regionCode: 'MY',
         maxResultCount: maxResults,
-        locationBias: {
-          circle: {
-            center: { latitude: refLat, longitude: refLng },
-            radius: 30000.0
-          }
-        }
-      };
+        lat: refLat,
+        lng: refLng,
+        radius: 30000.0
+      }, 4000);
 
-      const res = await fetchWithTimeout('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
-          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.currentOpeningHours'
-        },
-        body: JSON.stringify(body)
-      }, 3500);
-      if (!res.ok) return [];
-      const data = await res.json();
+      if (!data) return [];
       const list = (data.places || []).map((pl) => {
         const lat = pl.location?.latitude;
         const lng = pl.location?.longitude;
@@ -586,17 +583,19 @@
 
     async function geocodeGoogleAddress(addressText) {
       const q = (addressText || '').trim();
-      if (!q || !GOOGLE_GEOCODING_API_KEY) return null;
+      if (!q) return null;
       const cacheKey = `geocode::${q.toLowerCase()}`;
       const cached = getGeoCache()[cacheKey];
       if (cached && typeof cached.lat === 'number' && typeof cached.lng === 'number') return cached;
 
       const fullQuery = q.toLowerCase().includes('malaysia') ? q : `${q}, Malaysia`;
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullQuery)}®ion=my&key=${encodeURIComponent(GOOGLE_GEOCODING_API_KEY)}`;
-      const res = await fetchWithTimeout(url, {}, 3000);
-      if (!res.ok) return null;
-      const data = await res.json();
-      const first = data.results && data.results[0];
+      const data = await callGeoProxy({
+        action: 'geocode',
+        address: fullQuery,
+        region: 'my'
+      }, 3500);
+
+      const first = data?.results && data.results[0];
       if (!first?.geometry?.location) return null;
       const out = {
         lat: first.geometry.location.lat,
