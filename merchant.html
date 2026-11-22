@@ -198,6 +198,9 @@
   </div>
 
   <script>
+    const GOOGLE_PLACES_API_KEY = 'AIzaSyAmfOfbCjhsZc51i-Ezn5qarPMduEVgw_4';
+    const GOOGLE_GEOCODING_API_KEY = 'AIzaSyAy6rlS8FxgnB9580Z_8ziGoYiip9FKrZI';
+
     const M_I18N = {
       zh: {
         back: '← 首页',
@@ -352,6 +355,59 @@
     let addrSuggestTimer = null;
     const mTranslateCache = {};
 
+    async function fetchGooglePlaceCandidates(queryText, maxResults = 3) {
+      const q = (queryText || '').trim();
+      if (!q || !GOOGLE_PLACES_API_KEY) return [];
+      const biasCircle = capturedMerchantCoords
+        ? { circle: { center: { latitude: capturedMerchantCoords.lat, longitude: capturedMerchantCoords.lng }, radius: 25000.0 } }
+        : undefined;
+
+      const body = {
+        textQuery: q.toLowerCase().includes('malaysia') ? q : `${q}, Malaysia`,
+        languageCode: currentMLang === 'ms' ? 'ms' : (currentMLang === 'en' ? 'en' : 'zh-CN'),
+        regionCode: 'MY',
+        maxResultCount: maxResults,
+        ...(biasCircle ? { locationBias: biasCircle } : {})
+      };
+
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.places || []).map((pl) => {
+        const lat = pl.location?.latitude;
+        const lng = pl.location?.longitude;
+        if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+        const full = pl.formattedAddress || pl.displayName?.text || '';
+        if (!full) return null;
+        return { label: `🗺️ 地图匹配：${full}`, addr: full, lat, lng };
+      }).filter(Boolean);
+    }
+
+    async function geocodeAddressFallback(addressText) {
+      const q = (addressText || '').trim();
+      if (!q || !GOOGLE_GEOCODING_API_KEY) return null;
+      const fullQuery = q.toLowerCase().includes('malaysia') ? q : `${q}, Malaysia`;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullQuery)}®ion=my&key=${encodeURIComponent(GOOGLE_GEOCODING_API_KEY)}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const first = data.results && data.results[0];
+      if (!first?.geometry?.location) return null;
+      return {
+        lat: first.geometry.location.lat,
+        lng: first.geometry.location.lng,
+        addr: first.formatted_address || q
+      };
+    }
+
     function renderAddressCandidates(items) {
       const box = document.getElementById('mAddressCandidatesBox');
       const list = document.getElementById('mAddressCandidatesList');
@@ -429,19 +485,17 @@
       const searchSeed = rawAddr || shopName;
       if (searchSeed) {
         try {
-          const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchSeed + ' Malaysia')}&limit=3`;
-          const res = await fetch(url);
-          if (res.ok) {
-            const data = await res.json();
-            (data.features || []).forEach((f) => {
-              const p = f.properties || {};
-              const [lng, lat] = f.geometry.coordinates || [];
-              const parts = [p.name, p.street, p.district || p.city, p.state].filter(Boolean);
-              const full = parts.join(', ');
-              if (full && !list.some(x => x.addr.toLowerCase() === full.toLowerCase())) {
-                list.push({ label: `🗺️ 地图匹配：${full}`, addr: full, lat, lng });
-              }
-            });
+          const gList = await fetchGooglePlaceCandidates(searchSeed, 3);
+          gList.forEach((item) => {
+            if (!list.some(x => x.addr.toLowerCase() === item.addr.toLowerCase())) {
+              list.push(item);
+            }
+          });
+          if (gList.length === 0) {
+            const geo = await geocodeAddressFallback(searchSeed);
+            if (geo && !list.some(x => x.addr.toLowerCase() === geo.addr.toLowerCase())) {
+              list.push({ label: `🗺️ 地址解析：${geo.addr}`, addr: geo.addr, lat: geo.lat, lng: geo.lng });
+            }
           }
         } catch (e) {}
       }
@@ -455,16 +509,7 @@
       if (q.length < 3) return;
       addrSuggestTimer = setTimeout(async () => {
         try {
-          const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q + ' Malaysia')}&limit=3`;
-          const res = await fetch(url);
-          if (!res.ok) return;
-          const data = await res.json();
-          const items = (data.features || []).map((f) => {
-            const p = f.properties || {};
-            const [lng, lat] = f.geometry.coordinates || [];
-            const full = [p.name, p.street, p.district || p.city, p.state].filter(Boolean).join(', ');
-            return full ? { label: `🗺️ ${full}`, addr: full, lat, lng } : null;
-          }).filter(Boolean);
+          const items = await fetchGooglePlaceCandidates(q, 3);
           if (items.length > 0) renderAddressCandidates(items);
         } catch (e) {}
       }, 320);
