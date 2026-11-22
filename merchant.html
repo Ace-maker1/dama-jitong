@@ -86,6 +86,16 @@
           <input type="text" id="mName" required placeholder="例如：槟城老字号炒粿条 / KL 极速冷气维修" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
         </div>
 
+        <!-- 精准门店地址 / 所在茶室或路名 + 一键抓当前 GPS -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label id="mLabelExactAddr" class="block text-xs font-bold text-gray-700">精准门店地址 / 路名（导航必用）*</label>
+            <button type="button" onclick="captureMerchantGps()" id="mGpsBtn" class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">📍 抓当前定位</button>
+          </div>
+          <input type="text" id="mExactAddress" required placeholder="例如：KK83 烧腊 (Kafe Pak Ngah), Jalan Burma, Penang" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
+          <div id="mGpsStatus" class="text-[10px] text-emerald-700 mt-1 hidden"></div>
+        </div>
+
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label id="mLabelCity" class="block text-xs font-bold text-gray-700 mb-1">所属州属 *</label>
@@ -116,8 +126,8 @@
         </div>
 
         <div>
-          <label id="mLabelDesc" class="block text-xs font-bold text-gray-700 mb-1">详细地址与营业时间 *</label>
-          <textarea id="mDesc" rows="3" required placeholder="填写详细街道地址（方便客户地图导航）、营业时间、特色服务介绍..." class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></textarea>
+          <label id="mLabelDesc" class="block text-xs font-bold text-gray-700 mb-1">营业时间与特色介绍 *</label>
+          <textarea id="mDesc" rows="3" required placeholder="填写营业时间、招牌菜/服务介绍、停车或外卖说明..." class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></textarea>
         </div>
 
         <button type="submit" id="mSubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-3.5 rounded-xl shadow-md hover:opacity-95 transition">
@@ -210,8 +220,8 @@
         labelPromo: '招牌优惠 / 人均消费 *',
         phPromo: '例如：开业8折 / 人均 RM15',
         labelWa: '接单 WhatsApp *',
-        labelDesc: '详细地址与营业时间 *',
-        phDesc: '填写详细街道地址（方便客户地图导航）、营业时间、特色服务介绍...',
+        labelDesc: '营业时间与特色介绍 *',
+        phDesc: '填写营业时间、招牌菜/服务介绍、停车或外卖说明...',
         submitBtn: '🚀 立即提交商家入驻',
         submittingBtn: '⏳ 正在生成三语并提交商家资料...',
         successAlert: '🎉 恭喜！您的商家资料已成功入驻大马吉通，现已上线展示！',
@@ -258,8 +268,8 @@
         labelPromo: 'Signature Deal / Avg Spend *',
         phPromo: 'e.g. 20% Off / Avg RM15',
         labelWa: 'WhatsApp Number *',
-        labelDesc: 'Full Address & Opening Hours *',
-        phDesc: 'Enter full street address (for map navigation), opening hours, and services...',
+        labelDesc: 'Opening Hours & Highlights *',
+        phDesc: 'Enter opening hours, signature items/services, parking or delivery info...',
         submitBtn: '🚀 Submit Merchant Listing',
         submittingBtn: '⏳ Generating trilingual & submitting...',
         successAlert: '🎉 Success! Your business is now live on DamaJitong!',
@@ -306,8 +316,8 @@
         labelPromo: 'Promosi Utama / Harga Purata *',
         phPromo: 'Cth: Diskaun 20% / Purata RM15',
         labelWa: 'Nombor WhatsApp *',
-        labelDesc: 'Alamat Penuh & Waktu Operasi *',
-        phDesc: 'Masukkan alamat jalan lengkap (untuk navigasi peta), waktu operasi & servis...',
+        labelDesc: 'Waktu Operasi & Info Tambahan *',
+        phDesc: 'Masukkan waktu operasi, menu/servis utama, parkir atau penghantaran...',
         submitBtn: '🚀 Hantar Pendaftaran Peniaga',
         submittingBtn: '⏳ Menjana 3 bahasa & menghantar...',
         successAlert: '🎉 Tahniah! Kedai anda telah berjaya didaftarkan dan dipaparkan di DamaJitong!',
@@ -333,7 +343,52 @@
     let currentMLang = localStorage.getItem('dama_lang') || 'zh';
     let merchantFile = null;
     let aiGeneratedTrilingual = null;
+    let capturedMerchantCoords = null;
     const mTranslateCache = {};
+
+    function captureMerchantGps() {
+      const statusEl = document.getElementById('mGpsStatus');
+      const btn = document.getElementById('mGpsBtn');
+      if (!navigator.geolocation) {
+        alert('当前设备不支持定位');
+        return;
+      }
+      btn.innerText = '⏳ 定位中...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          capturedMerchantCoords = {
+            lat: Number(pos.coords.latitude.toFixed(6)),
+            lng: Number(pos.coords.longitude.toFixed(6))
+          };
+          btn.innerText = '✅ 已抓定位';
+          if (statusEl) {
+            statusEl.textContent = `已锁定门店 GPS (${capturedMerchantCoords.lat}, ${capturedMerchantCoords.lng})`;
+            statusEl.classList.remove('hidden');
+          }
+        },
+        () => {
+          btn.innerText = '📍 抓当前定位';
+          alert('无法获取定位，请允许浏览器定位或填写完整门店地址/路名');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function packMerchantLocation(rawDesc, exactAddr, coords) {
+      const cleanDesc = (rawDesc || '').replace(/\[\[MAP:[^\]]+\]\]/g, '').trim();
+      const addrPart = (exactAddr || '').trim();
+      const parts = [];
+      if (addrPart) parts.push(`📍 地址：${addrPart}`);
+      if (cleanDesc) parts.push(cleanDesc);
+      const baseText = parts.join('\n');
+      if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
+        return `${baseText}\n[[MAP:${coords.lat},${coords.lng}|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+      }
+      if (addrPart) {
+        return `${baseText}\n[[MAP:,|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+      }
+      return baseText;
+    }
 
     function refreshAiButtonState() {
       const t = M_I18N[currentMLang];
@@ -439,6 +494,7 @@
         const { imageBase64, mimeType } = await compressFileToBase64(merchantFile);
         const extraNotes = [
           document.getElementById('mName').value.trim(),
+          document.getElementById('mExactAddress')?.value.trim(),
           document.getElementById('mDesc').value.trim()
         ].filter(Boolean).join(' | ');
 
@@ -467,10 +523,12 @@
         if (d.businessName) document.getElementById('mName').value = d.businessName;
         if (d.phone) document.getElementById('mWhatsapp').value = d.phone.replace(/[^\d]/g, '') || d.phone;
         if (d.promoTagline) document.getElementById('mPromo').value = d.promoTagline;
+        if (d.address && document.getElementById('mExactAddress')) {
+          document.getElementById('mExactAddress').value = d.address;
+        }
 
-        const addrHours = [d.address, d.businessHours].filter(Boolean).join(' · ');
-        const combinedDesc = addrHours ? `${addrHours}\n${d.descZh || ''}`.trim() : (d.descZh || '');
-        if (combinedDesc) document.getElementById('mDesc').value = combinedDesc;
+        const hoursAndDesc = [d.businessHours, d.descZh].filter(Boolean).join(' · ');
+        if (hoursAndDesc) document.getElementById('mDesc').value = hoursAndDesc;
 
         matchCityOption(`${d.address || ''} ${d.descZh || ''} ${d.descEn || ''}`);
         matchIndustryOption(`${d.category || ''} ${d.businessName || ''}`);
@@ -669,8 +727,13 @@
 
         const industry = document.getElementById('mIndustry').value;
         const name = document.getElementById('mName').value.trim();
+        const exactAddr = (document.getElementById('mExactAddress')?.value || '').trim();
         const promo = document.getElementById('mPromo').value.trim();
-        const desc = document.getElementById('mDesc').value.trim();
+        const desc = packMerchantLocation(
+          document.getElementById('mDesc').value.trim(),
+          exactAddr,
+          capturedMerchantCoords
+        );
         const fullTitle = `【${M_I18N.zh.tagPrefix}·${industry}】${name}`;
 
         const [tZh, tEn, tMs, pZh, pEn, pMs, dZh, dEn, dMs] = await Promise.all([
@@ -708,6 +771,7 @@
         const { error } = await dmjtSupabase.from('posts').insert([postData]);
         if (error) throw error;
 
+        capturedMerchantCoords = null;
         alert(t.successAlert);
         window.location.href = '/';
       } catch (err) {
