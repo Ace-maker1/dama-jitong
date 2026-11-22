@@ -1787,20 +1787,24 @@
           iconAnchor: [15, 30]
         });
         if (endMarker) map.removeLayer(endMarker);
-        endMarker = L.marker([lat, lng], { icon: endPinIcon }).addTo(map).bindPopup(`<b>${dest}</b>`);
-        map.setView([lat, lng], 16);
+        endMarker = L.marker([lat, lng], { icon: endPinIcon }).addTo(map).bindPopup(`<b>${dest}</b>`).openPopup();
+        map.setView([lat, lng], 17);
 
-        // 等待真实 GPS 返回后再算路；若 1.8 秒内未获取到定位，再用默认坐标兜底
-        setTimeout(() => {
-          if (!startCoords) {
-            startCoords = { lat: 5.4141, lng: 100.3288, name: 'George Town, Penang' };
-            document.getElementById('startInput').value = startCoords.name;
-          }
+        document.getElementById('destDisplayTitle').innerText = dest;
+        document.getElementById('routeDistBadge').innerText = '';
+        document.getElementById('routeTimeBadge').innerText = currentLang === 'zh' ? '目的地已定位' : 'Destination Set';
+        document.getElementById('routeSubInfo').innerText = currentLang === 'zh'
+          ? '开启定位或点击左上角“我的位置”即可查看路线与距离'
+          : 'Enable GPS or tap "Your location" above to calculate route';
+        document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+        document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
+        openResultPanel();
+
+        if (startCoords) {
           calculateAndRenderRoute();
-        }, 1800);
+        }
       }
     })();
-
     function focusStep(idx) {
       const st = currentSteps[idx];
       if (st && st.location) {
