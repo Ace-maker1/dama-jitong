@@ -153,6 +153,15 @@
     let detailTransCache = {};
     try { detailTransCache = JSON.parse(localStorage.getItem(DETAIL_TRANS_CACHE_KEY) || '{}'); } catch (e) {}
 
+    function cleanMapText(str) {
+      return (str || '')
+        .replace(/[()（）\[\]]/g, ' ')
+        .replace(/\s*,\s*,+/g, ',')
+        .replace(/^[\s,·-]+|[\s,·-]+$/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
+
     function extractMapMeta(post) {
       const raw = post?.description || '';
       const match = raw.match(/\[\[MAP:([^|\]]*)\|([^\]]*)\]\]/);
@@ -167,19 +176,21 @@
           lat = parsedLat;
           lng = parsedLng;
         }
-        addr = (match[2] || '').trim();
+        addr = cleanMapText(match[2] || '');
       }
       if (!addr) {
         const addrLine = raw.match(/📍\s*地址[：:]\s*([^\n\[]+)/);
-        if (addrLine) addr = addrLine[1].trim();
+        if (addrLine) addr = cleanMapText(addrLine[1]);
       }
       const cleanDesc = raw.replace(/\n?\[\[MAP:[^\]]+\]\]/g, '').trim();
-      const pureTitle = (post?.title || '')
-        .replace(/^【[^】]*】\s*/, '')
-        .replace(/^\[[^\]]*\]\s*/, '')
-        .trim();
-      const destQuery = addr || (pureTitle ? `${pureTitle} ${post?.city || ''}`.trim() : (post?.title || ''));
-      return { lat, lng, addr, cleanDesc, destQuery };
+      const pureTitle = cleanMapText(
+        (post?.title || '')
+          .replace(/^【[^】]*】\s*/, '')
+          .replace(/^\[[^\]]*\]\s*/, '')
+      );
+      const cityPart = cleanMapText(post?.city || '');
+      const destQuery = addr || (pureTitle ? `${pureTitle} ${cityPart}`.trim() : cleanMapText(post?.title || ''));
+      return { lat, lng, addr, cleanDesc, destQuery, pureTitle, cityPart };
     }
 
     function getLocalizedField(post, baseField, lang) {
@@ -294,16 +305,16 @@
       document.getElementById('catBadge').innerText = t.cats[p.category] || p.category;
       const cityLabel = DMJT_API.getRegionLabel(p.city, lang);
       document.getElementById('cityBadge').innerText = `📍 ${cityLabel}`;
-      document.getElementById('navLocationLabel').innerText = mapMeta.addr ? `📍 ${mapMeta.addr}` : `📍 ${cityLabel} · ${localizedTitle}`;
+      document.getElementById('navLocationLabel').innerText = mapMeta.addr ? `📍 ${mapMeta.addr}` : `📍 ${cityLabel} · ${mapMeta.pureTitle || localizedTitle}`;
 
       const regionInfo = DMJT_API.getRegionInfo(p.city);
       const targetLat = mapMeta.lat != null ? mapMeta.lat : regionInfo.lat;
       const targetLng = mapMeta.lng != null ? mapMeta.lng : regionInfo.lng;
-      const cleanShopTitle = localizedTitle.replace(/^【[^】]*】\s*/, '').replace(/^\[[^\]]*\]\s*/, '').trim();
+      const cleanShopTitle = cleanMapText(localizedTitle.replace(/^【[^】]*】\s*/, '').replace(/^\[[^\]]*\]\s*/, ''));
       const combinedDest = mapMeta.addr
         ? (mapMeta.addr.toLowerCase().includes(cleanShopTitle.toLowerCase()) ? mapMeta.addr : `${cleanShopTitle}, ${mapMeta.addr}`)
-        : mapMeta.destQuery;
-      const mapUrl = `/map.html?dest=${encodeURIComponent(combinedDest)}&lat=${targetLat}&lng=${targetLng}`;
+        : (cleanShopTitle ? `${cleanShopTitle} ${mapMeta.cityPart}`.trim() : mapMeta.destQuery);
+      const mapUrl = `/map.html?dest=${encodeURIComponent(cleanMapText(combinedDest))}&lat=${targetLat}&lng=${targetLng}`;
       document.getElementById('goMapBtn').href = mapUrl;
       document.getElementById('bottomMapBtn').href = mapUrl;
 
