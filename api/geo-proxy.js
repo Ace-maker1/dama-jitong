@@ -1,24 +1,25 @@
-exports.handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  let payload = {};
-  try {
-    payload = JSON.parse(event.body || '{}');
-  } catch (_) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON body' }) };
+  let payload = req.body;
+  if (typeof payload === 'string') {
+    try {
+      payload = JSON.parse(payload || '{}');
+    } catch (_) {
+      return res.status(400).json({ error: 'Invalid JSON body' });
+    }
+  } else if (!payload || typeof payload !== 'object') {
+    payload = {};
   }
 
   const action = payload.action;
@@ -27,12 +28,12 @@ exports.handler = async (event) => {
     if (action === 'places_search') {
       const apiKey = process.env.GOOGLE_PLACES_KEY;
       if (!apiKey) {
-        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Missing GOOGLE_PLACES_KEY' }) };
+        return res.status(500).json({ error: 'Missing GOOGLE_PLACES_KEY' });
       }
 
       const textQuery = String(payload.textQuery || '').trim();
       if (!textQuery) {
-        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing textQuery' }) };
+        return res.status(400).json({ error: 'Missing textQuery' });
       }
 
       const body = {
@@ -62,18 +63,18 @@ exports.handler = async (event) => {
       });
 
       const data = await googleRes.json();
-      return { statusCode: googleRes.status, headers, body: JSON.stringify(data) };
+      return res.status(googleRes.status).json(data);
     }
 
     if (action === 'geocode') {
       const apiKey = process.env.GOOGLE_GEOCODING_KEY;
       if (!apiKey) {
-        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Missing GOOGLE_GEOCODING_KEY' }) };
+        return res.status(500).json({ error: 'Missing GOOGLE_GEOCODING_KEY' });
       }
 
       const address = String(payload.address || '').trim();
       if (!address) {
-        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing address' }) };
+        return res.status(400).json({ error: 'Missing address' });
       }
 
       const region = encodeURIComponent(payload.region || 'my');
@@ -81,15 +82,13 @@ exports.handler = async (event) => {
 
       const googleRes = await fetch(url);
       const data = await googleRes.json();
-      return { statusCode: googleRes.status, headers, body: JSON.stringify(data) };
+      return res.status(googleRes.status).json(data);
     }
 
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unsupported action' }) };
+    return res.status(400).json({ error: 'Unsupported action' });
   } catch (err) {
-    return {
-      statusCode: 502,
-      headers,
-      body: JSON.stringify({ error: err?.message || 'Proxy request failed' })
-    };
+    return res.status(502).json({
+      error: err?.message || 'Proxy request failed'
+    });
   }
-};
+}
