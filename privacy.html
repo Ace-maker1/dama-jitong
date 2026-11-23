@@ -7,63 +7,92 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.65; max-width: 800px; margin: 30px auto; padding: 0 20px; color: #222; background: #fafafa; }
     .card { background: #fff; padding: 28px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
-    h1 { color: #111; font-size: 1.6em; margin-top: 0; }
+    h1 { color: #111; font-size: 1.55em; margin-top: 0; }
     h2 { color: #111; font-size: 1.15em; margin-top: 24px; border-left: 4px solid #dc2626; padding-left: 10px; }
     .meta { color: #666; font-size: 0.9em; margin-bottom: 20px; }
     .back-link { display: inline-block; margin-bottom: 16px; color: #dc2626; text-decoration: none; font-weight: 700; font-size: 0.9em; }
     .notice-box { background: #fef2f2; border: 1px solid #fecaca; padding: 14px 16px; border-radius: 10px; font-size: 0.92em; color: #7f1d1d; margin: 18px 0; }
+    .lang-nav { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    .lang-nav a { background: #fff; border: 1px solid #e5e7eb; padding: 6px 14px; border-radius: 999px; font-size: 0.85em; font-weight: 600; text-decoration: none; color: #374151; }
+    .lang-nav a:hover { border-color: #dc2626; color: #dc2626; }
     ul { padding-left: 20px; }
     li { margin-bottom: 6px; }
     a { color: #dc2626; }
+    hr { border: 0; border-top: 1px solid #eee; margin: 32px 0; }
   </style>
 </head>
 <body>
-  <a href="/" class="back-link">← Back to Home / 返回大马吉通首页</a>
+  <a href="/" class="back-link">← Back to Home / 返回大马吉通首页 / Kembali ke Laman Utama</a>
+
+  <div class="lang-nav">
+    <a href="#en">English</a>
+    <a href="#zh">简体中文</a>
+    <a href="#ms">Bahasa Melayu</a>
+  </div>
 
   <div class="card">
-    <h1>Privacy Policy & PDPA Notice</h1>
+    <h1>Privacy Policy & PDPA Notice<br /><span style="font-size: 0.75em; color: #555;">隐私政策与 PDPA 声明 | Dasar Privasi & Notis PDPA</span></h1>
     <p class="meta">Effective Date: November 22, 2026 | Operator: DamaJitong (Low Chee Heong)</p>
 
-    <p>DamaJitong ("we", "our", or "us") operates the <strong>damajitong.com</strong> website and the <strong>DamaJitong</strong> mobile application (the "Service"). We are committed to protecting personal data in accordance with Malaysia's <strong>Personal Data Protection Act 2010 (PDPA)</strong>. This page explains how we collect, use, display, and manage information across our Service.</p>
+    <!-- ENGLISH -->
+    <div id="en">
+      <p>DamaJitong ("we", "our", or "us") operates the <strong>damajitong.com</strong> website and the <strong>DamaJitong</strong> mobile application (the "Service"). We protect personal data in accordance with Malaysia's <strong>Personal Data Protection Act 2010 (PDPA)</strong>.</p>
 
-    <h2>1. Information We Collect & Display</h2>
-    <ul>
-      <li><strong>Account Information:</strong> When you register or log in, we may collect your email address, username, or profile details necessary to provide account access.</li>
-      <li><strong>User-Generated Content:</strong> Text, promotional copy, contact details, and images that you voluntarily upload or submit for display on our platform.</li>
-      <li><strong>Public Business Directory Listings:</strong> To facilitate local discovery and map navigation in Malaysia (such as Penang and Seberang Perai), we compile and display publicly available business directory information (business names, addresses, coordinates, operating categories, and public business contact numbers).</li>
-      <li><strong>Device & Usage Data:</strong> Basic diagnostic logs, device model, OS version, and IP address used solely to maintain platform stability, map functionality, and security.</li>
-    </ul>
+      <h2>1. Information We Collect & Display</h2>
+      <ul>
+        <li><strong>Account Information:</strong> Email address, username, or profile details necessary to provide account access.</li>
+        <li><strong>User-Generated Content:</strong> Text, promotional copy, contact details, and images voluntarily uploaded or submitted for display on our platform.</li>
+        <li><strong>Public Business Directory Listings:</strong> Publicly available business directory information in Malaysia (business names, addresses, coordinates, categories, and public business contact numbers).</li>
+        <li><strong>Device & Usage Data:</strong> Basic diagnostic logs, device model, OS version, and IP address used solely to maintain platform stability, map navigation, and security.</li>
+      </ul>
 
-    <h2>2. How We Use Information</h2>
-    <p>We use information strictly to:</p>
-    <ul>
-      <li>Provide, operate, and maintain the DamaJitong website, map directory, and mobile app;</li>
-      <li>Display user-submitted posts and local business listings to help users locate and contact local services;</li>
-      <li>Prevent spam, fraud, and unauthorized access, and comply with Malaysian legal obligations.</li>
-    </ul>
-    <p>We <strong>never sell, rent, or trade</strong> personal data or business contact lists to third parties for unsolicited marketing.</p>
+      <h2>2. How We Use & Share Information</h2>
+      <p>We use information strictly to operate the DamaJitong directory and app, display local business listings, and prevent fraud or spam. We <strong>never sell, rent, or trade</strong> personal data to third parties. Necessary technical data is only shared with essential infrastructure providers (cloud hosting, storage, map/navigation, and push notification services) bound by confidentiality obligations.</p>
 
-    <h2>3. Data Sharing & Third-Party Services</h2>
-    <p>We only share necessary technical data with essential infrastructure providers (such as cloud hosting, database/storage services, map/navigation providers, and push notification services) strictly bound by confidentiality and security obligations.</p>
-
-    <h2>4. Business Owner Rights, Updates & Data Deletion (PDPA)</h2>
-    <div class="notice-box">
-      <strong>For Business Owners / 致收录商家负责人：</strong><br />
-      If your business is listed in our directory, you may claim your listing for free to update details, or request to hide/remove your contact number or entire listing at any time. We honor all legitimate modification and removal requests promptly.
+      <h2>3. Business Owner Rights & Data Deletion (PDPA)</h2>
+      <div class="notice-box">
+        <strong>For Business Owners / 致收录商家 / Untuk Pemilik Perniagaan:</strong><br />
+        Listed businesses may claim their profile for free to update details or request to hide/remove their contact number or entire listing at any time.
+      </div>
+      <p>You may request access, updates, or permanent deletion of your account, uploaded content, or business listing via email (processed within <strong>7 business days</strong>):</p>
+      <ul>
+        <li><strong>Official Support Email:</strong> <a href="mailto:damajitongofficial@gmail.com">damajitongofficial@gmail.com</a></li>
+        <li><strong>Developer Contact Email:</strong> <a href="mailto:acelow808@gmail.com">acelow808@gmail.com</a></li>
+      </ul>
     </div>
-    <p>You may request to access, update, or permanently delete your account, uploaded content, or business directory listing at any time via email:</p>
-    <ul>
-      <li><strong>Official Support Email:</strong> <a href="mailto:damajitongofficial@gmail.com">damajitongofficial@gmail.com</a></li>
-      <li><strong>Developer Contact Email:</strong> <a href="mailto:acelow808@gmail.com">acelow808@gmail.com</a></li>
-    </ul>
-    <p>Verified deletion and opt-out requests are processed within <strong>7 business days</strong> (and typically within 24–48 hours for business listing removals).</p>
 
-    <h2>5. Contact Us</h2>
-    <p>If you have any questions regarding this Privacy Policy or PDPA compliance, please contact us:</p>
+    <hr />
+
+    <!-- CHINESE -->
+    <div id="zh">
+      <h2>4. 隐私政策声明 (简体中文)</h2>
+      <p>大马吉通（DamaJitong，运营者：Low Chee Heong）负责运营 <strong>damajitong.com</strong> 网站及 <strong>DamaJitong</strong> 移动应用程序。我们严格遵守马来西亚《2010年个人数据保护法》（PDPA）保护您的个人隐私。</p>
+      <ul>
+        <li><strong>信息收集范围：</strong>包括注册账号所需的邮箱与用户名、用户主动提交的推广图文内容、马来西亚本地公开商家黄页名录（店名、地址、坐标及公开联系电话），以及保障应用与地图稳定运行所需的设备型号、系统版本和日志数据。</li>
+        <li><strong>信息使用与保护：</strong>所收集信息仅用于提供本地黄页查询、地图导航、推广展示及安全防刷，我们绝不向第三方出售或出租您的个人数据。</li>
+        <li><strong>商家权益与账号删除：</strong>收录商家可随时免费申请认领、修改或下架门店信息；用户可随时发送邮件至 <strong>damajitongofficial@gmail.com</strong> 或 <strong>acelow808@gmail.com</strong> 申请注销账号并永久删除个人数据，我们将在 <strong>7 个工作日</strong>内处理完毕。</li>
+      </ul>
+    </div>
+
+    <hr />
+
+    <!-- BAHASA MELAYU -->
+    <div id="ms">
+      <h2>5. Dasar Privasi & Notis PDPA (Bahasa Melayu)</h2>
+      <p>DamaJitong (dikendalikan oleh Low Chee Heong) mengendalikan laman web <strong>damajitong.com</strong> dan aplikasi mudah alih <strong>DamaJitong</strong>. Kami komited untuk melindungi data peribadi anda selaras dengan <strong>Akta Perlindungan Data Peribadi 2010 (PDPA)</strong> Malaysia.</p>
+      <ul>
+        <li><strong>Maklumat yang Dikumpul:</strong> Alamat e-mel dan nama pengguna untuk akses akaun, kandungan promosi yang dimuat naik secara sukarela oleh pengguna, maklumat direktori perniagaan awam di Malaysia (nama kedai, alamat, koordinat, dan nombor telefon perniagaan), serta log peranti asas untuk kestabilan aplikasi dan navigasi peta.</li>
+        <li><strong>Penggunaan & Perkongsian Data:</strong> Maklumat digunakan semata-mata untuk mengendalikan direktori perniagaan, memaparkan promosi tempatan, dan mencegah penipuan. Kami tidak pernah menjual atau menyewakan data peribadi anda kepada pihak ketiga.</li>
+        <li><strong>Hak Pemilik Perniagaan & Pemadaman Data:</strong> Pemilik perniagaan boleh menuntut, mengemas kini, atau memohon pemadaman penyenaraian kedai secara percuma pada bila-bila masa. Pengguna boleh memohon akses atau pemadaman kekal akaun dan data melalui e-mel di <strong>damajitongofficial@gmail.com</strong> atau <strong>acelow808@gmail.com</strong> (diproses dalam tempoh <strong>7 hari bekerja</strong>).</li>
+      </ul>
+    </div>
+
+    <hr />
+    <h2>Contact Us / 联系我们 / Hubungi Kami</h2>
     <ul>
       <li><strong>Website:</strong> <a href="https://damajitong.com">https://damajitong.com</a></li>
-      <li><strong>Official Email:</strong> <a href="mailto:damajitongofficial@gmail.com">damajitongofficial@gmail.com</a></li>
-      <li><strong>Developer Email:</strong> <a href="mailto:acelow808@gmail.com">acelow808@gmail.com</a></li>
+      <li><strong>Official Support Email:</strong> <a href="mailto:damajitongofficial@gmail.com">damajitongofficial@gmail.com</a></li>
+      <li><strong>Developer Contact Email:</strong> <a href="mailto:acelow808@gmail.com">acelow808@gmail.com</a></li>
     </ul>
   </div>
 </body>
