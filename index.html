@@ -60,27 +60,27 @@
   </header>
 
   <!-- 主页面内容 -->
-  <main id="mainTab" class="flex-1 pb-24">
-   <!-- 万字开奖 4D + 大马吹水站论坛 并排入口 -->
-      <div class="grid grid-cols-2 gap-2 mx-3 mt-3">
-        <a href="/4d.html" class="bg-gradient-to-r from-amber-500 to-red-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
-          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">🎰</div>
-          <div class="min-w-0">
-            <div id="idx4dTitle" class="font-black text-xs truncate">万字开奖 4D</div>
-            <p id="idx4dSub" class="text-[10px] text-amber-100 truncate">对奖 & 官方直播</p>
-          </div>
-        </a>
+  <main id="mainTab" class="flex-1 pb-6">
+    <!-- 万字开奖 4D + 大马吹水站论坛 并排入口 -->
+    <div class="grid grid-cols-2 gap-2 mx-3 mt-3">
+      <a href="/4d.html" class="bg-gradient-to-r from-amber-500 to-red-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">🎰</div>
+        <div class="min-w-0">
+          <div id="idx4dTitle" class="font-black text-xs truncate">万字开奖 4D</div>
+          <p id="idx4dSub" class="text-[10px] text-amber-100 truncate">对奖 & 官方直播</p>
+        </div>
+      </a>
 
-        <a href="/forum.html" class="bg-gradient-to-r from-indigo-600 to-sky-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
-          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">💬</div>
-          <div class="min-w-0">
-            <div id="idxForumTitle" class="font-black text-xs truncate">大马吹水站</div>
-            <p id="idxForumSub" class="text-[10px] text-sky-100 truncate">发帖交流 · 探店问答</p>
-          </div>
-        </a>
-      </div>
+      <a href="/forum.html" class="bg-gradient-to-r from-indigo-600 to-sky-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">💬</div>
+        <div class="min-w-0">
+          <div id="idxForumTitle" class="font-black text-xs truncate">大马吹水站</div>
+          <p id="idxForumSub" class="text-[10px] text-sky-100 truncate">发帖交流 · 探店问答</p>
+        </div>
+      </a>
+    </div>
 
-    <!-- 大马今日便民速览卡片（实时汇率 + 2026最新油价） -->
+    <!-- 大马今日便民速览卡片（实时汇率 + 最新油价） -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100">
       <div class="flex items-center justify-between mb-2.5">
         <div class="flex items-center space-x-1.5">
@@ -110,7 +110,7 @@
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
         <span id="hotCityLabel" class="text-gray-400 shrink-0 font-medium">热门：</span>
         <button type="button" onclick="selectQuickCity('全马')" data-quick-city="全马" class="quick-city-btn px-2.5 py-1 rounded-full bg-red-600 text-white font-bold shrink-0 transition">全马</button>
-        <button type="button" onclick="selectQuickCity('槟城')" data-quick-city="槟城" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">槟城 Penang</button>
+        <button type="button" onclick="selectQuickCity('槟城')" data-quick-city="槟城" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">槟城·威省</button>
         <button type="button" onclick="selectQuickCity('怡保')" data-quick-city="怡保" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">怡保 Ipoh</button>
         <button type="button" onclick="selectQuickCity('吉隆坡')" data-quick-city="吉隆坡" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">吉隆坡 KL</button>
         <button type="button" onclick="selectQuickCity('雪兰莪')" data-quick-city="雪兰莪" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">雪兰莪 Selangor</button>
@@ -295,7 +295,6 @@
           <label id="labelTitle" class="block text-xs font-bold text-gray-700 mb-1">信息标题 *</label>
           <input type="text" id="postTitle" required placeholder="例如：【屋主直租】槟城 Gurney 海景套房" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
         </div>
-        <!-- 准确地址 / 门店路名 + 一键抓当前 GPS -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label id="labelExactAddr" class="block text-xs font-bold text-gray-700">准确地址 / 店名路名（导航更准）</label>
@@ -383,9 +382,8 @@
     const REPORT_COUNTS_KEY = 'dama_report_counts_v1';
     const DAILY_POST_LOG_KEY = 'dama_daily_posts_v1';
 
-    // 中英巫常用搜索同义词映射（提升本地检索命中率）
     const SEARCH_SYNONYM_GROUPS = [
-      ['槟城', 'penang', 'pulau pinang', '北海', 'butterworth', '大山脚', 'bukit mertajam', 'bayan lepas', 'tanjung tokong', 'sungai bakap', 'batu kawan'],
+      ['槟城', 'penang', 'pulau pinang', 'georgetown', 'gurney', '北海', 'butterworth', '大山脚', 'bukit mertajam', '威南', 'nibong tebal', 'sungai bakap', 'batu kawan', 'bayan lepas', 'tanjung tokong'],
       ['怡保', 'ipoh', '霹雳', 'perak', 'kampar', 'taiping'],
       ['吉隆坡', 'kl', 'kuala lumpur', 'cheras', '蕉赖', 'kepong', '甲洞', 'bukit bintang', 'mont kiara', 'setapak'],
       ['雪兰莪', 'selangor', 'pj', 'petaling jaya', '八打灵', 'subang', 'puchong', '蒲种', 'klang', '巴生', 'shah alam', 'kajang'],
@@ -393,7 +391,7 @@
       ['租房', '房子', '房间', '套房', 'condo', '公寓', 'rumah', 'sewa', 'bilik', 'rent', 'room'],
       ['招聘', '工作', '兼职', '薪资', 'kerja', 'kosong', 'jawatan', 'job', 'hiring', 'part time'],
       ['二手', '闲置', '转让', 'terpakai', 'preloved', 'used', 'second hand'],
-      ['美食', '探店', '优惠', '商家', 'makan', 'food', 'promo', 'kedai']
+      ['美食', '探店', '优惠', '商家', 'makan', 'food', 'promo', 'kedai', 'kopitiam', 'clinic', 'workshop']
     ];
 
     function expandSearchTerms(rawKeyword) {
@@ -465,7 +463,7 @@
       { value: '马六甲', group: 'west', zh: '马六甲 Melaka', en: 'Melaka', ms: 'Melaka', lat: 2.1896, lng: 102.2501 },
       { value: '森美兰', group: 'west', zh: '森美兰 Negeri Sembilan', en: 'Negeri Sembilan', ms: 'Negeri Sembilan', lat: 2.7258, lng: 101.9424 },
       { value: '彭亨', group: 'west', zh: '彭亨 Pahang', en: 'Pahang', ms: 'Pahang', lat: 3.8077, lng: 103.3260 },
-      { value: '槟城', group: 'west', zh: '槟城 Penang', en: 'Penang', ms: 'Pulau Pinang', lat: 5.4141, lng: 100.3288 },
+      { value: '槟城', group: 'west', zh: '槟城·威省 Penang', en: 'Penang & Seberang Perai', ms: 'Pulau Pinang & S. Perai', lat: 5.4141, lng: 100.3288 },
       { value: '霹雳', group: 'west', zh: '霹雳 Perak', en: 'Perak', ms: 'Perak', lat: 4.5975, lng: 101.0901 },
       { value: '玻璃市', group: 'west', zh: '玻璃市 Perlis', en: 'Perlis', ms: 'Perlis', lat: 6.4449, lng: 100.2048 },
       { value: '雪兰莪', group: 'west', zh: '雪兰莪 Selangor', en: 'Selangor', ms: 'Selangor', lat: 3.0733, lng: 101.5185 },
@@ -538,23 +536,27 @@
             syncQuickCityButtons(closest.value);
             renderPosts();
           }
-          btn.innerText = '📍';
+          btn.innerText = I18N[currentLang].autoLocBtn;
         },
-        () => { btn.innerText = '📍'; },
+        () => { btn.innerText = I18N[currentLang].autoLocBtn; },
         { timeout: 6000 }
       );
     }
 
     const LEGACY_CITY_MAP = {
       '吉隆坡/雪兰莪': ['吉隆坡', '雪兰莪'],
-      '新山': ['柔佛']
+      '新山': ['柔佛'],
+      '威省': ['槟城'],
+      '北海': ['槟城'],
+      '大山脚': ['槟城'],
+      '威南': ['槟城']
     };
 
     const I18N = {
       zh: {
         brandTitle: '大马吉通',
         autoLocBtn: '📍定位',
-        searchPlaceholder: '搜租房、招聘、二手、槟城/Ipoh...',
+        searchPlaceholder: '搜租房、招聘、槟城/北海/大山脚...',
         hotCityLabel: '热门：',
         resetBtn: '重置',
         idx4dTitle: '万字开奖 4D',
@@ -579,7 +581,7 @@
         pinnedPrefix: '置顶 · ',
         publishedSuffix: '发布',
         reportBtn: '🚨 举报',
-        daysLeft: (d) => `剩${d}天`,
+        freshBadge: '最新',
         noDesc: '发布者未填写更多补充描述。',
         favBtn: '☆ 收藏',
         favedBtn: '⭐ 已收藏',
@@ -622,12 +624,12 @@
         limitAlert: '⚠️ 为防止刷屏广告，每台设备每日最多免费发布 3 条信息，如需置顶推广请前往商家入驻中心。',
         groupLabels: { ft: '联邦直辖区 (3)', west: '西马各州 (11)', east: '东马各州 (2)', all: '通用' },
         cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' },
-        cardLabels: { '找房子': '精选房源', '找工作': '名企直聘', '二手闲置': '同城闲置', '本地优惠': '本地热点' }
+        cardLabels: { '找房子': '精选房源', '找工作': '名企直聘', '二手闲置': '同城闲置', '本地优惠': '本地商家' }
       },
       en: {
         brandTitle: 'DamaJitong',
         autoLocBtn: '📍GPS',
-        searchPlaceholder: 'Search rent, jobs, Penang/Ipoh...',
+        searchPlaceholder: 'Search rent, jobs, Penang/BM...',
         hotCityLabel: 'Hot:',
         resetBtn: 'Reset',
         idx4dTitle: '4D Live Results',
@@ -652,7 +654,7 @@
         pinnedPrefix: 'Featured · ',
         publishedSuffix: '',
         reportBtn: '🚨 Report',
-        daysLeft: (d) => `${d}d left`,
+        freshBadge: 'New',
         noDesc: 'No additional description provided.',
         favBtn: '☆ Save',
         favedBtn: '⭐ Saved',
@@ -695,12 +697,12 @@
         limitAlert: '⚠️ Daily limit of 3 free posts reached to prevent spam.',
         groupLabels: { ft: 'Federal Territories (3)', west: 'Peninsular States (11)', east: 'East Malaysia (2)', all: 'General' },
         cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' },
-        cardLabels: { '找房子': 'Property', '找工作': 'Hiring', '二手闲置': 'Preloved', '本地优惠': 'Hot Deal' }
+        cardLabels: { '找房子': 'Property', '找工作': 'Hiring', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' }
       },
       ms: {
         brandTitle: 'DamaJitong',
         autoLocBtn: '📍GPS',
-        searchPlaceholder: 'Cari sewa, kerja, Penang/Ipoh...',
+        searchPlaceholder: 'Cari sewa, kerja, Penang/BM...',
         hotCityLabel: 'Hot:',
         resetBtn: 'Reset',
         idx4dTitle: 'Keputusan 4D Live',
@@ -725,7 +727,7 @@
         pinnedPrefix: 'Taja · ',
         publishedSuffix: '',
         reportBtn: '🚨 Lapor',
-        daysLeft: (d) => `${d}h lagi`,
+        freshBadge: 'Baru',
         noDesc: 'Tiada maklumat tambahan dinyatakan.',
         favBtn: '☆ Simpan',
         favedBtn: '⭐ Disimpan',
@@ -768,7 +770,7 @@
         limitAlert: '⚠️ Had 3 iklan percuma sehari telah dicapai untuk mengelakkan spam.',
         groupLabels: { ft: 'Wilayah Persekutuan (3)', west: 'Semenanjung (11 Negeri)', east: 'Sabah & Sarawak (2)', all: 'Umum' },
         cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' },
-        cardLabels: { '找房子': 'Hartanah', '找工作': 'Kerjaya', '二手闲置': 'Terpakai', '本地优惠': 'Promosi' }
+        cardLabels: { '找房子': 'Hartanah', '找工作': 'Kerjaya', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' }
       }
     };
 
@@ -1126,10 +1128,8 @@
         (currentLang === 'en' ? post.price_en : (currentLang === 'ms' ? post.price_ms : post.price_zh)) ||
         post.price;
 
-      const ageDays = Math.floor((Date.now() - new Date(post.created_at).getTime()) / 86400000);
-      const remainDays = Math.max(1, 7 - ageDays);
-      const expireBadgeHTML = !post.is_pinned
-        ? `<span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-medium">${t.daysLeft(remainDays)}</span>`
+      const freshBadgeHTML = !post.is_pinned
+        ? `<span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-medium">${t.freshBadge}</span>`
         : '';
 
       const rightMediaHTML = post.image_url
@@ -1148,7 +1148,7 @@
                   ${post.is_pinned ? `<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">${t.pinnedTag}</span>` : ''}
                   <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">${displayCat}</span>
                   <span class="text-[11px] text-gray-400 truncate">📍 ${displayCity}</span>
-                  ${expireBadgeHTML}
+                  ${freshBadgeHTML}
                 </div>
                 <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${localizedTitle}</h3>
               </div>
@@ -1200,7 +1200,6 @@
         return matchCity && matchCat && matchKey;
       });
 
-      // 确保黄金置顶永远排在最前面
       filtered.sort((a, b) => {
         const pinA = a.is_pinned ? 1 : 0;
         const pinB = b.is_pinned ? 1 : 0;
@@ -1414,11 +1413,11 @@
     <span id="fabMapText">查路线</span>
   </a>
   <!-- 大马吉通 AI 助手悬浮入口按钮 -->
-<a href="/ai.html" style="position:fixed;right:14px;bottom:134px;z-index:40;display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ea580c);color:#ffffff;padding:8px 13px;border-radius:999px;font-size:12px;font-weight:bold;text-decoration:none;box-shadow:0 4px 12px rgba(220,38,38,0.35);border:1.5px solid #ffffff;">
-  <span style="font-size:15px;">🤖</span>
-  <span>AI 助手</span>
-</a>
-  <!-- 全站底部合规与招商入口（过审 Google AdSense 必备） -->
+  <a href="/ai.html" style="position:fixed;right:14px;bottom:134px;z-index:40;display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ea580c);color:#ffffff;padding:8px 13px;border-radius:999px;font-size:12px;font-weight:bold;text-decoration:none;box-shadow:0 4px 12px rgba(220,38,38,0.35);border:1.5px solid #ffffff;">
+    <span style="font-size:15px;">🤖</span>
+    <span>AI 助手</span>
+  </a>
+  <!-- 全站底部合规与招商入口 -->
   <footer class="max-w-3xl mx-auto px-4 pt-4 pb-24 text-center text-xs text-slate-400 space-y-1">
     <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
       <a href="legal.html#about" class="hover:text-red-500 underline">关于我们 About</a>
