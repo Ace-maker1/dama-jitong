@@ -40,8 +40,8 @@
       <div id="txtLoading">正在加载详细信息...</div>
     </div>
 
-    <!-- 主内容区 -->
-    <main id="detailMain" class="hidden flex-1">
+    <!-- 主内容区（pb-28 防止底部固定栏遮挡最下方内容） -->
+    <main id="detailMain" class="hidden flex-1 pb-28">
       <!-- 大图展示区 -->
       <div id="heroImageBox" class="bg-slate-900 relative hidden">
         <img id="heroImg" src="" alt="" class="w-full max-h-80 object-contain mx-auto" />
@@ -68,21 +68,54 @@
         </div>
       </section>
 
-      <!-- 一键到店站内导航卡片（无缝联动你的 map.html） -->
-      <section class="mx-3 mt-3 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-3.5 text-white shadow-md flex items-center justify-between gap-3">
-        <div class="min-w-0">
-          <div class="text-[11px] text-emerald-100 font-semibold" id="txtNavSub">大马吉通站内实景地图 · 语音带路</div>
-          <div id="navLocationLabel" class="font-extrabold text-sm truncate mt-0.5">📍 前往该区域查看周边与路线</div>
+      <!-- 一键到店导航卡片（支持站内地图 + Google Maps / Waze 直达） -->
+      <section class="mx-3 mt-3 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-3.5 text-white shadow-md">
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-[11px] text-emerald-100 font-semibold" id="txtNavSub">大马吉通站内实景地图 · 语音带路</div>
+            <div id="navLocationLabel" class="font-extrabold text-sm truncate mt-0.5">📍 前往该区域查看周边与路线</div>
+          </div>
+          <a id="goMapBtn" href="/map.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-3.5 py-2 rounded-xl text-xs font-black shadow shrink-0 active:scale-95 transition">
+            🧭 站内导航
+          </a>
         </div>
-        <a id="goMapBtn" href="/map.html" class="bg-white text-emerald-700 hover:bg-emerald-50 px-3.5 py-2 rounded-xl text-xs font-black shadow shrink-0 active:scale-95 transition">
-          🧭 导航去这里
-        </a>
+        <!-- 外部常用导航快捷入口 -->
+        <div class="mt-2.5 pt-2.5 border-t border-white/15 flex items-center gap-2 text-[11px] font-bold">
+          <span id="txtExtNav" class="text-emerald-100 shrink-0">外部App直达：</span>
+          <a id="gmapExtBtn" href="#" target="_blank" rel="noopener" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition">
+            🗺️ Google Maps
+          </a>
+          <a id="wazeExtBtn" href="#" target="_blank" rel="noopener" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition">
+            🚗 Waze
+          </a>
+        </div>
       </section>
 
       <!-- 详细描述卡片 -->
       <section class="mx-3 mt-3 bg-white rounded-2xl p-4 shadow-xs border border-gray-100">
         <h2 id="txtDescTitle" class="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-2">详细信息说明</h2>
         <div id="postDesc" class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">--</div>
+      </section>
+
+      <!-- 店主认领 / 信息纠错 / 申请下架（PDPA 合规与商户入驻入口） -->
+      <section class="mx-3 mt-3 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-700 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-extrabold text-slate-800 flex items-center gap-1">
+            <span>🏪</span><span id="txtOwnerTitle">信息说明与店主权益</span>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full" id="txtFreeBadge">免费认证</span>
+        </div>
+        <p id="txtOwnerBody" class="text-[11px] leading-relaxed text-slate-600">
+          本页门店基础信息由公开商业资料整理收录，旨在方便本地用户检索与导航。若您是本店负责人，欢迎免费认领店铺、更新营业时间与招牌优惠；如需修改联系方式或申请下架，请联系平台客服立即处理。
+        </p>
+        <div class="flex items-center gap-2 pt-0.5">
+          <a id="claimOwnerBtn" href="#" target="_blank" rel="noopener" class="flex-1 text-center bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] py-2 px-3 rounded-xl transition">
+            ✅ 我是店主 · 免费认领
+          </a>
+          <a id="removeOwnerBtn" href="#" target="_blank" rel="noopener" class="text-center bg-white hover:bg-gray-100 text-slate-600 border border-slate-300 font-bold text-[11px] py-2 px-3 rounded-xl transition">
+            ✏️ 纠错 / 申请下架
+          </a>
+        </div>
       </section>
 
       <!-- 平台安全交易提示 -->
@@ -99,6 +132,18 @@
         </div>
         <div id="relatedList" class="space-y-2"></div>
       </section>
+
+      <!-- 底部合规链接栏 -->
+      <footer class="mx-3 mt-6 pt-4 border-t border-gray-200/80 text-center text-[11px] text-gray-400 space-y-1.5">
+        <div class="flex items-center justify-center gap-3 flex-wrap">
+          <a href="/privacy.html" id="txtFooterPrivacy" class="hover:text-gray-600 underline">隐私政策 (PDPA)</a>
+          <span>·</span>
+          <a href="/terms.html" id="txtFooterTerms" class="hover:text-gray-600 underline">免责声明与协议</a>
+          <span>·</span>
+          <a id="footerContactBtn" href="#" target="_blank" rel="noopener" class="hover:text-gray-600 underline">联系与删改通道</a>
+        </div>
+        <div>© 2026 大马吉通 DamaJitong.com · 马来西亚本地生活目录</div>
+      </footer>
     </main>
 
     <!-- 底部固定操作栏（收藏 + 站内导航 + 一键 WhatsApp 联系） -->
@@ -116,35 +161,62 @@
   </div>
 
   <script>
+    // ⚠️ 请把这里改成你自己的大马吉通平台客服 WhatsApp 号码（601开头，纯数字）
+    const ADMIN_WA = '601XXXXXXXX';
+
     const DETAIL_I18N = {
       zh: {
         back: '返回首页', header: '信息详情', share: '🔗 分享', sharedAlert: '已复制分享链接！可直接粘贴发给好友或 WhatsApp 群聊。',
         loading: '正在加载详细信息...', pin: '🔥 置顶推荐', transBtn: '🌐 翻译成中文', origBtn: '↩ 显示原文',
-        transDone: '已自动翻译为中文', navSub: '大马吉通站内实景地图 · 语音带路', navGo: '🧭 导航去这里',
+        transDone: '已自动翻译为中文', navSub: '大马吉通站内实景地图 · 语音带路', navGo: '🧭 站内导航',
+        extNav: '外部App直达：',
         descTitle: '详细信息说明', noDesc: '发布者未填写更多补充说明。',
+        ownerTitle: '信息说明与店主权益', freeBadge: '免费认证',
+        ownerBody: '本页门店基础信息由公开商业资料整理收录，旨在方便本地用户检索与导航。若您是本店负责人，欢迎免费认领店铺、更新营业时间与招牌优惠；如需修改联系方式或申请下架，请联系平台客服立即处理。',
+        claimBtn: '✅ 我是店主 · 免费认领',
+        removeBtn: '✏️ 纠错 / 申请下架',
+        claimWaMsg: (id, title, url) => `你好，我是【大马吉通】收录店铺「${title}」(ID:${id}) 的店主，我想申请免费认领并更新店铺资料。链接：${url}`,
+        removeWaMsg: (id, title, url) => `你好，我是「${title}」(ID:${id}) 相关负责人，我想申请修改或下架该条收录信息。链接：${url}`,
         safeTitle: '大马吉通安全交易提醒', safeBody: '线下看房、面试或二手面交请尽量选择公共场所，核实对方身份与物品状况后再付款，切勿提前转账定金。',
         relatedTitle: '同类热门推荐', fav: '☆ 收藏', faved: '⭐ 已收藏', bottomNav: '导航', waBtn: '联系 WhatsApp',
-        waHello: (title) => `你好，我在【大马吉通】看到你发布的：${title}，请问还在吗？`,
+        footerPrivacy: '隐私政策 (PDPA)', footerTerms: '免责声明与协议', footerContact: '联系与删改通道',
+        waHello: (title) => `你好，我在【大马吉通】看到贵店信息：${title}，想咨询一下！`,
         cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' }
       },
       en: {
         back: 'Home', header: 'Listing Details', share: '🔗 Share', sharedAlert: 'Link copied! You can paste and share it on WhatsApp now.',
         loading: 'Loading details...', pin: '🔥 Featured', transBtn: '🌐 Translate to English', origBtn: '↩ Original',
-        transDone: 'Auto-translated to English', navSub: 'In-App Navigation & Voice Guidance', navGo: '🧭 Navigate',
+        transDone: 'Auto-translated to English', navSub: 'In-App Navigation & Voice Guidance', navGo: '🧭 In-App Map',
+        extNav: 'Open in App:',
         descTitle: 'Description', noDesc: 'No additional description provided.',
+        ownerTitle: 'Listing Notice & Owner Rights', freeBadge: 'Free Claim',
+        ownerBody: 'Basic business details are compiled from publicly available sources to help local users navigate. If you are the owner, claim your listing for free to update hours or promos, or contact us anytime for edits/removal.',
+        claimBtn: '✅ Owner · Claim Free',
+        removeBtn: '✏️ Edit / Remove',
+        claimWaMsg: (id, title, url) => `Hi DamaJitong, I am the owner of "${title}" (ID:${id}) and would like to claim & update my listing. Link: ${url}`,
+        removeWaMsg: (id, title, url) => `Hi DamaJitong, I am requesting an edit or removal for "${title}" (ID:${id}). Link: ${url}`,
         safeTitle: 'Safety Reminder', safeBody: 'Meet in public places and verify details before making any advance payment or deposit.',
         relatedTitle: 'Similar Listings', fav: '☆ Save', faved: '⭐ Saved', bottomNav: 'Map', waBtn: 'WhatsApp Now',
-        waHello: (title) => `Hi, I saw your listing on DamaJitong: "${title}". Is it still available?`,
+        footerPrivacy: 'Privacy Policy (PDPA)', footerTerms: 'Disclaimer & Terms', footerContact: 'Contact / Removal',
+        waHello: (title) => `Hi, I found your business "${title}" on DamaJitong and would like to inquire!`,
         cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' }
       },
       ms: {
         back: 'Utama', header: 'Butiran Iklan', share: '🔗 Kongsi', sharedAlert: 'Pautan disalin! Sedia untuk dikongsi ke WhatsApp.',
         loading: 'Memuatkan butiran...', pin: '🔥 Pilihan', transBtn: '🌐 Terjemah ke BM', origBtn: '↩ Teks Asal',
-        transDone: 'Diterjemah ke Bahasa Melayu', navSub: 'Navigasi Terus & Panduan Suara', navGo: '🧭 Navigasi',
+        transDone: 'Diterjemah ke Bahasa Melayu', navSub: 'Navigasi Terus & Panduan Suara', navGo: '🧭 Peta Dalam App',
+        extNav: 'Buka di App:',
         descTitle: 'Keterangan Lanjut', noDesc: 'Tiada maklumat tambahan dinyatakan.',
+        ownerTitle: 'Notis Penyenaraian & Hak Pemilik', freeBadge: 'Tuntutan Percuma',
+        ownerBody: 'Maklumat asas perniagaan dikumpulkan daripada sumber terbuka untuk memudahkan navigasi pengguna. Jika anda pemilik premis, tuntut profil secara percuma atau hubungi kami untuk pindaan/pemadaman.',
+        claimBtn: '✅ Pemilik · Tuntut Percuma',
+        removeBtn: '✏️ Pinda / Padam',
+        claimWaMsg: (id, title, url) => `Salam DamaJitong, saya pemilik "${title}" (ID:${id}) dan ingin menuntut profil perniagaan saya secara percuma. Pautan: ${url}`,
+        removeWaMsg: (id, title, url) => `Salam DamaJitong, saya ingin memohon pindaan atau pemadaman maklumat bagi "${title}" (ID:${id}). Pautan: ${url}`,
         safeTitle: 'Tip Keselamatan', safeBody: 'Sila berjumpa di tempat awam dan sahkan maklumat sebelum membuat sebarang bayaran pendahuluan.',
         relatedTitle: 'Iklan Berkaitan', fav: '☆ Simpan', faved: '⭐ Disimpan', bottomNav: 'Peta', waBtn: 'Hubungi WhatsApp',
-        waHello: (title) => `Salam, saya nampak iklan anda di DamaJitong: "${title}". Masih ada lagi?`,
+        footerPrivacy: 'Dasar Privasi (PDPA)', footerTerms: 'Penafian & Terma', footerContact: 'Hubungi / Padam Data',
+        waHello: (title) => `Salam, saya jumpa kedai anda "${title}" di DamaJitong. Boleh saya bertanya?`,
         cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' }
       }
     };
@@ -280,7 +352,11 @@
 
       const localizedTitle = getLocalizedField(p, 'title', lang);
       const localizedPrice = getLocalizedField(p, 'price', lang);
-      const baseDesc = mapMeta.cleanDesc || getLocalizedField(p, 'desc', lang).replace(/\n?\[\[MAP:[^\]]+\]\]/g, '').trim() || t.noDesc;
+      // 优先读取对应语言的预存描述，再兜底清洗后的默认描述
+      const rawLocalizedDesc = (lang === 'en' && p.desc_en)
+        ? p.desc_en
+        : ((lang === 'ms' && p.desc_ms) ? p.desc_ms : (p.desc_zh || mapMeta.cleanDesc));
+      const baseDesc = (rawLocalizedDesc || '').replace(/\n?\[\[MAP:[^\]]+\]\]/g, '').trim() || t.noDesc;
 
       document.title = `${localizedTitle} - 大马吉通 MY`;
       document.getElementById('txtBack').innerText = t.back;
@@ -289,12 +365,21 @@
       document.getElementById('pinBadge').innerText = t.pin;
       document.getElementById('txtNavSub').innerText = t.navSub;
       document.getElementById('goMapBtn').innerText = t.navGo;
+      document.getElementById('txtExtNav').innerText = t.extNav;
       document.getElementById('txtDescTitle').innerText = t.descTitle;
+      document.getElementById('txtOwnerTitle').innerText = t.ownerTitle;
+      document.getElementById('txtFreeBadge').innerText = t.freeBadge;
+      document.getElementById('txtOwnerBody').innerText = t.ownerBody;
+      document.getElementById('claimOwnerBtn').innerText = t.claimBtn;
+      document.getElementById('removeOwnerBtn').innerText = t.removeBtn;
       document.getElementById('txtSafeTitle').innerText = t.safeTitle;
       document.getElementById('txtSafeBody').innerText = t.safeBody;
       document.getElementById('txtRelatedTitle').innerText = t.relatedTitle;
       document.getElementById('txtBottomNav').innerText = t.bottomNav;
       document.getElementById('txtWaBtn').innerText = t.waBtn;
+      document.getElementById('txtFooterPrivacy').innerText = t.footerPrivacy;
+      document.getElementById('txtFooterTerms').innerText = t.footerTerms;
+      document.getElementById('footerContactBtn').innerText = t.footerContact;
 
       if (p.image_url) {
         document.getElementById('heroImageBox').classList.remove('hidden');
@@ -307,6 +392,7 @@
       document.getElementById('cityBadge').innerText = `📍 ${cityLabel}`;
       document.getElementById('navLocationLabel').innerText = mapMeta.addr ? `📍 ${mapMeta.addr}` : `📍 ${cityLabel} · ${mapMeta.pureTitle || localizedTitle}`;
 
+      // 站内地图 + 外部 Google Maps / Waze 导航链接
       const regionInfo = DMJT_API.getRegionInfo(p.city);
       const targetLat = mapMeta.lat != null ? mapMeta.lat : regionInfo.lat;
       const targetLng = mapMeta.lng != null ? mapMeta.lng : regionInfo.lng;
@@ -317,6 +403,23 @@
       const mapUrl = `/map.html?dest=${encodeURIComponent(cleanMapText(combinedDest))}&lat=${targetLat}&lng=${targetLng}`;
       document.getElementById('goMapBtn').href = mapUrl;
       document.getElementById('bottomMapBtn').href = mapUrl;
+
+      const gmapUrl = mapMeta.lat != null
+        ? `https://www.google.com/maps/dir/?api=1&destination=${targetLat},${targetLng}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanMapText(combinedDest))}`;
+      const wazeUrl = mapMeta.lat != null
+        ? `https://waze.com/ul?ll=${targetLat},${targetLng}&navigate=yes`
+        : `https://waze.com/ul?q=${encodeURIComponent(cleanMapText(combinedDest))}&navigate=yes`;
+      document.getElementById('gmapExtBtn').href = gmapUrl;
+      document.getElementById('wazeExtBtn').href = wazeUrl;
+
+      // 店主认领 & 申请修改/下架 WhatsApp 链接
+      const pageUrl = window.location.href;
+      const cleanAdminWa = ADMIN_WA.replace(/[^0-9]/g, '');
+      document.getElementById('claimOwnerBtn').href = `https://wa.me/${cleanAdminWa}?text=${encodeURIComponent(t.claimWaMsg(p.id, localizedTitle, pageUrl))}`;
+      const removeHref = `https://wa.me/${cleanAdminWa}?text=${encodeURIComponent(t.removeWaMsg(p.id, localizedTitle, pageUrl))}`;
+      document.getElementById('removeOwnerBtn').href = removeHref;
+      document.getElementById('footerContactBtn').href = removeHref;
 
       isTranslated = false;
       document.getElementById('transTag').classList.add('hidden');
@@ -342,7 +445,9 @@
       document.getElementById('bottomActionBar').classList.remove('hidden');
 
       // 仅当数据库未存储该语言版本时，才自动兜底翻译
-      const hasPreStored = (lang === 'en' && p.title_en) || (lang === 'ms' && p.title_ms) || (lang === 'zh' && p.title_zh);
+      const hasPreStored = (lang === 'en' && (p.title_en || p.desc_en))
+        || (lang === 'ms' && (p.title_ms || p.desc_ms))
+        || (lang === 'zh' && (p.title_zh || p.desc_zh));
       const targetTl = lang === 'zh' ? 'zh-CN' : (lang === 'ms' ? 'ms' : 'en');
       if (!hasPreStored && detectDetailTextLang(localizedTitle) !== targetTl) {
         handleTranslate(true);
