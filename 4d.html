@@ -265,7 +265,7 @@
         pushDesc: '仅在官方开奖数据更新时推送查询提醒，可随时关闭',
         liveStreamTitle: '📺 官方实时开奖直播 & 成绩核对',
         liveBannerTitle: '🔴 正在开彩中 · 实时同步官方出奖号码',
-        liveBannerSub: '每 4 秒自动检测最新开出号码，开出即自动跳上公告板',
+        liveBannerSub: '每 3 秒自动检测最新开出号码，开出即自动跳上公告板',
         checkerTitle: '🔍 万字快速对奖器（输入 4 位号码）',
         checkerSub: '支持正字 & 跳字(iBox)检测',
         checkBtn: '立即核对',
@@ -301,7 +301,7 @@
         pushDesc: 'Notify only when official draw results update; toggle anytime',
         liveStreamTitle: '📺 Official Live Draw Streams & Verification',
         liveBannerTitle: '🔴 LIVE DRAW IN PROGRESS · SYNCING OFFICIAL NUMBERS',
-        liveBannerSub: 'Auto-checking every 4s · Each drawn number pops onto the board live',
+        liveBannerSub: 'Auto-checking every 3s · Each drawn number pops onto the board live',
         checkerTitle: '🔍 Quick 4D Number Checker (4 Digits)',
         checkerSub: 'Checks Straight & Permutation (iBox)',
         checkBtn: 'Check',
@@ -337,7 +337,7 @@
         pushDesc: 'Maklum hanya apabila keputusan rasmi dikemas kini',
         liveStreamTitle: '📺 Siaran Langsung Cabutan Rasmi',
         liveBannerTitle: '🔴 CABUTAN SEDANG BERLANGSUNG · KEMAS KINI LANGSUNG',
-        liveBannerSub: 'Semakan automatik setiap 4 saat · Nombor rasmi dipaparkan serta-merta',
+        liveBannerSub: 'Semakan automatik setiap 3 saat · Nombor rasmi dipaparkan serta-merta',
         checkerTitle: '🔍 Penyemak Nombor 4D Pantas (4 Digit)',
         checkerSub: 'Semak Tegak & Pusingan (iBox)',
         checkBtn: 'Semak',
@@ -653,7 +653,7 @@
               p2: r.p2 || '----',
               p3: r.p3 || '----',
               special: Array.isArray(r.special) && r.special.length === 10 ? r.special : Array(10).fill('----'),
-              consolation: Array.isArray(r.consolation) && r.consolation.length === 10 ? r.consolation : Array(10).fill('----')
+              consolation: Array(10).fill('----')
             };
           }
         });
@@ -661,7 +661,7 @@
 
       if (incomingHistory && typeof incomingHistory === 'object') {
         Object.keys(historyStore).forEach(k => {
-          if (Array.isArray(incomingHistory[k])) {
+          if (Array.isArray(incomingHistory[k]) && incomingHistory[k].length > 0) {
             historyStore[k] = incomingHistory[k];
           }
         });
@@ -785,12 +785,12 @@
 
     setInterval(updateDrawCountdown, 1000);
 
-    // 开彩时段每 4 秒自动拉取最新真实开出号码（绝不生成假随机号码）
+    // 开彩时段每 3 秒自动拉取最新真实开出号码（绝不生成假随机号码）
     setInterval(() => {
       if (isLiveDrawWindow() && selectedHistoryIdx === -1) {
         syncLatest4D(false);
       }
-    }, 4000);
+    }, 3000);
 
     function switch4DLang(lang) {
       currentLang = lang;
