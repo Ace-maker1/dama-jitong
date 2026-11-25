@@ -751,23 +751,24 @@
     }
 
     function locateForNearbyBiz() {
+      const t = I18N[currentLang];
       const btn = document.getElementById('bizLocateBtn');
       const hint = document.getElementById('bizGpsHint');
       if (!navigator.geolocation) {
-        if (hint) hint.textContent = '📍 当前设备不支持定位';
+        if (hint) hint.textContent = t.bizGpsUnsupported;
         return;
       }
       if (btn) btn.innerText = '⏳...';
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           nearbyUserCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          if (btn) btn.innerText = '✅ 已定位';
-          if (hint) hint.textContent = `📍 已按附近距离 + 付费置顶排序`;
+          if (btn) btn.innerText = t.bizLocatedBtn;
+          if (hint) hint.textContent = t.bizGpsSorted;
           renderPosts();
         },
         () => {
-          if (btn) btn.innerText = '📍 定位附近';
-          if (hint) hint.textContent = '📍 未开启定位，仍可按州属与分类筛选';
+          if (btn) btn.innerText = t.bizLocateBtn;
+          if (hint) hint.textContent = t.bizGpsHint;
         },
         { timeout: 6000 }
       );
@@ -1050,6 +1051,58 @@
         sortOptDefault: '排序：置顶 + 最新',
         sortOptAsc: '价格从低到高',
         sortOptDesc: '价格从高到低',
+        propDealAny: '租房 / 买房',
+        propDealRent: '出租 Rent',
+        propDealSale: '出售 Sale',
+        propDealOther: '其他',
+        propTypeAny: '全部房型',
+        propTypeCondo: '公寓 Condo',
+        propTypeTerrace: '排屋 Terrace',
+        propTypeSemiD: '半独立 Semi-D',
+        propTypeRoom: '房间 Room',
+        propTypeOther: '其他',
+        propMaxPricePh: '最高金额 RM',
+        propMinSizePh: '最小面积 sqft',
+        jobModeAny: '上班方式',
+        jobModeOnsite: '现场上班',
+        jobModeWfh: '居家办公 WFH',
+        jobModeHybrid: '混合办公',
+        jobModeOther: '其他',
+        jobShiftAny: '工作时间',
+        jobShiftDay: '日班 / 正常工时',
+        jobShiftShift: '轮班制',
+        jobShiftFlex: '弹性时间',
+        jobShiftOther: '其他',
+        jobMinSalaryPh: '最低薪资 RM',
+        jobPerkAny: '条件 / 待遇',
+        jobPerkNoExp: '无需经验',
+        jobPerkAccom: '包吃住 / 宿舍',
+        jobPerkComm: '高佣金 / 奖金',
+        jobPerkOther: '其他',
+        prelovedCatAny: '闲置品类',
+        prelovedCatFurniture: '家具',
+        prelovedCatWatch: '手表',
+        prelovedCatBag: '包包',
+        prelovedCatCar: '汽车',
+        prelovedCatMoto: '摩托车',
+        prelovedCatElec: '数码/家电',
+        prelovedCatOther: '其他',
+        prelovedMaxBudgetPh: '预算上限 RM',
+        bizCatAny: '全部商家服务',
+        bizCatCar: '🔧 汽车维修 / 洗车',
+        bizCatFood: '🍜 美食 / 餐饮',
+        bizCatBeauty: '💇 理发 / 美容',
+        bizCatHome: '🛠️ 装修 / 水电 / 搬家',
+        bizCatOther: '其他',
+        bizRadiusAny: '附近不限距离',
+        bizRadius5: '5 km 以内',
+        bizRadius15: '15 km 以内',
+        bizRadius30: '30 km 以内',
+        bizGpsHint: '📍 附近优先 + 付费置顶排序',
+        bizGpsSorted: '📍 已按附近距离 + 付费置顶排序',
+        bizGpsUnsupported: '📍 当前设备不支持定位',
+        bizLocateBtn: '📍 定位附近',
+        bizLocatedBtn: '✅ 已定位',
         catHouse: '找房子',
         catJob: '找工作',
         catSecond: '二手闲置',
@@ -1160,6 +1213,58 @@
         sortOptDefault: 'Sort: Featured + Latest',
         sortOptAsc: 'Price: Low to High',
         sortOptDesc: 'Price: High to Low',
+        propDealAny: 'Rent / Buy',
+        propDealRent: 'For Rent',
+        propDealSale: 'For Sale',
+        propDealOther: 'Other',
+        propTypeAny: 'All Property Types',
+        propTypeCondo: 'Condo',
+        propTypeTerrace: 'Terrace',
+        propTypeSemiD: 'Semi-D',
+        propTypeRoom: 'Room',
+        propTypeOther: 'Other',
+        propMaxPricePh: 'Max Price RM',
+        propMinSizePh: 'Min Size sqft',
+        jobModeAny: 'Work Mode',
+        jobModeOnsite: 'Onsite',
+        jobModeWfh: 'WFH / Remote',
+        jobModeHybrid: 'Hybrid',
+        jobModeOther: 'Other',
+        jobShiftAny: 'Work Hours',
+        jobShiftDay: 'Day Shift',
+        jobShiftShift: 'Shift Work',
+        jobShiftFlex: 'Flexible',
+        jobShiftOther: 'Other',
+        jobMinSalaryPh: 'Min Salary RM',
+        jobPerkAny: 'Perks / Req',
+        jobPerkNoExp: 'No Exp Needed',
+        jobPerkAccom: 'Accommodation',
+        jobPerkComm: 'Commission / Bonus',
+        jobPerkOther: 'Other',
+        prelovedCatAny: 'Preloved Category',
+        prelovedCatFurniture: 'Furniture',
+        prelovedCatWatch: 'Watches',
+        prelovedCatBag: 'Bags',
+        prelovedCatCar: 'Cars',
+        prelovedCatMoto: 'Motorcycles',
+        prelovedCatElec: 'Electronics',
+        prelovedCatOther: 'Other',
+        prelovedMaxBudgetPh: 'Max Budget RM',
+        bizCatAny: 'All Services',
+        bizCatCar: '🔧 Auto Repair / Wash',
+        bizCatFood: '🍜 Food & Dining',
+        bizCatBeauty: '💇 Hair & Beauty',
+        bizCatHome: '🛠️ Renovation / Fix',
+        bizCatOther: 'Other',
+        bizRadiusAny: 'Any Distance',
+        bizRadius5: 'Within 5 km',
+        bizRadius15: 'Within 15 km',
+        bizRadius30: 'Within 30 km',
+        bizGpsHint: '📍 Nearby + Featured Pin Priority',
+        bizGpsSorted: '📍 Sorted by Nearby + Featured Pin',
+        bizGpsUnsupported: '📍 GPS not supported on this device',
+        bizLocateBtn: '📍 Nearby',
+        bizLocatedBtn: '✅ Located',
         catHouse: 'Property',
         catJob: 'Jobs',
         catSecond: 'Preloved',
@@ -1270,6 +1375,58 @@
         sortOptDefault: 'Susunan: Pilihan + Terkini',
         sortOptAsc: 'Harga: Rendah ke Tinggi',
         sortOptDesc: 'Harga: Tinggi ke Rendah',
+        propDealAny: 'Sewa / Beli',
+        propDealRent: 'Untuk Disewa',
+        propDealSale: 'Untuk Dijual',
+        propDealOther: 'Lain-lain',
+        propTypeAny: 'Semua Jenis Rumah',
+        propTypeCondo: 'Kondominium',
+        propTypeTerrace: 'Rumah Teres',
+        propTypeSemiD: 'Semi-D / Banglo',
+        propTypeRoom: 'Bilik',
+        propTypeOther: 'Lain-lain',
+        propMaxPricePh: 'Harga Maksimum RM',
+        propMinSizePh: 'Keluasan Min sqft',
+        jobModeAny: 'Cara Kerja',
+        jobModeOnsite: 'Di Pejabat / Kedai',
+        jobModeWfh: 'WFH / Jarak Jauh',
+        jobModeHybrid: 'Hibrid',
+        jobModeOther: 'Lain-lain',
+        jobShiftAny: 'Waktu Kerja',
+        jobShiftDay: 'Waktu Siang',
+        jobShiftShift: 'Syif',
+        jobShiftFlex: 'Fleksibel',
+        jobShiftOther: 'Lain-lain',
+        jobMinSalaryPh: 'Gaji Minimum RM',
+        jobPerkAny: 'Manfaat / Syarat',
+        jobPerkNoExp: 'Tiada Pengalaman',
+        jobPerkAccom: 'Penginapan / Asrama',
+        jobPerkComm: 'Komisen / Bonus',
+        jobPerkOther: 'Lain-lain',
+        prelovedCatAny: 'Kategori Terpakai',
+        prelovedCatFurniture: 'Perabot',
+        prelovedCatWatch: 'Jam Tangan',
+        prelovedCatBag: 'Beg',
+        prelovedCatCar: 'Kereta',
+        prelovedCatMoto: 'Motosikal',
+        prelovedCatElec: 'Elektronik',
+        prelovedCatOther: 'Lain-lain',
+        prelovedMaxBudgetPh: 'Bajet Maksimum RM',
+        bizCatAny: 'Semua Servis',
+        bizCatCar: '🔧 Bengkel / Cuci Kereta',
+        bizCatFood: '🍜 Makanan & Minuman',
+        bizCatBeauty: '💇 Rambut & Kecantikan',
+        bizCatHome: '🛠️ Ubah Suai / Baik Pulih',
+        bizCatOther: 'Lain-lain',
+        bizRadiusAny: 'Semua Jarak',
+        bizRadius5: 'Dalam 5 km',
+        bizRadius15: 'Dalam 15 km',
+        bizRadius30: 'Dalam 30 km',
+        bizGpsHint: '📍 Berdekatan + Pin Utama',
+        bizGpsSorted: '📍 Susunan Berdekatan + Pin Utama',
+        bizGpsUnsupported: '📍 GPS tidak disokong pada peranti ini',
+        bizLocateBtn: '📍 Berdekatan',
+        bizLocatedBtn: '✅ Lokasi Aktif',
         catHouse: 'Rumah Sewa',
         catJob: 'Kerja Kosong',
         catSecond: 'Terpakai',
@@ -1359,6 +1516,77 @@
     let currentCategory = '全部';
     let savedIds = JSON.parse(localStorage.getItem('dama_favs') || '[]');
     let translationCache = {};
+
+    function applySubFilterLang(t) {
+      const setOptText = (selectId, idx, text) => {
+        const sel = document.getElementById(selectId);
+        if (sel && sel.options[idx]) sel.options[idx].text = text;
+      };
+      setOptText('propDealFilter', 0, t.propDealAny);
+      setOptText('propDealFilter', 1, t.propDealRent);
+      setOptText('propDealFilter', 2, t.propDealSale);
+      setOptText('propDealFilter', 3, t.propDealOther);
+
+      setOptText('propTypeFilter', 0, t.propTypeAny);
+      setOptText('propTypeFilter', 1, t.propTypeCondo);
+      setOptText('propTypeFilter', 2, t.propTypeTerrace);
+      setOptText('propTypeFilter', 3, t.propTypeSemiD);
+      setOptText('propTypeFilter', 4, t.propTypeRoom);
+      setOptText('propTypeFilter', 5, t.propTypeOther);
+
+      if (document.getElementById('propMaxPrice')) document.getElementById('propMaxPrice').placeholder = t.propMaxPricePh;
+      if (document.getElementById('propMinSize')) document.getElementById('propMinSize').placeholder = t.propMinSizePh;
+
+      setOptText('jobModeFilter', 0, t.jobModeAny);
+      setOptText('jobModeFilter', 1, t.jobModeOnsite);
+      setOptText('jobModeFilter', 2, t.jobModeWfh);
+      setOptText('jobModeFilter', 3, t.jobModeHybrid);
+      setOptText('jobModeFilter', 4, t.jobModeOther);
+
+      setOptText('jobShiftFilter', 0, t.jobShiftAny);
+      setOptText('jobShiftFilter', 1, t.jobShiftDay);
+      setOptText('jobShiftFilter', 2, t.jobShiftShift);
+      setOptText('jobShiftFilter', 3, t.jobShiftFlex);
+      setOptText('jobShiftFilter', 4, t.jobShiftOther);
+
+      if (document.getElementById('jobMinSalary')) document.getElementById('jobMinSalary').placeholder = t.jobMinSalaryPh;
+
+      setOptText('jobPerkFilter', 0, t.jobPerkAny);
+      setOptText('jobPerkFilter', 1, t.jobPerkNoExp);
+      setOptText('jobPerkFilter', 2, t.jobPerkAccom);
+      setOptText('jobPerkFilter', 3, t.jobPerkComm);
+      setOptText('jobPerkFilter', 4, t.jobPerkOther);
+
+      setOptText('prelovedCatFilter', 0, t.prelovedCatAny);
+      setOptText('prelovedCatFilter', 1, t.prelovedCatFurniture);
+      setOptText('prelovedCatFilter', 2, t.prelovedCatWatch);
+      setOptText('prelovedCatFilter', 3, t.prelovedCatBag);
+      setOptText('prelovedCatFilter', 4, t.prelovedCatCar);
+      setOptText('prelovedCatFilter', 5, t.prelovedCatMoto);
+      setOptText('prelovedCatFilter', 6, t.prelovedCatElec);
+      setOptText('prelovedCatFilter', 7, t.prelovedCatOther);
+
+      if (document.getElementById('prelovedMaxBudget')) document.getElementById('prelovedMaxBudget').placeholder = t.prelovedMaxBudgetPh;
+
+      setOptText('bizCatFilter', 0, t.bizCatAny);
+      setOptText('bizCatFilter', 1, t.bizCatCar);
+      setOptText('bizCatFilter', 2, t.bizCatFood);
+      setOptText('bizCatFilter', 3, t.bizCatBeauty);
+      setOptText('bizCatFilter', 4, t.bizCatHome);
+      setOptText('bizCatFilter', 5, t.bizCatOther);
+
+      setOptText('bizRadiusFilter', 0, t.bizRadiusAny);
+      setOptText('bizRadiusFilter', 1, t.bizRadius5);
+      setOptText('bizRadiusFilter', 2, t.bizRadius15);
+      setOptText('bizRadiusFilter', 3, t.bizRadius30);
+
+      if (document.getElementById('bizGpsHint')) {
+        document.getElementById('bizGpsHint').textContent = nearbyUserCoords ? t.bizGpsSorted : t.bizGpsHint;
+      }
+      if (document.getElementById('bizLocateBtn')) {
+        document.getElementById('bizLocateBtn').innerText = nearbyUserCoords ? t.bizLocatedBtn : t.bizLocateBtn;
+      }
+    }
 
     function getRegionDisplayName(val, lang = currentLang) {
       if (val === '吉隆坡/雪兰莪') return lang === 'zh' ? '吉隆坡 / 雪兰莪' : 'KL / Selangor';
@@ -1522,6 +1750,7 @@
       if (document.getElementById('sortOptDefault')) document.getElementById('sortOptDefault').innerText = t.sortOptDefault;
       if (document.getElementById('sortOptAsc')) document.getElementById('sortOptAsc').innerText = t.sortOptAsc;
       if (document.getElementById('sortOptDesc')) document.getElementById('sortOptDesc').innerText = t.sortOptDesc;
+      applySubFilterLang(t);
 
       if (document.getElementById('navHomeText')) document.getElementById('navHomeText').innerText = t.navHome;
       if (document.getElementById('navPostText')) document.getElementById('navPostText').innerText = t.navPost;
@@ -1793,7 +2022,9 @@
       const isFaved = savedIds.includes(post.id);
 
       const zoomHint = currentLang === 'en' ? '🔍 Zoom' : (currentLang === 'ms' ? '🔍 Besarkan' : '🔍 点击放大');
-      const fullDetailHint = currentLang === 'en' ? 'Open full page & map navigation ›' : (currentLang === 'ms' ? 'Buka halaman penuh & navigasi peta ›' : '打开独立详情页与地图导航 ›');
+      const fullDetailBtnText = currentLang === 'en'
+        ? '🧭 Full Details & Map Navigation'
+        : (currentLang === 'ms' ? '🧭 Butiran Penuh & Navigasi Peta' : '🧭 完整详情与地图导航');
 
       const galleryHTML = photos.length > 0 ? `
         <div class="mb-3.5">
@@ -1836,9 +2067,10 @@
             ${t.waBtn}
           </a>
         </div>
-        <div class="mt-2.5 text-center">
-          <a href="/detail.html?id=${post.id}" class="text-[11px] text-blue-600 font-semibold hover:underline">${fullDetailHint}</a>
-        </div>
+        <a href="/detail.html?id=${post.id}"
+           class="mt-2.5 w-full py-2.5 px-4 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs flex items-center justify-center gap-1.5 transition">
+          ${fullDetailBtnText}
+        </a>
       `;
 
       document.getElementById('detailModal').classList.remove('hidden');
