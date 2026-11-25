@@ -47,7 +47,7 @@
         <div class="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-950">
           <img id="heroImg" src="" alt="" onclick="openDetailLightbox()" class="w-full h-full object-contain mx-auto cursor-zoom-in transition" />
           <span id="heroPhotoCounter" class="hidden absolute top-2.5 left-2.5 bg-black/70 text-white text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full backdrop-blur-xs">1 / 1</span>
-          <span class="absolute bottom-2.5 right-2.5 bg-black/65 text-white text-[10px] font-bold px-2 py-1 rounded-full">🔍 点击放大</span>
+          <span id="heroZoomHint" class="absolute bottom-2.5 right-2.5 bg-black/65 text-white text-[10px] font-bold px-2 py-1 rounded-full">🔍 点击放大</span>
           <button type="button" id="heroPrevBtn" onclick="shiftHeroPhoto(-1)" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold flex items-center justify-center">‹</button>
           <button type="button" id="heroNextBtn" onclick="shiftHeroPhoto(1)" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold flex items-center justify-center">›</button>
         </div>
@@ -60,8 +60,8 @@
         <div id="detailLightboxCounter" class="text-white/80 text-xs font-mono mb-2">1 / 1</div>
         <img id="detailLightboxImg" src="" onclick="event.stopPropagation(); shiftHeroPhoto(1);" class="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl cursor-pointer" />
         <div id="detailLightboxNav" class="hidden flex items-center gap-4 mt-4">
-          <button type="button" onclick="event.stopPropagation(); shiftHeroPhoto(-1);" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">‹ 上一张</button>
-          <button type="button" onclick="event.stopPropagation(); shiftHeroPhoto(1);" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">下一张 ›</button>
+          <button type="button" id="lbPrevTxt" onclick="event.stopPropagation(); shiftHeroPhoto(-1);" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">‹ 上一张</button>
+          <button type="button" id="lbNextTxt" onclick="event.stopPropagation(); shiftHeroPhoto(1);" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">下一张 ›</button>
         </div>
       </div>
 
@@ -179,13 +179,13 @@
   </div>
 
   <script>
-    // ⚠️ 请把这里改成你自己的大马吉通平台客服 WhatsApp 号码（601开头，纯数字）
-    const ADMIN_WA = '601XXXXXXXX';
+    const ADMIN_WA = '601125490636';
 
     const DETAIL_I18N = {
       zh: {
         back: '返回首页', header: '信息详情', share: '🔗 分享', sharedAlert: '已复制分享链接！可直接粘贴发给好友或 WhatsApp 群聊。',
         loading: '正在加载详细信息...', pin: '🔥 置顶推荐', transBtn: '🌐 翻译成中文', origBtn: '↩ 显示原文',
+        zoomHint: '🔍 点击放大', lbPrev: '‹ 上一张', lbNext: '下一张 ›',
         transDone: '已自动翻译为中文', navSub: '大马吉通站内实景地图 · 语音带路', navGo: '🧭 站内导航',
         extNav: '外部App直达：',
         descTitle: '详细信息说明', noDesc: '发布者未填写更多补充说明。',
@@ -204,6 +204,7 @@
       en: {
         back: 'Home', header: 'Listing Details', share: '🔗 Share', sharedAlert: 'Link copied! You can paste and share it on WhatsApp now.',
         loading: 'Loading details...', pin: '🔥 Featured', transBtn: '🌐 Translate to English', origBtn: '↩ Original',
+        zoomHint: '🔍 Tap to Zoom', lbPrev: '‹ Prev', lbNext: 'Next ›',
         transDone: 'Auto-translated to English', navSub: 'In-App Navigation & Voice Guidance', navGo: '🧭 In-App Map',
         extNav: 'Open in App:',
         descTitle: 'Description', noDesc: 'No additional description provided.',
@@ -222,6 +223,7 @@
       ms: {
         back: 'Utama', header: 'Butiran Iklan', share: '🔗 Kongsi', sharedAlert: 'Pautan disalin! Sedia untuk dikongsi ke WhatsApp.',
         loading: 'Memuatkan butiran...', pin: '🔥 Pilihan', transBtn: '🌐 Terjemah ke BM', origBtn: '↩ Teks Asal',
+        zoomHint: '🔍 Tekan Besarkan', lbPrev: '‹ Sebelum', lbNext: 'Seterusnya ›',
         transDone: 'Diterjemah ke Bahasa Melayu', navSub: 'Navigasi Terus & Panduan Suara', navGo: '🧭 Peta Dalam App',
         extNav: 'Buka di App:',
         descTitle: 'Keterangan Lanjut', noDesc: 'Tiada maklumat tambahan dinyatakan.',
@@ -478,6 +480,9 @@
       document.getElementById('txtHeader').innerText = t.header;
       document.getElementById('shareBtn').innerText = t.share;
       document.getElementById('pinBadge').innerText = t.pin;
+      document.getElementById('heroZoomHint').innerText = t.zoomHint;
+      document.getElementById('lbPrevTxt').innerText = t.lbPrev;
+      document.getElementById('lbNextTxt').innerText = t.lbNext;
       document.getElementById('txtNavSub').innerText = t.navSub;
       document.getElementById('goMapBtn').innerText = t.navGo;
       document.getElementById('txtExtNav').innerText = t.extNav;
