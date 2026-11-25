@@ -194,8 +194,8 @@
     <!-- 多维过滤器面板（按当前分类切换） -->
     <section id="smartFilterPanel" class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 space-y-2 text-xs">
       <div class="flex items-center justify-between">
-        <span class="font-bold text-gray-700 text-[11px]">🎛️ 精准筛选条件</span>
-        <button type="button" onclick="resetSubFilters()" class="text-[10px] text-gray-400 hover:text-red-600 font-semibold">清空筛选项</button>
+        <span id="filterPanelTitle" class="font-bold text-gray-700 text-[11px]">🎛️ 精准筛选条件</span>
+        <button type="button" id="clearSubFilterBtn" onclick="resetSubFilters()" class="text-[10px] text-gray-400 hover:text-red-600 font-semibold">清空筛选项</button>
       </div>
 
       <!-- 全部信息快捷金额上限 -->
@@ -203,9 +203,9 @@
         <input id="allMaxPrice" type="number" oninput="renderPosts()" placeholder="最高预算/价格 RM（可选）"
                class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white focus:border-red-500 focus:outline-none">
         <select id="allSortBy" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
-          <option value="default">排序：置顶 + 最新</option>
-          <option value="price_asc">价格从低到高</option>
-          <option value="price_desc">价格从高到低</option>
+          <option id="sortOptDefault" value="default">排序：置顶 + 最新</option>
+          <option id="sortOptAsc" value="price_asc">价格从低到高</option>
+          <option id="sortOptDesc" value="price_desc">价格从高到低</option>
         </select>
       </div>
 
@@ -326,7 +326,7 @@
   <main id="favTab" class="flex-1 pb-24 hidden px-3 pt-4">
     <div class="flex items-center justify-between mb-3 px-1">
       <h2 id="favPageTitle" class="font-extrabold text-gray-800 text-base">⭐ 我的本地收藏</h2>
-      <button type="button" onclick="switchTab('main')" class="text-xs text-red-600 font-bold">← 返回首页</button>
+      <button type="button" id="favBackHomeBtn" onclick="switchTab('main')" class="text-xs text-red-600 font-bold">← 返回首页</button>
     </div>
     <div id="favList" class="space-y-2.5"></div>
   </main>
@@ -344,12 +344,12 @@
   <main id="myPostsTab" class="flex-1 pb-24 hidden px-3 pt-4">
     <div class="flex items-center justify-between mb-3 px-1">
       <h2 id="myPostsPageTitle" class="font-extrabold text-gray-800 text-base">📝 我发布的信息</h2>
-      <button type="button" onclick="openPostModal()" class="text-xs bg-red-600 text-white px-3 py-1 rounded-full font-bold">+ 发新帖</button>
+      <button type="button" id="myPostsNewBtn" onclick="openPostModal()" class="text-xs bg-red-600 text-white px-3 py-1 rounded-full font-bold">+ 发新帖</button>
     </div>
     <div id="myPostsList" class="space-y-2.5"></div>
   </main>
 
-  <!-- 清爽清单式“我的”个人中心（对齐图3风格，无需账号登录） -->
+  <!-- 清爽清单式“我的”个人中心 -->
   <main id="profileTab" class="flex-1 pb-24 hidden">
     <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-red-900 text-white px-5 py-6 flex items-center space-x-3.5">
       <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-14 h-14 rounded-full object-cover shadow-md bg-[#F8F6F0] border-2 border-white/80 shrink-0" />
@@ -454,8 +454,8 @@
     <div id="lightboxCounter" class="text-white/80 text-xs font-mono mb-2">1 / 1</div>
     <img id="lightboxImg" src="" onclick="event.stopPropagation(); nextLightboxPhoto();" class="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl cursor-pointer" />
     <div class="flex items-center gap-4 mt-4">
-      <button type="button" onclick="event.stopPropagation(); prevLightboxPhoto();" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">‹ 上一张</button>
-      <button type="button" onclick="event.stopPropagation(); nextLightboxPhoto();" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">下一张 ›</button>
+      <button type="button" id="lbPrevBtn" onclick="event.stopPropagation(); prevLightboxPhoto();" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">‹ 上一张</button>
+      <button type="button" id="lbNextBtn" onclick="event.stopPropagation(); nextLightboxPhoto();" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">下一张 ›</button>
     </div>
   </div>
 
@@ -503,7 +503,7 @@
         <div>
           <div class="flex items-center justify-between mb-1">
             <label id="labelExactAddr" class="block text-xs font-bold text-gray-700">准确地址 / 店名路名（导航更准）</label>
-            <button type="button" onclick="capturePostGps('post')" id="postGpsBtn" class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">📍 抓当前定位</button>
+            <button type="button" onclick="capturePostGps()" id="postGpsBtn" class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">📍 抓当前定位</button>
           </div>
           <input type="text" id="postExactAddress" placeholder="例如：KK83 烧腊 Kafe Pak Ngah, Jalan Burma" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
           <div id="postGpsStatus" class="text-[10px] text-emerald-700 mt-1 hidden"></div>
@@ -663,8 +663,7 @@
       try { ids = JSON.parse(localStorage.getItem(BROWSE_HISTORY_KEY) || '[]'); } catch (_) {}
       const list = ids.map(id => allPosts.find(p => p.id === id)).filter(Boolean);
       if (list.length === 0) {
-        const emptyTxt = currentLang === 'en' ? 'No browsing history yet.' : (currentLang === 'ms' ? 'Tiada rekod tontonan lagi.' : '暂无浏览记录，快去首页看看吧！');
-        box.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${emptyTxt}</div>`;
+        box.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${I18N[currentLang].emptyHistory}</div>`;
         return;
       }
       box.innerHTML = list.map(createPostCardHTML).join('');
@@ -677,8 +676,7 @@
       try { ids = JSON.parse(localStorage.getItem(MY_POST_IDS_KEY) || '[]'); } catch (_) {}
       const list = allPosts.filter(p => ids.includes(p.id));
       if (list.length === 0) {
-        const emptyTxt = currentLang === 'en' ? 'You have not posted any listing on this device yet.' : (currentLang === 'ms' ? 'Anda belum memuat naik sebarang iklan lagi.' : '当前设备暂未发布过信息，点右上角立即免费发布！');
-        box.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${emptyTxt}</div>`;
+        box.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${I18N[currentLang].emptyMyPosts}</div>`;
         return;
       }
       box.innerHTML = list.map(createPostCardHTML).join('');
@@ -796,28 +794,29 @@
     }
 
     function capturePostGps() {
+      const t = I18N[currentLang];
       const statusEl = document.getElementById('postGpsStatus');
       const btn = document.getElementById('postGpsBtn');
       if (!navigator.geolocation) {
-        alert('当前设备不支持定位');
+        alert(t.gpsUnsupported);
         return;
       }
-      btn.innerText = '⏳ 定位中...';
+      btn.innerText = '⏳...';
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           capturedPostCoords = {
             lat: Number(pos.coords.latitude.toFixed(6)),
             lng: Number(pos.coords.longitude.toFixed(6))
           };
-          btn.innerText = '✅ 已抓定位';
+          btn.innerText = t.gpsLockedBtn;
           if (statusEl) {
-            statusEl.textContent = `已锁定当前位置坐标 (${capturedPostCoords.lat}, ${capturedPostCoords.lng})`;
+            statusEl.textContent = `${t.gpsLockedText} (${capturedPostCoords.lat}, ${capturedPostCoords.lng})`;
             statusEl.classList.remove('hidden');
           }
         },
         () => {
-          btn.innerText = '📍 抓当前定位';
-          alert('无法获取定位，请允许浏览器定位或手动填写准确店名/街道地址');
+          btn.innerText = t.gpsBtn;
+          alert(t.gpsFailed);
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
@@ -1038,12 +1037,19 @@
         bigJobSub: '优质职位 岗位多多',
         hotCityLabel: '热门：',
         resetBtn: '重置',
+        backHomeBtn: '← 返回首页',
         idxForumTitle: '大马吹水站',
         idxForumSub: '本地吹水 · 探店问答',
         idxMapTitle: '出行导航',
         idxMapSub: '一键搜店 · 路线规划',
         rateCnyLabel: '马币兑人民币',
         rateSgdLabel: '新币兑马币',
+        filterPanelTitle: '🎛️ 精准筛选条件',
+        clearSubFilterBtn: '清空筛选项',
+        allMaxPricePh: '最高预算/价格 RM（可选）',
+        sortOptDefault: '排序：置顶 + 最新',
+        sortOptAsc: '价格从低到高',
+        sortOptDesc: '价格从高到低',
         catHouse: '找房子',
         catJob: '找工作',
         catSecond: '二手闲置',
@@ -1069,12 +1075,29 @@
         navPost: '发布',
         navFav: '收藏',
         navProfile: '我的',
+        fabAiText: 'AI 助手',
+        fabMapText: '查路线',
+        footerAbout: '关于我们',
+        footerAds: '广告招商',
+        footerPrivacy: '隐私政策',
+        footerTerms: '服务条款',
+        footerContact: '联系我们',
         favPageTitle: '⭐ 我的本地收藏',
         emptyFav: '还没有收藏任何帖子，点开帖子详情可点击收藏哦！',
+        historyPageTitle: '🕒 最近浏览记录',
+        clearHistoryBtn: '清空记录',
+        emptyHistory: '暂无浏览记录，快去首页看看吧！',
+        myPostsPageTitle: '📝 我发布的信息',
+        myPostsNewBtn: '+ 发新帖',
+        emptyMyPosts: '当前设备暂未发布过信息，点右上角立即免费发布！',
         profileWelcome: '大马吉通本地访客',
         profileSub: '马来西亚本地生活 · 免费分类信息门户',
-        profilePostTitle: '免费发布分类信息',
+        profileMyPostsMenu: '我的帖子',
         profileFavTitle: '我的收藏',
+        profileHistoryMenu: '我的浏览记录',
+        profilePostTitle: '免费发布分类信息',
+        profileMerchantTitle: '商家入驻与认证',
+        profilePromoMenu: '推广置顶服务',
         profileNoticeTitle: '📌 平台使用须知',
         profileNotice1: '• 本平台为全马用户提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。',
         profileNotice2: '• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。',
@@ -1085,6 +1108,13 @@
         labelCity: '所在州属 / 直辖区 *',
         labelTitle: '信息标题 *',
         titlePlaceholder: '例如：【屋主直租】槟城 Gurney 海景套房',
+        labelExactAddr: '准确地址 / 店名路名（导航更准）',
+        exactAddrPlaceholder: '例如：KK83 烧腊 Kafe Pak Ngah, Jalan Burma',
+        gpsBtn: '📍 抓当前定位',
+        gpsLockedBtn: '✅ 已抓定位',
+        gpsLockedText: '已锁定当前位置坐标',
+        gpsUnsupported: '当前设备不支持定位',
+        gpsFailed: '无法获取定位，请允许浏览器定位或手动填写准确店名/街道地址',
         labelPrice: '价格 / 薪资 *',
         pricePlaceholder: 'RM 1,500/月',
         labelWhatsapp: 'WhatsApp 号码 *',
@@ -1096,6 +1126,8 @@
         spamAlert: '⚠️ 内容包含违规或敏感词汇（如博彩、非法借贷、刷单等），系统已自动拦截！',
         phoneAlert: '⚠️ 请输入有效的马来西亚 WhatsApp 手机号码（例如 0123456789 或 60123456789）！',
         limitAlert: '⚠️ 为防止刷屏广告，每台设备每日最多免费发布 3 条信息，如需置顶推广请前往商家入驻中心。',
+        lbPrev: '‹ 上一张',
+        lbNext: '下一张 ›',
         groupLabels: { ft: '联邦直辖区 (3)', west: '西马各州 (11)', east: '东马各州 (2)', all: '通用' },
         cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' },
         cardLabels: { '找房子': '精选房源', '找工作': '名企直聘', '二手闲置': '同城闲置', '本地优惠': '本地商家' }
@@ -1115,12 +1147,19 @@
         bigJobSub: 'Quality roles & fast hiring',
         hotCityLabel: 'Hot:',
         resetBtn: 'Reset',
+        backHomeBtn: '← Home',
         idxForumTitle: 'MY Forum',
         idxForumSub: 'Chat · Food & Q&A',
         idxMapTitle: 'Navigation',
         idxMapSub: 'Find places & routes',
         rateCnyLabel: 'MYR to CNY',
         rateSgdLabel: 'SGD to MYR',
+        filterPanelTitle: '🎛️ Smart Filters',
+        clearSubFilterBtn: 'Clear',
+        allMaxPricePh: 'Max Budget / Price RM (Optional)',
+        sortOptDefault: 'Sort: Featured + Latest',
+        sortOptAsc: 'Price: Low to High',
+        sortOptDesc: 'Price: High to Low',
         catHouse: 'Property',
         catJob: 'Jobs',
         catSecond: 'Preloved',
@@ -1146,12 +1185,29 @@
         navPost: 'Post',
         navFav: 'Saved',
         navProfile: 'Me',
+        fabAiText: 'AI Helper',
+        fabMapText: 'Routes',
+        footerAbout: 'About Us',
+        footerAds: 'Advertise',
+        footerPrivacy: 'Privacy',
+        footerTerms: 'Terms',
+        footerContact: 'Contact',
         favPageTitle: '⭐ My Saved Posts',
         emptyFav: 'No saved posts yet. Open any post and tap Save!',
+        historyPageTitle: '🕒 Browsing History',
+        clearHistoryBtn: 'Clear',
+        emptyHistory: 'No browsing history yet.',
+        myPostsPageTitle: '📝 My Published Listings',
+        myPostsNewBtn: '+ New Post',
+        emptyMyPosts: 'You have not posted any listing on this device yet.',
         profileWelcome: 'DamaJitong Local Guest',
         profileSub: 'Malaysia Local Community & Free Classifieds',
-        profilePostTitle: 'Post a Free Classified Ad',
+        profileMyPostsMenu: 'My Posts',
         profileFavTitle: 'My Saved Items',
+        profileHistoryMenu: 'Browsing History',
+        profilePostTitle: 'Post a Free Classified Ad',
+        profileMerchantTitle: 'Merchant Listing & Verification',
+        profilePromoMenu: 'Prime Pin Promotion',
         profileNoticeTitle: '📌 Community Guidelines',
         profileNotice1: '• Free local listing platform across Malaysia. Tap any listing to contact the poster directly via WhatsApp.',
         profileNotice2: '• Safety Reminder: Always inspect items or properties in person before transferring any deposit.',
@@ -1162,6 +1218,13 @@
         labelCity: 'State / Federal Territory *',
         labelTitle: 'Listing Title *',
         titlePlaceholder: 'e.g. Gurney Seaview Condo for Rent',
+        labelExactAddr: 'Exact Address / Street Name (For Navigation)',
+        exactAddrPlaceholder: 'e.g. Kafe Pak Ngah, Jalan Burma, Penang',
+        gpsBtn: '📍 Use Current GPS',
+        gpsLockedBtn: '✅ GPS Locked',
+        gpsLockedText: 'Location coordinates locked',
+        gpsUnsupported: 'Geolocation is not supported on this device',
+        gpsFailed: 'Unable to get location. Please allow GPS or enter full street address.',
         labelPrice: 'Price / Salary *',
         pricePlaceholder: 'RM 1,500/mo',
         labelWhatsapp: 'WhatsApp Number *',
@@ -1173,6 +1236,8 @@
         spamAlert: '⚠️ Restricted keywords detected (gambling/loan/scam). Submission blocked.',
         phoneAlert: '⚠️ Please enter a valid Malaysia WhatsApp number (e.g. 0123456789 or 60123456789).',
         limitAlert: '⚠️ Daily limit of 3 free posts reached to prevent spam.',
+        lbPrev: '‹ Prev',
+        lbNext: 'Next ›',
         groupLabels: { ft: 'Federal Territories (3)', west: 'Peninsular States (11)', east: 'East Malaysia (2)', all: 'General' },
         cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' },
         cardLabels: { '找房子': 'Property', '找工作': 'Hiring', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' }
@@ -1192,12 +1257,19 @@
         bigJobSub: 'Jawatan menarik & terus mohon',
         hotCityLabel: 'Hot:',
         resetBtn: 'Reset',
+        backHomeBtn: '← Utama',
         idxForumTitle: 'Forum MY',
         idxForumSub: 'Sembang · Makan & Soal',
         idxMapTitle: 'Navigasi',
         idxMapSub: 'Cari kedai & laluan',
         rateCnyLabel: 'MYR ke CNY',
         rateSgdLabel: 'SGD ke MYR',
+        filterPanelTitle: '🎛️ Penapis Tepat',
+        clearSubFilterBtn: 'Kosongkan',
+        allMaxPricePh: 'Bajet / Harga Maksimum RM',
+        sortOptDefault: 'Susunan: Pilihan + Terkini',
+        sortOptAsc: 'Harga: Rendah ke Tinggi',
+        sortOptDesc: 'Harga: Tinggi ke Rendah',
         catHouse: 'Rumah Sewa',
         catJob: 'Kerja Kosong',
         catSecond: 'Terpakai',
@@ -1223,12 +1295,29 @@
         navPost: 'Iklan',
         navFav: 'Simpanan',
         navProfile: 'Saya',
+        fabAiText: 'Pembantu AI',
+        fabMapText: 'Laluan',
+        footerAbout: 'Tentang Kami',
+        footerAds: 'Iklan',
+        footerPrivacy: 'Privasi',
+        footerTerms: 'Terma',
+        footerContact: 'Hubungi',
         favPageTitle: '⭐ Iklan Disimpan',
         emptyFav: 'Belum ada iklan disimpan. Buka mana-mana iklan dan tekan Simpan!',
+        historyPageTitle: '🕒 Rekod Tontonan',
+        clearHistoryBtn: 'Padam Rekod',
+        emptyHistory: 'Tiada rekod tontonan lagi.',
+        myPostsPageTitle: '📝 Iklan Saya',
+        myPostsNewBtn: '+ Iklan Baru',
+        emptyMyPosts: 'Anda belum memuat naik sebarang iklan lagi.',
         profileWelcome: 'Pelawat Tempatan DamaJitong',
         profileSub: 'Platform Iklan Percuma Komuniti Malaysia',
-        profilePostTitle: 'Muat Naik Iklan Percuma',
+        profileMyPostsMenu: 'Iklan Saya',
         profileFavTitle: 'Senarai Simpanan',
+        profileHistoryMenu: 'Rekod Tontonan Saya',
+        profilePostTitle: 'Muat Naik Iklan Percuma',
+        profileMerchantTitle: 'Daftar & Pengesahan Peniaga',
+        profilePromoMenu: 'Promosi Pin Utama',
         profileNoticeTitle: '📌 Panduan Pengguna',
         profileNotice1: '• Platform iklan percuma seluruh Malaysia. Tekan iklan untuk terus berhubung melalui WhatsApp.',
         profileNotice2: '• Peringatan Keselamatan: Sila berjumpa secara bersemuka sebelum membayar sebarang deposit.',
@@ -1239,6 +1328,13 @@
         labelCity: 'Negeri / Wilayah Persekutuan *',
         labelTitle: 'Tajuk Iklan *',
         titlePlaceholder: 'Cth: Bilik / Rumah Sewa di Penang',
+        labelExactAddr: 'Alamat Tepat / Nama Jalan (Untuk Navigasi)',
+        exactAddrPlaceholder: 'Cth: Kafe Pak Ngah, Jalan Burma, Penang',
+        gpsBtn: '📍 Guna GPS Semasa',
+        gpsLockedBtn: '✅ GPS Dikunci',
+        gpsLockedText: 'Koordinat lokasi dikunci',
+        gpsUnsupported: 'Peranti ini tidak menyokong GPS',
+        gpsFailed: 'Gagal mendapatkan lokasi. Sila benarkan GPS atau isi alamat penuh.',
         labelPrice: 'Harga / Gaji *',
         pricePlaceholder: 'RM 1,500/bln',
         labelWhatsapp: 'Nombor WhatsApp *',
@@ -1250,6 +1346,8 @@
         spamAlert: '⚠️ Kata kunci terlarang dikesan (judi/pinjaman haram). Penghantaran disekat.',
         phoneAlert: '⚠️ Sila masukkan nombor WhatsApp Malaysia yang sah (cth: 0123456789 atau 60123456789).',
         limitAlert: '⚠️ Had 3 iklan percuma sehari telah dicapai untuk mengelakkan spam.',
+        lbPrev: '‹ Sebelum',
+        lbNext: 'Seterusnya ›',
         groupLabels: { ft: 'Wilayah Persekutuan (3)', west: 'Semenanjung (11 Negeri)', east: 'Sabah & Sarawak (2)', all: 'Umum' },
         cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' },
         cardLabels: { '找房子': 'Hartanah', '找工作': 'Kerjaya', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' }
@@ -1387,13 +1485,16 @@
       const resetBtn = document.getElementById('resetFilterBtn');
       if (resetBtn) resetBtn.innerText = t.resetBtn;
 
-      const navNewsEl = document.getElementById('navNewsText');
-      if (navNewsEl) navNewsEl.textContent = t.navNews;
+      if (document.getElementById('favBackHomeBtn')) document.getElementById('favBackHomeBtn').innerText = t.backHomeBtn;
+      if (document.getElementById('navNewsText')) document.getElementById('navNewsText').textContent = t.navNews;
+      if (document.getElementById('fabAiText')) document.getElementById('fabAiText').textContent = t.fabAiText;
+      if (document.getElementById('fabMapText')) document.getElementById('fabMapText').textContent = t.fabMapText;
 
-      const fabMapEl = document.getElementById('fabMapText');
-      if (fabMapEl) {
-        fabMapEl.textContent = lang === 'en' ? 'Routes' : (lang === 'ms' ? 'Laluan' : '查路线');
-      }
+      if (document.getElementById('footerAbout')) document.getElementById('footerAbout').innerText = t.footerAbout;
+      if (document.getElementById('footerAds')) document.getElementById('footerAds').innerText = t.footerAds;
+      if (document.getElementById('footerPrivacy')) document.getElementById('footerPrivacy').innerText = t.footerPrivacy;
+      if (document.getElementById('footerTerms')) document.getElementById('footerTerms').innerText = t.footerTerms;
+      if (document.getElementById('footerContact')) document.getElementById('footerContact').innerText = t.footerContact;
 
       document.getElementById('brandTitle').innerText = t.brandTitle;
       document.getElementById('heroBannerHeadline').innerText = t.heroHeadline;
@@ -1415,22 +1516,39 @@
       document.getElementById('rateSgdLabel').innerText = t.rateSgdLabel;
       document.getElementById('topFreePostBtn').innerText = t.freePostBtn;
 
+      if (document.getElementById('filterPanelTitle')) document.getElementById('filterPanelTitle').innerText = t.filterPanelTitle;
+      if (document.getElementById('clearSubFilterBtn')) document.getElementById('clearSubFilterBtn').innerText = t.clearSubFilterBtn;
+      if (document.getElementById('allMaxPrice')) document.getElementById('allMaxPrice').placeholder = t.allMaxPricePh;
+      if (document.getElementById('sortOptDefault')) document.getElementById('sortOptDefault').innerText = t.sortOptDefault;
+      if (document.getElementById('sortOptAsc')) document.getElementById('sortOptAsc').innerText = t.sortOptAsc;
+      if (document.getElementById('sortOptDesc')) document.getElementById('sortOptDesc').innerText = t.sortOptDesc;
+
       if (document.getElementById('navHomeText')) document.getElementById('navHomeText').innerText = t.navHome;
       if (document.getElementById('navPostText')) document.getElementById('navPostText').innerText = t.navPost;
       if (document.getElementById('navFavText')) document.getElementById('navFavText').innerText = t.navFav;
       if (document.getElementById('navProfileText')) document.getElementById('navProfileText').innerText = t.navProfile;
+
       document.getElementById('favPageTitle').innerText = t.favPageTitle;
+      document.getElementById('historyPageTitle').innerText = t.historyPageTitle;
+      document.getElementById('clearHistoryBtn').innerText = t.clearHistoryBtn;
+      document.getElementById('myPostsPageTitle').innerText = t.myPostsPageTitle;
+      document.getElementById('myPostsNewBtn').innerText = t.myPostsNewBtn;
+
       document.getElementById('profileWelcome').innerText = t.profileWelcome;
       document.getElementById('profileSub').innerText = t.profileSub;
-      document.getElementById('profilePostTitle').innerText = t.profilePostTitle;
+      document.getElementById('profileMyPostsMenu').innerText = t.profileMyPostsMenu;
       document.getElementById('profileFavTitle').innerText = t.profileFavTitle;
+      document.getElementById('profileHistoryMenu').innerText = t.profileHistoryMenu;
+      document.getElementById('profilePostTitle').innerText = t.profilePostTitle;
+      document.getElementById('profileMerchantTitle').innerText = t.profileMerchantTitle;
+      document.getElementById('profilePromoMenu').innerText = t.profilePromoMenu;
       document.getElementById('profileNoticeTitle').innerText = t.profileNoticeTitle;
       document.getElementById('profileNotice1').innerText = t.profileNotice1;
       document.getElementById('profileNotice2').innerText = t.profileNotice2;
 
       document.getElementById('modalPostHeader').innerText = t.modalPostHeader;
       document.getElementById('labelPhoto').innerText = t.labelPhoto;
-      document.getElementById('photoHintText').innerText = t.photoHint;
+      if (document.getElementById('photoHintText')) document.getElementById('photoHintText').innerText = t.photoHint;
       document.getElementById('labelCat').innerText = t.labelCat;
       document.getElementById('formCatHouse').innerText = `🏠 ${t.catHouse}`;
       document.getElementById('formCatJob').innerText = `💼 ${t.catJob}`;
@@ -1439,17 +1557,24 @@
       document.getElementById('labelCity').innerText = t.labelCity;
       document.getElementById('labelTitle').innerText = t.labelTitle;
       document.getElementById('postTitle').placeholder = t.titlePlaceholder;
+      document.getElementById('labelExactAddr').innerText = t.labelExactAddr;
+      document.getElementById('postExactAddress').placeholder = t.exactAddrPlaceholder;
+      document.getElementById('postGpsBtn').innerText = capturedPostCoords ? t.gpsLockedBtn : t.gpsBtn;
       document.getElementById('labelPrice').innerText = t.labelPrice;
       document.getElementById('postPrice').placeholder = t.pricePlaceholder;
       document.getElementById('labelWhatsapp').innerText = t.labelWhatsapp;
       document.getElementById('labelDesc').innerText = t.labelDesc;
       document.getElementById('postDesc').placeholder = t.descPlaceholder;
       document.getElementById('submitBtn').innerText = t.submitBtn;
+      if (document.getElementById('lbPrevBtn')) document.getElementById('lbPrevBtn').innerText = t.lbPrev;
+      if (document.getElementById('lbNextBtn')) document.getElementById('lbNextBtn').innerText = t.lbNext;
 
       renderPortalIconGrid();
       renderPostGalleryGrid();
       renderPosts();
       renderFavs();
+      renderBrowseHistory();
+      renderMyPosts();
     }
 
     function readFileAsDataUrl(file) {
@@ -1597,7 +1722,7 @@
         : '';
 
       const multiBadgeHTML = photos.length > 1
-        ? `<span class="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">📷 ${photos.length}图</span>`
+        ? `<span class="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">📷 ${photos.length}</span>`
         : '';
 
       const rightMediaHTML = photos.length > 0
@@ -1667,12 +1792,15 @@
       const waLink = `https://wa.me/${waDigits}?text=${encodeURIComponent(t.waGreeting(localizedTitle))}`;
       const isFaved = savedIds.includes(post.id);
 
+      const zoomHint = currentLang === 'en' ? '🔍 Zoom' : (currentLang === 'ms' ? '🔍 Besarkan' : '🔍 点击放大');
+      const fullDetailHint = currentLang === 'en' ? 'Open full page & map navigation ›' : (currentLang === 'ms' ? 'Buka halaman penuh & navigasi peta ›' : '打开独立详情页与地图导航 ›');
+
       const galleryHTML = photos.length > 0 ? `
         <div class="mb-3.5">
           <div class="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-xs">
             <img id="detailMainImg" src="${photos[0]}" onclick="openLightbox(activeDetailImages, activeDetailIndex)" class="w-full h-full object-cover cursor-zoom-in transition" />
             <span id="detailPhotoCounter" class="absolute top-2.5 left-2.5 bg-black/70 text-white text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full backdrop-blur-xs">1 / ${photos.length}</span>
-            <span class="absolute bottom-2.5 right-2.5 bg-black/65 text-white text-[10px] font-bold px-2 py-1 rounded-full">🔍 点击放大</span>
+            <span class="absolute bottom-2.5 right-2.5 bg-black/65 text-white text-[10px] font-bold px-2 py-1 rounded-full">${zoomHint}</span>
             ${photos.length > 1 ? `
               <button type="button" onclick="shiftDetailPhoto(-1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/75 text-white font-bold flex items-center justify-center">‹</button>
               <button type="button" onclick="shiftDetailPhoto(1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/75 text-white font-bold flex items-center justify-center">›</button>
@@ -1709,7 +1837,7 @@
           </a>
         </div>
         <div class="mt-2.5 text-center">
-          <a href="/detail.html?id=${post.id}" class="text-[11px] text-blue-600 font-semibold hover:underline">打开独立详情页与地图导航 ›</a>
+          <a href="/detail.html?id=${post.id}" class="text-[11px] text-blue-600 font-semibold hover:underline">${fullDetailHint}</a>
         </div>
       `;
 
@@ -1938,11 +2066,12 @@
 
     function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
     function openPostModal() {
+      const t = I18N[currentLang];
       capturedPostCoords = null;
       const statusEl = document.getElementById('postGpsStatus');
       const btn = document.getElementById('postGpsBtn');
       if (statusEl) statusEl.classList.add('hidden');
-      if (btn) btn.innerText = '📍 抓当前定位';
+      if (btn) btn.innerText = t.gpsBtn;
       renderPostGalleryGrid();
       document.getElementById('postModal').classList.remove('hidden');
     }
@@ -2143,22 +2272,22 @@
   <!-- 大马吉通 AI 助手悬浮入口按钮 -->
   <a href="/ai.html" style="position:fixed;right:14px;bottom:134px;z-index:40;display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,#dc2626,#ea580c);color:#ffffff;padding:8px 13px;border-radius:999px;font-size:12px;font-weight:bold;text-decoration:none;box-shadow:0 4px 12px rgba(220,38,38,0.35);border:1.5px solid #ffffff;">
     <span style="font-size:15px;">🤖</span>
-    <span>AI 助手</span>
+    <span id="fabAiText">AI 助手</span>
   </a>
   <!-- 全站底部合规与招商入口 -->
   <footer class="max-w-3xl mx-auto px-4 pt-4 pb-24 text-center text-xs text-slate-400 space-y-1">
     <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-      <a href="legal.html#about" class="hover:text-red-500 underline">关于我们 About</a>
+      <a id="footerAbout" href="legal.html#about" class="hover:text-red-500 underline">关于我们</a>
       <span>·</span>
-      <a href="legal.html#ads" class="text-amber-600 font-semibold hover:text-amber-700 underline">广告招商 Ads</a>
+      <a id="footerAds" href="legal.html#ads" class="text-amber-600 font-semibold hover:text-amber-700 underline">广告招商</a>
       <span>·</span>
-      <a href="legal.html#privacy" class="hover:text-red-500 underline">隐私政策 Privacy</a>
+      <a id="footerPrivacy" href="legal.html#privacy" class="hover:text-red-500 underline">隐私政策</a>
       <span>·</span>
-      <a href="legal.html#terms" class="hover:text-red-500 underline">服务条款 Terms</a>
+      <a id="footerTerms" href="legal.html#terms" class="hover:text-red-500 underline">服务条款</a>
       <span>·</span>
-      <a href="legal.html#contact" class="hover:text-red-500 underline">联系我们 Contact</a>
+      <a id="footerContact" href="legal.html#contact" class="hover:text-red-500 underline">联系我们</a>
     </div>
-    <p class="text-[11px] text-slate-400">© 2026 大马吉通 DaMaJiTong.com · All Rights Reserved</p>
+    <p class="text-[11px] text-slate-400">© 2026 DamaJitong.com · All Rights Reserved</p>
   </footer>
 </body>
 </html>
