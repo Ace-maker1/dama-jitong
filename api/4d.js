@@ -27,7 +27,18 @@ function isLiveDrawHourMyt() {
   const myt = getMytNow();
   const d = myt.getDay();
   const h = myt.getHours();
-  return (d === 0 || d === 3 || d === 6) && h >= 19 && h < 21;
+  return (d === 0 || d === 3 || d === 6) && h >= 19 && h < 20;
+}
+
+function normalizeCompanyKey(raw = '') {
+  const s = String(raw || '').toLowerCase().trim();
+  if (s === 'magnum' || s.includes('magnum')) return 'magnum';
+  if (s === 'toto' || s.includes('toto')) return 'toto';
+  if (s === 'damacai' || s.includes('da ma cai') || s.includes('damacai')) return 'damacai';
+  if (s === 'sabah88' || s.includes('sabah') || s.includes('diriwan')) return 'sabah88';
+  if (s === 'stc' || s.includes('sandakan')) return 'stc';
+  if (s === 'cashsweep' || s.includes('sarawak') || s.includes('cashsweep')) return 'cashsweep';
+  return null;
 }
 
 function fmt4(v) {
@@ -48,108 +59,59 @@ function hasAnyValid4D(board) {
     .some(n => /^\d{4}$/.test(n));
 }
 
-async function fetchTextSafe(url, ms = 6500) {
+// 关键：只要开出任意 1 个号码（哪怕头奖还没开，先开了安慰奖/特别奖）就保留！
+function normalizeDrawRecord(item, fallbackDate = '') {
+  if (!item || typeof item !== 'object') return null;
+
+  const p1 = fmt4(item.first ?? item.p1 ?? item['1st']);
+  const p2 = fmt4(item.second ?? item.p2 ?? item['2nd']);
+  const p3 = fmt4(item.third ?? item.p3 ?? item['3rd']);
+  const special = pad4List(item.special, 10);
+  const consolation = pad4List(item.consolation, 10);
+
+  const board = {
+    drawNo: String(item.draw_no ?? item.drawNo ?? ''),
+    drawDate: String(item.date ?? item.draw_date ?? fallbackDate).slice(0, 10),
+    p1,
+    p2,
+    p3,
+    special,
+    consolation
+  };
+
+  return hasAnyValid4D(board) ? board : null;
+}
+
+function extractItemsArray(payload) {
+  if (!payload || typeof payload !== 'object') return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.data?.results)) return payload.data.results;
+  if (Array.isArray(payload.data?.draws)) return payload.data.draws;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.results)) return payload.results;
+  if (payload.data && typeof payload.data === 'object') return [payload.data];
+  return [];
+}
+
+async function fetchJsonSafe(url, ms = 5500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
     const r = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/127.0.0.0 Safari/537.36',
         'Cache-Control': 'no-cache'
       }
     });
-    if (!r.ok) return '';
-    return await r.text();
+    if (!r.ok) return null;
+    return await r.json();
   } catch (_) {
-    return '';
+    return null;
   } finally {
     clearTimeout(timer);
   }
-}
-
-// 从直播页面区块中按顺序提取 23 个奖号 (1st, 2nd, 3rd, 10 Special, 10 Consolation)
-function parseOperatorBlock(blockHtml, todayStr) {
-  if (!blockHtml) return null;
-
-  // 剥离 HTML 标签，按文本 token 提取
-  const text = blockHtml
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/ /gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // 检查日期是否匹配今天（支持 2026-11-25 或 25-11-2026 或 25/11/2026）
-  const [yyyy, mm, dd] = todayStr.split('-');
-  const datePatterns = [
-    `${yyyy}-${mm}-${dd}`,
-    `${dd}-${mm}-${yyyy}`,
-    `${dd}/${mm}/${yyyy}`
-  ];
-  const isToday = datePatterns.some(p => text.includes(p));
-  if (!isToday) return null;
-
-  // 提取期号 Draw No（例如 454/26 或 5678/26）
-  const drawNoMatch = text.match(/\b(\d{3,4}\/\d{2})\b/);
-  const drawNo = drawNoMatch ? drawNoMatch[1] : '';
-
-  // 按位置定位 1st / 2nd / 3rd / Special / Consolation 后的 4 位数字或占位符 ----
-  const extractAfter = (labelRegex, count) => {
-    const m = text.match(labelRegex);
-    if (!m) return Array(count).fill('----');
-    const sub = text.slice(m.index + m[0].length, m.index + m[0].length + 450);
-    const tokens = sub.match(/\b\d{4}\b|----/g) || [];
-    return pad4List(tokens, count);
-  };
-
-  const p1 = extractAfter(/(?:1st\s*Prize|1ST|首奖|头奖)/i, 1)[0];
-  const p2 = extractAfter(/(?:2nd\s*Prize|2ND|二奖)/i, 1)[0];
-  const p3 = extractAfter(/(?:3rd\s*Prize|3RD|三奖)/i, 1)[0];
-  const special = extractAfter(/(?:Special|特别奖)/i, 10);
-  const consolation = extractAfter(/(?:Consolation|安慰奖)/i, 10);
-
-  const board = { drawNo, drawDate: todayStr, p1, p2, p3, special, consolation };
-  return hasAnyValid4D(board) ? board : null;
-}
-
-// 切分主流 4D 直播页面各家运营商区块
-function scrapeLiveFromHtml(html, todayStr) {
-  const out = {};
-  if (!html) return out;
-
-  const markers = [
-    { key: 'magnum', rx: /Magnum\s*4D/i },
-    { key: 'damacai', rx: /Da\s*Ma\s*Cai|PMP\s*1\+3D/i },
-    { key: 'toto', rx: /Sports\s*Toto/i },
-    { key: 'sabah88', rx: /Sabah\s*88|Diriwan/i },
-    { key: 'stc', rx: /Sandakan\s*STC|STC\s*4D/i },
-    { key: 'cashsweep', rx: /CashSweep|Special\s*CashSweep/i }
-  ];
-
-  // 找到每个运营商标题在 HTML 中的位置并切片
-  const positions = [];
-  for (const m of markers) {
-    const match = html.match(m.rx);
-    if (match && typeof match.index === 'number') {
-      positions.push({ key: m.key, idx: match.index });
-    }
-  }
-  positions.sort((a, b) => a.idx - b.idx);
-
-  for (let i = 0; i < positions.length; i++) {
-    const start = positions[i].idx;
-    const end = i + 1 < positions.length ? positions[i + 1].idx : start + 18000;
-    const slice = html.slice(start, Math.min(end, start + 18000));
-    const parsed = parseOperatorBlock(slice, todayStr);
-    if (parsed) {
-      out[positions[i].key] = parsed;
-    }
-  }
-
-  return out;
 }
 
 async function loadHistoryFromSupabase() {
@@ -165,7 +127,7 @@ async function loadHistoryFromSupabase() {
       const rows = await r.json();
       if (Array.isArray(rows)) {
         rows.forEach(row => {
-          if (history[row.company_id] && history[row.company_id].length < 20) {
+          if (history[row.company_id] && history[row.company_id].length < 25) {
             history[row.company_id].push({
               drawNo: row.draw_no || '',
               drawDate: row.draw_date || '',
@@ -183,7 +145,7 @@ async function loadHistoryFromSupabase() {
   return history;
 }
 
-async function saveTodayToSupabase(resultsMap, todayStr) {
+async function saveTodayPartialOrFull(resultsMap, todayStr) {
   const url = process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
 
@@ -231,37 +193,58 @@ module.exports = async function handler(req, res) {
   const results = {};
   COMPANIES.forEach(k => { results[k] = emptyBoard(todayStr, ''); });
 
-  // 1. 并发拉取多个秒级直播源 + 历史数据库
-  const [htmlCheck4d, html4d88, history] = await Promise.all([
-    fetchTextSafe(`https://www.check4d.com/?_t=${Date.now()}`, 6000),
-    fetchTextSafe(`https://www.4d88.com/?_t=${Date.now()}`, 6000),
-    loadHistoryFromSupabase()
+  // 1. 先加载 Supabase 里的全部历史记录（确保往期记录永远不会消失）
+  const history = await loadHistoryFromSupabase();
+
+  // 2. 并发拉取实时开奖接口 + 各家最近开彩接口
+  const [liveJson, latestJson, ...opJsons] = await Promise.all([
+    fetchJsonSafe(`https://4dlivetoday.com/api/v1/live?_t=${Date.now()}`, 5000),
+    fetchJsonSafe(`https://4dlivetoday.com/api/v1/latest?_t=${Date.now()}`, 5000),
+    ...COMPANIES.map(comp => fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${comp}?limit=15&_t=${Date.now()}`, 5000))
   ]);
 
-  const liveFromCheck4d = scrapeLiveFromHtml(htmlCheck4d, todayStr);
-  const liveFrom4d88 = scrapeLiveFromHtml(html4d88, todayStr);
+  // 合并历史记录
+  COMPANIES.forEach((comp, idx) => {
+    const list = extractItemsArray(opJsons[idx]);
+    for (const item of list) {
+      const board = normalizeDrawRecord(item, todayStr);
+      if (!board) continue;
+      const existIdx = history[comp].findIndex(h => h.drawDate === board.drawDate);
+      if (existIdx === -1) history[comp].push(board);
+      else history[comp][existIdx] = board;
+    }
+    history[comp].sort((a, b) => String(b.drawDate).localeCompare(String(a.drawDate)));
+  });
 
+  // 合并 /live 和 /latest 里的今日实时出奖号码（出一个合并一个）
+  const incomingLive = [...extractItemsArray(latestJson), ...extractItemsArray(liveJson)];
+  for (const item of incomingLive) {
+    const comp = normalizeCompanyKey(item.operator || item.operator_name || item.company);
+    if (!comp) continue;
+    const board = normalizeDrawRecord(item, todayStr);
+    if (!board) continue;
+
+    const existIdx = history[comp].findIndex(h => h.drawDate === board.drawDate);
+    if (existIdx === -1) history[comp].unshift(board);
+    else history[comp][existIdx] = board;
+  }
+
+  // 决定主面板展示：开奖时段优先展示今日实时进度的盘面；非开奖时段展示最新一期完整结果
   for (const comp of COMPANIES) {
-    const todayLive = liveFromCheck4d[comp] || liveFrom4d88[comp];
-    if (todayLive) {
-      results[comp] = todayLive;
-      const idx = history[comp].findIndex(h => h.drawDate === todayStr);
-      if (idx === -1) history[comp].unshift(todayLive);
-      else history[comp][idx] = todayLive;
+    const todayRec = history[comp].find(h => h.drawDate === todayStr);
+    if (todayRec) {
+      results[comp] = { ...todayRec };
     } else if (!liveWindow && history[comp][0]) {
-      // 非开奖时段，展示最新一期归档成绩
       results[comp] = { ...history[comp][0] };
     }
   }
 
-  await saveTodayToSupabase(results, todayStr);
+  await saveTodayPartialOrFull(results, todayStr);
 
-  const liveHitCount = COMPANIES.filter(c => hasAnyValid4D(results[c])).length;
   return res.status(200).json({
     ok: true,
     today: todayStr,
     liveWindow,
-    liveHitCount,
     results,
     history
   });
