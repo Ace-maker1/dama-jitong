@@ -42,9 +42,27 @@
 
     <!-- 主内容区（pb-28 防止底部固定栏遮挡最下方内容） -->
     <main id="detailMain" class="hidden flex-1 pb-28">
-      <!-- 大图展示区 -->
-      <div id="heroImageBox" class="bg-slate-900 relative hidden">
-        <img id="heroImg" src="" alt="" class="w-full max-h-80 object-contain mx-auto" />
+      <!-- 高级多图画廊 & 缩略图展示区 -->
+      <div id="heroImageBox" class="bg-slate-900 relative hidden p-2.5">
+        <div class="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-950">
+          <img id="heroImg" src="" alt="" onclick="openDetailLightbox()" class="w-full h-full object-contain mx-auto cursor-zoom-in transition" />
+          <span id="heroPhotoCounter" class="hidden absolute top-2.5 left-2.5 bg-black/70 text-white text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full backdrop-blur-xs">1 / 1</span>
+          <span class="absolute bottom-2.5 right-2.5 bg-black/65 text-white text-[10px] font-bold px-2 py-1 rounded-full">🔍 点击放大</span>
+          <button type="button" id="heroPrevBtn" onclick="shiftHeroPhoto(-1)" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold flex items-center justify-center">‹</button>
+          <button type="button" id="heroNextBtn" onclick="shiftHeroPhoto(1)" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold flex items-center justify-center">›</button>
+        </div>
+        <div id="heroThumbStrip" class="hidden flex items-center gap-2 overflow-x-auto no-scrollbar mt-2 pb-0.5"></div>
+      </div>
+
+      <!-- 全屏高清看图灯箱 -->
+      <div id="detailLightbox" onclick="closeDetailLightbox()" class="fixed inset-0 bg-black/95 z-50 hidden flex flex-col items-center justify-center p-3">
+        <button type="button" onclick="closeDetailLightbox()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 text-white font-bold flex items-center justify-center">✕</button>
+        <div id="detailLightboxCounter" class="text-white/80 text-xs font-mono mb-2">1 / 1</div>
+        <img id="detailLightboxImg" src="" onclick="event.stopPropagation(); shiftHeroPhoto(1);" class="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl cursor-pointer" />
+        <div id="detailLightboxNav" class="hidden flex items-center gap-4 mt-4">
+          <button type="button" onclick="event.stopPropagation(); shiftHeroPhoto(-1);" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">‹ 上一张</button>
+          <button type="button" onclick="event.stopPropagation(); shiftHeroPhoto(1);" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">下一张 ›</button>
+        </div>
       </div>
 
       <!-- 核心标题与价格卡片 -->
@@ -134,7 +152,7 @@
       </section>
 
       <!-- 底部合规链接栏 -->
-      <footer class="mx-3 mt-6 pt-4 border-t border-gray-200/80 text-center text-[11px] text-gray-400 space-y-1.5">
+      <footer class="mx-3 mt-6 pt-4 border-t border-gray-200/80 text-center text-[11px] text-slate-400 space-y-1.5">
         <div class="flex items-center justify-center gap-3 flex-wrap">
           <a href="/privacy.html" id="txtFooterPrivacy" class="hover:text-gray-600 underline">隐私政策 (PDPA)</a>
           <span>·</span>
@@ -225,6 +243,98 @@
     let detailTransCache = {};
     try { detailTransCache = JSON.parse(localStorage.getItem(DETAIL_TRANS_CACHE_KEY) || '{}'); } catch (e) {}
 
+    let heroPhotos = [];
+    let heroPhotoIndex = 0;
+
+    function extractAllPostPhotos(post) {
+      const list = [];
+      const add = (u) => {
+        if (typeof u === 'string' && u.trim() && !list.includes(u.trim())) {
+          list.push(u.trim());
+        }
+      };
+      add(post?.image_url);
+      if (Array.isArray(post?.images)) post.images.forEach(add);
+
+      const blob = `${post?.description || ''} ${post?.desc_zh || ''} ${post?.desc_en || ''} ${post?.desc_ms || ''}`;
+      const m = blob.match(/\[\[IMGS:(\[[\s\S]*?\])\]\]/);
+      if (m) {
+        try {
+          const arr = JSON.parse(m[1]);
+          if (Array.isArray(arr)) arr.forEach(add);
+        } catch (_) {}
+      }
+      return list;
+    }
+
+    function renderHeroGallery(photos, startIdx = 0) {
+      const box = document.getElementById('heroImageBox');
+      const img = document.getElementById('heroImg');
+      const counter = document.getElementById('heroPhotoCounter');
+      const prevBtn = document.getElementById('heroPrevBtn');
+      const nextBtn = document.getElementById('heroNextBtn');
+      const thumbStrip = document.getElementById('heroThumbStrip');
+
+      if (!photos || photos.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      heroPhotos = photos;
+      heroPhotoIndex = ((startIdx % photos.length) + photos.length) % photos.length;
+      box.classList.remove('hidden');
+      img.src = heroPhotos[heroPhotoIndex];
+
+      if (photos.length > 1) {
+        counter.innerText = `${heroPhotoIndex + 1} / ${photos.length}`;
+        counter.classList.remove('hidden');
+        prevBtn.classList.remove('hidden');
+        nextBtn.classList.remove('hidden');
+        thumbStrip.classList.remove('hidden');
+        thumbStrip.innerHTML = heroPhotos.map((u, idx) => `
+          <button type="button" onclick="selectHeroPhoto(${idx})" class="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition ${idx === heroPhotoIndex ? 'border-amber-400 scale-102' : 'border-transparent opacity-65 hover:opacity-100'}">
+            <img src="${u}" class="w-full h-full object-cover" />
+          </button>
+        `).join('');
+      } else {
+        counter.classList.add('hidden');
+        prevBtn.classList.add('hidden');
+        nextBtn.classList.add('hidden');
+        thumbStrip.classList.add('hidden');
+      }
+
+      const lb = document.getElementById('detailLightbox');
+      if (lb && !lb.classList.contains('hidden')) {
+        document.getElementById('detailLightboxImg').src = heroPhotos[heroPhotoIndex];
+        document.getElementById('detailLightboxCounter').innerText = `${heroPhotoIndex + 1} / ${heroPhotos.length}`;
+      }
+    }
+
+    function selectHeroPhoto(idx) {
+      if (!heroPhotos.length) return;
+      renderHeroGallery(heroPhotos, idx);
+    }
+
+    function shiftHeroPhoto(delta) {
+      if (!heroPhotos.length) return;
+      renderHeroGallery(heroPhotos, heroPhotoIndex + delta);
+    }
+
+    function openDetailLightbox() {
+      if (!heroPhotos.length) return;
+      const lb = document.getElementById('detailLightbox');
+      document.getElementById('detailLightboxImg').src = heroPhotos[heroPhotoIndex];
+      document.getElementById('detailLightboxCounter').innerText = `${heroPhotoIndex + 1} / ${heroPhotos.length}`;
+      const nav = document.getElementById('detailLightboxNav');
+      if (heroPhotos.length > 1) nav.classList.remove('hidden');
+      else nav.classList.add('hidden');
+      lb.classList.remove('hidden');
+    }
+
+    function closeDetailLightbox() {
+      document.getElementById('detailLightbox').classList.add('hidden');
+    }
+
     function cleanMapText(str) {
       return (str || '')
         .replace(/[()（）\[\]]/g, ' ')
@@ -254,7 +364,10 @@
         const addrLine = raw.match(/📍\s*地址[：:]\s*([^\n\[]+)/);
         if (addrLine) addr = cleanMapText(addrLine[1]);
       }
-      const cleanDesc = raw.replace(/\n?\[\[MAP:[^\]]+\]\]/g, '').trim();
+      const cleanDesc = raw
+        .replace(/\n?\[\[MAP:[^\]]+\]\]/g, '')
+        .replace(/\n?\[\[IMGS:[\s\S]*?\]\]/g, '')
+        .trim();
       const pureTitle = cleanMapText(
         (post?.title || '')
           .replace(/^【[^】]*】\s*/, '')
@@ -352,11 +465,13 @@
 
       const localizedTitle = getLocalizedField(p, 'title', lang);
       const localizedPrice = getLocalizedField(p, 'price', lang);
-      // 优先读取对应语言的预存描述，再兜底清洗后的默认描述
       const rawLocalizedDesc = (lang === 'en' && p.desc_en)
         ? p.desc_en
         : ((lang === 'ms' && p.desc_ms) ? p.desc_ms : (p.desc_zh || mapMeta.cleanDesc));
-      const baseDesc = (rawLocalizedDesc || '').replace(/\n?\[\[MAP:[^\]]+\]\]/g, '').trim() || t.noDesc;
+      const baseDesc = (rawLocalizedDesc || '')
+        .replace(/\n?\[\[MAP:[^\]]+\]\]/g, '')
+        .replace(/\n?\[\[IMGS:[\s\S]*?\]\]/g, '')
+        .trim() || t.noDesc;
 
       document.title = `${localizedTitle} - 大马吉通 MY`;
       document.getElementById('txtBack').innerText = t.back;
@@ -381,10 +496,7 @@
       document.getElementById('txtFooterTerms').innerText = t.footerTerms;
       document.getElementById('footerContactBtn').innerText = t.footerContact;
 
-      if (p.image_url) {
-        document.getElementById('heroImageBox').classList.remove('hidden');
-        document.getElementById('heroImg').src = p.image_url;
-      }
+      renderHeroGallery(extractAllPostPhotos(p), 0);
 
       if (p.is_pinned) document.getElementById('pinBadge').classList.remove('hidden');
       document.getElementById('catBadge').innerText = t.cats[p.category] || p.category;
@@ -392,7 +504,6 @@
       document.getElementById('cityBadge').innerText = `📍 ${cityLabel}`;
       document.getElementById('navLocationLabel').innerText = mapMeta.addr ? `📍 ${mapMeta.addr}` : `📍 ${cityLabel} · ${mapMeta.pureTitle || localizedTitle}`;
 
-      // 站内地图 + 外部 Google Maps / Waze 导航链接
       const regionInfo = DMJT_API.getRegionInfo(p.city);
       const targetLat = mapMeta.lat != null ? mapMeta.lat : regionInfo.lat;
       const targetLng = mapMeta.lng != null ? mapMeta.lng : regionInfo.lng;
@@ -413,7 +524,6 @@
       document.getElementById('gmapExtBtn').href = gmapUrl;
       document.getElementById('wazeExtBtn').href = wazeUrl;
 
-      // 店主认领 & 申请修改/下架 WhatsApp 链接
       const pageUrl = window.location.href;
       const cleanAdminWa = ADMIN_WA.replace(/[^0-9]/g, '');
       document.getElementById('claimOwnerBtn').href = `https://wa.me/${cleanAdminWa}?text=${encodeURIComponent(t.claimWaMsg(p.id, localizedTitle, pageUrl))}`;
@@ -444,7 +554,6 @@
       document.getElementById('detailMain').classList.remove('hidden');
       document.getElementById('bottomActionBar').classList.remove('hidden');
 
-      // 仅当数据库未存储该语言版本时，才自动兜底翻译
       const hasPreStored = (lang === 'en' && (p.title_en || p.desc_en))
         || (lang === 'ms' && (p.title_ms || p.desc_ms))
         || (lang === 'zh' && (p.title_zh || p.desc_zh));
