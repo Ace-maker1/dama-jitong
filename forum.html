@@ -82,9 +82,9 @@
     </nav>
   </div>
 
-  <!-- 发新帖弹窗 -->
+  <!-- 发新帖弹窗（支持最多 6 张图九宫格上传） -->
   <div id="newPostModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-4 space-y-3 shadow-2xl">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-4 space-y-3 shadow-2xl max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <h2 id="modalNewTitle" class="font-black text-base text-slate-900">✏️ 发布新话题</h2>
         <button type="button" id="closeNewPostBtn" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold text-sm cursor-pointer">✕</button>
@@ -114,6 +114,21 @@
                   class="w-full bg-slate-100 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs leading-relaxed text-slate-800 focus:outline-none"></textarea>
       </div>
 
+      <!-- 多图相册上传区（最多 6 张） -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span id="lblForumPhotos" class="text-[11px] font-bold text-slate-600">📸 附带实拍图集（可选，最多 6 张）</span>
+          <span id="forumPhotoCount" class="text-[10px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">0 / 6</span>
+        </div>
+        <div id="forumPhotoGrid" class="grid grid-cols-3 gap-2">
+          <label class="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-indigo-200 rounded-2xl bg-indigo-50/40 hover:bg-indigo-50 transition cursor-pointer">
+            <span class="text-xl mb-0.5">📷</span>
+            <span id="forumAddPhotoText" class="text-[10px] font-bold text-indigo-700">添加图片</span>
+            <input type="file" id="forumPhotoInput" accept="image/*" multiple class="hidden" />
+          </label>
+        </div>
+      </div>
+
       <p id="reviewNoticeHint" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
         🛡️ 为维护社区环境，新发布的帖子需经审核通过后公开展示。
       </p>
@@ -125,7 +140,7 @@
     </div>
   </div>
 
-  <!-- 帖子详情 & 盖楼回复弹窗 -->
+  <!-- 帖子详情 & 多图画廊 & 盖楼回复弹窗 -->
   <div id="detailModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-md h-[88vh] sm:h-[82vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
       <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
@@ -147,6 +162,18 @@
               ❤️ 0
             </button>
           </div>
+
+          <!-- 详情多图画廊 + 缩略图条 -->
+          <div id="forumDetailGallery" class="hidden mb-3">
+            <div class="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
+              <img id="forumDetailMainImg" src="" class="w-full h-full object-cover cursor-zoom-in" />
+              <span id="forumDetailImgCounter" class="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">1 / 1</span>
+              <button type="button" id="forumPrevImgBtn" class="hidden absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 text-white font-bold text-sm flex items-center justify-center cursor-pointer">‹</button>
+              <button type="button" id="forumNextImgBtn" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 text-white font-bold text-sm flex items-center justify-center cursor-pointer">›</button>
+            </div>
+            <div id="forumDetailThumbs" class="hidden flex items-center gap-2 overflow-x-auto no-scrollbar mt-2 pb-0.5"></div>
+          </div>
+
           <div id="detailContent" class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-3.5 rounded-2xl border border-slate-100"></div>
           <div id="detailTranslatedBox" class="hidden mt-2.5 text-xs text-sky-900 leading-relaxed whitespace-pre-wrap bg-sky-50/90 p-3 rounded-2xl border border-sky-200"></div>
         </div>
@@ -172,10 +199,18 @@
     </div>
   </div>
 
+  <!-- 全屏高清看图灯箱 -->
+  <div id="forumLightbox" class="hidden fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-3">
+    <button type="button" id="closeForumLightboxBtn" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 text-white font-bold flex items-center justify-center cursor-pointer">✕</button>
+    <div id="forumLightboxCounter" class="text-white/80 text-xs font-mono mb-2">1 / 1</div>
+    <img id="forumLightboxImg" src="" class="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl cursor-pointer" />
+  </div>
+
   <script>
     window.addEventListener('DOMContentLoaded', function () {
       var SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
       var SUPABASE_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+      var MAX_FORUM_PHOTOS = 6;
       var sb = null;
       try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
@@ -240,6 +275,8 @@
           titlePh: '一句话概括你想聊的话题...',
           lblPostContent: '详细内容 *',
           contentPh: '分享你的见闻、提问或吹水内容（请文明交流）...',
+          lblForumPhotos: '📸 附带实拍图集（可选，最多 6 张）',
+          addPhotoText: '添加图片',
           reviewHint: '🛡️ 为维护社区环境，新发布的帖子需经审核通过后公开展示。',
           submitBtn: '🚀 提交帖子（待审核）',
           pendingSubmitted: '✅ 已提交审核！审核通过后将在论坛公开展示。',
@@ -283,6 +320,8 @@
           titlePh: 'Summarize your topic...',
           lblPostContent: 'Details *',
           contentPh: 'Share your thoughts, questions, or local tips...',
+          lblForumPhotos: '📸 Attach Photos (Optional, up to 6)',
+          addPhotoText: 'Add Photo',
           reviewHint: '🛡️ New posts are reviewed before going public to keep the community clean.',
           submitBtn: '🚀 Submit for Review',
           pendingSubmitted: '✅ Submitted for review! It will appear publicly once approved.',
@@ -326,6 +365,8 @@
           titlePh: 'Ringkaskan topik perbincangan...',
           lblPostContent: 'Kandungan *',
           contentPh: 'Kongsi cerita, soalan atau info tempatan...',
+          lblForumPhotos: '📸 Lampirkan Gambar (Pilihan, maks. 6)',
+          addPhotoText: 'Tambah',
           reviewHint: '🛡️ Siaran baharu akan disemak terlebih dahulu sebelum dipaparkan secara umum.',
           submitBtn: '🚀 Hantar (Semakan)',
           pendingSubmitted: '✅ Dihantar untuk semakan! Akan dipaparkan selepas diluluskan.',
@@ -374,11 +415,173 @@
       var detailTranslatedOpen = false;
       var currentReplies = [];
       var expandedReplyIdx = {};
+      var forumDraftPhotos = [];
+      var activeDetailPhotos = [];
+      var activeDetailPhotoIdx = 0;
 
       try {
         var storedPending = JSON.parse(localStorage.getItem(MY_PENDING_KEY) || '[]');
         if (Array.isArray(storedPending)) myPendingPosts = storedPending;
       } catch (e) {}
+
+      function extractForumPhotos(post) {
+        var list = [];
+        var add = function (u) {
+          if (typeof u === 'string' && u.trim() && list.indexOf(u.trim()) === -1) list.push(u.trim());
+        };
+        add(post && post.image_url);
+        if (post && Array.isArray(post.images)) {
+          for (var i = 0; i < post.images.length; i++) add(post.images[i]);
+        }
+        var raw = (post && post.content) ? post.content : '';
+        var m = raw.match(/\[\[IMGS:(\[[\s\S]*?\])\]\]/);
+        if (m) {
+          try {
+            var arr = JSON.parse(m[1]);
+            if (Array.isArray(arr)) {
+              for (var j = 0; j < arr.length; j++) add(arr[j]);
+            }
+          } catch (e) {}
+        }
+        return list;
+      }
+
+      function cleanForumContent(raw) {
+        return String(raw || '').replace(/\n?\[\[IMGS:[\s\S]*?\]\]/g, '').trim();
+      }
+
+      function readFileUrl(file) {
+        return new Promise(function (resolve, reject) {
+          var r = new FileReader();
+          r.onload = function (ev) { resolve(ev.target.result); };
+          r.onerror = reject;
+          r.readAsDataURL(file);
+        });
+      }
+
+      function compressForumPhoto(file) {
+        return new Promise(function (resolve) {
+          var r = new FileReader();
+          r.readAsDataURL(file);
+          r.onload = function (ev) {
+            var img = new Image();
+            img.src = ev.target.result;
+            img.onload = function () {
+              var maxW = 1080;
+              var w = img.width;
+              var h = img.height;
+              if (w > maxW) {
+                h = Math.round((h * maxW) / w);
+                w = maxW;
+              }
+              var c = document.createElement('canvas');
+              c.width = w;
+              c.height = h;
+              c.getContext('2d').drawImage(img, 0, 0, w, h);
+              c.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.8);
+            };
+          };
+        });
+      }
+
+      function renderForumPhotoGrid() {
+        var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
+        var grid = document.getElementById('forumPhotoGrid');
+        var cnt = document.getElementById('forumPhotoCount');
+        if (!grid) return;
+        if (cnt) cnt.innerText = forumDraftPhotos.length + ' / ' + MAX_FORUM_PHOTOS;
+
+        var html = '';
+        for (var i = 0; i < forumDraftPhotos.length; i++) {
+          html += '<div class="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">' +
+            '<img src="' + forumDraftPhotos[i].dataUrl + '" class="w-full h-full object-cover" />' +
+            '<button type="button" data-pidx="' + i + '" class="rm-forum-photo absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 text-white text-xs font-bold flex items-center justify-center cursor-pointer">✕</button>' +
+            '</div>';
+        }
+        if (forumDraftPhotos.length < MAX_FORUM_PHOTOS) {
+          html += '<label class="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-indigo-200 rounded-2xl bg-indigo-50/40 hover:bg-indigo-50 transition cursor-pointer">' +
+            '<span class="text-xl mb-0.5">📷</span>' +
+            '<span class="text-[10px] font-bold text-indigo-700">' + escapeHtml(t.addPhotoText) + '</span>' +
+            '<input type="file" id="forumPhotoInput" accept="image/*" multiple class="hidden" />' +
+            '</label>';
+        }
+        grid.innerHTML = html;
+
+        var newInput = document.getElementById('forumPhotoInput');
+        if (newInput) {
+          newInput.addEventListener('change', function () {
+            var files = Array.prototype.slice.call(this.files || []);
+            this.value = '';
+            var remain = MAX_FORUM_PHOTOS - forumDraftPhotos.length;
+            if (remain <= 0 || files.length === 0) return;
+            var picked = files.slice(0, remain);
+            Promise.all(picked.map(function (f) {
+              return readFileUrl(f).then(function (u) { return { file: f, dataUrl: u }; });
+            })).then(function (items) {
+              forumDraftPhotos = forumDraftPhotos.concat(items);
+              renderForumPhotoGrid();
+            });
+          });
+        }
+
+        var rmBtns = grid.querySelectorAll('.rm-forum-photo');
+        for (var j = 0; j < rmBtns.length; j++) {
+          rmBtns[j].addEventListener('click', function () {
+            var idx = Number(this.getAttribute('data-pidx'));
+            forumDraftPhotos.splice(idx, 1);
+            renderForumPhotoGrid();
+          });
+        }
+      }
+
+      function renderForumDetailGallery(photos, startIdx) {
+        var box = document.getElementById('forumDetailGallery');
+        var imgEl = document.getElementById('forumDetailMainImg');
+        var ctrEl = document.getElementById('forumDetailImgCounter');
+        var prevBtn = document.getElementById('forumPrevImgBtn');
+        var nextBtn = document.getElementById('forumNextImgBtn');
+        var thumbBox = document.getElementById('forumDetailThumbs');
+        if (!box || !imgEl) return;
+
+        if (!photos || photos.length === 0) {
+          box.classList.add('hidden');
+          activeDetailPhotos = [];
+          return;
+        }
+
+        activeDetailPhotos = photos;
+        activeDetailPhotoIdx = ((startIdx || 0) % photos.length + photos.length) % photos.length;
+        box.classList.remove('hidden');
+        imgEl.src = activeDetailPhotos[activeDetailPhotoIdx];
+
+        if (photos.length > 1) {
+          if (ctrEl) ctrEl.innerText = (activeDetailPhotoIdx + 1) + ' / ' + photos.length;
+          if (prevBtn) prevBtn.classList.remove('hidden');
+          if (nextBtn) nextBtn.classList.remove('hidden');
+          if (thumbBox) {
+            thumbBox.classList.remove('hidden');
+            var tHtml = '';
+            for (var i = 0; i < photos.length; i++) {
+              tHtml += '<button type="button" data-tidx="' + i + '" class="forum-thumb-btn w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 cursor-pointer transition ' +
+                (i === activeDetailPhotoIdx ? 'border-indigo-600' : 'border-transparent opacity-65') + '">' +
+                '<img src="' + photos[i] + '" class="w-full h-full object-cover" />' +
+                '</button>';
+            }
+            thumbBox.innerHTML = tHtml;
+            var tBtns = thumbBox.querySelectorAll('.forum-thumb-btn');
+            for (var k = 0; k < tBtns.length; k++) {
+              tBtns[k].addEventListener('click', function () {
+                renderForumDetailGallery(activeDetailPhotos, Number(this.getAttribute('data-tidx')));
+              });
+            }
+          }
+        } else {
+          if (ctrEl) ctrEl.innerText = '1 / 1';
+          if (prevBtn) prevBtn.classList.add('hidden');
+          if (nextBtn) nextBtn.classList.add('hidden');
+          if (thumbBox) thumbBox.classList.add('hidden');
+        }
+      }
 
       function setText(id, val) {
         var el = document.getElementById(id);
@@ -428,76 +631,76 @@
       }
 
       function translateSingleText(text, targetLangCode) {
-  var clean = String(text || '').trim();
-  if (!clean) return Promise.resolve('');
-  var cacheKey = targetLangCode + '::' + clean;
-  if (translationCache[cacheKey]) {
-    return Promise.resolve(translationCache[cacheKey]);
-  }
-
-  var mmTarget = targetLangCode === 'zh-CN' ? 'zh-CN' : (targetLangCode === 'ms' ? 'ms-MY' : 'en-GB');
-  var lingvaTarget = targetLangCode === 'zh-CN' ? 'zh' : targetLangCode;
-
-  function tryMyMemory(q) {
-    var url = 'https://api.mymemory.translated.net/get?q=' +
-      encodeURIComponent(q) + '&langpair=Autodetect|' + encodeURIComponent(mmTarget);
-    return fetch(url)
-      .then(function (r) {
-        if (!r.ok) throw new Error('MM HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function (d) {
-        var out = d && d.responseData ? d.responseData.translatedText : '';
-        if (!out || /MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(out)) {
-          throw new Error('MM limit/empty');
+        var clean = String(text || '').trim();
+        if (!clean) return Promise.resolve('');
+        var cacheKey = targetLangCode + '::' + clean;
+        if (translationCache[cacheKey]) {
+          return Promise.resolve(translationCache[cacheKey]);
         }
-        return out;
-      });
-  }
 
-  function tryLingva(q) {
-    var url = 'https://lingva.ml/api/v1/auto/' + encodeURIComponent(lingvaTarget) + '/' + encodeURIComponent(q);
-    return fetch(url)
-      .then(function (r) {
-        if (!r.ok) throw new Error('Lingva HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function (d) {
-        if (!d || !d.translation) throw new Error('Lingva empty');
-        return d.translation;
-      });
-  }
+        var mmTarget = targetLangCode === 'zh-CN' ? 'zh-CN' : (targetLangCode === 'ms' ? 'ms-MY' : 'en-GB');
+        var lingvaTarget = targetLangCode === 'zh-CN' ? 'zh' : targetLangCode;
 
-  function tryGtx(q) {
-    var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
-      encodeURIComponent(targetLangCode) + '&dt=t&q=' + encodeURIComponent(q);
-    return fetch(url)
-      .then(function (r) {
-        if (!r.ok) throw new Error('GTX HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function (data) {
-        if (!Array.isArray(data) || !Array.isArray(data[0])) throw new Error('GTX bad');
-        return data[0].map(function (seg) { return seg && seg[0] ? seg[0] : ''; }).join('');
-      });
-  }
+        function tryMyMemory(q) {
+          var url = 'https://api.mymemory.translated.net/get?q=' +
+            encodeURIComponent(q) + '&langpair=Autodetect|' + encodeURIComponent(mmTarget);
+          return fetch(url)
+            .then(function (r) {
+              if (!r.ok) throw new Error('MM HTTP ' + r.status);
+              return r.json();
+            })
+            .then(function (d) {
+              var out = d && d.responseData ? d.responseData.translatedText : '';
+              if (!out || /MYMEMORY WARNING|QUERY LENGTH LIMIT/i.test(out)) {
+                throw new Error('MM limit/empty');
+              }
+              return out;
+            });
+        }
 
-  var chunks = [];
-  var maxLen = 380;
-  for (var i = 0; i < clean.length; i += maxLen) {
-    chunks.push(clean.slice(i, i + maxLen));
-  }
+        function tryLingva(q) {
+          var url = 'https://lingva.ml/api/v1/auto/' + encodeURIComponent(lingvaTarget) + '/' + encodeURIComponent(q);
+          return fetch(url)
+            .then(function (r) {
+              if (!r.ok) throw new Error('Lingva HTTP ' + r.status);
+              return r.json();
+            })
+            .then(function (d) {
+              if (!d || !d.translation) throw new Error('Lingva empty');
+              return d.translation;
+            });
+        }
 
-  return Promise.all(chunks.map(function (chunk) {
-    return tryMyMemory(chunk)
-      .catch(function () { return tryLingva(chunk); })
-      .catch(function () { return tryGtx(chunk); });
-  })).then(function (parts) {
-    var merged = parts.join('');
-    translationCache[cacheKey] = merged;
-    return merged;
-  });
-}
+        function tryGtx(q) {
+          var url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
+            encodeURIComponent(targetLangCode) + '&dt=t&q=' + encodeURIComponent(q);
+          return fetch(url)
+            .then(function (r) {
+              if (!r.ok) throw new Error('GTX HTTP ' + r.status);
+              return r.json();
+            })
+            .then(function (data) {
+              if (!Array.isArray(data) || !Array.isArray(data[0])) throw new Error('GTX bad');
+              return data[0].map(function (seg) { return seg && seg[0] ? seg[0] : ''; }).join('');
+            });
+        }
+
+        var chunks = [];
+        var maxLen = 380;
+        for (var i = 0; i < clean.length; i += maxLen) {
+          chunks.push(clean.slice(i, i + maxLen));
+        }
+
+        return Promise.all(chunks.map(function (chunk) {
+          return tryMyMemory(chunk)
+            .catch(function () { return tryLingva(chunk); })
+            .catch(function () { return tryGtx(chunk); });
+        })).then(function (parts) {
+          var merged = parts.join('');
+          translationCache[cacheKey] = merged;
+          return merged;
+        });
+      }
 
       function checkPostRisk(title, content) {
         var t = FORUM_I18N[currentLang] || FORUM_I18N.zh;
@@ -608,6 +811,7 @@
         setPlaceholder('postTitleInput', t.titlePh);
         setText('lblPostContent', t.lblPostContent);
         setPlaceholder('postContentInput', t.contentPh);
+        setText('lblForumPhotos', t.lblForumPhotos);
         setText('reviewNoticeHint', t.reviewHint);
         setText('submitPostBtn', t.submitBtn);
         setPlaceholder('replyContentInput', t.replyPh);
@@ -621,6 +825,7 @@
         }
         setText('detailTranslateBtn', t.translateBtn);
 
+        renderForumPhotoGrid();
         renderCategoryTabs();
         renderPostsList();
         if (activePost) {
@@ -656,7 +861,7 @@
 
         Promise.all([
           translateSingleText(post.title, t.targetCode),
-          translateSingleText(post.content, t.targetCode)
+          translateSingleText(cleanForumContent(post.content), t.targetCode)
         ]).then(function (resPair) {
           expandedPostIds[key] = { title: resPair[0], content: resPair[1] };
           renderPostsList();
@@ -682,7 +887,8 @@
         for (var i = 0; i < merged.length; i++) {
           var p = merged[i];
           var matchCat = currentCat === 'all' || p.category === currentCat;
-          var textBlob = ((p.title || '') + ' ' + (p.content || '')).toLowerCase();
+          var cleanBody = cleanForumContent(p.content);
+          var textBlob = ((p.title || '') + ' ' + cleanBody).toLowerCase();
           var matchKw = !kw || textBlob.indexOf(kw) !== -1;
           if (matchCat && matchKw) filtered.push(p);
         }
@@ -701,6 +907,8 @@
         var listHtml = '';
         for (var j = 0; j < filtered.length; j++) {
           var item = filtered[j];
+          var cleanBody = cleanForumContent(item.content);
+          var photos = extractForumPhotos(item);
           var isPending = item.status === 'pending';
           var badgeHtml = isPending
             ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">' + escapeHtml(t.pendingBadge) + '</span>'
@@ -714,6 +922,13 @@
               '</div>'
             : '<div id="cardTrans-' + item.id + '" class="hidden mt-2 p-2.5 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-950"></div>';
 
+          var thumbHtml = photos.length > 0
+            ? '<div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-100 bg-slate-100">' +
+                '<img src="' + photos[0] + '" loading="lazy" class="w-full h-full object-cover" />' +
+                (photos.length > 1 ? '<span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">📷 ' + photos.length + '图</span>' : '') +
+              '</div>'
+            : '';
+
           listHtml += '<div data-post-id="' + item.id + '" class="forum-post-card bg-white rounded-2xl p-3.5 shadow-2xs border ' +
             (isPending ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 hover:border-indigo-200') +
             ' transition cursor-pointer">' +
@@ -721,8 +936,13 @@
             badgeHtml +
             '<span class="text-[11px] text-gray-400">' + escapeHtml(item.author_name) + ' · ' + escapeHtml(timeAgo(item.created_at)) + '</span>' +
             '</div>' +
-            '<h2 class="font-bold text-gray-900 text-[15px] leading-snug mb-1">' + escapeHtml(item.title) + '</h2>' +
-            '<p class="text-xs text-gray-500 line-clamp-2 leading-relaxed">' + escapeHtml(item.content) + '</p>' +
+            '<div class="flex items-start justify-between gap-2.5">' +
+              '<div class="min-w-0 flex-1">' +
+                '<h2 class="font-bold text-gray-900 text-[15px] leading-snug mb-1">' + escapeHtml(item.title) + '</h2>' +
+                '<p class="text-xs text-gray-500 line-clamp-2 leading-relaxed">' + escapeHtml(cleanBody) + '</p>' +
+              '</div>' +
+              thumbHtml +
+            '</div>' +
             transBlockHtml +
             '<div class="flex items-center justify-between text-[11px] text-gray-400 pt-2 mt-2.5 border-t border-gray-50">' +
             '<div class="flex items-center gap-3">' +
@@ -797,6 +1017,7 @@
         }
         var catEl = document.getElementById('postCategoryInput');
         if (catEl && currentCat !== 'all') catEl.value = currentCat;
+        renderForumPhotoGrid();
         var modal = document.getElementById('newPostModal');
         if (modal) modal.classList.remove('hidden');
       }
@@ -804,6 +1025,8 @@
       function closeNewPostModal() {
         var modal = document.getElementById('newPostModal');
         if (modal) modal.classList.add('hidden');
+        forumDraftPhotos = [];
+        renderForumPhotoGrid();
       }
 
       function submitNewPost() {
@@ -816,14 +1039,14 @@
         var category = catEl && catEl.value ? catEl.value : 'chat';
         var authorRaw = authorEl && authorEl.value ? authorEl.value.trim() : '';
         var title = titleEl && titleEl.value ? titleEl.value.trim() : '';
-        var content = contentEl && contentEl.value ? contentEl.value.trim() : '';
+        var rawContent = contentEl && contentEl.value ? contentEl.value.trim() : '';
 
-        if (!title || !content) {
+        if (!title || !rawContent) {
           alert(t.alertMissing);
           return;
         }
 
-        var riskErr = checkPostRisk(title, content);
+        var riskErr = checkPostRisk(title, rawContent);
         if (riskErr) {
           alert(riskErr);
           return;
@@ -835,45 +1058,73 @@
           localStorage.setItem('dmjt_last_post_ts', String(Date.now()));
         } catch (e) {}
 
-        var tempPost = {
-          id: Date.now(),
-          category: category,
-          author_name: authorName,
-          title: title,
-          content: content,
-          likes: 0,
-          reply_count: 0,
-          status: 'pending',
-          created_at: new Date().toISOString()
+        var finishInsert = function (uploadedUrls) {
+          var finalContent = uploadedUrls && uploadedUrls.length > 0
+            ? (rawContent + '\n[[IMGS:' + JSON.stringify(uploadedUrls) + ']]')
+            : rawContent;
+
+          var tempPost = {
+            id: Date.now(),
+            category: category,
+            author_name: authorName,
+            title: title,
+            content: finalContent,
+            likes: 0,
+            reply_count: 0,
+            status: 'pending',
+            created_at: new Date().toISOString()
+          };
+
+          myPendingPosts.unshift(tempPost);
+          try { localStorage.setItem(MY_PENDING_KEY, JSON.stringify(myPendingPosts)); } catch (e) {}
+
+          if (titleEl) titleEl.value = '';
+          if (contentEl) contentEl.value = '';
+          closeNewPostModal();
+          showStatus(t.pendingSubmitted);
+          renderPostsList();
+
+          if (sb) {
+            sb.from('forum_posts')
+              .insert([{ category: category, author_name: authorName, title: title, content: finalContent, status: 'pending' }])
+              .select()
+              .single()
+              .then(function (res) {
+                if (res && res.error) {
+                  showStatus('发帖同步失败：' + res.error.message);
+                  return;
+                }
+                if (res && res.data) {
+                  for (var j = 0; j < myPendingPosts.length; j++) {
+                    if (myPendingPosts[j].id === tempPost.id) myPendingPosts[j] = res.data;
+                  }
+                  try { localStorage.setItem(MY_PENDING_KEY, JSON.stringify(myPendingPosts)); } catch (e) {}
+                  renderPostsList();
+                }
+              });
+          }
         };
 
-        myPendingPosts.unshift(tempPost);
-        try { localStorage.setItem(MY_PENDING_KEY, JSON.stringify(myPendingPosts)); } catch (e) {}
-
-        if (titleEl) titleEl.value = '';
-        if (contentEl) contentEl.value = '';
-        closeNewPostModal();
-        showStatus(t.pendingSubmitted);
-        renderPostsList();
-
-        if (sb) {
-          sb.from('forum_posts')
-            .insert([{ category: category, author_name: authorName, title: title, content: content, status: 'pending' }])
-            .select()
-            .single()
-            .then(function (res) {
-              if (res && res.error) {
-                showStatus('发帖同步失败：' + res.error.message);
-                return;
-              }
-              if (res && res.data) {
-                for (var j = 0; j < myPendingPosts.length; j++) {
-                  if (myPendingPosts[j].id === tempPost.id) myPendingPosts[j] = res.data;
-                }
-                try { localStorage.setItem(MY_PENDING_KEY, JSON.stringify(myPendingPosts)); } catch (e) {}
-                renderPostsList();
-              }
+        if (sb && forumDraftPhotos.length > 0) {
+          var uploadTasks = forumDraftPhotos.map(function (item, idx) {
+            return compressForumPhoto(item.file).then(function (blob) {
+              var fname = 'forum_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
+              return sb.storage.from('images').upload(fname, blob, { contentType: 'image/jpeg' }).then(function (upRes) {
+                if (upRes && upRes.error) return null;
+                var urlObj = sb.storage.from('images').getPublicUrl(fname);
+                return urlObj && urlObj.data ? urlObj.data.publicUrl : null;
+              });
             });
+          });
+          Promise.all(uploadTasks).then(function (urls) {
+            var validUrls = [];
+            for (var u = 0; u < urls.length; u++) {
+              if (urls[u]) validUrls.push(urls[u]);
+            }
+            finishInsert(validUrls);
+          });
+        } else {
+          finishInsert([]);
         }
       }
 
@@ -990,7 +1241,7 @@
 
         Promise.all([
           translateSingleText(activePost.title, t.targetCode),
-          translateSingleText(activePost.content, t.targetCode)
+          translateSingleText(cleanForumContent(activePost.content), t.targetCode)
         ]).then(function (pair) {
           var combined = pair[0] + '\n\n' + pair[1];
           translationCache[cacheKey] = combined;
@@ -1031,7 +1282,8 @@
         setText('detailTitle', post.title);
         setText('detailMeta', post.author_name + ' · ' + timeAgo(post.created_at));
         setText('detailLikeBtn', '❤️ ' + (post.likes || 0));
-        setText('detailContent', post.content);
+        setText('detailContent', cleanForumContent(post.content));
+        renderForumDetailGallery(extractForumPhotos(post), 0);
 
         var modal = document.getElementById('detailModal');
         if (modal) modal.classList.remove('hidden');
@@ -1123,6 +1375,12 @@
       var closeDetailBtn = document.getElementById('closeDetailBtn');
       var likeBtn = document.getElementById('detailLikeBtn');
       var sendReplyBtn = document.getElementById('sendReplyBtn');
+      var fPrevBtn = document.getElementById('forumPrevImgBtn');
+      var fNextBtn = document.getElementById('forumNextImgBtn');
+      var fMainImg = document.getElementById('forumDetailMainImg');
+      var fLb = document.getElementById('forumLightbox');
+      var fLbImg = document.getElementById('forumLightboxImg');
+      var fLbClose = document.getElementById('closeForumLightboxBtn');
 
       if (topPostBtn) topPostBtn.addEventListener('click', openNewPostModal);
       if (botPostBtn) botPostBtn.addEventListener('click', openNewPostModal);
@@ -1132,6 +1390,32 @@
       if (closeDetailBtn) closeDetailBtn.addEventListener('click', closeDetailModal);
       if (likeBtn) likeBtn.addEventListener('click', likeCurrentPost);
       if (sendReplyBtn) sendReplyBtn.addEventListener('click', submitReply);
+
+      if (fPrevBtn) fPrevBtn.addEventListener('click', function () {
+        if (activeDetailPhotos.length) renderForumDetailGallery(activeDetailPhotos, activeDetailPhotoIdx - 1);
+      });
+      if (fNextBtn) fNextBtn.addEventListener('click', function () {
+        if (activeDetailPhotos.length) renderForumDetailGallery(activeDetailPhotos, activeDetailPhotoIdx + 1);
+      });
+      if (fMainImg) fMainImg.addEventListener('click', function () {
+        if (!activeDetailPhotos.length || !fLb || !fLbImg) return;
+        fLbImg.src = activeDetailPhotos[activeDetailPhotoIdx];
+        setText('forumLightboxCounter', (activeDetailPhotoIdx + 1) + ' / ' + activeDetailPhotos.length);
+        fLb.classList.remove('hidden');
+      });
+      if (fLbImg) fLbImg.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        if (!activeDetailPhotos.length) return;
+        renderForumDetailGallery(activeDetailPhotos, activeDetailPhotoIdx + 1);
+        fLbImg.src = activeDetailPhotos[activeDetailPhotoIdx];
+        setText('forumLightboxCounter', (activeDetailPhotoIdx + 1) + ' / ' + activeDetailPhotos.length);
+      });
+      if (fLbClose) fLbClose.addEventListener('click', function () {
+        if (fLb) fLb.classList.add('hidden');
+      });
+      if (fLb) fLb.addEventListener('click', function () {
+        fLb.classList.add('hidden');
+      });
 
       switchForumLang(currentLang);
       loadPosts();
