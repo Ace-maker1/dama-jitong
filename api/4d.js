@@ -12,15 +12,26 @@ function emptyBoard(drawDate = '', drawNo = '') {
   };
 }
 
+function getMytNow() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utc + 8 * 3600000);
+}
+
 function getMytDateStr(offsetDays = 0) {
   try {
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-    const myt = new Date(utc + 8 * 3600000 + offsetDays * 86400000);
+    const myt = new Date(getMytNow().getTime() + offsetDays * 86400000);
     return myt.toISOString().slice(0, 10);
   } catch (_) {
     return '2026-11-25';
   }
+}
+
+function isLiveDrawHourMyt() {
+  const myt = getMytNow();
+  const d = myt.getDay();
+  const h = myt.getHours();
+  return (d === 0 || d === 3 || d === 6) && h >= 19 && h < 21;
 }
 
 function normalizeCompanyKey(raw = '') {
@@ -28,9 +39,9 @@ function normalizeCompanyKey(raw = '') {
   if (s === 'magnum' || s.includes('magnum')) return 'magnum';
   if (s === 'toto' || s.includes('toto')) return 'toto';
   if (s === 'damacai' || s.includes('da ma cai') || s.includes('damacai')) return 'damacai';
-  if (s === 'sabah88' || s.includes('sabah')) return 'sabah88';
+  if (s === 'sabah88' || s.includes('sabah') || s.includes('diriwan')) return 'sabah88';
   if (s === 'stc' || s.includes('sandakan')) return 'stc';
-  if (s === 'cashsweep' || s.includes('sarawak')) return 'cashsweep';
+  if (s === 'cashsweep' || s.includes('sarawak') || s.includes('cashsweep')) return 'cashsweep';
   return null;
 }
 
@@ -40,9 +51,7 @@ function fmt4(v) {
 }
 
 function pad4List(arr, count = 10) {
-  const clean = (Array.isArray(arr) ? arr : [])
-    .map(v => fmt4(v))
-    .filter(v => v !== '----');
+  const clean = (Array.isArray(arr) ? arr : []).map(v => fmt4(v));
   const out = clean.slice(0, count);
   while (out.length < count) out.push('----');
   return out;
@@ -84,7 +93,7 @@ function extractItemsArray(payload) {
   return [];
 }
 
-async function fetchJsonSafe(url, ms = 6500) {
+async function fetchJsonSafe(url, ms = 6000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
@@ -104,6 +113,56 @@ async function fetchJsonSafe(url, ms = 6500) {
   }
 }
 
+async function fetchTextSafe(url, ms = 6000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    const r = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36'
+      }
+    });
+    if (!r.ok) return '';
+    return await r.text();
+  } catch (_) {
+    return '';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// 备用实时解析：直接从 4dlivetoday.com 首页提取今日实时跳出号码（支持部分出奖）
+function parseLiveHtmlFallback(html, todayStr) {
+  const parsed = {};
+  if (!html || !html.includes(todayStr)) return parsed;
+
+  // 尝试从 Next.js __NEXT_DATA__ 或内联 JSON 中提取今日实时开奖对象
+  const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+  if (nextDataMatch) {
+    try {
+      const dataObj = JSON.parse(nextDataMatch[1]);
+      const walk = (node) => {
+        if (!node || typeof node !== 'object') return;
+        if (Array.isArray(node)) {
+          node.forEach(walk);
+          return;
+        }
+        const opKey = normalizeCompanyKey(node.operator || node.operator_name || node.company || node.id);
+        const dStr = String(node.date || node.draw_date || node.drawDate || '').slice(0, 10);
+        if (opKey && dStr === todayStr) {
+          const rec = normalizeDrawRecord(node, todayStr);
+          if (rec) parsed[opKey] = rec;
+        }
+        Object.values(node).forEach(walk);
+      };
+      walk(dataObj);
+    } catch (_) {}
+  }
+  return parsed;
+}
+
 async function getExistingDrawKeys(url, key, rows) {
   const existing = new Set();
   const dates = [...new Set(rows.map(r => r.draw_date).filter(Boolean))];
@@ -113,10 +172,7 @@ async function getExistingDrawKeys(url, key, rows) {
     const inList = dates.map(d => `"${d}"`).join(',');
     const endpoint = `${url}/rest/v1/results_4d_history?select=company_id,draw_date&draw_date=in.(${encodeURIComponent(inList)})`;
     const resp = await fetch(endpoint, {
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`
-      }
+      headers: { apikey: key, Authorization: `Bearer ${key}` }
     });
     if (resp.ok) {
       const data = await resp.json();
@@ -143,11 +199,7 @@ async function send4DUpdatePush(newDraws, drawDate) {
       body: JSON.stringify({
         app_id: appId,
         included_segments: ['All'],
-        headings: {
-          en: '4D Draw Results Updated',
-          zh: '4D 开奖通知',
-          ms: 'Keputusan 4D Dikemas Kini'
-        },
+        headings: { en: '4D Draw Results Updated', zh: '4D 开奖通知', ms: 'Keputusan 4D Dikemas Kini' },
         contents: {
           en: `4D draw results (${drawDate}) are updated. Tap to view latest results.`,
           zh: `今晚 4D 开奖号码已更新，点击查看最新开奖结果。`,
@@ -170,6 +222,7 @@ async function saveToSupabaseHistory(resultsMap, fallbackDate) {
   const rows = [];
   for (const comp of COMPANIES) {
     const item = resultsMap?.[comp];
+    // 只有头奖已开出时才归档进历史表
     if (!item || !/^\d{4}$/.test(item.p1)) continue;
     rows.push({
       company_id: comp,
@@ -218,8 +271,10 @@ module.exports = async function handler(req, res) {
   }
 
   const todayStr = getMytDateStr(0);
+  const liveWindow = isLiveDrawHourMyt();
   const results = {};
   const history = {};
+
   COMPANIES.forEach(k => {
     results[k] = emptyBoard(todayStr, '');
     history[k] = [];
@@ -227,8 +282,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const [latestJson, ...opJsons] = await Promise.all([
-      fetchJsonSafe('https://4dlivetoday.com/api/v1/latest', 6500),
-      ...COMPANIES.map(comp => fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${comp}?limit=15`, 6000))
+      fetchJsonSafe(`https://4dlivetoday.com/api/v1/latest?_t=${Date.now()}`, 5500),
+      ...COMPANIES.map(comp => fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${comp}?limit=15`, 5500))
     ]);
 
     COMPANIES.forEach((comp, idx) => {
@@ -243,8 +298,12 @@ module.exports = async function handler(req, res) {
         history[comp].push(board);
       }
       history[comp].sort((a, b) => String(b.drawDate).localeCompare(String(a.drawDate)));
+
+      // 关键修复：正在开奖时段（19:00-21:00）绝对不用旧日期数据冒充“最新一期”！
       if (history[comp].length > 0) {
-        results[comp] = { ...history[comp][0] };
+        if (!liveWindow || history[comp][0].drawDate === todayStr) {
+          results[comp] = { ...history[comp][0] };
+        }
       }
     });
 
@@ -255,7 +314,10 @@ module.exports = async function handler(req, res) {
       const board = normalizeDrawRecord(item, todayStr);
       if (!board) continue;
 
-      results[comp] = board;
+      if (!liveWindow || board.drawDate === todayStr) {
+        results[comp] = board;
+      }
+
       const existIdx = history[comp].findIndex(h => h.drawDate === board.drawDate);
       if (existIdx === -1) {
         history[comp].unshift(board);
@@ -264,13 +326,25 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // 如果开奖时段 API 还没吐出今天的新号码，立刻用 HTML 实时页面解析补抓一次
+    if (liveWindow && COMPANIES.every(c => results[c].p1 === '----' && results[c].special.every(n => n === '----'))) {
+      const liveHtml = await fetchTextSafe(`https://4dlivetoday.com/?_t=${Date.now()}`, 5500);
+      const liveParsed = parseLiveHtmlFallback(liveHtml, todayStr);
+      Object.keys(liveParsed).forEach(comp => {
+        if (results[comp]) {
+          results[comp] = liveParsed[comp];
+        }
+      });
+    }
+
     const syncMeta = await saveToSupabaseHistory(results, todayStr);
     const hitCount = COMPANIES.filter(c => results[c].p1 !== '----' || results[c].special.some(n => /^\d{4}$/.test(n))).length;
 
     return res.status(200).json({
       ok: true,
       today: todayStr,
-      source: hitCount > 0 ? '4dlivetoday.com/api/v1' : 'pending',
+      liveWindow,
+      source: hitCount > 0 ? 'live-synced' : 'live-rolling-waiting',
       pushTriggered: syncMeta.pushed,
       results,
       history
@@ -279,6 +353,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       today: todayStr,
+      liveWindow,
       source: 'safe-fallback',
       pushTriggered: false,
       results,
