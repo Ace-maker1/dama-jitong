@@ -1918,11 +1918,42 @@
 
     function getCategoryVisual(cat, post = {}) {
       const t = I18N[currentLang];
+      const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''} ${post.desc_en || ''} ${post.desc_ms || ''}`.toLowerCase();
+
+      if (/klinik|poliklinik|clinic|dental|pharmacy|farmasi|诊所|牙科|药房|医疗|养生|保健/.test(text)) {
+        return {
+          bg: 'from-teal-500 to-emerald-600',
+          icon: '🏥',
+          label: currentLang === 'en' ? 'Clinic' : (currentLang === 'ms' ? 'Klinik' : '医疗诊所')
+        };
+      }
+      if (/kitchen|laksa|cafe|kopitiam|restaurant|food|makan|nasi|炒|烧腊|茶室|美食|火锅|烧烤|咖啡/.test(text)) {
+        return {
+          bg: 'from-amber-500 to-orange-600',
+          icon: '🍜',
+          label: currentLang === 'en' ? 'Food' : (currentLang === 'ms' ? 'Makanan' : '美食餐饮')
+        };
+      }
+      if (/car wash|auto|workshop|bengkel|tyre|tire|aircond|修车|汽车|洗车|轮胎|冷气|维修/.test(text)) {
+        return {
+          bg: 'from-slate-600 to-blue-700',
+          icon: '🔧',
+          label: currentLang === 'en' ? 'Auto/Fix' : (currentLang === 'ms' ? 'Bengkel' : '汽车/维修')
+        };
+      }
+      if (/salon|hair|beauty|spa|理发|美发|美容|按摩/.test(text)) {
+        return {
+          bg: 'from-pink-500 to-rose-600',
+          icon: '💇',
+          label: currentLang === 'en' ? 'Beauty' : (currentLang === 'ms' ? 'Kecantikan' : '美容美发')
+        };
+      }
+
       const map = {
         '找房子': { bg: 'from-blue-600 to-indigo-600', icon: '🏢', label: t.cardLabels['找房子'] },
         '找工作': { bg: 'from-emerald-600 to-teal-600', icon: '💼', label: t.cardLabels['找工作'] },
         '二手闲置': { bg: 'from-amber-500 to-orange-600', icon: '📦', label: t.cardLabels['二手闲置'] },
-        '本地优惠': { bg: 'from-red-600 to-rose-600', icon: '🏪', label: t.cardLabels['本地优惠'] }
+        '本地优惠': { bg: 'from-purple-600 to-indigo-700', icon: '🏪', label: t.cardLabels['本地优惠'] }
       };
       return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: 'Info' };
     }
