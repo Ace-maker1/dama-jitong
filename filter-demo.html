@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大马吉通智能过滤器预览 · DaMaJiTong</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-12">
+  <div class="max-w-3xl mx-auto p-3 space-y-3">
+    <!-- 顶部标题 -->
+    <header class="bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-2xl p-4 shadow">
+      <h1 class="font-black text-base">🔎 大马吉通智能搜索与多维过滤器</h1>
+      <p class="text-xs text-amber-100 mt-0.5">找房 · 找工 · 二手闲置 · 附近商家（支持距离排序 & 附近付费置顶）</p>
+    </header>
+
+    <!-- 板块切换 -->
+    <div id="tabBar" class="grid grid-cols-4 gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
+      <button data-tab="property" onclick="switchTab('property')" class="tab-btn py-2 rounded-xl bg-red-600 text-white">🏠 找房子</button>
+      <button data-tab="jobs" onclick="switchTab('jobs')" class="tab-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100">💼 找工作</button>
+      <button data-tab="preloved" onclick="switchTab('preloved')" class="tab-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100">🛍️ 二手闲置</button>
+      <button data-tab="biz" onclick="switchTab('biz')" class="tab-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100">🏪 本地商家</button>
+    </div>
+
+    <!-- 过滤器面板 -->
+    <section class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-2xs space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <input id="kwInput" oninput="applyFilters()" placeholder="输入关键词（如：公寓、维修、手表、客服...）"
+               class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-red-500 focus:outline-none" />
+        <select id="areaSelect" onchange="applyFilters()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold">
+          <option value="">全部地区（全马）</option>
+          <option value="Penang">槟城 / 威省 Penang & Seberang Perai</option>
+          <option value="Selangor">雪兰莪 Selangor</option>
+          <option value="KL">吉隆坡 Kuala Lumpur</option>
+          <option value="Perak">霹雳 / 怡保 Perak & Ipoh</option>
+        </select>
+      </div>
+
+      <!-- 1. 找房子专属筛选项 -->
+      <div id="filter-property" class="filter-group grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <select id="propDeal" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+          <option value="">租房 / 买房</option>
+          <option value="rent">出租 Rent</option>
+          <option value="sale">出售 Sale</option>
+        </select>
+        <select id="propType" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+          <option value="">全部房型</option>
+          <option value="Condo">公寓 Condo</option>
+          <option value="Terrace">排屋 Terrace</option>
+          <option value="Semi-D">半独立 Semi-D</option>
+          <option value="Room">房间 Room</option>
+        </select>
+        <input id="propMaxPrice" type="number" oninput="applyFilters()" placeholder="最高金额 RM"
+               class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2" />
+        <input id="propMinSize" type="number" oninput="applyFilters()" placeholder="最小面积 sqft"
+               class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2" />
+      </div>
+
+      <!-- 2. 找工作专属筛选项 -->
+      <div id="filter-jobs" class="filter-group hidden grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <select id="jobMode" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+          <option value="">上班方式</option>
+          <option value="Onsite">现场上班</option>
+          <option value="WFH">居家办公 WFH</option>
+          <option value="Hybrid">混合办公</option>
+        </select>
+        <select id="jobShift" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+          <option value="">工作时间</option>
+          <option value="Day">日班 / 正常工时</option>
+          <option value="Shift">轮班制</option>
+          <option value="Flexible">弹性时间</option>
+        </select>
+        <input id="jobMinSalary" type="number" oninput="applyFilters()" placeholder="最低薪资 RM"
+               class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2" />
+        <select id="jobPerk" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+          <option value="">条件 / 待遇</option>
+          <option value="NoExp">无需经验</option>
+          <option value="Accommodation">包吃住 / 宿舍</option>
+          <option value="Commission">高佣金 / 奖金</option>
+        </select>
+      </div>
+
+      <!-- 3. 二手闲置专属筛选项 -->
+      <div id="filter-preloved" class="filter-group hidden grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+        <select id="prelovedCat" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+          <option value="">闲置品类</option>
+          <option value="Furniture">家具</option>
+          <option value="Watch">手表</option>
+          <option value="Bag">包包</option>
+          <option value="Car">汽车</option>
+          <option value="Motorcycle">摩托车</option>
+          <option value="Electronics">数码/家电</option>
+        </select>
+        <input id="prelovedMaxBudget" type="number" oninput="applyFilters()" placeholder="预算上限 RM"
+               class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2" />
+        <button type="button" onclick="resetFilters()" class="bg-slate-200 hover:bg-slate-300 rounded-xl px-3 py-2 font-bold text-slate-700">
+          重置条件
+        </button>
+      </div>
+
+      <!-- 4. 本地商家专属筛选项（含附近距离 & 附近付费置顶） -->
+      <div id="filter-biz" class="filter-group hidden space-y-2 text-xs">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <select id="bizCat" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+            <option value="">全部商家服务</option>
+            <option value="CarRepair">🔧 汽车维修 / 洗车</option>
+            <option value="Food">🍜 美食 / 餐饮</option>
+            <option value="Beauty">💇 理发 / 美容</option>
+            <option value="HomeService">🛠️ 装修 / 水电 / 搬家</option>
+          </select>
+          <select id="bizRadius" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
+            <option value="999">附近不限距离</option>
+            <option value="3">3 km 以内</option>
+            <option value="10">10 km 以内</option>
+            <option value="25">25 km 以内</option>
+          </select>
+          <button type="button" onclick="locateUserSim()" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-3 py-2 font-bold">
+            📍 刷新当前定位
+          </button>
+        </div>
+        <p id="gpsStatus" class="text-[11px] text-emerald-700 font-semibold">
+          📍 当前定位：槟城乔治市/威省一带（演示坐标，可接浏览器/Capacitor GPS 自动获取）
+        </p>
+      </div>
+    </section>
+
+    <!-- 筛选结果列表 -->
+    <section id="resultList" class="space-y-2.5"></section>
+  </div>
+
+  <script>
+    let activeTab = 'property';
+    let userCoords = { lat: 5.4164, lng: 100.3327 }; // 默认槟城示例坐标
+
+    const ITEMS = [
+      // 找房子
+      { tab: 'property', title: '峇都交湾海景 Condo 出租', area: 'Penang', deal: 'rent', propType: 'Condo', price: 1800, size: 950, meta: '出租 · RM 1,800/月 · 950 sqft · 槟城' },
+      { tab: 'property', title: '双层排屋出售 靠近学校商圈', area: 'Selangor', deal: 'sale', propType: 'Terrace', price: 680000, size: 1800, meta: '出售 · RM 680,000 · 1,800 sqft · 雪兰莪' },
+      { tab: 'property', title: '独立式洋房 Bungalow 出售', area: 'Perak', deal: 'sale', propType: 'Semi-D', price: 920000, size: 2600, meta: '出售 · RM 920,000 · 2,600 sqft · 霹雳/怡保' },
+
+      // 找工作
+      { tab: 'jobs', title: '前端 / 全栈开发工程师', area: 'Selangor', mode: 'Hybrid', shift: 'Day', salary: 5500, perk: 'Commission', meta: '月薪 RM 5,500+ · 混合办公 · 日班 · 绩效奖金' },
+      { tab: 'jobs', title: '线上华语客服专员（可居家）', area: 'KL', mode: 'WFH', shift: 'Flexible', salary: 3200, perk: 'NoExp', meta: '月薪 RM 3,200 · 居家办公 WFH · 弹性时间 · 无需经验' },
+      { tab: 'jobs', title: '门店店长 / 销售顾问', area: 'Penang', mode: 'Onsite', shift: 'Shift', salary: 2800, perk: 'Accommodation', meta: '月薪 RM 2,800+ · 现场上班 · 轮班制 · 包宿舍' },
+
+      // 二手闲置
+      { tab: 'preloved', title: '实木餐桌 + 6张餐椅 九成新', area: 'Penang', cat: 'Furniture', budget: 850, meta: '家具 · RM 850 · 槟城自取/送货' },
+      { tab: 'preloved', title: '机械手表 附原盒保卡', area: 'KL', cat: 'Watch', budget: 1500, meta: '手表 · RM 1,500 · 吉隆坡面交' },
+      { tab: 'preloved', title: '通勤代步摩托车 车况佳', area: 'Selangor', cat: 'Motorcycle', budget: 4200, meta: '摩托车 · RM 4,200 · 雪兰莪' },
+
+      // 本地商家（含经纬度 + 付费广告置顶权重 adPriority）
+      { tab: 'biz', title: '顺发汽车冷气与底盘维修中心', area: 'Penang', cat: 'CarRepair', lat: 5.3850, lng: 100.3750, adPriority: 1, meta: '🔧 汽车维修 · 威省/槟城 · 支持预约' },
+      { tab: 'biz', title: '全兴汽车维修与保养中心', area: 'Penang', cat: 'CarRepair', lat: 5.4120, lng: 100.3290, adPriority: 0, meta: '🔧 汽车维修 · 槟城 · 换黑油/刹车片' },
+      { tab: 'biz', title: '阿明古早味板面与白斩鸡', area: 'Penang', cat: 'Food', lat: 5.4180, lng: 100.3350, adPriority: 1, meta: '🍜 美食餐饮 · 槟城 · 堂食/打包' },
+      { tab: 'biz', title: '怡保特色茶餐室与点心', area: 'Perak', cat: 'Food', lat: 4.5975, lng: 101.0901, adPriority: 1, meta: '🍜 美食餐饮 · 怡保 · 早餐/午餐' }
+    ];
+
+    function calcDistanceKm(lat1, lon1, lat2, lon2) {
+      if (typeof lat2 !== 'number' || typeof lng2 !== 'number') return null;
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const isAct = btn.dataset.tab === tab;
+        btn.className = isAct
+          ? 'tab-btn py-2 rounded-xl bg-red-600 text-white'
+          : 'tab-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100';
+      });
+      document.querySelectorAll('.filter-group').forEach(g => g.classList.add('hidden'));
+      document.getElementById(`filter-${tab}`).classList.remove('hidden');
+      applyFilters();
+    }
+
+    function resetFilters() {
+      ['kwInput', 'propMaxPrice', 'propMinSize', 'jobMinSalary', 'prelovedMaxBudget'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      ['areaSelect', 'propDeal', 'propType', 'jobMode', 'jobShift', 'jobPerk', 'prelovedCat', 'bizCat'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      document.getElementById('bizRadius').value = '999';
+      applyFilters();
+    }
+
+    function locateUserSim() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            document.getElementById('gpsStatus').innerText =
+              `📍 已获取实时定位 (${userCoords.lat.toFixed(4)}, ${userCoords.lng.toFixed(4)})，优先展示附近商家与付费置顶`;
+            applyFilters();
+          },
+          () => {
+            document.getElementById('gpsStatus').innerText =
+              '📍 未授予定位权限，当前使用默认位置排序，仍可按地区筛选';
+            applyFilters();
+          }
+        );
+      }
+    }
+
+    function applyFilters() {
+      const kw = document.getElementById('kwInput').value.trim().toLowerCase();
+      const area = document.getElementById('areaSelect').value;
+
+      let list = ITEMS.filter(item => {
+        if (item.tab !== activeTab) return false;
+        if (area && item.area !== area) return false;
+        if (kw && !`${item.title} ${item.meta}`.toLowerCase().includes(kw)) return false;
+
+        if (activeTab === 'property') {
+          const deal = document.getElementById('propDeal').value;
+          const pType = document.getElementById('propType').value;
+          const maxPrice = Number(document.getElementById('propMaxPrice').value || 0);
+          const minSize = Number(document.getElementById('propMinSize').value || 0);
+          if (deal && item.deal !== deal) return false;
+          if (pType && item.propType !== pType) return false;
+          if (maxPrice > 0 && item.price > maxPrice) return false;
+          if (minSize > 0 && item.size < minSize) return false;
+        }
+
+        if (activeTab === 'jobs') {
+          const mode = document.getElementById('jobMode').value;
+          const shift = document.getElementById('jobShift').value;
+          const minSal = Number(document.getElementById('jobMinSalary').value || 0);
+          const perk = document.getElementById('jobPerk').value;
+          if (mode && item.mode !== mode) return false;
+          if (shift && item.shift !== shift) return false;
+          if (minSal > 0 && item.salary < minSal) return false;
+          if (perk && item.perk !== perk) return false;
+        }
+
+        if (activeTab === 'preloved') {
+          const cat = document.getElementById('prelovedCat').value;
+          const maxBudget = Number(document.getElementById('prelovedMaxBudget').value || 0);
+          if (cat && item.cat !== cat) return false;
+          if (maxBudget > 0 && item.budget > maxBudget) return false;
+        }
+
+        if (activeTab === 'biz') {
+          const cat = document.getElementById('bizCat').value;
+          const maxKm = Number(document.getElementById('bizRadius').value || 999);
+          if (cat && item.cat !== cat) return false;
+          const dist = calcDistanceKm(userCoords.lat, userCoords.lng, item.lat, item.lng);
+          item._dist = dist;
+          if (dist !== null && maxKm < 999 && dist > maxKm) return false;
+        }
+
+        return true;
+      });
+
+      // 本地商家：先按“附近”范围（同区/距离近），同距离/同附近圈内优先展示付费广告位（adPriority > 0）
+      if (activeTab === 'biz') {
+        list.sort((a, b) => {
+          const da = a._dist ?? 9999;
+          const db = b._dist ?? 9999;
+          // 都在 15km 附近圈内时，付费置顶优先排前面
+          const nearA = da <= 15 ? 0 : 1;
+          const nearB = db <= 15 ? 0 : 1;
+          if (nearA !== nearB) return nearA - nearB;
+          if ((b.adPriority || 0) !== (a.adPriority || 0)) return (b.adPriority || 0) - (a.adPriority || 0);
+          return da - db;
+        });
+      }
+
+      const box = document.getElementById('resultList');
+      if (list.length === 0) {
+        box.innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-200">没有符合当前筛选条件的结果，试试放宽金额/距离或点“重置条件”。</div>`;
+        return;
+      }
+
+      box.innerHTML = list.map(item => {
+        const isAd = activeTab === 'biz' && item.adPriority > 0;
+        const distBadge = typeof item._dist === 'number'
+          ? `<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">${item._dist.toFixed(1)} km</span>`
+          : '';
+        return `
+          <div class="bg-white rounded-2xl p-3.5 border ${isAd ? 'border-amber-400 bg-amber-50/30' : 'border-slate-200'} flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${isAd ? '<span class="text-[10px] font-black bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full">附近置顶 · 广告</span>' : ''}
+                <h3 class="font-bold text-sm text-slate-900">${item.title}</h3>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">${item.meta}</p>
+            </div>
+            ${distBadge}
+          </div>
+        `;
+      }).join('');
+    }
+
+    applyFilters();
+  </script>
+</body>
+</html>
