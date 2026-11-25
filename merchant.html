@@ -8,11 +8,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="/style.css" />
   <script src="/api.js"></script>
-  <script src="/pay.js"></script>
 </head>
 <body>
   <div class="app-shell pb-16">
-    <!-- 顶部尊享黑金商业导航栏（已移除站长后台，改为三语切换） -->
+    <!-- 顶部尊享黑金商业导航栏 -->
     <header class="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-900 text-white sticky top-0 z-30 shadow-lg px-3.5 py-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0">
         <a href="/" id="mBackBtn" class="bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-xl text-xs font-bold transition shrink-0">← 首页</a>
@@ -61,7 +60,7 @@
       </h3>
 
       <form id="merchantForm" onsubmit="submitMerchant(event)" class="space-y-3">
-        <!-- 高级多图相册上传区（最多 6 张，首张为封面主图，支持设封面与删单张） -->
+        <!-- 高级多图相册上传区（最多 6 张，首张为封面主图） -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <label id="mLabelPhoto" class="block text-xs font-bold text-gray-700">上传店铺门头照 / 实拍图集（最多 6 张，强烈推荐）</label>
@@ -69,7 +68,6 @@
           </div>
 
           <div id="mGalleryGrid" class="grid grid-cols-3 gap-2">
-            <!-- 添加图片槽位 -->
             <label id="mAddPhotoTile" class="relative flex flex-col items-center justify-center aspect-square border-2 border-dashed border-amber-300 rounded-2xl bg-amber-50/50 hover:bg-amber-50 transition cursor-pointer overflow-hidden">
               <span class="text-2xl mb-0.5">📸</span>
               <span id="mPhotoHint" class="text-[11px] font-bold text-amber-800 px-1 text-center leading-tight">添加门店/实拍图</span>
@@ -91,7 +89,6 @@
           <input type="text" id="mName" required placeholder="例如：槟城老字号炒粿条 / KL 极速冷气维修" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
         </div>
 
-        <!-- 精准门店地址 / 所在茶室或路名 + 一键抓当前 GPS + AI/联想候选点选 -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label id="mLabelExactAddr" class="block text-xs font-bold text-gray-700">精准门店地址 / 路名（导航必用）*</label>
@@ -99,7 +96,6 @@
           </div>
           <input type="text" id="mExactAddress" required oninput="onExactAddressInput(this.value)" placeholder="例如：KK83 烧腊 (Kafe Pak Ngah), Jalan Burma, Penang" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
           <div id="mGpsStatus" class="text-[10px] text-emerald-700 mt-1 hidden"></div>
-          <!-- AI 识图候选地址 & 实时联想候选列表（点一下即可直接选用，免手动打字） -->
           <div id="mAddressCandidatesBox" class="hidden mt-2 bg-amber-50/70 border border-amber-200/80 rounded-xl p-2 space-y-1.5">
             <div id="mAddressCandidatesTitle" class="text-[11px] font-bold text-amber-900">💡 识别到的候选地址（点一下直接选用）：</div>
             <div id="mAddressCandidatesList" class="space-y-1"></div>
@@ -146,65 +142,25 @@
       </form>
     </section>
 
-    <!-- 付费黄金置顶套餐说明 -->
-    <section class="mx-3 mt-3 vip-card rounded-2xl p-4">
-      <div class="flex items-center justify-between mb-2">
-        <span id="mVipTitle" class="font-black text-sm text-amber-900">👑 商家爆单推广 · 首页黄金置顶</span>
-        <span id="mVipBadge" class="text-[11px] text-amber-700 font-bold">曝光量提升 10 倍</span>
+    <!-- 官方认证与品牌曝光咨询卡片（符合 Google Play 规范，不展示外部收款账号） -->
+    <section id="planCards" class="mx-3 mt-3 vip-card rounded-2xl p-4 space-y-2.5">
+      <div class="flex items-center justify-between">
+        <span id="mVipTitle" class="font-black text-sm text-amber-900">🏅 门店官方认证与品牌合作</span>
+        <span id="mVipBadge" class="text-[11px] text-amber-700 font-bold">专属认证标识</span>
       </div>
-      <div id="planCards" class="space-y-2 mb-3"></div>
-      <button id="mOpenPayBtn" onclick="openPayModal()" class="w-full bg-slate-900 text-amber-300 font-bold text-xs py-3.5 rounded-xl shadow hover:bg-slate-800 transition">
-        💳 申请首页黄金置顶（支持 TNG / DuitNow 转账）
+      <p id="mVipDesc" class="text-xs text-amber-900/80 leading-relaxed">
+        完成实体店资料核验后，可获得「官方认证商家」蓝标及本地优先推荐资格。如需预约专员核验或咨询企业合作，请点击下方按钮联系商务顾问。
+      </p>
+      <button type="button" id="mConsultBtn" onclick="contactBusinessSupport()" class="w-full bg-slate-900 text-amber-300 font-bold text-xs py-3.5 rounded-xl shadow hover:bg-slate-800 transition">
+        💬 联系商务顾问申请认证（WhatsApp）
       </button>
     </section>
-
-    <!-- 付费置顶弹窗 -->
-    <div id="payModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
-      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-3">
-          <h3 id="payModalTitle" class="font-black text-base text-gray-800">👑 开通首页黄金置顶</h3>
-          <button onclick="document.getElementById('payModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500">✕</button>
-        </div>
-
-        <form onsubmit="handlePaySubmit(event)" class="space-y-3 text-xs">
-          <div>
-            <label id="payLabelPlan" class="block font-bold text-gray-700 mb-1">1. 选择置顶套餐 *</label>
-            <select id="payPlanSelect" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm font-bold text-amber-800"></select>
-          </div>
-          <div>
-            <label id="payLabelTitle" class="block font-bold text-gray-700 mb-1">2. 输入要置顶的店铺/帖子标题 *</label>
-            <input type="text" id="payPostTitle" required placeholder="输入您已发布的店铺或帖子标题" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
-          </div>
-          <div>
-            <label id="payLabelPhone" class="block font-bold text-gray-700 mb-1">3. 您的 WhatsApp 联系方式 *</label>
-            <input type="text" id="payPhone" required placeholder="60123456789" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm" />
-          </div>
-
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-1">
-            <div id="payReceiverTitle" class="font-bold text-amber-900">💳 官方收款方式：</div>
-            <div id="receiverInfo" class="text-amber-800"></div>
-          </div>
-
-          <div>
-            <label id="payLabelReceipt" class="block font-bold text-gray-700 mb-1">4. 上传 TNG / Bank 转账截图凭证 *</label>
-            <div class="relative flex items-center gap-2.5 w-full border border-gray-200 bg-gray-50 rounded-xl p-2 text-xs overflow-hidden">
-              <span id="receiptChooseBtn" class="bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-lg shrink-0">📎 选择截图</span>
-              <span id="receiptFileName" class="text-gray-400 truncate">未选择文件</span>
-              <input type="file" id="receiptFileInput" accept="image/*" required onchange="updateReceiptFileName(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-            </div>
-          </div>
-
-          <button type="submit" id="paySubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow">
-            ✅ 提交付款凭证（审核后秒置顶）
-          </button>
-        </form>
-      </div>
-    </div>
   </div>
 
   <script>
     const GEO_PROXY_ENDPOINT = '/api/geo-proxy';
     const MAX_MERCHANT_PHOTOS = 6;
+    const ADMIN_SUPPORT_WA = '601125490636';
 
     const M_I18N = {
       zh: {
@@ -230,6 +186,9 @@
         aiFail: '⚠️ 识别失败，请检查网络或手动填写，谢谢。',
         labelName: '店铺 / 公司名称 *',
         phName: '例如：槟城老字号炒粿条 / KL 极速冷气维修',
+        labelExactAddr: '精准门店地址 / 路名（导航必用）*',
+        phExactAddr: '例如：KK83 烧腊 (Kafe Pak Ngah), Jalan Burma, Penang',
+        gpsBtn: '📍 抓当前定位',
         labelCity: '所属州属 *',
         labelIndustry: '主营行业 *',
         indFood: '🍜 餐饮美食', indService: '🛠️ 维修/搬家/清洁', indBeauty: '💇 美容美发/养生',
@@ -242,21 +201,11 @@
         submitBtn: '🚀 立即提交商家入驻',
         submittingBtn: '⏳ 正在压缩上传多图并提交商家资料...',
         successAlert: '🎉 恭喜！您的商家资料已成功入驻大马吉通，现已上线展示！',
-        vipTitle: '👑 商家爆单推广 · 首页黄金置顶',
-        vipBadge: '曝光量提升 10 倍',
-        openPayBtn: '💳 申请首页黄金置顶（支持 TNG / DuitNow 转账）',
-        payModalTitle: '👑 开通首页黄金置顶',
-        payLabelPlan: '1. 选择置顶套餐 *',
-        payLabelTitle: '2. 输入要置顶的店铺/帖子标题 *',
-        payPhTitle: '输入您已发布的店铺或帖子标题',
-        payLabelPhone: '3. 您的 WhatsApp 联系方式 *',
-        payReceiverTitle: '💳 官方收款方式：',
-        payLabelReceipt: '4. 上传 TNG / Bank 转账截图凭证 *',
-        receiptBtn: '📎 选择截图',
-        receiptNone: '未选择文件',
-        paySubmitBtn: '✅ 提交付款凭证（审核后秒置顶）',
-        paySubmittingBtn: '⏳ 正在上传凭证并提交订单...',
-        paySuccessAlert: '✅ 付款凭证已提交！核实后将立即为您开启首页黄金置顶。',
+        vipTitle: '🏅 门店官方认证与品牌合作',
+        vipBadge: '专属认证标识',
+        vipDesc: '完成实体店资料核验后，可获得「官方认证商家」标识及本地优先推荐资格。如需预约专员核验或咨询企业合作，请点击下方按钮联系商务顾问。',
+        consultBtn: '💬 联系商务顾问申请认证（WhatsApp）',
+        consultMsg: (shop) => `你好，我想为我的店铺「${shop || '本地商户'}」申请大马吉通官方商家认证与推广合作，请提供指引。`,
         tagPrefix: '认证商家'
       },
       en: {
@@ -282,6 +231,9 @@
         aiFail: '⚠️ AI scan failed. Please retry or fill manually.',
         labelName: 'Shop / Company Name *',
         phName: 'e.g. Penang Char Koay Teow / KL Aircond Service',
+        labelExactAddr: 'Exact Store Address / Street Name *',
+        phExactAddr: 'e.g. Kafe Pak Ngah, Jalan Burma, Penang',
+        gpsBtn: '📍 Use Current GPS',
         labelCity: 'State / Territory *',
         labelIndustry: 'Business Category *',
         indFood: '🍜 Food & Beverage', indService: '🛠️ Repair / Moving / Cleaning', indBeauty: '💇 Beauty / Spa / Wellness',
@@ -294,21 +246,11 @@
         submitBtn: '🚀 Submit Merchant Listing',
         submittingBtn: '⏳ Compressing photos & submitting...',
         successAlert: '🎉 Success! Your business is now live on DamaJitong!',
-        vipTitle: '👑 Boost Sales · Homepage Prime Pin',
-        vipBadge: '10x More Views',
-        openPayBtn: '💳 Apply for Prime Pin (TNG / DuitNow)',
-        payModalTitle: '👑 Activate Homepage Prime Pin',
-        payLabelPlan: '1. Select Pin Package *',
-        payLabelTitle: '2. Shop / Listing Title to Pin *',
-        payPhTitle: 'Enter your published shop or post title',
-        payLabelPhone: '3. Your WhatsApp Number *',
-        payReceiverTitle: '💳 Official Payment Details:',
-        payLabelReceipt: '4. Upload TNG / Bank Transfer Receipt *',
-        receiptBtn: '📎 Choose Image',
-        receiptNone: 'No file chosen',
-        paySubmitBtn: '✅ Submit Receipt (Fast Approval)',
-        paySubmittingBtn: '⏳ Uploading receipt & submitting...',
-        paySuccessAlert: '✅ Receipt submitted! Your listing will be pinned shortly after verification.',
+        vipTitle: '🏅 Official Merchant Verification & Partnership',
+        vipBadge: 'Verified Badge',
+        vipDesc: 'Verify your physical storefront to receive an Official Merchant badge and priority local visibility. Tap below to chat with our business support team.',
+        consultBtn: '💬 Contact Business Support (WhatsApp)',
+        consultMsg: (shop) => `Hi DamaJitong, I would like to apply for Official Merchant Verification and partnership for "${shop || 'my business'}".`,
         tagPrefix: 'Verified Merchant'
       },
       ms: {
@@ -334,6 +276,9 @@
         aiFail: '⚠️ Gagal mengimbas. Sila cuba lagi atau isi manual.',
         labelName: 'Nama Kedai / Syarikat *',
         phName: 'Cth: Nasi Kandar Penang / Servis Aircond KL',
+        labelExactAddr: 'Alamat Tepat Kedai / Nama Jalan *',
+        phExactAddr: 'Cth: Kafe Pak Ngah, Jalan Burma, Penang',
+        gpsBtn: '📍 Guna GPS Semasa',
         labelCity: 'Negeri / Wilayah *',
         labelIndustry: 'Kategori Perniagaan *',
         indFood: '🍜 Makanan & Minuman', indService: '🛠️ Baik Pulih / Pindah / Cuci', indBeauty: '💇 Kecantikan / Spa',
@@ -346,32 +291,28 @@
         submitBtn: '🚀 Hantar Pendaftaran Peniaga',
         submittingBtn: '⏳ Memampatkan gambar & menghantar...',
         successAlert: '🎉 Tahniah! Kedai anda telah berjaya didaftarkan dan dipaparkan di DamaJitong!',
-        vipTitle: '👑 Promosi Laris · Pin Utama Laman Depan',
-        vipBadge: '10x Lebih Tontonan',
-        openPayBtn: '💳 Mohon Pin Utama (TNG / DuitNow)',
-        payModalTitle: '👑 Aktifkan Pin Utama Laman Depan',
-        payLabelPlan: '1. Pilih Pakej Pin *',
-        payLabelTitle: '2. Tajuk Kedai / Iklan untuk Dipin *',
-        payPhTitle: 'Masukkan tajuk kedai atau iklan anda',
-        payLabelPhone: '3. Nombor WhatsApp Anda *',
-        payReceiverTitle: '💳 Maklumat Pembayaran Rasmi:',
-        payLabelReceipt: '4. Muat Naik Resit TNG / Pindahan Bank *',
-        receiptBtn: '📎 Pilih Gambar',
-        receiptNone: 'Tiada fail dipilih',
-        paySubmitBtn: '✅ Hantar Resit Pembayaran',
-        paySubmittingBtn: '⏳ Memuat naik resit...',
-        paySuccessAlert: '✅ Resit dihantar! Iklan anda akan dipin sejurus selepas pengesahan.',
+        vipTitle: '🏅 Pengesahan Rasmi Peniaga & Kerjasama',
+        vipBadge: 'Lencana Sah',
+        vipDesc: 'Sahkan premis fizikal anda untuk mendapatkan lencana Peniaga Sah dan keutamaan paparan tempatan. Tekan butang di bawah untuk hubungi pasukan kami.',
+        consultBtn: '💬 Hubungi Khidmat Perniagaan (WhatsApp)',
+        consultMsg: (shop) => `Salam DamaJitong, saya ingin memohon Pengesahan Peniaga Rasmi dan kerjasama bagi "${shop || 'perniagaan saya'}".`,
         tagPrefix: 'Peniaga Sah'
       }
     };
 
     let currentMLang = localStorage.getItem('dama_lang') || 'zh';
-    // 多图相册状态：每项 { file, dataUrl }，第 0 项为封面主图
     let merchantPhotoItems = [];
     let aiGeneratedTrilingual = null;
     let capturedMerchantCoords = null;
     let addrSuggestTimer = null;
     const mTranslateCache = {};
+
+    function contactBusinessSupport() {
+      const t = M_I18N[currentMLang];
+      const shopName = document.getElementById('mName')?.value.trim() || '';
+      const url = `https://wa.me/${ADMIN_SUPPORT_WA}?text=${encodeURIComponent(t.consultMsg(shopName))}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
 
     function getCoverPhotoItem() {
       return merchantPhotoItems[0] || null;
@@ -503,7 +444,7 @@
         if (typeof lat !== 'number' || typeof lng !== 'number') return null;
         const full = pl.formattedAddress || pl.displayName?.text || '';
         if (!full) return null;
-        return { label: `🗺️ 地图匹配：${full}`, addr: full, lat, lng };
+        return { label: `🗺️ ${full}`, addr: full, lat, lng };
       }).filter(Boolean);
     }
 
@@ -543,7 +484,7 @@
           <button type="button" onclick="selectMerchantCandidate('${safeAddr}', ${latArg}, ${lngArg})"
                   class="w-full text-left bg-white hover:bg-amber-100/70 border border-amber-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-800 flex items-center justify-between gap-2 transition">
             <span class="truncate font-medium">${it.label || it.addr}</span>
-            <span class="text-[10px] font-bold text-amber-700 shrink-0">选用 ›</span>
+            <span class="text-[10px] font-bold text-amber-700 shrink-0">›</span>
           </button>
         `;
       }).join('');
@@ -559,9 +500,9 @@
         capturedMerchantCoords = { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
         const statusEl = document.getElementById('mGpsStatus');
         const btn = document.getElementById('mGpsBtn');
-        if (btn) btn.innerText = '✅ 已锁坐标';
+        if (btn) btn.innerText = '✅ GPS';
         if (statusEl) {
-          statusEl.textContent = `已锁定坐标 (${capturedMerchantCoords.lat}, ${capturedMerchantCoords.lng})`;
+          statusEl.textContent = `GPS (${capturedMerchantCoords.lat}, ${capturedMerchantCoords.lng})`;
           statusEl.classList.remove('hidden');
         }
       }
@@ -576,7 +517,7 @@
 
       if (rawAddr) {
         list.push({
-          label: `📍 AI 识别地址：${rawAddr}`,
+          label: `📍 ${rawAddr}`,
           addr: rawAddr,
           lat: capturedMerchantCoords?.lat,
           lng: capturedMerchantCoords?.lng
@@ -584,7 +525,7 @@
       }
       if (shopName && rawAddr && !rawAddr.toLowerCase().includes(shopName.toLowerCase())) {
         list.push({
-          label: `🏪 店名+地址：${shopName}, ${rawAddr}`,
+          label: `🏪 ${shopName}, ${rawAddr}`,
           addr: `${shopName}, ${rawAddr}`,
           lat: capturedMerchantCoords?.lat,
           lng: capturedMerchantCoords?.lng
@@ -593,7 +534,7 @@
       if (shopName) {
         const q = cityVal ? `${shopName}, ${cityVal}, Malaysia` : `${shopName}, Malaysia`;
         list.push({
-          label: `🔎 门店检索词：${q}`,
+          label: `🔎 ${q}`,
           addr: q,
           lat: capturedMerchantCoords?.lat,
           lng: capturedMerchantCoords?.lng
@@ -612,7 +553,7 @@
           if (gList.length === 0) {
             const geo = await geocodeAddressFallback(searchSeed);
             if (geo && !list.some(x => x.addr.toLowerCase() === geo.addr.toLowerCase())) {
-              list.push({ label: `🗺️ 地址解析：${geo.addr}`, addr: geo.addr, lat: geo.lat, lng: geo.lng });
+              list.push({ label: `🗺️ ${geo.addr}`, addr: geo.addr, lat: geo.lat, lng: geo.lng });
             }
           }
         } catch (e) {}
@@ -637,25 +578,25 @@
       const statusEl = document.getElementById('mGpsStatus');
       const btn = document.getElementById('mGpsBtn');
       if (!navigator.geolocation) {
-        if (!silent) alert('当前设备不支持定位');
+        if (!silent) alert('Geolocation not supported');
         return;
       }
-      if (btn) btn.innerText = '⏳ 定位中...';
+      if (btn) btn.innerText = '⏳...';
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           capturedMerchantCoords = {
             lat: Number(pos.coords.latitude.toFixed(6)),
             lng: Number(pos.coords.longitude.toFixed(6))
           };
-          if (btn) btn.innerText = '✅ 已抓定位';
+          if (btn) btn.innerText = '✅ GPS';
           if (statusEl) {
-            statusEl.textContent = `已锁定门店 GPS (${capturedMerchantCoords.lat}, ${capturedMerchantCoords.lng})`;
+            statusEl.textContent = `GPS (${capturedMerchantCoords.lat}, ${capturedMerchantCoords.lng})`;
             statusEl.classList.remove('hidden');
           }
         },
         () => {
-          if (btn) btn.innerText = '📍 抓当前定位';
-          if (!silent) alert('无法获取定位，请允许浏览器定位或填写完整门店地址/路名');
+          if (btn) btn.innerText = M_I18N[currentMLang].gpsBtn;
+          if (!silent) alert('Unable to get location');
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
@@ -807,7 +748,7 @@
         try {
           json = JSON.parse(rawBody);
         } catch (_) {
-          throw new Error(`接口返回异常(HTTP ${res.status})`);
+          throw new Error(`HTTP ${res.status}`);
         }
         if (!res.ok || !json.success || !json.data) {
           throw new Error(json.error || `HTTP ${res.status}`);
@@ -834,9 +775,8 @@
         statusEl.className = 'text-[11px] text-emerald-700 font-semibold mt-1';
         statusEl.classList.remove('hidden');
       } catch (err) {
-        console.error('AI autoFill error:', err);
         const msg = err?.message || '';
-        statusEl.textContent = msg ? `${t.aiFail}（${msg}）` : t.aiFail;
+        statusEl.textContent = msg ? `${t.aiFail} (${msg})` : t.aiFail;
         statusEl.className = 'text-[11px] text-red-600 font-semibold mt-1';
         statusEl.classList.remove('hidden');
       } finally {
@@ -879,26 +819,6 @@
       });
     }
 
-    function renderPlans(lang) {
-      const planCards = document.getElementById('planCards');
-      const payPlanSelect = document.getElementById('payPlanSelect');
-      planCards.innerHTML = '';
-      payPlanSelect.innerHTML = '';
-      DMJT_PAY.PLANS.forEach(p => {
-        const label = p[lang] || p.zh;
-        planCards.innerHTML += `
-          <div class="bg-white rounded-xl p-2.5 border border-amber-200/70 flex items-center justify-between text-xs">
-            <span class="font-bold text-gray-800">${label}</span>
-            <span class="font-black text-red-600 text-sm">RM ${p.price}</span>
-          </div>
-        `;
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = `${label} — RM ${p.price}`;
-        payPlanSelect.appendChild(opt);
-      });
-    }
-
     function setMerchantLang(lang) {
       currentMLang = lang;
       localStorage.setItem('dama_lang', lang);
@@ -926,6 +846,9 @@
       document.getElementById('mGalleryTip').innerText = t.galleryTip;
       document.getElementById('mLabelName').innerText = t.labelName;
       document.getElementById('mName').placeholder = t.phName;
+      document.getElementById('mLabelExactAddr').innerText = t.labelExactAddr;
+      document.getElementById('mExactAddress').placeholder = t.phExactAddr;
+      if (!capturedMerchantCoords) document.getElementById('mGpsBtn').innerText = t.gpsBtn;
       document.getElementById('mLabelCity').innerText = t.labelCity;
       document.getElementById('mLabelIndustry').innerText = t.labelIndustry;
       document.getElementById('indFood').innerText = t.indFood;
@@ -942,54 +865,11 @@
       document.getElementById('mSubmitBtn').innerText = t.submitBtn;
       document.getElementById('mVipTitle').innerText = t.vipTitle;
       document.getElementById('mVipBadge').innerText = t.vipBadge;
-      document.getElementById('mOpenPayBtn').innerText = t.openPayBtn;
-      document.getElementById('payModalTitle').innerText = t.payModalTitle;
-      document.getElementById('payLabelPlan').innerText = t.payLabelPlan;
-      document.getElementById('payLabelTitle').innerText = t.payLabelTitle;
-      document.getElementById('payPostTitle').placeholder = t.payPhTitle;
-      document.getElementById('payLabelPhone').innerText = t.payLabelPhone;
-      document.getElementById('payReceiverTitle').innerText = t.payReceiverTitle;
-      document.getElementById('payLabelReceipt').innerText = t.payLabelReceipt;
-      document.getElementById('receiptChooseBtn').innerText = t.receiptBtn;
-      const rInput = document.getElementById('receiptFileInput');
-      if (!rInput.files || rInput.files.length === 0) {
-        document.getElementById('receiptFileName').innerText = t.receiptNone;
-      }
-      document.getElementById('paySubmitBtn').innerText = t.paySubmitBtn;
+      document.getElementById('mVipDesc').innerText = t.vipDesc;
+      document.getElementById('mConsultBtn').innerText = t.consultBtn;
 
       renderMerchantGallery();
       populateCities(lang);
-      renderPlans(lang);
-      updateReceiverInfo(lang);
-    }
-
-    function updateReceiverInfo(lang) {
-      const rawAcc = DMJT_PAY.RECEIVER.accountNo || '';
-      const localizedAcc = rawAcc.replace(
-        '请联系客服或扫描 DuitNow QR',
-        lang === 'en'
-          ? 'Contact Admin / Scan DuitNow QR'
-          : (lang === 'ms' ? 'Hubungi Admin / Imbas DuitNow QR' : '请联系客服或扫描 DuitNow QR')
-      );
-      document.getElementById('receiverInfo').innerHTML = `
-        <div>Bank / E-Wallet: <b>${DMJT_PAY.RECEIVER.bankName}</b></div>
-        <div>Name: <b>${DMJT_PAY.RECEIVER.accountName}</b></div>
-        <div>Account No: <b>${localizedAcc}</b></div>
-      `;
-    }
-
-    function updateReceiptFileName(input) {
-      const t = M_I18N[currentMLang];
-      const nameEl = document.getElementById('receiptFileName');
-      if (input.files && input.files[0]) {
-        nameEl.innerText = input.files[0].name;
-        nameEl.classList.remove('text-gray-400');
-        nameEl.classList.add('text-gray-800', 'font-semibold');
-      } else {
-        nameEl.innerText = t.receiptNone;
-        nameEl.classList.add('text-gray-400');
-        nameEl.classList.remove('text-gray-800', 'font-semibold');
-      }
     }
 
     async function previewMerchantImg(e) {
@@ -1093,46 +973,6 @@
       } finally {
         btn.disabled = false;
         btn.innerText = t.submitBtn;
-      }
-    }
-
-    function openPayModal() {
-      const titleInput = document.getElementById('mName').value.trim();
-      const phoneInput = document.getElementById('mWhatsapp').value.trim();
-      if (titleInput) document.getElementById('payPostTitle').value = titleInput;
-      if (phoneInput) document.getElementById('payPhone').value = phoneInput;
-      document.getElementById('payModal').classList.remove('hidden');
-    }
-
-    async function handlePaySubmit(e) {
-      e.preventDefault();
-      const t = M_I18N[currentMLang];
-      const btn = document.getElementById('paySubmitBtn');
-      btn.disabled = true;
-      btn.innerText = t.paySubmittingBtn;
-
-      try {
-        const file = document.getElementById('receiptFileInput').files[0];
-        let receiptUrl = null;
-        if (file) {
-          receiptUrl = await DMJT_API.uploadImage(file);
-        }
-
-        await DMJT_PAY.submitTopOrder({
-          postId: '商家申请',
-          postTitle: document.getElementById('payPostTitle').value.trim(),
-          planId: document.getElementById('payPlanSelect').value,
-          payerPhone: document.getElementById('payPhone').value.trim(),
-          receiptUrl
-        });
-
-        alert(t.paySuccessAlert);
-        document.getElementById('payModal').classList.add('hidden');
-      } catch (err) {
-        alert('Error: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = t.paySubmitBtn;
       }
     }
 
