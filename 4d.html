@@ -12,6 +12,8 @@
   <!-- Google AdSense 自动广告与审核验证脚本 -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4770023285363817"
      crossorigin="anonymous"></script>
+  <!-- OneSignal Web / Hybrid SDK（需在 OneSignal 控制台填入你的 App ID） -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body>
   <div class="app-shell pb-24">
@@ -48,6 +50,18 @@
     </header>
 
     <main class="flex-1 p-3 space-y-3">
+      <!-- 4D 开奖结果更新通知订阅开关 -->
+      <section class="bg-amber-50 border border-amber-200 rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div id="pushToggleTitle" class="text-xs font-black text-slate-800">🔔 开奖结果更新通知</div>
+          <div id="pushToggleDesc" class="text-[10px] text-slate-600">仅在官方开奖数据更新时推送查询提醒，可随时关闭</div>
+        </div>
+        <label class="inline-flex items-center cursor-pointer shrink-0">
+          <input type="checkbox" id="pushAlertToggle" onchange="toggle4DPushAlert(this.checked)" class="sr-only peer">
+          <div class="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600 relative"></div>
+        </label>
+      </section>
+
       <!-- 官方实时开彩直播直达栏 -->
       <section class="bg-slate-900 text-white rounded-2xl p-3 shadow-sm border border-slate-800">
         <div class="flex items-center justify-between mb-2">
@@ -162,6 +176,11 @@
           <p id="boardNotice" class="text-[10px] text-slate-400 text-center pt-1">
             💡 提示：每晚 7:00 PM 开彩时段请点击上方「官方实时核对」查看摇珠直播与最终派彩公报。
           </p>
+
+          <!-- 合规免责声明（防恶意举报） -->
+          <div id="legalDisclaimerBox" class="bg-slate-100 border border-slate-200/90 rounded-xl p-2.5 text-[10px] text-slate-500 leading-relaxed">
+            ⚠️ 声明：本页面仅提供马来西亚合法持牌机构（Magnum、Sports Toto、Da Ma Cai、Sabah 88、STC、CashSweep）公开开奖历史数据与信息查询服务，不提供任何投注、代买、赔率预测或博彩交易功能。最终开奖与派彩以各持牌机构官方公告为准。
+          </div>
         </div>
       </section>
 
@@ -207,11 +226,15 @@
   </div>
 
   <script>
+    const ONESIGNAL_APP_ID = 'YOUR_ONESIGNAL_APP_ID'; // 接入 OneSignal 后替换此处
+
     const I18N_4D = {
       zh: {
         back: '← 首页',
         title: '🎰 大马万字 4D 开奖',
         sub: '万能 · 多多 · 大马彩 · 东马开彩时间 & 官方直播',
+        pushTitle: '🔔 开奖结果更新通知',
+        pushDesc: '仅在官方开奖数据更新时推送查询提醒，可随时关闭',
         liveStreamTitle: '📺 官方实时开奖直播 & 成绩核对',
         checkerTitle: '🔍 万字快速对奖器（输入 4 位号码）',
         checkerSub: '支持正字 & 跳字(iBox)检测',
@@ -226,6 +249,7 @@
         lblSpecial: '✨ 特别奖 SPECIAL',
         lblConsolation: '🎁 安慰奖 CONSOLATION',
         notice: '💡 提示：每晚 7:00 PM 开彩时段请点击上方「官方实时核对」查看摇珠直播与最终派彩公报。',
+        disclaimer: '⚠️ 声明：本页面仅提供马来西亚合法持牌机构（Magnum、Sports Toto、Da Ma Cai、Sabah 88、STC、CashSweep）公开开奖历史数据与信息查询服务，不提供任何投注、代买、赔率预测或博彩交易功能。最终开奖与派彩以各持牌机构官方公告为准。',
         historyTitle: '📜 往期开奖历史记录',
         historySub: '点击任意一期即可切换查看完整 23 组奖号',
         officialPastLink: '官网全部历史 ↗',
@@ -243,6 +267,8 @@
         back: '← Home',
         title: '🎰 Malaysia 4D Live Results',
         sub: 'Magnum · Sports Toto · Da Ma Cai · East MY Streams',
+        pushTitle: '🔔 Draw Result Update Alerts',
+        pushDesc: 'Notify only when official draw results update; toggle anytime',
         liveStreamTitle: '📺 Official Live Draw Streams & Verification',
         checkerTitle: '🔍 Quick 4D Number Checker (4 Digits)',
         checkerSub: 'Checks Straight & Permutation (iBox)',
@@ -257,6 +283,7 @@
         lblSpecial: '✨ SPECIAL PRIZES',
         lblConsolation: '🎁 CONSOLATION PRIZES',
         notice: '💡 Tip: Tap "Official Live" during 7:00 PM MYT draw hours to watch the live draw broadcast.',
+        disclaimer: '⚠️ Disclaimer: This page provides public draw result lookup from licensed operators (Magnum, Sports Toto, Da Ma Cai, Sabah 88, STC, CashSweep) for informational purposes only. No betting, wagering, prediction, or gambling services are offered.',
         historyTitle: '📜 Past Draw History',
         historySub: 'Tap any past draw to view all 23 winning numbers',
         officialPastLink: 'Official Archive ↗',
@@ -274,6 +301,8 @@
         back: '← Utama',
         title: '🎰 Keputusan 4D Malaysia Live',
         sub: 'Magnum · Sports Toto · Da Ma Cai · Siaran Rasmi',
+        pushTitle: '🔔 Makluman Keputusan Cabutan',
+        pushDesc: 'Maklum hanya apabila keputusan rasmi dikemas kini',
         liveStreamTitle: '📺 Siaran Langsung Cabutan Rasmi',
         checkerTitle: '🔍 Penyemak Nombor 4D Pantas (4 Digit)',
         checkerSub: 'Semak Tegak & Pusingan (iBox)',
@@ -288,6 +317,7 @@
         lblSpecial: '✨ HADIAH KHAS (SPECIAL)',
         lblConsolation: '🎁 HADIAH SAGU HATI',
         notice: '💡 Tip: Tekan "Semak Rasmi" pada jam 7:00 malam untuk menonton siaran langsung cabutan.',
+        disclaimer: '⚠️ Penafian: Halaman ini hanya memaparkan keputusan cabutan rasmi daripada pengendali berlesen untuk tujuan rujukan maklumat sahaja. Tiada perkhidmatan pertaruhan atau perjudian disediakan.',
         historyTitle: '📜 Rekod Cabutan Lepas',
         historySub: 'Tekan mana-mana tarikh untuk lihat 23 nombor penuh',
         officialPastLink: 'Arkib Rasmi ↗',
@@ -397,9 +427,49 @@
 
     let liveResultsStore = makeEmptyStore();
     let historyStore = { magnum: [], toto: [], damacai: [], sabah88: [], stc: [], cashsweep: [] };
-    let selectedHistoryIdx = -1; // -1 表示显示最新一期
+    let selectedHistoryIdx = -1;
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let currentCompId = 'magnum';
+
+    async function initPushState() {
+      const saved = localStorage.getItem('dama_4d_push_enabled') === '1';
+      const toggle = document.getElementById('pushAlertToggle');
+      if (toggle) toggle.checked = saved;
+
+      if (ONESIGNAL_APP_ID !== 'YOUR_ONESIGNAL_APP_ID') {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.init({ appId: ONESIGNAL_APP_ID });
+          if (saved) {
+            await OneSignal.User.addTag('4d_alert', 'on');
+          }
+        });
+      }
+    }
+
+    async function toggle4DPushAlert(enabled) {
+      localStorage.setItem('dama_4d_push_enabled', enabled ? '1' : '0');
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.OneSignal) {
+        try {
+          if (enabled) {
+            await window.Capacitor.Plugins.OneSignal.promptForPushNotificationsWithUserResponse();
+            await window.Capacitor.Plugins.OneSignal.sendTag({ key: '4d_alert', value: 'on' });
+          } else {
+            await window.Capacitor.Plugins.OneSignal.deleteTag({ key: '4d_alert' });
+          }
+        } catch (_) {}
+      }
+      if (ONESIGNAL_APP_ID !== 'YOUR_ONESIGNAL_APP_ID' && window.OneSignalDeferred) {
+        OneSignalDeferred.push(async function(OneSignal) {
+          if (enabled) {
+            await OneSignal.Notifications.requestPermission();
+            await OneSignal.User.addTag('4d_alert', 'on');
+          } else {
+            await OneSignal.User.removeTag('4d_alert');
+          }
+        });
+      }
+    }
 
     function getActiveBoardData() {
       const list = historyStore[currentCompId] || [];
@@ -638,6 +708,8 @@
       document.getElementById('backHomeBtn').innerText = t.back;
       document.getElementById('pageTitle').innerText = t.title;
       document.getElementById('pageSub').innerText = t.sub;
+      document.getElementById('pushToggleTitle').innerText = t.pushTitle;
+      document.getElementById('pushToggleDesc').innerText = t.pushDesc;
       document.getElementById('liveStreamTitle').innerText = t.liveStreamTitle;
       document.getElementById('checkerTitle').innerText = t.checkerTitle;
       document.getElementById('checkerSub').innerText = t.checkerSub;
@@ -651,6 +723,7 @@
       document.getElementById('lblSpecial').innerText = t.lblSpecial;
       document.getElementById('lblConsolation').innerText = t.lblConsolation;
       document.getElementById('boardNotice').innerText = t.notice;
+      document.getElementById('legalDisclaimerBox').innerText = t.disclaimer;
       document.getElementById('historyTitle').innerText = t.historyTitle;
       document.getElementById('historySub').innerText = t.historySub;
       document.getElementById('officialPastLink').innerText = t.officialPastLink;
@@ -774,7 +847,6 @@
       msgBox.classList.remove('hidden');
     }
 
-  
     let lastCheckedDateStr = getMytNow().toISOString().slice(0, 10);
     setInterval(() => {
       const nowDateStr = getMytNow().toISOString().slice(0, 10);
@@ -785,6 +857,7 @@
       }
     }, 60000);
 
+    initPushState();
     switch4DLang(currentLang);
     syncLatest4D(false);
   </script>
