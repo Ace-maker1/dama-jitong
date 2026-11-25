@@ -9,11 +9,23 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="/style.css" />
-  <!-- Google AdSense 自动广告与审核验证脚本 -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4770023285363817"
      crossorigin="anonymous"></script>
-  <!-- OneSignal Web / Hybrid SDK（需在 OneSignal 控制台填入你的 App ID） -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <style>
+    .rolling-num {
+      color: #dc2626 !important;
+      background: #fef2f2 !important;
+      letter-spacing: 0.16em !important;
+    }
+    .locked-pop {
+      animation: popIn 0.35s ease-out;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.88); background-color: #fef08a; }
+      100% { transform: scale(1); }
+    }
+  </style>
 </head>
 <body>
   <div class="app-shell pb-24">
@@ -50,6 +62,18 @@
     </header>
 
     <main class="flex-1 p-3 space-y-3">
+      <!-- 实时跳号开彩提示横幅 -->
+      <div id="liveRollingBanner" class="hidden bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-2xl px-3.5 py-2.5 shadow-sm flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping shrink-0"></span>
+          <div class="min-w-0">
+            <div id="liveBannerTitle" class="text-xs font-black truncate">🔴 正在开彩中 · 号码逐个跳出同步</div>
+            <div id="liveBannerSub" class="text-[10px] text-amber-100 truncate">19:00 - 20:00 MYT 每 4 秒自动刷新已开出号码</div>
+          </div>
+        </div>
+        <span id="liveProgressBadge" class="font-mono text-[11px] font-black bg-black/25 px-2 py-0.5 rounded-lg shrink-0">0/23</span>
+      </div>
+
       <!-- 4D 开奖结果更新通知订阅开关 -->
       <section class="bg-amber-50 border border-amber-200 rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-3">
         <div class="min-w-0">
@@ -69,9 +93,9 @@
           <span class="text-[10px] text-slate-400">19:00 - 20:00 MYT</span>
         </div>
         <div class="grid grid-cols-3 gap-1.5 text-center text-[11px] font-bold">
-          <a href="https://www.magnum4d.my/en/" target="_blank" rel="noopener noreferrer"
+          <a href="https://4dlivetoday.com/" target="_blank" rel="noopener noreferrer"
              class="bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 px-1 rounded-xl transition shadow-xs">
-            🟡 万能 Magnum<br><span class="text-[9px] font-semibold opacity-80">Live / 官方成绩</span>
+            🟡 万能 Magnum<br><span class="text-[9px] font-semibold opacity-80">Live / 实时开彩</span>
           </a>
           <a href="https://www.sportstoto.com.my/" target="_blank" rel="noopener noreferrer"
              class="bg-rose-600 hover:bg-rose-500 text-white py-2 px-1 rounded-xl transition shadow-xs">
@@ -118,7 +142,7 @@
       <!-- 开彩机构切换标签栏 -->
       <div id="companyTabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
 
-      <!-- 期数/日期切换条（查看最新或回看往期） -->
+      <!-- 期数/日期切换条 -->
       <div class="bg-white rounded-xl px-3 py-2 border border-slate-200 flex items-center justify-between gap-2">
         <span id="drawPickerLabel" class="text-[11px] font-bold text-slate-700 shrink-0">📅 选择期数：</span>
         <select id="drawSelect" onchange="onSelectDrawIndex(this.value)"
@@ -138,7 +162,7 @@
             <h2 id="boardCompanyName" class="font-black text-base leading-tight truncate">万能 Magnum 4D</h2>
             <p id="boardDrawMeta" class="text-[11px] font-semibold opacity-85 truncate">开彩日：每周三、六、日 · 19:00 MYT</p>
           </div>
-          <a id="boardOfficialLink" href="https://www.magnum4d.my/en/" target="_blank" rel="noopener noreferrer"
+          <a id="boardOfficialLink" href="https://4dlivetoday.com/" target="_blank" rel="noopener noreferrer"
              class="bg-black/85 text-white text-[11px] font-bold px-3 py-1.5 rounded-full hover:bg-black transition shrink-0">
             官方实时核对 ↗
           </a>
@@ -149,15 +173,15 @@
           <div class="grid grid-cols-3 gap-2 text-center">
             <div class="bg-white rounded-xl p-2.5 border-2 border-red-500 shadow-2xs">
               <div id="lbl1st" class="text-[10px] font-black text-red-600 mb-1">🥇 头奖 1ST</div>
-              <div id="num1st" class="font-mono font-black text-xl tracking-widest text-slate-900">----</div>
+              <div id="num1st" class="font-mono font-black text-xl tracking-widest text-slate-900 rounded px-1">----</div>
             </div>
             <div class="bg-white rounded-xl p-2.5 border border-amber-400 shadow-2xs">
               <div id="lbl2nd" class="text-[10px] font-black text-amber-600 mb-1">🥈 二奖 2ND</div>
-              <div id="num2nd" class="font-mono font-black text-xl tracking-widest text-slate-900">----</div>
+              <div id="num2nd" class="font-mono font-black text-xl tracking-widest text-slate-900 rounded px-1">----</div>
             </div>
             <div class="bg-white rounded-xl p-2.5 border border-slate-300 shadow-2xs">
               <div id="lbl3rd" class="text-[10px] font-black text-slate-600 mb-1">🥉 三奖 3RD</div>
-              <div id="num3rd" class="font-mono font-black text-xl tracking-widest text-slate-900">----</div>
+              <div id="num3rd" class="font-mono font-black text-xl tracking-widest text-slate-900 rounded px-1">----</div>
             </div>
           </div>
 
@@ -174,10 +198,10 @@
           </div>
 
           <p id="boardNotice" class="text-[10px] text-slate-400 text-center pt-1">
-            💡 提示：每晚 7:00 PM 开彩时段请点击上方「官方实时核对」查看摇珠直播与最终派彩公报。
+            💡 提示：每晚 7:00 PM 开彩时段未开出号码将实时跳动，开出后自动定格；最终派彩以官方公告为准。
           </p>
 
-          <!-- 合规免责声明（防恶意举报） -->
+          <!-- 合规免责声明 -->
           <div id="legalDisclaimerBox" class="bg-slate-100 border border-slate-200/90 rounded-xl p-2.5 text-[10px] text-slate-500 leading-relaxed">
             ⚠️ 声明：本页面仅提供马来西亚合法持牌机构（Magnum、Sports Toto、Da Ma Cai、Sabah 88、STC、CashSweep）公开开奖历史数据与信息查询服务，不提供任何投注、代买、赔率预测或博彩交易功能。最终开奖与派彩以各持牌机构官方公告为准。
           </div>
@@ -191,7 +215,7 @@
             <h3 id="historyTitle" class="text-xs font-black text-slate-800">📜 往期开奖历史记录</h3>
             <p id="historySub" class="text-[10px] text-slate-400">点击任意一期即可切换查看完整 23 组奖号</p>
           </div>
-          <a id="officialPastLink" href="https://www.magnum4d.my/en/results" target="_blank" rel="noopener noreferrer"
+          <a id="officialPastLink" href="https://4dlivetoday.com/" target="_blank" rel="noopener noreferrer"
              class="text-[10px] font-bold text-blue-600 hover:underline shrink-0">
             官网全部历史 ↗
           </a>
@@ -226,7 +250,7 @@
   </div>
 
   <script>
-    const ONESIGNAL_APP_ID = 'YOUR_ONESIGNAL_APP_ID'; // 接入 OneSignal 后替换此处
+    const ONESIGNAL_APP_ID = 'YOUR_ONESIGNAL_APP_ID';
 
     const I18N_4D = {
       zh: {
@@ -236,6 +260,8 @@
         pushTitle: '🔔 开奖结果更新通知',
         pushDesc: '仅在官方开奖数据更新时推送查询提醒，可随时关闭',
         liveStreamTitle: '📺 官方实时开奖直播 & 成绩核对',
+        liveBannerTitle: '🔴 正在开彩中 · 号码逐个跳出同步',
+        liveBannerSub: '19:00 - 20:00 MYT 每 4 秒自动刷新已开出号码',
         checkerTitle: '🔍 万字快速对奖器（输入 4 位号码）',
         checkerSub: '支持正字 & 跳字(iBox)检测',
         checkBtn: '立即核对',
@@ -248,7 +274,7 @@
         lbl3rd: '🥉 三奖 3RD',
         lblSpecial: '✨ 特别奖 SPECIAL',
         lblConsolation: '🎁 安慰奖 CONSOLATION',
-        notice: '💡 提示：每晚 7:00 PM 开彩时段请点击上方「官方实时核对」查看摇珠直播与最终派彩公报。',
+        notice: '💡 提示：每晚 7:00 PM 开彩时段未开出号码将实时跳动，开出后自动定格；最终派彩以官方公告为准。',
         disclaimer: '⚠️ 声明：本页面仅提供马来西亚合法持牌机构（Magnum、Sports Toto、Da Ma Cai、Sabah 88、STC、CashSweep）公开开奖历史数据与信息查询服务，不提供任何投注、代买、赔率预测或博彩交易功能。最终开奖与派彩以各持牌机构官方公告为准。',
         historyTitle: '📜 往期开奖历史记录',
         historySub: '点击任意一期即可切换查看完整 23 组奖号',
@@ -258,7 +284,7 @@
         liveNow: '🔴 正在开彩中 (19:00 - 20:00 MYT)',
         nextDraw: '⏱️ 距离下期开彩倒计时：',
         enter4Digits: '请输入完整的 4 位数字号码',
-        pendingNumbers: '本期开彩号码尚未公布，请点击上方绿色/金色按钮进入官方直播查看实时摇珠。',
+        pendingNumbers: '本期开彩号码尚未公布，请点击上方按钮进入实时开奖页查看。',
         hitExact: (prize) => `🎉 恭喜！正字命中【${prize}】！`,
         hitBox: (num, prize) => `✨ 跳字(iBox)命中 ${num}【${prize}】！`,
         noHit: '暂未匹配到当前所选期数奖号，祝下期好运！'
@@ -270,6 +296,8 @@
         pushTitle: '🔔 Draw Result Update Alerts',
         pushDesc: 'Notify only when official draw results update; toggle anytime',
         liveStreamTitle: '📺 Official Live Draw Streams & Verification',
+        liveBannerTitle: '🔴 LIVE DRAW IN PROGRESS · NUMBERS ROLLING',
+        liveBannerSub: '19:00 - 20:00 MYT · Auto-syncing every 4s as each number drops',
         checkerTitle: '🔍 Quick 4D Number Checker (4 Digits)',
         checkerSub: 'Checks Straight & Permutation (iBox)',
         checkBtn: 'Check',
@@ -282,7 +310,7 @@
         lbl3rd: '🥉 3RD PRIZE',
         lblSpecial: '✨ SPECIAL PRIZES',
         lblConsolation: '🎁 CONSOLATION PRIZES',
-        notice: '💡 Tip: Tap "Official Live" during 7:00 PM MYT draw hours to watch the live draw broadcast.',
+        notice: '💡 Tip: During 7:00 PM - 8:00 PM MYT draw hours, pending slots roll live and lock automatically once drawn.',
         disclaimer: '⚠️ Disclaimer: This page provides public draw result lookup from licensed operators (Magnum, Sports Toto, Da Ma Cai, Sabah 88, STC, CashSweep) for informational purposes only. No betting, wagering, prediction, or gambling services are offered.',
         historyTitle: '📜 Past Draw History',
         historySub: 'Tap any past draw to view all 23 winning numbers',
@@ -292,7 +320,7 @@
         liveNow: '🔴 LIVE DRAW IN PROGRESS (19:00 - 20:00 MYT)',
         nextDraw: '⏱️ Next Draw Countdown:',
         enter4Digits: 'Please enter a 4-digit number',
-        pendingNumbers: 'Numbers not yet published on board. Tap the official stream buttons above for live draw.',
+        pendingNumbers: 'Numbers not yet published on board. Tap the live buttons above.',
         hitExact: (prize) => `🎉 Congrats! Exact match for [${prize}]!`,
         hitBox: (num, prize) => `✨ Permutation (iBox) match ${num} [${prize}]!`,
         noHit: 'No match in selected draw numbers. Better luck next draw!'
@@ -304,6 +332,8 @@
         pushTitle: '🔔 Makluman Keputusan Cabutan',
         pushDesc: 'Maklum hanya apabila keputusan rasmi dikemas kini',
         liveStreamTitle: '📺 Siaran Langsung Cabutan Rasmi',
+        liveBannerTitle: '🔴 CABUTAN SEDANG BERLANGSUNG · NOMBOR BERGERAK',
+        liveBannerSub: '19:00 - 20:00 MYT · Kemas kini automatik setiap 4 saat',
         checkerTitle: '🔍 Penyemak Nombor 4D Pantas (4 Digit)',
         checkerSub: 'Semak Tegak & Pusingan (iBox)',
         checkBtn: 'Semak',
@@ -316,7 +346,7 @@
         lbl3rd: '🥉 HADIAH KETIGA',
         lblSpecial: '✨ HADIAH KHAS (SPECIAL)',
         lblConsolation: '🎁 HADIAH SAGU HATI',
-        notice: '💡 Tip: Tekan "Semak Rasmi" pada jam 7:00 malam untuk menonton siaran langsung cabutan.',
+        notice: '💡 Tip: Waktu cabutan 7:00 - 8:00 malam, nombor belum keluar akan bergerak dan berhenti apabila rasmi.',
         disclaimer: '⚠️ Penafian: Halaman ini hanya memaparkan keputusan cabutan rasmi daripada pengendali berlesen untuk tujuan rujukan maklumat sahaja. Tiada perkhidmatan pertaruhan atau perjudian disediakan.',
         historyTitle: '📜 Rekod Cabutan Lepas',
         historySub: 'Tekan mana-mana tarikh untuk lihat 23 nombor penuh',
@@ -326,7 +356,7 @@
         liveNow: '🔴 CABUTAN SEDANG BERLANGSUNG (19:00 MYT)',
         nextDraw: '⏱️ Kiraan Detik Cabutan Seterusnya:',
         enter4Digits: 'Sila masukkan 4 digit nombor',
-        pendingNumbers: 'Keputusan belum dikemas kini di papan. Sila tekan butang rasmi di atas untuk siaran langsung.',
+        pendingNumbers: 'Keputusan belum dikemas kini di papan. Sila tekan butang di atas.',
         hitExact: (prize) => `🎉 Tahniah! Padanan tepat untuk [${prize}]!`,
         hitBox: (num, prize) => `✨ Padanan pusingan (iBox) ${num} [${prize}]!`,
         noHit: 'Tiada padanan ditemui. Semoga berjaya cabutan seterusnya!'
@@ -341,8 +371,8 @@
         ms: '🟡 Magnum 4D',
         headerBg: 'bg-amber-500 text-slate-950',
         borderCol: 'border-amber-400',
-        url: 'https://www.magnum4d.my/en/',
-        pastUrl: 'https://www.magnum4d.my/en/results',
+        url: 'https://4dlivetoday.com/',
+        pastUrl: 'https://4dlivetoday.com/',
         metaZh: '开彩日：每周三、六、日 · 19:00 MYT',
         metaEn: 'Draw Days: Wed, Sat, Sun · 19:00 MYT',
         metaMs: 'Hari Cabutan: Rabu, Sabtu, Ahad · 19:00 MYT'
@@ -430,6 +460,34 @@
     let selectedHistoryIdx = -1;
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let currentCompId = 'magnum';
+    let previouslyLockedSet = new Set();
+
+    function getMytNow() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      return new Date(utc + 8 * 3600000);
+    }
+
+    function isLiveDrawWindow() {
+      const myt = getMytNow();
+      const day = myt.getDay(); // 0=Sun, 3=Wed, 6=Sat
+      const hour = myt.getHours();
+      return (day === 0 || day === 3 || day === 6) && hour >= 19 && hour < 20;
+    }
+
+    function is4DCode(v) {
+      return /^\d{4}$/.test(String(v || '').trim());
+    }
+
+    function random4Digit() {
+      return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    }
+
+    function countLockedNumbers(data) {
+      if (!data) return 0;
+      const all = [data.p1, data.p2, data.p3, ...(data.special || []), ...(data.consolation || [])];
+      return all.filter(is4DCode).length;
+    }
 
     async function initPushState() {
       const saved = localStorage.getItem('dama_4d_push_enabled') === '1';
@@ -501,7 +559,7 @@
 
       const options = [`<option value="-1">${latestLabel}</option>`];
       list.forEach((item, idx) => {
-        const tag = [item.drawDate || '', item.drawNo ? `#${item.drawNo}` : '', item.p1 !== '----' ? `1st: ${item.p1}` : '']
+        const tag = [item.drawDate || '', item.drawNo ? `#${item.drawNo}` : '', is4DCode(item.p1) ? `1st: ${item.p1}` : '']
           .filter(Boolean)
           .join(' · ');
         options.push(`<option value="${idx}">${tag}</option>`);
@@ -645,31 +703,30 @@
       }
     }
 
-    function getMytNow() {
-      const now = new Date();
-      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-      return new Date(utc + 8 * 3600000);
-    }
-
     function updateDrawCountdown() {
       const t = I18N_4D[currentLang];
       const myt = getMytNow();
-      const day = myt.getDay();
-      const hour = myt.getHours();
-      const isDrawDay = (day === 0 || day === 3 || day === 6);
+      const isLive = isLiveDrawWindow();
 
       const badgeEl = document.getElementById('drawStatusBadge');
       const countEl = document.getElementById('drawCountdown');
       const dotEl = document.getElementById('liveDot');
+      const bannerEl = document.getElementById('liveRollingBanner');
 
-      if (isDrawDay && hour >= 19 && hour < 20) {
+      if (isLive) {
         badgeEl.innerText = t.liveNow;
         badgeEl.className = 'font-black text-rose-300';
         countEl.innerText = 'LIVE';
         dotEl.className = 'w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping shrink-0';
+        if (selectedHistoryIdx === -1) {
+          bannerEl.classList.remove('hidden');
+        } else {
+          bannerEl.classList.add('hidden');
+        }
         return;
       }
 
+      bannerEl.classList.add('hidden');
       dotEl.className = 'w-2 h-2 rounded-full bg-amber-300 animate-ping shrink-0';
       badgeEl.innerText = t.nextDraw;
       badgeEl.className = 'font-bold text-amber-200';
@@ -694,6 +751,57 @@
 
     setInterval(updateDrawCountdown, 1000);
 
+    // 19:00 - 20:00 开彩时段：未开出号码格子每 70ms 跳动，已开出号码自动定格
+    setInterval(() => {
+      if (!isLiveDrawWindow() || selectedHistoryIdx !== -1) return;
+      const data = getActiveBoardData();
+      if (!data) return;
+
+      const lockedCount = countLockedNumbers(data);
+      const progEl = document.getElementById('liveProgressBadge');
+      if (progEl) progEl.innerText = `${lockedCount}/23`;
+
+      // 如果 23 个号码已全部开出，无需再跳动
+      if (lockedCount >= 23) return;
+
+      const setSlot = (el, slotKey, actualVal) => {
+        if (!el) return;
+        const fullKey = `${currentCompId}_${slotKey}`;
+        if (is4DCode(actualVal)) {
+          const justLocked = !previouslyLockedSet.has(fullKey);
+          previouslyLockedSet.add(fullKey);
+          el.innerText = actualVal;
+          el.classList.remove('rolling-num');
+          if (justLocked) {
+            el.classList.remove('locked-pop');
+            void el.offsetWidth;
+            el.classList.add('locked-pop');
+          }
+        } else {
+          el.innerText = random4Digit();
+          el.classList.add('rolling-num');
+          el.classList.remove('locked-pop');
+        }
+      };
+
+      setSlot(document.getElementById('num1st'), 'p1', data.p1);
+      setSlot(document.getElementById('num2nd'), 'p2', data.p2);
+      setSlot(document.getElementById('num3rd'), 'p3', data.p3);
+
+      const spEls = document.querySelectorAll('#gridSpecial > div');
+      data.special.forEach((val, idx) => setSlot(spEls[idx], `sp_${idx}`, val));
+
+      const conEls = document.querySelectorAll('#gridConsolation > div');
+      data.consolation.forEach((val, idx) => setSlot(conEls[idx], `con_${idx}`, val));
+    }, 70);
+
+    // 开彩时段每 4 秒自动拉取最新已出号码
+    setInterval(() => {
+      if (isLiveDrawWindow() && selectedHistoryIdx === -1) {
+        syncLatest4D(false);
+      }
+    }, 4000);
+
     function switch4DLang(lang) {
       currentLang = lang;
       localStorage.setItem('dama_lang', lang);
@@ -708,6 +816,8 @@
       document.getElementById('backHomeBtn').innerText = t.back;
       document.getElementById('pageTitle').innerText = t.title;
       document.getElementById('pageSub').innerText = t.sub;
+      document.getElementById('liveBannerTitle').innerText = t.liveBannerTitle;
+      document.getElementById('liveBannerSub').innerText = t.liveBannerSub;
       document.getElementById('pushToggleTitle').innerText = t.pushTitle;
       document.getElementById('pushToggleDesc').innerText = t.pushDesc;
       document.getElementById('liveStreamTitle').innerText = t.liveStreamTitle;
@@ -747,6 +857,7 @@
       renderDrawPicker();
       renderBoard();
       renderHistoryList();
+      updateDrawCountdown();
       checkMy4D();
     }
 
@@ -780,17 +891,34 @@
       document.getElementById('boardOfficialLink').href = comp.url;
       document.getElementById('officialPastLink').href = comp.pastUrl || comp.url;
 
-      document.getElementById('num1st').innerText = data.p1;
-      document.getElementById('num2nd').innerText = data.p2;
-      document.getElementById('num3rd').innerText = data.p3;
+      const rollingActive = isLiveDrawWindow() && selectedHistoryIdx === -1 && countLockedNumbers(data) < 23;
+      const progEl = document.getElementById('liveProgressBadge');
+      if (progEl) progEl.innerText = `${countLockedNumbers(data)}/23`;
 
-      document.getElementById('gridSpecial').innerHTML = data.special.map(n =>
-        `<div class="bg-slate-50 border border-slate-200/80 rounded-lg py-1.5">${n}</div>`
-      ).join('');
+      const applyCellStyle = (el, val) => {
+        if (!el) return;
+        if (rollingActive && !is4DCode(val)) {
+          el.classList.add('rolling-num');
+          el.innerText = random4Digit();
+        } else {
+          el.classList.remove('rolling-num');
+          el.innerText = val;
+        }
+      };
 
-      document.getElementById('gridConsolation').innerHTML = data.consolation.map(n =>
-        `<div class="bg-slate-50 border border-slate-200/80 rounded-lg py-1.5">${n}</div>`
-      ).join('');
+      applyCellStyle(document.getElementById('num1st'), data.p1);
+      applyCellStyle(document.getElementById('num2nd'), data.p2);
+      applyCellStyle(document.getElementById('num3rd'), data.p3);
+
+      document.getElementById('gridSpecial').innerHTML = data.special.map(n => {
+        const isRoll = rollingActive && !is4DCode(n);
+        return `<div class="${isRoll ? 'rolling-num border border-red-200' : 'bg-slate-50 border border-slate-200/80'} rounded-lg py-1.5">${isRoll ? random4Digit() : n}</div>`;
+      }).join('');
+
+      document.getElementById('gridConsolation').innerHTML = data.consolation.map(n => {
+        const isRoll = rollingActive && !is4DCode(n);
+        return `<div class="${isRoll ? 'rolling-num border border-red-200' : 'bg-slate-50 border border-slate-200/80'} rounded-lg py-1.5">${isRoll ? random4Digit() : n}</div>`;
+      }).join('');
     }
 
     function checkMy4D() {
@@ -810,7 +938,7 @@
       }
 
       const data = getActiveBoardData();
-      if (data.p1 === '----') {
+      if (!is4DCode(data.p1)) {
         msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200';
         msgBox.innerText = t.pendingNumbers;
         msgBox.classList.remove('hidden');
@@ -834,7 +962,7 @@
       }
 
       const sortedInput = input.split('').sort().join('');
-      const box = allPrizes.find(p => /^\d{4}$/.test(p.num) && p.num.split('').sort().join('') === sortedInput);
+      const box = allPrizes.find(p => is4DCode(p.num) && p.num.split('').sort().join('') === sortedInput);
       if (box) {
         msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-100 text-amber-900 border border-amber-300';
         msgBox.innerText = t.hitBox(box.num, box.name);
@@ -853,6 +981,7 @@
       if (nowDateStr !== lastCheckedDateStr) {
         lastCheckedDateStr = nowDateStr;
         selectedHistoryIdx = -1;
+        previouslyLockedSet.clear();
         syncLatest4D(false);
       }
     }, 60000);
@@ -861,7 +990,7 @@
     switch4DLang(currentLang);
     syncLatest4D(false);
   </script>
-  <!-- 全站底部合规与招商入口（过审 Google AdSense 必备） -->
+
   <footer class="max-w-3xl mx-auto px-4 pt-4 pb-24 text-center text-xs text-slate-400 space-y-1">
     <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
       <a href="legal.html#about" class="hover:text-red-500 underline">关于我们 About</a>
