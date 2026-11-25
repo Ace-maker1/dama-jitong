@@ -68,7 +68,6 @@ function normalizeDrawRecord(item, fallbackDate = '') {
   };
 }
 
-// 精准解包 4dlivetoday 的 data.results / data / results 结构
 function extractItemsArray(payload) {
   if (!payload || typeof payload !== 'object') return [];
   if (Array.isArray(payload)) return payload;
@@ -102,7 +101,68 @@ async function fetchJsonSafe(url, ms = 6500) {
   }
 }
 
-// 写入 Supabase 历史表，保证永久归档不丢失
+// 查询已存在的 (company_id, draw_date) 组合，用于判断是否为全新一期开奖
+async function getExistingDrawKeys(url, key, rows) {
+  const existing = new Set();
+  const dates = [...new Set(rows.map(r => r.draw_date).filter(Boolean))];
+  if (dates.length === 0) return existing;
+
+  try {
+    const inList = dates.map(d => `"${d}"`).join(',');
+    const endpoint = `${url}/rest/v1/results_4d_history?select=company_id,draw_date&draw_date=in.(${encodeURIComponent(inList)})`;
+    const resp = await fetch(endpoint, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`
+      }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (Array.isArray(data)) {
+        data.forEach(row => existing.add(`${row.company_id}_${row.draw_date}`));
+      }
+    }
+  } catch (_) {}
+  return existing;
+}
+
+// 发送合规的 4D 开奖更新通知（仅在新一期入库时触发一次）
+async function send4DUpdatePush(newDraws, drawDate) {
+  const appId = process.env.ONESIGNAL_APP_ID;
+  const restApiKey = process.env.ONESIGNAL_REST_API_KEY;
+  if (!appId || !restApiKey || newDraws.length === 0) return false;
+
+  try {
+    const resp = await fetch('https://api.onesignal.com/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Key ${restApiKey}`
+      },
+      body: JSON.stringify({
+        app_id: appId,
+        included_segments: ['All'],
+        headings: {
+          en: '4D Draw Results Updated',
+          zh: '4D 开奖通知',
+          ms: 'Keputusan 4D Dikemas Kini'
+        },
+        contents: {
+          en: `4D draw results (${drawDate}) are updated. Tap to view latest results.`,
+          zh: `今晚 4D 开奖号码已更新，点击查看最新开奖结果。`,
+          ms: `Keputusan 4D (${drawDate}) telah dikemas kini. Tekan untuk semak.`
+        },
+        url: 'https://damajitong.com/4d.html',
+        data: { route: '/4d.html', drawDate, operators: newDraws }
+      })
+    });
+    return resp.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+// 写入 Supabase 历史表，并在检测到全新开奖期数时触发推送
 async function saveToSupabaseHistory(resultsMap, fallbackDate) {
   const url = process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
@@ -122,7 +182,10 @@ async function saveToSupabaseHistory(resultsMap, fallbackDate) {
       consolation: item.consolation
     });
   }
-  if (rows.length === 0) return;
+  if (rows.length === 0) return { pushed: false, newCount: 0 };
+
+  const existingKeys = await getExistingDrawKeys(url, key, rows);
+  const brandNewRows = rows.filter(r => !existingKeys.has(`${r.company_id}_${r.draw_date}`));
 
   try {
     await fetch(`${url}/rest/v1/results_4d_history?on_conflict=company_id,draw_date`, {
@@ -136,6 +199,14 @@ async function saveToSupabaseHistory(resultsMap, fallbackDate) {
       body: JSON.stringify(rows)
     });
   } catch (_) {}
+
+  let pushed = false;
+  if (brandNewRows.length > 0) {
+    const latestDate = brandNewRows[0].draw_date || fallbackDate;
+    pushed = await send4DUpdatePush(brandNewRows.map(r => r.company_id), latestDate);
+  }
+
+  return { pushed, newCount: brandNewRows.length };
 }
 
 module.exports = async function handler(req, res) {
@@ -155,13 +226,11 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    // 并发拉取最新全盘结果 + 6家各自近期历史
     const [latestJson, ...opJsons] = await Promise.all([
       fetchJsonSafe('https://4dlivetoday.com/api/v1/latest', 6500),
       ...COMPANIES.map(comp => fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${comp}?limit=15`, 6000))
     ]);
 
-    // 1. 解析各家历史多期记录
     COMPANIES.forEach((comp, idx) => {
       const list = extractItemsArray(opJsons[idx]);
       const seen = new Set();
@@ -179,7 +248,6 @@ module.exports = async function handler(req, res) {
       }
     });
 
-    // 2. 用 /latest 最新开奖结果覆盖并置于历史列表最前
     const latestItems = extractItemsArray(latestJson);
     for (const item of latestItems) {
       const comp = normalizeCompanyKey(item.operator || item.operator_name);
@@ -196,14 +264,14 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    await saveToSupabaseHistory(results, todayStr);
-
+    const syncMeta = await saveToSupabaseHistory(results, todayStr);
     const hitCount = COMPANIES.filter(c => results[c].p1 !== '----').length;
 
     return res.status(200).json({
       ok: true,
       today: todayStr,
       source: hitCount > 0 ? '4dlivetoday.com/api/v1' : 'pending',
+      pushTriggered: syncMeta.pushed,
       results,
       history
     });
@@ -212,6 +280,7 @@ module.exports = async function handler(req, res) {
       ok: true,
       today: todayStr,
       source: 'safe-fallback',
+      pushTriggered: false,
       results,
       history
     });
