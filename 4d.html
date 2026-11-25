@@ -13,16 +13,20 @@
      crossorigin="anonymous"></script>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <style>
-    .rolling-num {
-      color: #dc2626 !important;
-      background: #fef2f2 !important;
-      letter-spacing: 0.16em !important;
+    .pending-slot {
+      color: #94a3b8 !important;
+      animation: softPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes softPulse {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 1; }
     }
     .locked-pop {
-      animation: popIn 0.35s ease-out;
+      animation: popIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes popIn {
-      0% { transform: scale(0.88); background-color: #fef08a; }
+      0% { transform: scale(0.72); background-color: #fde047; color: #b91c1c; }
+      60% { transform: scale(1.08); background-color: #fef08a; }
       100% { transform: scale(1); }
     }
   </style>
@@ -62,13 +66,13 @@
     </header>
 
     <main class="flex-1 p-3 space-y-3">
-      <!-- 实时跳号开彩提示横幅 -->
+      <!-- 实时开彩同步提示横幅 -->
       <div id="liveRollingBanner" class="hidden bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-2xl px-3.5 py-2.5 shadow-sm flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping shrink-0"></span>
           <div class="min-w-0">
-            <div id="liveBannerTitle" class="text-xs font-black truncate">🔴 正在开彩中 · 号码逐个跳出同步</div>
-            <div id="liveBannerSub" class="text-[10px] text-amber-100 truncate">19:00 - 20:00 MYT 每 4 秒自动刷新已开出号码</div>
+            <div id="liveBannerTitle" class="text-xs font-black truncate">🔴 正在开彩中 · 实时同步官方出奖号码</div>
+            <div id="liveBannerSub" class="text-[10px] text-amber-100 truncate">每 4 秒自动检测最新开出号码，开出即自动跳上公告板</div>
           </div>
         </div>
         <span id="liveProgressBadge" class="font-mono text-[11px] font-black bg-black/25 px-2 py-0.5 rounded-lg shrink-0">0/23</span>
@@ -198,7 +202,7 @@
           </div>
 
           <p id="boardNotice" class="text-[10px] text-slate-400 text-center pt-1">
-            💡 提示：每晚 7:00 PM 开彩时段未开出号码将实时跳动，开出后自动定格；最终派彩以官方公告为准。
+            💡 提示：每晚 7:00 PM 开彩时段实时同步官方已出号码，开出即自动填入；最终派彩以官方公告为准。
           </p>
 
           <!-- 合规免责声明 -->
@@ -260,8 +264,8 @@
         pushTitle: '🔔 开奖结果更新通知',
         pushDesc: '仅在官方开奖数据更新时推送查询提醒，可随时关闭',
         liveStreamTitle: '📺 官方实时开奖直播 & 成绩核对',
-        liveBannerTitle: '🔴 正在开彩中 · 号码逐个跳出同步',
-        liveBannerSub: '19:00 - 20:00 MYT 每 4 秒自动刷新已开出号码',
+        liveBannerTitle: '🔴 正在开彩中 · 实时同步官方出奖号码',
+        liveBannerSub: '每 4 秒自动检测最新开出号码，开出即自动跳上公告板',
         checkerTitle: '🔍 万字快速对奖器（输入 4 位号码）',
         checkerSub: '支持正字 & 跳字(iBox)检测',
         checkBtn: '立即核对',
@@ -274,7 +278,7 @@
         lbl3rd: '🥉 三奖 3RD',
         lblSpecial: '✨ 特别奖 SPECIAL',
         lblConsolation: '🎁 安慰奖 CONSOLATION',
-        notice: '💡 提示：每晚 7:00 PM 开彩时段未开出号码将实时跳动，开出后自动定格；最终派彩以官方公告为准。',
+        notice: '💡 提示：每晚 7:00 PM 开彩时段实时同步官方已出号码，开出即自动填入；最终派彩以官方公告为准。',
         disclaimer: '⚠️ 声明：本页面仅提供马来西亚合法持牌机构（Magnum、Sports Toto、Da Ma Cai、Sabah 88、STC、CashSweep）公开开奖历史数据与信息查询服务，不提供任何投注、代买、赔率预测或博彩交易功能。最终开奖与派彩以各持牌机构官方公告为准。',
         historyTitle: '📜 往期开奖历史记录',
         historySub: '点击任意一期即可切换查看完整 23 组奖号',
@@ -284,7 +288,7 @@
         liveNow: '🔴 正在开彩中 (19:00 - 20:00 MYT)',
         nextDraw: '⏱️ 距离下期开彩倒计时：',
         enter4Digits: '请输入完整的 4 位数字号码',
-        pendingNumbers: '本期开彩号码尚未公布，请点击上方按钮进入实时开奖页查看。',
+        pendingNumbers: '本期开彩号码尚未公布，请稍候自动同步或点击上方直播按钮查看。',
         hitExact: (prize) => `🎉 恭喜！正字命中【${prize}】！`,
         hitBox: (num, prize) => `✨ 跳字(iBox)命中 ${num}【${prize}】！`,
         noHit: '暂未匹配到当前所选期数奖号，祝下期好运！'
@@ -296,8 +300,8 @@
         pushTitle: '🔔 Draw Result Update Alerts',
         pushDesc: 'Notify only when official draw results update; toggle anytime',
         liveStreamTitle: '📺 Official Live Draw Streams & Verification',
-        liveBannerTitle: '🔴 LIVE DRAW IN PROGRESS · NUMBERS ROLLING',
-        liveBannerSub: '19:00 - 20:00 MYT · Auto-syncing every 4s as each number drops',
+        liveBannerTitle: '🔴 LIVE DRAW IN PROGRESS · SYNCING OFFICIAL NUMBERS',
+        liveBannerSub: 'Auto-checking every 4s · Each drawn number pops onto the board live',
         checkerTitle: '🔍 Quick 4D Number Checker (4 Digits)',
         checkerSub: 'Checks Straight & Permutation (iBox)',
         checkBtn: 'Check',
@@ -310,7 +314,7 @@
         lbl3rd: '🥉 3RD PRIZE',
         lblSpecial: '✨ SPECIAL PRIZES',
         lblConsolation: '🎁 CONSOLATION PRIZES',
-        notice: '💡 Tip: During 7:00 PM - 8:00 PM MYT draw hours, pending slots roll live and lock automatically once drawn.',
+        notice: '💡 Tip: Numbers pop onto the board automatically as they are drawn during 7:00 PM - 8:00 PM MYT.',
         disclaimer: '⚠️ Disclaimer: This page provides public draw result lookup from licensed operators (Magnum, Sports Toto, Da Ma Cai, Sabah 88, STC, CashSweep) for informational purposes only. No betting, wagering, prediction, or gambling services are offered.',
         historyTitle: '📜 Past Draw History',
         historySub: 'Tap any past draw to view all 23 winning numbers',
@@ -320,7 +324,7 @@
         liveNow: '🔴 LIVE DRAW IN PROGRESS (19:00 - 20:00 MYT)',
         nextDraw: '⏱️ Next Draw Countdown:',
         enter4Digits: 'Please enter a 4-digit number',
-        pendingNumbers: 'Numbers not yet published on board. Tap the live buttons above.',
+        pendingNumbers: 'Numbers not yet drawn. Waiting for live sync...',
         hitExact: (prize) => `🎉 Congrats! Exact match for [${prize}]!`,
         hitBox: (num, prize) => `✨ Permutation (iBox) match ${num} [${prize}]!`,
         noHit: 'No match in selected draw numbers. Better luck next draw!'
@@ -332,8 +336,8 @@
         pushTitle: '🔔 Makluman Keputusan Cabutan',
         pushDesc: 'Maklum hanya apabila keputusan rasmi dikemas kini',
         liveStreamTitle: '📺 Siaran Langsung Cabutan Rasmi',
-        liveBannerTitle: '🔴 CABUTAN SEDANG BERLANGSUNG · NOMBOR BERGERAK',
-        liveBannerSub: '19:00 - 20:00 MYT · Kemas kini automatik setiap 4 saat',
+        liveBannerTitle: '🔴 CABUTAN SEDANG BERLANGSUNG · KEMAS KINI LANGSUNG',
+        liveBannerSub: 'Semakan automatik setiap 4 saat · Nombor rasmi dipaparkan serta-merta',
         checkerTitle: '🔍 Penyemak Nombor 4D Pantas (4 Digit)',
         checkerSub: 'Semak Tegak & Pusingan (iBox)',
         checkBtn: 'Semak',
@@ -346,7 +350,7 @@
         lbl3rd: '🥉 HADIAH KETIGA',
         lblSpecial: '✨ HADIAH KHAS (SPECIAL)',
         lblConsolation: '🎁 HADIAH SAGU HATI',
-        notice: '💡 Tip: Waktu cabutan 7:00 - 8:00 malam, nombor belum keluar akan bergerak dan berhenti apabila rasmi.',
+        notice: '💡 Tip: Nombor rasmi akan muncul secara automatik satu demi satu sepanjang waktu cabutan 7:00 - 8:00 malam.',
         disclaimer: '⚠️ Penafian: Halaman ini hanya memaparkan keputusan cabutan rasmi daripada pengendali berlesen untuk tujuan rujukan maklumat sahaja. Tiada perkhidmatan pertaruhan atau perjudian disediakan.',
         historyTitle: '📜 Rekod Cabutan Lepas',
         historySub: 'Tekan mana-mana tarikh untuk lihat 23 nombor penuh',
@@ -356,7 +360,7 @@
         liveNow: '🔴 CABUTAN SEDANG BERLANGSUNG (19:00 MYT)',
         nextDraw: '⏱️ Kiraan Detik Cabutan Seterusnya:',
         enter4Digits: 'Sila masukkan 4 digit nombor',
-        pendingNumbers: 'Keputusan belum dikemas kini di papan. Sila tekan butang di atas.',
+        pendingNumbers: 'Keputusan belum keluar. Menunggu kemas kini langsung...',
         hitExact: (prize) => `🎉 Tahniah! Padanan tepat untuk [${prize}]!`,
         hitBox: (num, prize) => `✨ Padanan pusingan (iBox) ${num} [${prize}]!`,
         noHit: 'Tiada padanan ditemui. Semoga berjaya cabutan seterusnya!'
@@ -490,10 +494,6 @@
 
     function is4DCode(v) {
       return /^\d{4}$/.test(String(v || '').trim());
-    }
-
-    function random4Digit() {
-      return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
     }
 
     function countLockedNumbers(data) {
@@ -634,7 +634,6 @@
         Object.keys(rowsOrMap).forEach(k => {
           if (liveResultsStore[k]) {
             const r = rowsOrMap[k] || {};
-            // 开奖时段若返回非今日旧数据，不覆盖今日实时跳号盘
             if (liveNow && r.drawDate && r.drawDate !== todayStr) {
               liveResultsStore[k] = {
                 drawNo: '',
@@ -786,50 +785,7 @@
 
     setInterval(updateDrawCountdown, 1000);
 
-    // 19:00 - 20:00 开彩时段：未开出号码格子每 70ms 跳动，已开出号码自动定格
-    setInterval(() => {
-      if (!isLiveDrawWindow() || selectedHistoryIdx !== -1) return;
-      const data = getActiveBoardData();
-      if (!data) return;
-
-      const lockedCount = countLockedNumbers(data);
-      const progEl = document.getElementById('liveProgressBadge');
-      if (progEl) progEl.innerText = `${lockedCount}/23`;
-
-      if (lockedCount >= 23) return;
-
-      const setSlot = (el, slotKey, actualVal) => {
-        if (!el) return;
-        const fullKey = `${currentCompId}_${slotKey}`;
-        if (is4DCode(actualVal)) {
-          const justLocked = !previouslyLockedSet.has(fullKey);
-          previouslyLockedSet.add(fullKey);
-          el.innerText = actualVal;
-          el.classList.remove('rolling-num');
-          if (justLocked) {
-            el.classList.remove('locked-pop');
-            void el.offsetWidth;
-            el.classList.add('locked-pop');
-          }
-        } else {
-          el.innerText = random4Digit();
-          el.classList.add('rolling-num');
-          el.classList.remove('locked-pop');
-        }
-      };
-
-      setSlot(document.getElementById('num1st'), 'p1', data.p1);
-      setSlot(document.getElementById('num2nd'), 'p2', data.p2);
-      setSlot(document.getElementById('num3rd'), 'p3', data.p3);
-
-      const spEls = document.querySelectorAll('#gridSpecial > div');
-      data.special.forEach((val, idx) => setSlot(spEls[idx], `sp_${idx}`, val));
-
-      const conEls = document.querySelectorAll('#gridConsolation > div');
-      data.consolation.forEach((val, idx) => setSlot(conEls[idx], `con_${idx}`, val));
-    }, 70);
-
-    // 开彩时段每 4 秒自动拉取最新已出号码
+    // 开彩时段每 4 秒自动拉取最新真实开出号码（绝不生成假随机号码）
     setInterval(() => {
       if (isLiveDrawWindow() && selectedHistoryIdx === -1) {
         syncLatest4D(false);
@@ -909,6 +865,29 @@
       }).join('');
     }
 
+    function renderSlotValue(el, slotKey, val, isLivePending) {
+      if (!el) return;
+      const fullKey = `${currentCompId}_${slotKey}`;
+      if (is4DCode(val)) {
+        const justArrived = !previouslyLockedSet.has(fullKey);
+        previouslyLockedSet.add(fullKey);
+        el.innerText = val;
+        el.classList.remove('pending-slot');
+        if (justArrived && isLiveDrawWindow() && selectedHistoryIdx === -1) {
+          el.classList.remove('locked-pop');
+          void el.offsetWidth;
+          el.classList.add('locked-pop');
+        }
+      } else {
+        el.innerText = '----';
+        if (isLivePending) {
+          el.classList.add('pending-slot');
+        } else {
+          el.classList.remove('pending-slot');
+        }
+      }
+    }
+
     function renderBoard() {
       const comp = COMPANIES.find(c => c.id === currentCompId) || COMPANIES[0];
       const data = getActiveBoardData();
@@ -925,33 +904,34 @@
       document.getElementById('boardOfficialLink').href = comp.url;
       document.getElementById('officialPastLink').href = comp.pastUrl || comp.url;
 
-      const rollingActive = isLiveDrawWindow() && selectedHistoryIdx === -1 && countLockedNumbers(data) < 23;
+      const isLivePending = isLiveDrawWindow() && selectedHistoryIdx === -1;
       const progEl = document.getElementById('liveProgressBadge');
       if (progEl) progEl.innerText = `${countLockedNumbers(data)}/23`;
 
-      const applyCellStyle = (el, val) => {
-        if (!el) return;
-        if (rollingActive && !is4DCode(val)) {
-          el.classList.add('rolling-num');
-          el.innerText = random4Digit();
-        } else {
-          el.classList.remove('rolling-num');
-          el.innerText = val;
-        }
-      };
+      renderSlotValue(document.getElementById('num1st'), 'p1', data.p1, isLivePending);
+      renderSlotValue(document.getElementById('num2nd'), 'p2', data.p2, isLivePending);
+      renderSlotValue(document.getElementById('num3rd'), 'p3', data.p3, isLivePending);
 
-      applyCellStyle(document.getElementById('num1st'), data.p1);
-      applyCellStyle(document.getElementById('num2nd'), data.p2);
-      applyCellStyle(document.getElementById('num3rd'), data.p3);
-
-      document.getElementById('gridSpecial').innerHTML = data.special.map(n => {
-        const isRoll = rollingActive && !is4DCode(n);
-        return `<div class="${isRoll ? 'rolling-num border border-red-200' : 'bg-slate-50 border border-slate-200/80'} rounded-lg py-1.5">${isRoll ? random4Digit() : n}</div>`;
+      document.getElementById('gridSpecial').innerHTML = data.special.map((n, idx) => {
+        const valid = is4DCode(n);
+        const fullKey = `${currentCompId}_sp_${idx}`;
+        const justArrived = valid && !previouslyLockedSet.has(fullKey);
+        if (valid) previouslyLockedSet.add(fullKey);
+        const cls = valid
+          ? `bg-slate-50 border border-slate-200/80 text-slate-900 ${justArrived && isLivePending ? 'locked-pop' : ''}`
+          : `bg-slate-50 border border-slate-200/80 ${isLivePending ? 'pending-slot' : 'text-slate-400'}`;
+        return `<div class="${cls} rounded-lg py-1.5">${valid ? n : '----'}</div>`;
       }).join('');
 
-      document.getElementById('gridConsolation').innerHTML = data.consolation.map(n => {
-        const isRoll = rollingActive && !is4DCode(n);
-        return `<div class="${isRoll ? 'rolling-num border border-red-200' : 'bg-slate-50 border border-slate-200/80'} rounded-lg py-1.5">${isRoll ? random4Digit() : n}</div>`;
+      document.getElementById('gridConsolation').innerHTML = data.consolation.map((n, idx) => {
+        const valid = is4DCode(n);
+        const fullKey = `${currentCompId}_con_${idx}`;
+        const justArrived = valid && !previouslyLockedSet.has(fullKey);
+        if (valid) previouslyLockedSet.add(fullKey);
+        const cls = valid
+          ? `bg-slate-50 border border-slate-200/80 text-slate-900 ${justArrived && isLivePending ? 'locked-pop' : ''}`
+          : `bg-slate-50 border border-slate-200/80 ${isLivePending ? 'pending-slot' : 'text-slate-400'}`;
+        return `<div class="${cls} rounded-lg py-1.5">${valid ? n : '----'}</div>`;
       }).join('');
     }
 
@@ -972,13 +952,6 @@
       }
 
       const data = getActiveBoardData();
-      if (!is4DCode(data.p1)) {
-        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200';
-        msgBox.innerText = t.pendingNumbers;
-        msgBox.classList.remove('hidden');
-        return;
-      }
-
       const allPrizes = [
         { name: '1ST', num: data.p1 },
         { name: '2ND', num: data.p2 },
@@ -986,6 +959,13 @@
         ...data.special.map(n => ({ name: 'SPECIAL', num: n })),
         ...data.consolation.map(n => ({ name: 'CONSOLATION', num: n }))
       ];
+
+      if (!allPrizes.some(p => is4DCode(p.num))) {
+        msgBox.className = 'mt-2 text-xs font-bold px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200';
+        msgBox.innerText = t.pendingNumbers;
+        msgBox.classList.remove('hidden');
+        return;
+      }
 
       const exact = allPrizes.find(p => p.num === input);
       if (exact) {
