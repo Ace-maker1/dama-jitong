@@ -19,12 +19,8 @@ function getMytNow() {
 }
 
 function getMytDateStr(offsetDays = 0) {
-  try {
-    const myt = new Date(getMytNow().getTime() + offsetDays * 86400000);
-    return myt.toISOString().slice(0, 10);
-  } catch (_) {
-    return '2026-11-25';
-  }
+  const myt = new Date(getMytNow().getTime() + offsetDays * 86400000);
+  return myt.toISOString().slice(0, 10);
 }
 
 function isLiveDrawHourMyt() {
@@ -34,19 +30,8 @@ function isLiveDrawHourMyt() {
   return (d === 0 || d === 3 || d === 6) && h >= 19 && h < 21;
 }
 
-function normalizeCompanyKey(raw = '') {
-  const s = String(raw || '').toLowerCase().trim();
-  if (s === 'magnum' || s.includes('magnum')) return 'magnum';
-  if (s === 'toto' || s.includes('toto')) return 'toto';
-  if (s === 'damacai' || s.includes('da ma cai') || s.includes('damacai')) return 'damacai';
-  if (s === 'sabah88' || s.includes('sabah') || s.includes('diriwan')) return 'sabah88';
-  if (s === 'stc' || s.includes('sandakan')) return 'stc';
-  if (s === 'cashsweep' || s.includes('sarawak') || s.includes('cashsweep')) return 'cashsweep';
-  return null;
-}
-
 function fmt4(v) {
-  const d = String(v ?? '').replace(/\D/g, '').slice(0, 4);
+  const d = String(v ?? '').replace(/\D/g, '');
   return d.length === 4 ? d : '----';
 }
 
@@ -57,71 +42,22 @@ function pad4List(arr, count = 10) {
   return out;
 }
 
-function normalizeDrawRecord(item, fallbackDate = '') {
-  if (!item || typeof item !== 'object') return null;
-
-  const p1 = fmt4(item.first ?? item.p1 ?? item['1st']);
-  const p2 = fmt4(item.second ?? item.p2 ?? item['2nd']);
-  const p3 = fmt4(item.third ?? item.p3 ?? item['3rd']);
-  const special = pad4List(item.special, 10);
-  const consolation = pad4List(item.consolation, 10);
-
-  const hasAnyNumber = [p1, p2, p3, ...special, ...consolation].some(n => /^\d{4}$/.test(n));
-  if (!hasAnyNumber) return null;
-
-  return {
-    drawNo: String(item.draw_no ?? item.drawNo ?? ''),
-    drawDate: String(item.date ?? item.draw_date ?? fallbackDate).slice(0, 10),
-    p1,
-    p2,
-    p3,
-    special,
-    consolation
-  };
+function hasAnyValid4D(board) {
+  if (!board) return false;
+  return [board.p1, board.p2, board.p3, ...(board.special || []), ...(board.consolation || [])]
+    .some(n => /^\d{4}$/.test(n));
 }
 
-function extractItemsArray(payload) {
-  if (!payload || typeof payload !== 'object') return [];
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload.data?.results)) return payload.data.results;
-  if (Array.isArray(payload.data?.draws)) return payload.data.draws;
-  if (Array.isArray(payload.data)) return payload.data;
-  if (Array.isArray(payload.results)) return payload.results;
-  if (payload.data && typeof payload.data === 'object' && (payload.data.first || payload.data.p1 || payload.data.special)) {
-    return [payload.data];
-  }
-  return [];
-}
-
-async function fetchJsonSafe(url, ms = 6000) {
+async function fetchTextSafe(url, ms = 6500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
     const r = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36'
-      }
-    });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch (_) {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function fetchTextSafe(url, ms = 6000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  try {
-    const r = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'Accept': 'text/html,application/xhtml+xml',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36'
+        'Accept': 'text/html,application/xhtml+xml,application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+        'Cache-Control': 'no-cache'
       }
     });
     if (!r.ok) return '';
@@ -133,101 +69,132 @@ async function fetchTextSafe(url, ms = 6000) {
   }
 }
 
-// 备用实时解析：直接从 4dlivetoday.com 首页提取今日实时跳出号码（支持部分出奖）
-function parseLiveHtmlFallback(html, todayStr) {
-  const parsed = {};
-  if (!html || !html.includes(todayStr)) return parsed;
+// 从直播页面区块中按顺序提取 23 个奖号 (1st, 2nd, 3rd, 10 Special, 10 Consolation)
+function parseOperatorBlock(blockHtml, todayStr) {
+  if (!blockHtml) return null;
 
-  // 尝试从 Next.js __NEXT_DATA__ 或内联 JSON 中提取今日实时开奖对象
-  const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
-  if (nextDataMatch) {
-    try {
-      const dataObj = JSON.parse(nextDataMatch[1]);
-      const walk = (node) => {
-        if (!node || typeof node !== 'object') return;
-        if (Array.isArray(node)) {
-          node.forEach(walk);
-          return;
-        }
-        const opKey = normalizeCompanyKey(node.operator || node.operator_name || node.company || node.id);
-        const dStr = String(node.date || node.draw_date || node.drawDate || '').slice(0, 10);
-        if (opKey && dStr === todayStr) {
-          const rec = normalizeDrawRecord(node, todayStr);
-          if (rec) parsed[opKey] = rec;
-        }
-        Object.values(node).forEach(walk);
-      };
-      walk(dataObj);
-    } catch (_) {}
-  }
-  return parsed;
+  // 剥离 HTML 标签，按文本 token 提取
+  const text = blockHtml
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/ /gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // 检查日期是否匹配今天（支持 2026-11-25 或 25-11-2026 或 25/11/2026）
+  const [yyyy, mm, dd] = todayStr.split('-');
+  const datePatterns = [
+    `${yyyy}-${mm}-${dd}`,
+    `${dd}-${mm}-${yyyy}`,
+    `${dd}/${mm}/${yyyy}`
+  ];
+  const isToday = datePatterns.some(p => text.includes(p));
+  if (!isToday) return null;
+
+  // 提取期号 Draw No（例如 454/26 或 5678/26）
+  const drawNoMatch = text.match(/\b(\d{3,4}\/\d{2})\b/);
+  const drawNo = drawNoMatch ? drawNoMatch[1] : '';
+
+  // 按位置定位 1st / 2nd / 3rd / Special / Consolation 后的 4 位数字或占位符 ----
+  const extractAfter = (labelRegex, count) => {
+    const m = text.match(labelRegex);
+    if (!m) return Array(count).fill('----');
+    const sub = text.slice(m.index + m[0].length, m.index + m[0].length + 450);
+    const tokens = sub.match(/\b\d{4}\b|----/g) || [];
+    return pad4List(tokens, count);
+  };
+
+  const p1 = extractAfter(/(?:1st\s*Prize|1ST|首奖|头奖)/i, 1)[0];
+  const p2 = extractAfter(/(?:2nd\s*Prize|2ND|二奖)/i, 1)[0];
+  const p3 = extractAfter(/(?:3rd\s*Prize|3RD|三奖)/i, 1)[0];
+  const special = extractAfter(/(?:Special|特别奖)/i, 10);
+  const consolation = extractAfter(/(?:Consolation|安慰奖)/i, 10);
+
+  const board = { drawNo, drawDate: todayStr, p1, p2, p3, special, consolation };
+  return hasAnyValid4D(board) ? board : null;
 }
 
-async function getExistingDrawKeys(url, key, rows) {
-  const existing = new Set();
-  const dates = [...new Set(rows.map(r => r.draw_date).filter(Boolean))];
-  if (dates.length === 0) return existing;
+// 切分主流 4D 直播页面各家运营商区块
+function scrapeLiveFromHtml(html, todayStr) {
+  const out = {};
+  if (!html) return out;
+
+  const markers = [
+    { key: 'magnum', rx: /Magnum\s*4D/i },
+    { key: 'damacai', rx: /Da\s*Ma\s*Cai|PMP\s*1\+3D/i },
+    { key: 'toto', rx: /Sports\s*Toto/i },
+    { key: 'sabah88', rx: /Sabah\s*88|Diriwan/i },
+    { key: 'stc', rx: /Sandakan\s*STC|STC\s*4D/i },
+    { key: 'cashsweep', rx: /CashSweep|Special\s*CashSweep/i }
+  ];
+
+  // 找到每个运营商标题在 HTML 中的位置并切片
+  const positions = [];
+  for (const m of markers) {
+    const match = html.match(m.rx);
+    if (match && typeof match.index === 'number') {
+      positions.push({ key: m.key, idx: match.index });
+    }
+  }
+  positions.sort((a, b) => a.idx - b.idx);
+
+  for (let i = 0; i < positions.length; i++) {
+    const start = positions[i].idx;
+    const end = i + 1 < positions.length ? positions[i + 1].idx : start + 18000;
+    const slice = html.slice(start, Math.min(end, start + 18000));
+    const parsed = parseOperatorBlock(slice, todayStr);
+    if (parsed) {
+      out[positions[i].key] = parsed;
+    }
+  }
+
+  return out;
+}
+
+async function loadHistoryFromSupabase() {
+  const url = process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co';
+  const key = process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+  const history = { magnum: [], toto: [], damacai: [], sabah88: [], stc: [], cashsweep: [] };
 
   try {
-    const inList = dates.map(d => `"${d}"`).join(',');
-    const endpoint = `${url}/rest/v1/results_4d_history?select=company_id,draw_date&draw_date=in.(${encodeURIComponent(inList)})`;
-    const resp = await fetch(endpoint, {
+    const r = await fetch(`${url}/rest/v1/results_4d_history?select=*&order=draw_date.desc&limit=120`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` }
     });
-    if (resp.ok) {
-      const data = await resp.json();
-      if (Array.isArray(data)) {
-        data.forEach(row => existing.add(`${row.company_id}_${row.draw_date}`));
+    if (r.ok) {
+      const rows = await r.json();
+      if (Array.isArray(rows)) {
+        rows.forEach(row => {
+          if (history[row.company_id] && history[row.company_id].length < 20) {
+            history[row.company_id].push({
+              drawNo: row.draw_no || '',
+              drawDate: row.draw_date || '',
+              p1: row.p1 || '----',
+              p2: row.p2 || '----',
+              p3: row.p3 || '----',
+              special: pad4List(row.special, 10),
+              consolation: pad4List(row.consolation, 10)
+            });
+          }
+        });
       }
     }
   } catch (_) {}
-  return existing;
+  return history;
 }
 
-async function send4DUpdatePush(newDraws, drawDate) {
-  const appId = process.env.ONESIGNAL_APP_ID;
-  const restApiKey = process.env.ONESIGNAL_REST_API_KEY;
-  if (!appId || !restApiKey || newDraws.length === 0) return false;
-
-  try {
-    const resp = await fetch('https://api.onesignal.com/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${restApiKey}`
-      },
-      body: JSON.stringify({
-        app_id: appId,
-        included_segments: ['All'],
-        headings: { en: '4D Draw Results Updated', zh: '4D 开奖通知', ms: 'Keputusan 4D Dikemas Kini' },
-        contents: {
-          en: `4D draw results (${drawDate}) are updated. Tap to view latest results.`,
-          zh: `今晚 4D 开奖号码已更新，点击查看最新开奖结果。`,
-          ms: `Keputusan 4D (${drawDate}) telah dikemas kini. Tekan untuk semak.`
-        },
-        url: 'https://damajitong.com/4d.html',
-        data: { route: '/4d.html', drawDate, operators: newDraws }
-      })
-    });
-    return resp.ok;
-  } catch (_) {
-    return false;
-  }
-}
-
-async function saveToSupabaseHistory(resultsMap, fallbackDate) {
+async function saveTodayToSupabase(resultsMap, todayStr) {
   const url = process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
 
   const rows = [];
   for (const comp of COMPANIES) {
     const item = resultsMap?.[comp];
-    // 只有头奖已开出时才归档进历史表
-    if (!item || !/^\d{4}$/.test(item.p1)) continue;
+    if (!item || item.drawDate !== todayStr || !hasAnyValid4D(item)) continue;
     rows.push({
       company_id: comp,
       draw_no: item.drawNo || '',
-      draw_date: item.drawDate || fallbackDate,
+      draw_date: todayStr,
       p1: item.p1,
       p2: item.p2,
       p3: item.p3,
@@ -235,10 +202,7 @@ async function saveToSupabaseHistory(resultsMap, fallbackDate) {
       consolation: item.consolation
     });
   }
-  if (rows.length === 0) return { pushed: false, newCount: 0 };
-
-  const existingKeys = await getExistingDrawKeys(url, key, rows);
-  const brandNewRows = rows.filter(r => !existingKeys.has(`${r.company_id}_${r.draw_date}`));
+  if (rows.length === 0) return;
 
   try {
     await fetch(`${url}/rest/v1/results_4d_history?on_conflict=company_id,draw_date`, {
@@ -252,14 +216,6 @@ async function saveToSupabaseHistory(resultsMap, fallbackDate) {
       body: JSON.stringify(rows)
     });
   } catch (_) {}
-
-  let pushed = false;
-  if (brandNewRows.length > 0) {
-    const latestDate = brandNewRows[0].draw_date || fallbackDate;
-    pushed = await send4DUpdatePush(brandNewRows.map(r => r.company_id), latestDate);
-  }
-
-  return { pushed, newCount: brandNewRows.length };
 }
 
 module.exports = async function handler(req, res) {
@@ -273,91 +229,40 @@ module.exports = async function handler(req, res) {
   const todayStr = getMytDateStr(0);
   const liveWindow = isLiveDrawHourMyt();
   const results = {};
-  const history = {};
+  COMPANIES.forEach(k => { results[k] = emptyBoard(todayStr, ''); });
 
-  COMPANIES.forEach(k => {
-    results[k] = emptyBoard(todayStr, '');
-    history[k] = [];
-  });
+  // 1. 并发拉取多个秒级直播源 + 历史数据库
+  const [htmlCheck4d, html4d88, history] = await Promise.all([
+    fetchTextSafe(`https://www.check4d.com/?_t=${Date.now()}`, 6000),
+    fetchTextSafe(`https://www.4d88.com/?_t=${Date.now()}`, 6000),
+    loadHistoryFromSupabase()
+  ]);
 
-  try {
-    const [latestJson, ...opJsons] = await Promise.all([
-      fetchJsonSafe(`https://4dlivetoday.com/api/v1/latest?_t=${Date.now()}`, 5500),
-      ...COMPANIES.map(comp => fetchJsonSafe(`https://4dlivetoday.com/api/v1/operators/${comp}?limit=15`, 5500))
-    ]);
+  const liveFromCheck4d = scrapeLiveFromHtml(htmlCheck4d, todayStr);
+  const liveFrom4d88 = scrapeLiveFromHtml(html4d88, todayStr);
 
-    COMPANIES.forEach((comp, idx) => {
-      const list = extractItemsArray(opJsons[idx]);
-      const seen = new Set();
-      for (const item of list) {
-        const board = normalizeDrawRecord(item, todayStr);
-        if (!board) continue;
-        const uid = `${board.drawDate}_${board.drawNo}`;
-        if (seen.has(uid)) continue;
-        seen.add(uid);
-        history[comp].push(board);
-      }
-      history[comp].sort((a, b) => String(b.drawDate).localeCompare(String(a.drawDate)));
-
-      // 关键修复：正在开奖时段（19:00-21:00）绝对不用旧日期数据冒充“最新一期”！
-      if (history[comp].length > 0) {
-        if (!liveWindow || history[comp][0].drawDate === todayStr) {
-          results[comp] = { ...history[comp][0] };
-        }
-      }
-    });
-
-    const latestItems = extractItemsArray(latestJson);
-    for (const item of latestItems) {
-      const comp = normalizeCompanyKey(item.operator || item.operator_name);
-      if (!comp) continue;
-      const board = normalizeDrawRecord(item, todayStr);
-      if (!board) continue;
-
-      if (!liveWindow || board.drawDate === todayStr) {
-        results[comp] = board;
-      }
-
-      const existIdx = history[comp].findIndex(h => h.drawDate === board.drawDate);
-      if (existIdx === -1) {
-        history[comp].unshift(board);
-      } else {
-        history[comp][existIdx] = board;
-      }
+  for (const comp of COMPANIES) {
+    const todayLive = liveFromCheck4d[comp] || liveFrom4d88[comp];
+    if (todayLive) {
+      results[comp] = todayLive;
+      const idx = history[comp].findIndex(h => h.drawDate === todayStr);
+      if (idx === -1) history[comp].unshift(todayLive);
+      else history[comp][idx] = todayLive;
+    } else if (!liveWindow && history[comp][0]) {
+      // 非开奖时段，展示最新一期归档成绩
+      results[comp] = { ...history[comp][0] };
     }
-
-    // 如果开奖时段 API 还没吐出今天的新号码，立刻用 HTML 实时页面解析补抓一次
-    if (liveWindow && COMPANIES.every(c => results[c].p1 === '----' && results[c].special.every(n => n === '----'))) {
-      const liveHtml = await fetchTextSafe(`https://4dlivetoday.com/?_t=${Date.now()}`, 5500);
-      const liveParsed = parseLiveHtmlFallback(liveHtml, todayStr);
-      Object.keys(liveParsed).forEach(comp => {
-        if (results[comp]) {
-          results[comp] = liveParsed[comp];
-        }
-      });
-    }
-
-    const syncMeta = await saveToSupabaseHistory(results, todayStr);
-    const hitCount = COMPANIES.filter(c => results[c].p1 !== '----' || results[c].special.some(n => /^\d{4}$/.test(n))).length;
-
-    return res.status(200).json({
-      ok: true,
-      today: todayStr,
-      liveWindow,
-      source: hitCount > 0 ? 'live-synced' : 'live-rolling-waiting',
-      pushTriggered: syncMeta.pushed,
-      results,
-      history
-    });
-  } catch (_) {
-    return res.status(200).json({
-      ok: true,
-      today: todayStr,
-      liveWindow,
-      source: 'safe-fallback',
-      pushTriggered: false,
-      results,
-      history
-    });
   }
+
+  await saveTodayToSupabase(results, todayStr);
+
+  const liveHitCount = COMPANIES.filter(c => hasAnyValid4D(results[c])).length;
+  return res.status(200).json({
+    ok: true,
+    today: todayStr,
+    liveWindow,
+    liveHitCount,
+    results,
+    history
+  });
 };
