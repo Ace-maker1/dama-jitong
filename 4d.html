@@ -444,14 +444,40 @@
       }
     ];
 
-    function makeEmptyStore() {
+    function getMytNow() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      return new Date(utc + 8 * 3600000);
+    }
+
+    function getMytTodayStr() {
+      return getMytNow().toISOString().slice(0, 10);
+    }
+
+    function isLiveDrawWindow() {
+      const myt = getMytNow();
+      const day = myt.getDay(); // 0=Sun, 3=Wed, 6=Sat
+      const hour = myt.getHours();
+      return (day === 0 || day === 3 || day === 6) && hour >= 19 && hour < 20;
+    }
+
+    function makeEmptyStore(drawDate = getMytTodayStr()) {
+      const blank = () => ({
+        drawNo: '',
+        drawDate,
+        p1: '----',
+        p2: '----',
+        p3: '----',
+        special: Array(10).fill('----'),
+        consolation: Array(10).fill('----')
+      });
       return {
-        magnum: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-        toto: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-        damacai: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-        sabah88: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-        stc: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') },
-        cashsweep: { drawNo: '', drawDate: '', p1: '----', p2: '----', p3: '----', special: Array(10).fill('----'), consolation: Array(10).fill('----') }
+        magnum: blank(),
+        toto: blank(),
+        damacai: blank(),
+        sabah88: blank(),
+        stc: blank(),
+        cashsweep: blank()
       };
     }
 
@@ -461,19 +487,6 @@
     let currentLang = localStorage.getItem('dama_lang') || 'zh';
     let currentCompId = 'magnum';
     let previouslyLockedSet = new Set();
-
-    function getMytNow() {
-      const now = new Date();
-      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-      return new Date(utc + 8 * 3600000);
-    }
-
-    function isLiveDrawWindow() {
-      const myt = getMytNow();
-      const day = myt.getDay(); // 0=Sun, 3=Wed, 6=Sat
-      const hour = myt.getHours();
-      return (day === 0 || day === 3 || day === 6) && hour >= 19 && hour < 20;
-    }
 
     function is4DCode(v) {
       return /^\d{4}$/.test(String(v || '').trim());
@@ -543,6 +556,7 @@
       renderDrawPicker();
       renderBoard();
       renderHistoryList();
+      updateDrawCountdown();
       checkMy4D();
     }
 
@@ -613,13 +627,29 @@
     }
 
     function applyIncomingResults(rowsOrMap, incomingHistory = null) {
+      const todayStr = getMytTodayStr();
+      const liveNow = isLiveDrawWindow();
+
       if (rowsOrMap && typeof rowsOrMap === 'object' && !Array.isArray(rowsOrMap)) {
         Object.keys(rowsOrMap).forEach(k => {
           if (liveResultsStore[k]) {
-            const r = rowsOrMap[k];
+            const r = rowsOrMap[k] || {};
+            // 开奖时段若返回非今日旧数据，不覆盖今日实时跳号盘
+            if (liveNow && r.drawDate && r.drawDate !== todayStr) {
+              liveResultsStore[k] = {
+                drawNo: '',
+                drawDate: todayStr,
+                p1: '----',
+                p2: '----',
+                p3: '----',
+                special: Array(10).fill('----'),
+                consolation: Array(10).fill('----')
+              };
+              return;
+            }
             liveResultsStore[k] = {
               drawNo: r.drawNo || '',
-              drawDate: r.drawDate || '',
+              drawDate: r.drawDate || todayStr,
               p1: r.p1 || '----',
               p2: r.p2 || '----',
               p3: r.p3 || '----',
@@ -651,7 +681,7 @@
         btn.innerText = '...';
       }
       try {
-        const res = await fetch('/api/4d', { cache: 'no-store' });
+        const res = await fetch('/api/4d?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json && json.results) {
@@ -663,6 +693,8 @@
 
       try {
         if (window.supabase) {
+          const todayStr = getMytTodayStr();
+          const liveNow = isLiveDrawWindow();
           const client = window.supabase.createClient(
             'https://uhgukdqggvyaepkvlugg.supabase.co',
             'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU'
@@ -690,7 +722,10 @@
             });
             const latestMap = {};
             Object.keys(grouped).forEach(k => {
-              if (grouped[k][0]) latestMap[k] = grouped[k][0];
+              const top = grouped[k][0];
+              if (top && (!liveNow || top.drawDate === todayStr)) {
+                latestMap[k] = top;
+              }
             });
             applyIncomingResults(latestMap, grouped);
           }
@@ -714,7 +749,7 @@
       const bannerEl = document.getElementById('liveRollingBanner');
 
       if (isLive) {
-        badgeEl.innerText = t.liveNow;
+        badgeEl.innerText = `${t.liveNow} · ${getMytTodayStr()}`;
         badgeEl.className = 'font-black text-rose-300';
         countEl.innerText = 'LIVE';
         dotEl.className = 'w-2.5 h-2.5 rounded-full bg-rose-400 animate-ping shrink-0';
@@ -761,7 +796,6 @@
       const progEl = document.getElementById('liveProgressBadge');
       if (progEl) progEl.innerText = `${lockedCount}/23`;
 
-      // 如果 23 个号码已全部开出，无需再跳动
       if (lockedCount >= 23) return;
 
       const setSlot = (el, slotKey, actualVal) => {
@@ -975,9 +1009,9 @@
       msgBox.classList.remove('hidden');
     }
 
-    let lastCheckedDateStr = getMytNow().toISOString().slice(0, 10);
+    let lastCheckedDateStr = getMytTodayStr();
     setInterval(() => {
-      const nowDateStr = getMytNow().toISOString().slice(0, 10);
+      const nowDateStr = getMytTodayStr();
       if (nowDateStr !== lastCheckedDateStr) {
         lastCheckedDateStr = nowDateStr;
         selectedHistoryIdx = -1;
