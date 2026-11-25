@@ -57,7 +57,7 @@
     <!-- 帖子列表主体 -->
     <main class="flex-1 p-3 space-y-2.5 pb-24" id="postsContainer"></main>
 
-    <!-- 底部5键导航栏 -->
+    <!-- 底部5键导航栏（已替换为出行导航，符合 Google Play 合规要求） -->
     <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
       <a href="/" class="flex flex-col items-center text-gray-400 hover:text-red-600">
         <span class="text-lg">🏠</span>
@@ -71,9 +71,9 @@
         <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 to-sky-500 text-white flex items-center justify-center text-2xl font-black shadow-lg border-4 border-white">+</div>
         <span id="navPost" class="text-[10px] font-bold text-indigo-700 mt-0.5">发新帖</span>
       </button>
-      <a href="/4d.html" class="flex flex-col items-center text-gray-400 hover:text-amber-600">
-        <span class="text-lg">🎰</span>
-        <span id="nav4d" class="text-[10px] font-medium mt-0.5">万字开奖</span>
+      <a href="/map.html" class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+        <span class="text-lg">🧭</span>
+        <span id="navMap" class="text-[10px] font-medium mt-0.5">查路线</span>
       </a>
       <a href="/merchant.html" class="flex flex-col items-center text-gray-400 hover:text-amber-600">
         <span class="text-lg">🏪</span>
@@ -163,7 +163,6 @@
             </button>
           </div>
 
-          <!-- 详情多图画廊 + 缩略图条 -->
           <div id="forumDetailGallery" class="hidden mb-3">
             <div class="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200">
               <img id="forumDetailMainImg" src="" class="w-full h-full object-cover cursor-zoom-in" />
@@ -266,7 +265,7 @@
           sub: '本地吹水 · 美食探店 · 求助问答 · 商机交流',
           searchPh: '搜索帖子标题或内容...',
           topPost: '✏️ 发帖',
-          navHome: '首页', navNews: '实时新闻', navPost: '发新帖', nav4d: '万字开奖', navBiz: '商家入驻',
+          navHome: '首页', navNews: '实时新闻', navPost: '发新帖', navMap: '查路线', navBiz: '商家入驻',
           modalNewTitle: '✏️ 发布新话题',
           lblPickCat: '选择版块',
           lblAuthorName: '你的昵称',
@@ -311,7 +310,7 @@
           sub: 'Kopitiam Chat · Food Hunt · Q&A · Business',
           searchPh: 'Search topics or keywords...',
           topPost: '✏️ Post',
-          navHome: 'Home', navNews: 'News', navPost: 'New Post', nav4d: '4D Live', navBiz: 'Merchants',
+          navHome: 'Home', navNews: 'News', navPost: 'New Post', navMap: 'Routes', navBiz: 'Merchants',
           modalNewTitle: '✏️ Start a New Topic',
           lblPickCat: 'Category',
           lblAuthorName: 'Your Nickname',
@@ -356,7 +355,7 @@
           sub: 'Sembang Santai · Cari Makan · Soal Jawab · Niaga',
           searchPh: 'Cari tajuk atau kandungan...',
           topPost: '✏️ Tulis',
-          navHome: 'Utama', navNews: 'Berita', navPost: 'Topik Baru', nav4d: '4D Live', navBiz: 'Peniaga',
+          navHome: 'Utama', navNews: 'Berita', navPost: 'Topik Baru', navMap: 'Laluan', navBiz: 'Peniaga',
           modalNewTitle: '✏️ Cipta Topik Baharu',
           lblPickCat: 'Kategori',
           lblAuthorName: 'Nama Samaran',
@@ -800,7 +799,7 @@
         setText('navHome', t.navHome);
         setText('navNews', t.navNews);
         setText('navPost', t.navPost);
-        setText('nav4d', t.nav4d);
+        setText('navMap', t.navMap);
         setText('navBiz', t.navBiz);
 
         setText('modalNewTitle', t.modalNewTitle);
@@ -925,7 +924,7 @@
           var thumbHtml = photos.length > 0
             ? '<div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-100 bg-slate-100">' +
                 '<img src="' + photos[0] + '" loading="lazy" class="w-full h-full object-cover" />' +
-                (photos.length > 1 ? '<span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">📷 ' + photos.length + '图</span>' : '') +
+                (photos.length > 1 ? '<span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">📷 ' + photos.length + '</span>' : '') +
               '</div>'
             : '';
 
@@ -996,7 +995,7 @@
           .then(function (res) {
             if (syncTag) syncTag.classList.add('hidden');
             if (res && res.error) {
-              showStatus('云端读取提示：' + res.error.message + '（已展示本地内容）');
+              showStatus('Notice: ' + res.error.message);
               return;
             }
             if (res && Array.isArray(res.data)) {
@@ -1091,7 +1090,7 @@
               .single()
               .then(function (res) {
                 if (res && res.error) {
-                  showStatus('发帖同步失败：' + res.error.message);
+                  showStatus('Error: ' + res.error.message);
                   return;
                 }
                 if (res && res.data) {
@@ -1329,7 +1328,7 @@
           .insert([{ post_id: targetPost.id, author_name: authorName, content: content }])
           .then(function (res) {
             if (res && res.error) {
-              alert('回复失败：' + res.error.message);
+              alert('Error: ' + res.error.message);
               return;
             }
             var nextCount = (targetPost.reply_count || 0) + 1;
