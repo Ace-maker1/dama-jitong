@@ -33,6 +33,7 @@
           <option value="Selangor">雪兰莪 Selangor</option>
           <option value="KL">吉隆坡 Kuala Lumpur</option>
           <option value="Perak">霹雳 / 怡保 Perak & Ipoh</option>
+          <option value="Other">其他州属 / 地区</option>
         </select>
       </div>
 
@@ -42,6 +43,7 @@
           <option value="">租房 / 买房</option>
           <option value="rent">出租 Rent</option>
           <option value="sale">出售 Sale</option>
+          <option value="other">其他</option>
         </select>
         <select id="propType" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
           <option value="">全部房型</option>
@@ -49,6 +51,7 @@
           <option value="Terrace">排屋 Terrace</option>
           <option value="Semi-D">半独立 Semi-D</option>
           <option value="Room">房间 Room</option>
+          <option value="Other">其他房型</option>
         </select>
         <input id="propMaxPrice" type="number" oninput="applyFilters()" placeholder="最高金额 RM"
                class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2" />
@@ -63,12 +66,14 @@
           <option value="Onsite">现场上班</option>
           <option value="WFH">居家办公 WFH</option>
           <option value="Hybrid">混合办公</option>
+          <option value="Other">其他</option>
         </select>
         <select id="jobShift" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
           <option value="">工作时间</option>
           <option value="Day">日班 / 正常工时</option>
           <option value="Shift">轮班制</option>
           <option value="Flexible">弹性时间</option>
+          <option value="Other">其他</option>
         </select>
         <input id="jobMinSalary" type="number" oninput="applyFilters()" placeholder="最低薪资 RM"
                class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2" />
@@ -77,6 +82,7 @@
           <option value="NoExp">无需经验</option>
           <option value="Accommodation">包吃住 / 宿舍</option>
           <option value="Commission">高佣金 / 奖金</option>
+          <option value="Other">其他</option>
         </select>
       </div>
 
@@ -90,6 +96,7 @@
           <option value="Car">汽车</option>
           <option value="Motorcycle">摩托车</option>
           <option value="Electronics">数码/家电</option>
+          <option value="Other">📦 其他</option>
         </select>
         <input id="prelovedMaxBudget" type="number" oninput="applyFilters()" placeholder="预算上限 RM"
                class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2" />
@@ -107,6 +114,7 @@
             <option value="Food">🍜 美食 / 餐饮</option>
             <option value="Beauty">💇 理发 / 美容</option>
             <option value="HomeService">🛠️ 装修 / 水电 / 搬家</option>
+            <option value="Other">📦 其他</option>
           </select>
           <select id="bizRadius" onchange="applyFilters()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-semibold">
             <option value="999">附近不限距离</option>
@@ -137,26 +145,30 @@
       { tab: 'property', title: '峇都交湾海景 Condo 出租', area: 'Penang', deal: 'rent', propType: 'Condo', price: 1800, size: 950, meta: '出租 · RM 1,800/月 · 950 sqft · 槟城' },
       { tab: 'property', title: '双层排屋出售 靠近学校商圈', area: 'Selangor', deal: 'sale', propType: 'Terrace', price: 680000, size: 1800, meta: '出售 · RM 680,000 · 1,800 sqft · 雪兰莪' },
       { tab: 'property', title: '独立式洋房 Bungalow 出售', area: 'Perak', deal: 'sale', propType: 'Semi-D', price: 920000, size: 2600, meta: '出售 · RM 920,000 · 2,600 sqft · 霹雳/怡保' },
+      { tab: 'property', title: '工业区仓储厂房 / 土地短租', area: 'Penang', deal: 'other', propType: 'Other', price: 4500, size: 3500, meta: '其他 · RM 4,500/月 · 3,500 sqft · 威省' },
 
       // 找工作
       { tab: 'jobs', title: '前端 / 全栈开发工程师', area: 'Selangor', mode: 'Hybrid', shift: 'Day', salary: 5500, perk: 'Commission', meta: '月薪 RM 5,500+ · 混合办公 · 日班 · 绩效奖金' },
       { tab: 'jobs', title: '线上华语客服专员（可居家）', area: 'KL', mode: 'WFH', shift: 'Flexible', salary: 3200, perk: 'NoExp', meta: '月薪 RM 3,200 · 居家办公 WFH · 弹性时间 · 无需经验' },
       { tab: 'jobs', title: '门店店长 / 销售顾问', area: 'Penang', mode: 'Onsite', shift: 'Shift', salary: 2800, perk: 'Accommodation', meta: '月薪 RM 2,800+ · 现场上班 · 轮班制 · 包宿舍' },
+      { tab: 'jobs', title: '周末活动兼职 / 临时帮工', area: 'Penang', mode: 'Other', shift: 'Other', salary: 1800, perk: 'Other', meta: '其他 · 日结/兼职 · 槟城' },
 
       // 二手闲置
       { tab: 'preloved', title: '实木餐桌 + 6张餐椅 九成新', area: 'Penang', cat: 'Furniture', budget: 850, meta: '家具 · RM 850 · 槟城自取/送货' },
       { tab: 'preloved', title: '机械手表 附原盒保卡', area: 'KL', cat: 'Watch', budget: 1500, meta: '手表 · RM 1,500 · 吉隆坡面交' },
       { tab: 'preloved', title: '通勤代步摩托车 车况佳', area: 'Selangor', cat: 'Motorcycle', budget: 4200, meta: '摩托车 · RM 4,200 · 雪兰莪' },
+      { tab: 'preloved', title: '露营折叠推车与户外装备', area: 'Penang', cat: 'Other', budget: 260, meta: '其他 · RM 260 · 槟城面交' },
 
       // 本地商家（含经纬度 + 付费广告置顶权重 adPriority）
       { tab: 'biz', title: '顺发汽车冷气与底盘维修中心', area: 'Penang', cat: 'CarRepair', lat: 5.3850, lng: 100.3750, adPriority: 1, meta: '🔧 汽车维修 · 威省/槟城 · 支持预约' },
       { tab: 'biz', title: '全兴汽车维修与保养中心', area: 'Penang', cat: 'CarRepair', lat: 5.4120, lng: 100.3290, adPriority: 0, meta: '🔧 汽车维修 · 槟城 · 换黑油/刹车片' },
       { tab: 'biz', title: '阿明古早味板面与白斩鸡', area: 'Penang', cat: 'Food', lat: 5.4180, lng: 100.3350, adPriority: 1, meta: '🍜 美食餐饮 · 槟城 · 堂食/打包' },
-      { tab: 'biz', title: '怡保特色茶餐室与点心', area: 'Perak', cat: 'Food', lat: 4.5975, lng: 101.0901, adPriority: 1, meta: '🍜 美食餐饮 · 怡保 · 早餐/午餐' }
+      { tab: 'biz', title: '怡保特色茶餐室与点心', area: 'Perak', cat: 'Food', lat: 4.5975, lng: 101.0901, adPriority: 1, meta: '🍜 美食餐饮 · 怡保 · 早餐/午餐' },
+      { tab: 'biz', title: '恒信会计税务与 SSM 注册代办', area: 'Penang', cat: 'Other', lat: 5.4140, lng: 100.3310, adPriority: 0, meta: '📦 其他 · 槟城 · 商业服务' }
     ];
 
     function calcDistanceKm(lat1, lon1, lat2, lon2) {
-      if (typeof lat2 !== 'number' || typeof lng2 !== 'number') return null;
+      if (typeof lat2 !== 'number' || typeof lon2 !== 'number') return null;
       const R = 6371;
       const dLat = ((lat2 - lat1) * Math.PI) / 180;
       const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -263,12 +275,10 @@
         return true;
       });
 
-      // 本地商家：先按“附近”范围（同区/距离近），同距离/同附近圈内优先展示付费广告位（adPriority > 0）
       if (activeTab === 'biz') {
         list.sort((a, b) => {
           const da = a._dist ?? 9999;
           const db = b._dist ?? 9999;
-          // 都在 15km 附近圈内时，付费置顶优先排前面
           const nearA = da <= 15 ? 0 : 1;
           const nearB = db <= 15 ? 0 : 1;
           if (nearA !== nearB) return nearA - nearB;
