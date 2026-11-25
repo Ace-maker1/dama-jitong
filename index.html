@@ -22,27 +22,35 @@
 </head>
 <body class="max-w-md mx-auto bg-gray-100 min-h-screen flex flex-col relative shadow-2xl">
 
-  <!-- 顶部红色主导航 + 三语切换器 -->
-  <header class="bg-gradient-to-r from-red-600 to-orange-600 text-white sticky top-0 z-30 shadow-md px-3.5 py-2.5">
-    <div class="flex items-center justify-between gap-2 mb-2">
-      <!-- 左侧 Logo + 全马 13 州 3 直辖区选择 -->
+  <!-- 顶部沉浸式横幅 + 地区/三语 + 悬浮胶囊搜索框 -->
+  <header class="relative bg-gradient-to-br from-red-600 via-orange-600 to-amber-500 text-white pt-3 pb-7 px-3.5 shadow-md overflow-hidden">
+    <!-- 纯代码装饰矢量几何背景（零外链图片） -->
+    <svg class="absolute right-0 bottom-0 w-44 h-36 opacity-15 pointer-events-none" viewBox="0 0 200 160" fill="none">
+      <circle cx="150" cy="40" r="65" fill="white"/>
+      <rect x="25" y="75" width="28" height="85" rx="4" fill="white"/>
+      <rect x="62" y="45" width="34" height="115" rx="4" fill="white"/>
+      <rect x="105" y="65" width="30" height="95" rx="4" fill="white"/>
+      <rect x="144" y="30" width="36" height="130" rx="4" fill="white"/>
+    </svg>
+
+    <div class="relative z-10 flex items-center justify-between gap-2 mb-3">
+      <!-- 左侧 Logo + 州属选择 -->
       <div class="flex items-center space-x-2 shrink-0">
-        <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-8 h-8 rounded-xl object-cover shadow-sm bg-[#F8F6F0]">
+        <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-9 h-9 rounded-xl object-cover shadow-sm bg-[#F8F6F0] border border-white/40">
         <div>
           <div class="flex items-center space-x-1">
-            <span id="brandTitle" class="font-extrabold text-sm tracking-tight">大马吉通</span>
-            <span class="text-[9px] bg-white/20 px-1.5 py-0.2 rounded font-bold">MY</span>
+            <span id="brandTitle" class="font-black text-base tracking-tight">大马吉通</span>
+            <span class="text-[9px] bg-white/25 px-1.5 py-0.5 rounded font-extrabold">MY</span>
           </div>
           <div class="flex items-center gap-1">
-            <select id="cityFilter" onchange="onCityDropdownChange()" class="bg-transparent text-white text-[11px] font-medium focus:outline-none cursor-pointer -ml-1 max-w-[155px]">
-              <!-- 由 JS 根据 CN/EN/BM 自动生成全部 13 州 + 3 直辖区 -->
+            <select id="cityFilter" onchange="onCityDropdownChange()" class="bg-transparent text-white text-[11px] font-semibold focus:outline-none cursor-pointer -ml-1 max-w-[155px]">
             </select>
-            <button onclick="autoDetectState()" id="autoStateBtn" title="自动定位所在州属" class="text-[10px] bg-white/20 hover:bg-white/30 px-1.5 py-0.2 rounded font-bold shrink-0">📍定位</button>
+            <button onclick="autoDetectState()" id="autoStateBtn" title="自动定位所在州属" class="text-[10px] bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded font-bold shrink-0">📍定位</button>
           </div>
         </div>
       </div>
 
-      <!-- 右侧三语切换按钮 (CN / EN / BM) -->
+      <!-- 右侧三语切换器 -->
       <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
         <button onclick="setLang('zh')" id="langBtn-zh" class="px-2 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
         <button onclick="setLang('en')" id="langBtn-en" class="px-2 py-0.5 rounded-full text-white/90 hover:text-white transition">EN</button>
@@ -50,97 +58,136 @@
       </div>
     </div>
 
-    <!-- 第二行搜索框（带一键清空按钮） -->
-    <div class="relative">
-      <input type="text" id="searchInput" oninput="onSearchInput()" placeholder="搜租房、招聘、二手..." 
-             class="w-full bg-white/95 text-gray-800 text-xs rounded-full pl-8 pr-7 py-1.5 focus:outline-none shadow-inner">
-      <span class="absolute left-3 top-1.5 text-gray-400 text-xs pointer-events-none">🔍</span>
-      <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-2.5 top-1.5 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
+    <!-- 横幅标语 -->
+    <div class="relative z-10 px-0.5">
+      <div id="heroBannerHeadline" class="font-black text-[17px] tracking-tight leading-snug drop-shadow-xs">全马华人本地生活 · 租房求职商家直通</div>
+      <div id="heroBannerSub" class="text-[11px] text-amber-100 mt-0.5">零佣金免费发布 · 一键导航到店 · WhatsApp 直聊</div>
     </div>
   </header>
 
-  <!-- 主页面内容 -->
-  <main id="mainTab" class="flex-1 pb-6">
-    <!-- 万字开奖 4D + 大马吹水站论坛 并排入口 -->
-    <div class="grid grid-cols-2 gap-2 mx-3 mt-3">
-      <a href="/4d.html" class="bg-gradient-to-r from-amber-500 to-red-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
-        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">🎰</div>
-        <div class="min-w-0">
-          <div id="idx4dTitle" class="font-black text-xs truncate">万字开奖 4D</div>
-          <p id="idx4dSub" class="text-[10px] text-amber-100 truncate">对奖 & 官方直播</p>
-        </div>
-      </a>
-
-      <a href="/forum.html" class="bg-gradient-to-r from-indigo-600 to-sky-600 text-white rounded-2xl p-2.5 shadow-sm hover:opacity-95 transition flex items-center gap-2 min-w-0">
-        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shrink-0">💬</div>
-        <div class="min-w-0">
-          <div id="idxForumTitle" class="font-black text-xs truncate">大马吹水站</div>
-          <p id="idxForumSub" class="text-[10px] text-sky-100 truncate">发帖交流 · 探店问答</p>
-        </div>
-      </a>
+  <!-- 悬浮胶囊搜索框 + 三项快捷入口条（浏览记录 / 我的收藏 / 我的帖子） -->
+  <div class="relative z-20 -mt-5 mx-3 bg-white rounded-2xl shadow-md border border-gray-100 p-3">
+    <div class="relative mb-2.5">
+      <input type="text" id="searchInput" oninput="onSearchInput()" placeholder="找房子、找工作、找二手、搜商家..."
+             class="w-full bg-gray-100 text-gray-800 text-xs rounded-full pl-9 pr-8 py-2.5 focus:bg-white focus:ring-2 focus:ring-red-500/30 focus:outline-none transition font-medium">
+      <span class="absolute left-3.5 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
+      <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
     </div>
 
-    <!-- 大马今日便民速览卡片（实时汇率 + 最新油价） -->
-    <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100">
-      <div class="flex items-center justify-between mb-2.5">
-        <div class="flex items-center space-x-1.5">
-          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          <span id="dailyBoardTitle" class="text-xs font-bold text-gray-800">大马今日便民速览</span>
-        </div>
-        <span id="dailyBoardSub" class="text-[11px] text-gray-400">汇率实时 · 油价每周四更新</span>
+    <div class="grid grid-cols-3 divide-x divide-gray-100 text-center text-xs font-bold text-gray-700 pt-0.5">
+      <button type="button" onclick="switchTab('history')" class="flex items-center justify-center gap-1.5 py-1 hover:text-red-600 transition">
+        <span class="text-amber-500">🕒</span>
+        <span id="quickHistoryText">浏览记录</span>
+      </button>
+      <button type="button" onclick="switchTab('fav')" class="flex items-center justify-center gap-1.5 py-1 hover:text-red-600 transition">
+        <span class="text-red-500">⭐</span>
+        <span id="quickFavText">我的收藏</span>
+      </button>
+      <button type="button" onclick="switchTab('myPosts')" class="flex items-center justify-center gap-1.5 py-1 hover:text-red-600 transition">
+        <span class="text-blue-500">📝</span>
+        <span id="quickMyPostsText">我的帖子</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 主页面内容 -->
+  <main id="mainTab" class="flex-1 pb-6">
+
+    <!-- 门户视觉核心区：双大横卡 + 10 宫格矢量图标导航 -->
+    <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 space-y-3.5">
+      <!-- 双大横卡：房屋出租 / 招聘信息 -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <button type="button" onclick="selectPortalTile('找房子', '')"
+                class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-50 to-blue-100/90 border border-blue-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
+          <div class="relative z-10 pr-8">
+            <div id="bigCardHouseTitle" class="font-black text-[15px] text-slate-900">房屋出租</div>
+            <div id="bigCardHouseSub" class="text-[11px] text-slate-500 mt-0.5 leading-tight">好房直租 价格优惠</div>
+          </div>
+          <!-- 内嵌矢量楼宇图标 -->
+          <svg class="absolute right-2 bottom-1.5 w-12 h-12 opacity-90" viewBox="0 0 48 48" fill="none">
+            <rect x="8" y="10" width="20" height="32" rx="4" fill="#2563EB"/>
+            <rect x="24" y="18" width="16" height="24" rx="3" fill="#60A5FA"/>
+            <circle cx="14" cy="18" r="2" fill="white"/>
+            <circle cx="14" cy="25" r="2" fill="white"/>
+            <circle cx="14" cy="32" r="2" fill="white"/>
+            <rect x="29" y="24" width="6" height="4" rx="1" fill="white"/>
+            <rect x="29" y="31" width="6" height="4" rx="1" fill="white"/>
+          </svg>
+        </button>
+
+        <button type="button" onclick="selectPortalTile('找工作', '')"
+                class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 to-orange-100/90 border border-orange-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
+          <div class="relative z-10 pr-8">
+            <div id="bigCardJobTitle" class="font-black text-[15px] text-slate-900">招聘信息</div>
+            <div id="bigCardJobSub" class="text-[11px] text-slate-500 mt-0.5 leading-tight">优质职位 岗位多多</div>
+          </div>
+          <!-- 内嵌矢量公文包图标 -->
+          <svg class="absolute right-2 bottom-1.5 w-12 h-12 opacity-95" viewBox="0 0 48 48" fill="none">
+            <rect x="17" y="9" width="14" height="6" rx="2" stroke="#EA580C" stroke-width="3"/>
+            <rect x="6" y="14" width="36" height="26" rx="6" fill="#F97316"/>
+            <path d="M6 23H42" stroke="#FFEDD5" stroke-width="2.5"/>
+            <rect x="21" y="20" width="6" height="6" rx="1.5" fill="white"/>
+          </svg>
+        </button>
       </div>
-      <div class="grid grid-cols-3 gap-2 text-center">
-        <div class="bg-red-50/70 rounded-xl p-2 border border-red-100">
-          <div class="text-[10px] text-gray-500 mb-0.5">RON95 / RON97</div>
-          <div id="fuelPriceDisplay" class="text-xs font-extrabold text-red-600">RM 1.99 <span class="text-gray-400 font-normal">/ 4.00</span></div>
+
+      <!-- 10 宫格高辨识度矢量图标导航（2排 x 5列，零版权风险，免找图） -->
+      <div id="portalIconGrid" class="grid grid-cols-5 gap-y-3 gap-x-1 text-center pt-0.5"></div>
+    </section>
+
+    <!-- 快捷工具条：大马吹水站 + 实时汇率油价速览 -->
+    <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 space-y-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <a href="/forum.html" class="flex-1 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-base">💬</span>
+            <div class="min-w-0">
+              <div id="idxForumTitle" class="font-black text-xs text-indigo-950 truncate">大马吹水站</div>
+              <div id="idxForumSub" class="text-[10px] text-indigo-600 truncate">本地吹水 · 探店问答</div>
+            </div>
+          </div>
+          <span class="text-indigo-400 font-bold text-sm">›</span>
+        </a>
+
+        <a href="/map.html" class="flex-1 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-base">🧭</span>
+            <div class="min-w-0">
+              <div id="idxMapTitle" class="font-black text-xs text-emerald-950 truncate">出行导航</div>
+              <div id="idxMapSub" class="text-[10px] text-emerald-600 truncate">一键搜店 · 路线规划</div>
+            </div>
+          </div>
+          <span class="text-emerald-500 font-bold text-sm">›</span>
+        </a>
+      </div>
+
+      <!-- 汇率与油价一行精简展示 -->
+      <div class="grid grid-cols-3 gap-1.5 text-center text-[11px]">
+        <div class="bg-gray-50 rounded-xl py-1.5 px-1 border border-gray-100">
+          <div class="text-[9px] text-gray-400">RON95 / 97</div>
+          <div id="fuelPriceDisplay" class="font-extrabold text-red-600">RM 1.99 <span class="text-gray-400 font-normal">/ 4.00</span></div>
         </div>
-        <div class="bg-amber-50/70 rounded-xl p-2 border border-amber-100">
-          <div id="rateCnyLabel" class="text-[10px] text-gray-500 mb-0.5">马币兑人民币</div>
-          <div id="rateCnyDisplay" class="text-xs font-extrabold text-amber-600">1 MYR ≈ 1.62 CNY</div>
+        <div class="bg-gray-50 rounded-xl py-1.5 px-1 border border-gray-100">
+          <div id="rateCnyLabel" class="text-[9px] text-gray-400">马币兑人民币</div>
+          <div id="rateCnyDisplay" class="font-extrabold text-amber-600">1 MYR ≈ 1.62</div>
         </div>
-        <div class="bg-blue-50/70 rounded-xl p-2 border border-blue-100">
-          <div id="rateSgdLabel" class="text-[10px] text-gray-500 mb-0.5">新币兑马币</div>
-          <div id="rateSgdDisplay" class="text-xs font-extrabold text-blue-600">1 SGD ≈ 3.19 MYR</div>
+        <div class="bg-gray-50 rounded-xl py-1.5 px-1 border border-gray-100">
+          <div id="rateSgdLabel" class="text-[9px] text-gray-400">新币兑马币</div>
+          <div id="rateSgdDisplay" class="font-extrabold text-blue-600">1 SGD ≈ 3.19</div>
         </div>
       </div>
     </section>
 
     <!-- 热门城市快捷切换胶囊 -->
-    <section class="mx-3 mt-3 bg-white rounded-2xl px-3 py-2.5 shadow-sm border border-gray-100">
+    <section class="mx-3 mt-2.5 bg-white rounded-2xl px-3 py-2 shadow-sm border border-gray-100">
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
         <span id="hotCityLabel" class="text-gray-400 shrink-0 font-medium">热门：</span>
         <button type="button" onclick="selectQuickCity('全马')" data-quick-city="全马" class="quick-city-btn px-2.5 py-1 rounded-full bg-red-600 text-white font-bold shrink-0 transition">全马</button>
         <button type="button" onclick="selectQuickCity('槟城')" data-quick-city="槟城" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">槟城·威省</button>
         <button type="button" onclick="selectQuickCity('怡保')" data-quick-city="怡保" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">怡保 Ipoh</button>
         <button type="button" onclick="selectQuickCity('吉隆坡')" data-quick-city="吉隆坡" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">吉隆坡 KL</button>
-        <button type="button" onclick="selectQuickCity('雪兰莪')" data-quick-city="雪兰莪" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">雪兰莪 Selangor</button>
+        <button type="button" onclick="selectQuickCity('雪兰莪')" data-quick-city="雪兰莪" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">雪兰莪</button>
         <button type="button" onclick="selectQuickCity('柔佛')" data-quick-city="柔佛" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">新山 JB</button>
-      </div>
-    </section>
-
-    <!-- 5大金刚区分类导航 -->
-    <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
-      <div class="grid grid-cols-5 gap-1 text-center">
-        <button onclick="selectCategory('全部')" class="cat-item flex flex-col items-center p-1.5 rounded-xl bg-red-50 text-red-600 transition" data-cat="全部">
-          <div class="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center text-lg mb-1 shadow-sm">⊞</div>
-          <span id="catTextAll" class="text-[11px] font-bold">全部信息</span>
-        </button>
-        <button onclick="selectCategory('找房子')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="找房子">
-          <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg mb-1">🏠</div>
-          <span id="catTextHouse" class="text-[11px] font-medium">找房子</span>
-        </button>
-        <button onclick="selectCategory('找工作')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="找工作">
-          <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg mb-1">💼</div>
-          <span id="catTextJob" class="text-[11px] font-medium">找工作</span>
-        </button>
-        <button onclick="selectCategory('二手闲置')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="二手闲置">
-          <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg mb-1">🛍️</div>
-          <span id="catTextSecond" class="text-[11px] font-medium">二手闲置</span>
-        </button>
-        <button onclick="selectCategory('本地优惠')" class="cat-item flex flex-col items-center p-1.5 rounded-xl text-gray-600 hover:bg-gray-50 transition" data-cat="本地优惠">
-          <div class="w-10 h-10 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-lg mb-1">🏪</div>
-          <span id="catTextShop" class="text-[11px] font-medium">本地商家</span>
-        </button>
       </div>
     </section>
 
@@ -227,7 +274,7 @@
                class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white focus:border-red-500 focus:outline-none">
       </div>
 
-      <!-- 本地商家专属筛选项（含附近距离 & 附近付费置顶） -->
+      <!-- 本地商家专属筛选项 -->
       <div id="subfilter-本地优惠" class="subfilter-box hidden space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <select id="bizCatFilter" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
@@ -255,7 +302,7 @@
     </section>
 
     <!-- 列表标题栏 -->
-    <div class="mx-4 mt-4 mb-2 flex items-center justify-between">
+    <div id="feedAnchor" class="mx-4 mt-4 mb-2 flex items-center justify-between">
       <div class="flex items-center space-x-2 min-w-0">
         <span class="w-1 h-4 bg-red-600 rounded-full shrink-0"></span>
         <h2 class="font-extrabold text-gray-800 text-sm truncate" id="listHeaderTitle">全马最新动态</h2>
@@ -277,56 +324,92 @@
 
   <!-- 收藏页面 -->
   <main id="favTab" class="flex-1 pb-24 hidden px-3 pt-4">
-    <h2 id="favPageTitle" class="font-extrabold text-gray-800 text-base mb-3 px-1">⭐ 我的本地收藏</h2>
+    <div class="flex items-center justify-between mb-3 px-1">
+      <h2 id="favPageTitle" class="font-extrabold text-gray-800 text-base">⭐ 我的本地收藏</h2>
+      <button type="button" onclick="switchTab('main')" class="text-xs text-red-600 font-bold">← 返回首页</button>
+    </div>
     <div id="favList" class="space-y-2.5"></div>
   </main>
 
-  <!-- 纯净版“我的”页面 -->
-  <main id="profileTab" class="flex-1 pb-24 hidden px-4 pt-5">
-    <div class="bg-white rounded-2xl p-5 shadow-sm mb-4 flex items-center space-x-4">
-      <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-14 h-14 rounded-2xl object-cover shadow bg-[#F8F6F0] shrink-0" />
+  <!-- 浏览记录页面 -->
+  <main id="historyTab" class="flex-1 pb-24 hidden px-3 pt-4">
+    <div class="flex items-center justify-between mb-3 px-1">
+      <h2 id="historyPageTitle" class="font-extrabold text-gray-800 text-base">🕒 最近浏览记录</h2>
+      <button type="button" onclick="clearBrowseHistory()" id="clearHistoryBtn" class="text-xs text-gray-500 hover:text-red-600 font-bold">清空记录</button>
+    </div>
+    <div id="historyList" class="space-y-2.5"></div>
+  </main>
+
+  <!-- 我的帖子页面 -->
+  <main id="myPostsTab" class="flex-1 pb-24 hidden px-3 pt-4">
+    <div class="flex items-center justify-between mb-3 px-1">
+      <h2 id="myPostsPageTitle" class="font-extrabold text-gray-800 text-base">📝 我发布的信息</h2>
+      <button type="button" onclick="openPostModal()" class="text-xs bg-red-600 text-white px-3 py-1 rounded-full font-bold">+ 发新帖</button>
+    </div>
+    <div id="myPostsList" class="space-y-2.5"></div>
+  </main>
+
+  <!-- 清爽清单式“我的”个人中心（对齐图3风格，无需账号登录） -->
+  <main id="profileTab" class="flex-1 pb-24 hidden">
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-red-900 text-white px-5 py-6 flex items-center space-x-3.5">
+      <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-14 h-14 rounded-full object-cover shadow-md bg-[#F8F6F0] border-2 border-white/80 shrink-0" />
       <div>
-        <h2 id="profileWelcome" class="font-bold text-gray-800 text-lg">欢迎来到大马吉通</h2>
-        <p id="profileSub" class="text-xs text-gray-500 mt-0.5">马来西亚本地生活 · 免费分类信息平台</p>
+        <h2 id="profileWelcome" class="font-black text-base tracking-tight">大马吉通本地访客</h2>
+        <p id="profileSub" class="text-xs text-slate-300 mt-0.5">马来西亚本地生活 · 免费分类信息门户</p>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 space-y-3">
-      <button onclick="openPostModal()" class="w-full flex items-center justify-between py-2 text-left">
+    <div class="bg-white mt-3 mx-3 rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100 overflow-hidden">
+      <button onclick="switchTab('myPosts')" class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition text-left">
         <div class="flex items-center space-x-3">
-          <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-base">📝</span>
-          <div>
-            <div id="profilePostTitle" class="text-sm font-bold text-gray-800">免费发布本地信息</div>
-            <div id="profilePostDesc" class="text-xs text-gray-400">租房、招聘、二手交易、商家活动</div>
-          </div>
+          <span class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm">📝</span>
+          <span id="profileMyPostsMenu" class="text-sm font-bold text-gray-800">我的帖子</span>
         </div>
-        <span class="text-gray-300 text-lg">›</span>
+        <span class="text-gray-400 text-lg">›</span>
       </button>
-      <div class="border-t border-gray-100"></div>
-      <a href="/merchant.html" class="w-full flex items-center justify-between py-2 text-left">
+
+      <button onclick="switchTab('fav')" class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition text-left">
         <div class="flex items-center space-x-3">
-          <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base">🏪</span>
-          <div>
-            <div id="profileMerchantTitle" class="text-sm font-extrabold text-amber-800">商家入驻 · 首页黄金置顶</div>
-            <div id="profileMerchantDesc" class="text-xs text-gray-400">全马商户免费入驻 · 地图导流曝光</div>
-          </div>
+          <span class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm">★</span>
+          <span id="profileFavTitle" class="text-sm font-bold text-gray-800">我的收藏</span>
         </div>
-        <span class="text-amber-500 font-bold text-lg">›</span>
+        <span class="text-gray-400 text-lg">›</span>
+      </button>
+
+      <button onclick="switchTab('history')" class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition text-left">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center text-sm">🕒</span>
+          <span id="profileHistoryMenu" class="text-sm font-bold text-gray-800">我的浏览记录</span>
+        </div>
+        <span class="text-gray-400 text-lg">›</span>
+      </button>
+
+      <button onclick="openPostModal()" class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition text-left">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center text-sm">📢</span>
+          <span id="profilePostTitle" class="text-sm font-bold text-gray-800">免费发布分类信息</span>
+        </div>
+        <span class="text-gray-400 text-lg">›</span>
+      </button>
+
+      <a href="/merchant.html" class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition text-left">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm">🏅</span>
+          <span id="profileMerchantTitle" class="text-sm font-bold text-gray-800">商家入驻与认证</span>
+        </div>
+        <span class="text-gray-400 text-lg">›</span>
       </a>
-      <div class="border-t border-gray-100"></div>
-      <button onclick="switchTab('fav')" class="w-full flex items-center justify-between py-2 text-left">
+
+      <a href="/merchant.html#planCards" class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition text-left">
         <div class="flex items-center space-x-3">
-          <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">⭐</span>
-          <div>
-            <div id="profileFavTitle" class="text-sm font-bold text-gray-800">我的收藏夹</div>
-            <div id="profileFavDesc" class="text-xs text-gray-400">查看已保存的房源与联系方式</div>
-          </div>
+          <span class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm">👑</span>
+          <span id="profilePromoMenu" class="text-sm font-bold text-gray-800">推广置顶服务</span>
         </div>
-        <span class="text-gray-300 text-lg">›</span>
-      </button>
+        <span class="text-gray-400 text-lg">›</span>
+      </a>
     </div>
 
-    <div class="bg-white rounded-2xl p-4 shadow-sm text-xs text-gray-500 space-y-2">
+    <div class="bg-white rounded-2xl p-4 mx-3 mt-3 shadow-sm border border-gray-100 text-xs text-gray-500 space-y-1.5">
       <p id="profileNoticeTitle" class="font-bold text-gray-700 text-sm">📌 平台使用须知</p>
       <p id="profileNotice1">• 本平台为全马用户提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。</p>
       <p id="profileNotice2">• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。</p>
@@ -449,16 +532,158 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const MAX_POST_PHOTOS = 6;
+    const BROWSE_HISTORY_KEY = 'dama_browse_history_v1';
+    const MY_POST_IDS_KEY = 'dama_my_post_ids_v1';
 
     let capturedPostCoords = null;
     let nearbyUserCoords = null;
-    let postPhotoItems = []; // 每项 { file, dataUrl }
+    let postPhotoItems = [];
     let activeDetailImages = [];
     let activeDetailIndex = 0;
     let lightboxPhotos = [];
     let lightboxIndex = 0;
+    let activePortalKey = 'all';
 
-    // 提取帖子全部图片（兼容 image_url、images 数组、以及描述末尾 [[IMGS:[...]]]）
+    // 10 宫格纯代码矢量图标配置（零版权风险、生活高频分类、无金融敏感词）
+    const PORTAL_TILES = [
+      {
+        key: 'all', cat: '全部', kw: '',
+        zh: '全部信息', en: 'All Posts', ms: 'Semua',
+        bg: 'from-rose-500 to-red-600',
+        svg: '<path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z" fill="white"/>'
+      },
+      {
+        key: 'second', cat: '二手闲置', kw: '',
+        zh: '交易市场', en: 'Preloved', ms: 'Terpakai',
+        bg: 'from-amber-400 to-orange-500',
+        svg: '<path d="M6 7h12l-1 12H7L6 7zm3-2a3 3 0 016 0v2H9V5z" fill="white"/>'
+      },
+      {
+        key: 'car', cat: '二手闲置', kw: '车',
+        zh: '汽车买卖', en: 'Vehicles', ms: 'Kereta',
+        bg: 'from-sky-500 to-blue-600',
+        svg: '<path d="M5 11l2-5h10l2 5v6h-2v-2H7v2H5v-6zm3 1a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" fill="white"/>'
+      },
+      {
+        key: 'shop', cat: '本地优惠', kw: '',
+        zh: '本地商家', en: 'Merchants', ms: 'Peniaga',
+        bg: 'from-orange-500 to-red-600',
+        svg: '<path d="M4 9l2-5h12l2 5v2a2 2 0 01-2 2v7H6v-7a2 2 0 01-2-2V9zm5 5v4h6v-4H9z" fill="white"/>'
+      },
+      {
+        key: 'food', cat: '本地优惠', kw: '美食',
+        zh: '美食探店', en: 'Food Hunt', ms: 'Makanan',
+        bg: 'from-red-500 to-pink-600',
+        svg: '<path d="M4 12h16a8 8 0 01-16 0zm3-5h2v3H7V7zm4-1h2v4h-2V6zm4 1h2v3h-2V7z" fill="white"/>'
+      },
+      {
+        key: 'move', cat: '本地优惠', kw: '搬家',
+        zh: '搬家搬运', en: 'Moving', ms: 'Pindah',
+        bg: 'from-amber-500 to-yellow-600',
+        svg: '<path d="M3 7h11v8H3V7zm12 3h3l3 3v2h-6v-5zM7 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4z" fill="white"/>'
+      },
+      {
+        key: 'clean', cat: '本地优惠', kw: '清洁',
+        zh: '清洁服务', en: 'Cleaning', ms: 'Cuci',
+        bg: 'from-cyan-500 to-teal-600',
+        svg: '<path d="M11 3h2v7h5l1 9H5l1-9h5V3zm-2 10v4h2v-4H9zm4 0v4h2v-4h-2z" fill="white"/>'
+      },
+      {
+        key: 'reno', cat: '本地优惠', kw: '维修',
+        zh: '冷气水电', en: 'Aircond/Fix', ms: 'Baik Pulih',
+        bg: 'from-indigo-500 to-blue-700',
+        svg: '<path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.2 2.2-2-2 2.2-2.2z" fill="white"/>'
+      },
+      {
+        key: 'auto', cat: '本地优惠', kw: '修车',
+        zh: '汽车维修', en: 'Auto Care', ms: 'Bengkel',
+        bg: 'from-emerald-500 to-green-600',
+        svg: '<path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 4a4 4 0 110 8 4 4 0 010-8z" fill="white"/>'
+      },
+      {
+        key: 'sale', cat: '找房子', kw: '售',
+        zh: '房屋买卖', en: 'Buy Home', ms: 'Beli Rumah',
+        bg: 'from-blue-600 to-indigo-700',
+        svg: '<path d="M12 4L3 11h3v9h5v-5h2v5h5v-9h3L12 4z" fill="white"/>'
+      }
+    ];
+
+    function renderPortalIconGrid() {
+      const grid = document.getElementById('portalIconGrid');
+      if (!grid) return;
+      grid.innerHTML = PORTAL_TILES.map(tile => {
+        const isActive = activePortalKey === tile.key;
+        const label = tile[currentLang] || tile.zh;
+        return `
+          <button type="button" onclick="selectPortalTile('${tile.cat}', '${tile.kw}', '${tile.key}')"
+                  class="flex flex-col items-center group focus:outline-none">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br ${tile.bg} flex items-center justify-center shadow-xs transition-transform group-active:scale-95 ${isActive ? 'ring-2 ring-offset-2 ring-red-500 scale-105' : ''}">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">${tile.svg}</svg>
+            </div>
+            <span class="text-[11px] mt-1.5 leading-tight truncate max-w-full ${isActive ? 'font-black text-red-600' : 'font-medium text-gray-700'}">${label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectPortalTile(cat, kw = '', key = 'all') {
+      activePortalKey = key || 'all';
+      currentCategory = cat || '全部';
+      const searchEl = document.getElementById('searchInput');
+      if (searchEl) {
+        searchEl.value = kw || '';
+        document.getElementById('clearSearchBtn')?.classList.toggle('hidden', !kw);
+      }
+      renderPortalIconGrid();
+      syncSubFilterVisibility(currentCategory);
+      renderPosts();
+      const anchor = document.getElementById('feedAnchor');
+      if (anchor && key !== 'all') {
+        anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function recordBrowseHistory(postId) {
+      try {
+        let list = JSON.parse(localStorage.getItem(BROWSE_HISTORY_KEY) || '[]');
+        list = [postId, ...list.filter(id => id !== postId)].slice(0, 30);
+        localStorage.setItem(BROWSE_HISTORY_KEY, JSON.stringify(list));
+      } catch (_) {}
+    }
+
+    function clearBrowseHistory() {
+      localStorage.removeItem(BROWSE_HISTORY_KEY);
+      renderBrowseHistory();
+    }
+
+    function renderBrowseHistory() {
+      const box = document.getElementById('historyList');
+      if (!box) return;
+      let ids = [];
+      try { ids = JSON.parse(localStorage.getItem(BROWSE_HISTORY_KEY) || '[]'); } catch (_) {}
+      const list = ids.map(id => allPosts.find(p => p.id === id)).filter(Boolean);
+      if (list.length === 0) {
+        const emptyTxt = currentLang === 'en' ? 'No browsing history yet.' : (currentLang === 'ms' ? 'Tiada rekod tontonan lagi.' : '暂无浏览记录，快去首页看看吧！');
+        box.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${emptyTxt}</div>`;
+        return;
+      }
+      box.innerHTML = list.map(createPostCardHTML).join('');
+    }
+
+    function renderMyPosts() {
+      const box = document.getElementById('myPostsList');
+      if (!box) return;
+      let ids = [];
+      try { ids = JSON.parse(localStorage.getItem(MY_POST_IDS_KEY) || '[]'); } catch (_) {}
+      const list = allPosts.filter(p => ids.includes(p.id));
+      if (list.length === 0) {
+        const emptyTxt = currentLang === 'en' ? 'You have not posted any listing on this device yet.' : (currentLang === 'ms' ? 'Anda belum memuat naik sebarang iklan lagi.' : '当前设备暂未发布过信息，点右上角立即免费发布！');
+        box.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${emptyTxt}</div>`;
+        return;
+      }
+      box.innerHTML = list.map(createPostCardHTML).join('');
+    }
+
     function extractPostImages(post) {
       const urls = [];
       const pushUrl = (u) => {
@@ -468,10 +693,7 @@
       };
 
       pushUrl(post?.image_url);
-
-      if (Array.isArray(post?.images)) {
-        post.images.forEach(pushUrl);
-      }
+      if (Array.isArray(post?.images)) post.images.forEach(pushUrl);
 
       const rawBlob = `${post?.description || ''} ${post?.desc_zh || ''} ${post?.desc_en || ''} ${post?.desc_ms || ''}`;
       const match = rawBlob.match(/\[\[IMGS:(\[[\s\S]*?\])\]\]/);
@@ -757,7 +979,7 @@
       document.getElementById('cityFilter').value = '全马';
       syncQuickCityButtons('全马');
       resetSubFilters();
-      selectCategory('全部');
+      selectPortalTile('全部', '', 'all');
     }
 
     function autoDetectState() {
@@ -804,18 +1026,24 @@
       zh: {
         brandTitle: '大马吉通',
         autoLocBtn: '📍定位',
-        searchPlaceholder: '搜租房、招聘、槟城/北海/大山脚...',
+        heroHeadline: '全马华人本地生活 · 租房求职商家直通',
+        heroSub: '零佣金免费发布 · 一键导航到店 · WhatsApp 直聊',
+        searchPlaceholder: '找房子、找工作、找二手、搜商家...',
+        quickHistory: '浏览记录',
+        quickFav: '我的收藏',
+        quickMyPosts: '我的帖子',
+        bigHouseTitle: '房屋出租',
+        bigHouseSub: '好房直租 价格优惠',
+        bigJobTitle: '招聘信息',
+        bigJobSub: '优质职位 岗位多多',
         hotCityLabel: '热门：',
         resetBtn: '重置',
-        idx4dTitle: '万字开奖 4D',
-        idx4dSub: '对奖 & 官方直播',
         idxForumTitle: '大马吹水站',
-        idxForumSub: '发帖交流 · 探店问答',
-        dailyBoardTitle: '大马今日便民速览',
-        dailyBoardSub: '汇率实时 · 油价每周四更新',
+        idxForumSub: '本地吹水 · 探店问答',
+        idxMapTitle: '出行导航',
+        idxMapSub: '一键搜店 · 路线规划',
         rateCnyLabel: '马币兑人民币',
         rateSgdLabel: '新币兑马币',
-        catAll: '全部信息',
         catHouse: '找房子',
         catJob: '找工作',
         catSecond: '二手闲置',
@@ -843,12 +1071,10 @@
         navProfile: '我的',
         favPageTitle: '⭐ 我的本地收藏',
         emptyFav: '还没有收藏任何帖子，点开帖子详情可点击收藏哦！',
-        profileWelcome: '欢迎来到大马吉通',
-        profileSub: '马来西亚本地生活 · 免费分类信息平台',
-        profilePostTitle: '免费发布本地信息',
-        profilePostDesc: '租房、招聘、二手交易、商家活动',
-        profileFavTitle: '我的收藏夹',
-        profileFavDesc: '查看已保存的房源与联系方式',
+        profileWelcome: '大马吉通本地访客',
+        profileSub: '马来西亚本地生活 · 免费分类信息门户',
+        profilePostTitle: '免费发布分类信息',
+        profileFavTitle: '我的收藏',
         profileNoticeTitle: '📌 平台使用须知',
         profileNotice1: '• 本平台为全马用户提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。',
         profileNotice2: '• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。',
@@ -877,18 +1103,24 @@
       en: {
         brandTitle: 'DamaJitong',
         autoLocBtn: '📍GPS',
-        searchPlaceholder: 'Search rent, jobs, Penang/BM...',
+        heroHeadline: 'Malaysia Local Life · Rentals, Jobs & Merchants',
+        heroSub: '0% Commission · Direct Navigation · Instant WhatsApp',
+        searchPlaceholder: 'Search rentals, jobs, preloved, merchants...',
+        quickHistory: 'History',
+        quickFav: 'Saved',
+        quickMyPosts: 'My Posts',
+        bigHouseTitle: 'Rentals',
+        bigHouseSub: 'Direct owner & great deals',
+        bigJobTitle: 'Jobs',
+        bigJobSub: 'Quality roles & fast hiring',
         hotCityLabel: 'Hot:',
         resetBtn: 'Reset',
-        idx4dTitle: '4D Live Results',
-        idx4dSub: 'Check & Official Draw',
-        idxForumTitle: 'MY Community Forum',
+        idxForumTitle: 'MY Forum',
         idxForumSub: 'Chat · Food & Q&A',
-        dailyBoardTitle: 'Malaysia Daily Info',
-        dailyBoardSub: 'Live FX · Fuel Updated Thu',
+        idxMapTitle: 'Navigation',
+        idxMapSub: 'Find places & routes',
         rateCnyLabel: 'MYR to CNY',
         rateSgdLabel: 'SGD to MYR',
-        catAll: 'All Posts',
         catHouse: 'Property',
         catJob: 'Jobs',
         catSecond: 'Preloved',
@@ -916,12 +1148,10 @@
         navProfile: 'Me',
         favPageTitle: '⭐ My Saved Posts',
         emptyFav: 'No saved posts yet. Open any post and tap Save!',
-        profileWelcome: 'Welcome to DamaJitong',
+        profileWelcome: 'DamaJitong Local Guest',
         profileSub: 'Malaysia Local Community & Free Classifieds',
         profilePostTitle: 'Post a Free Classified Ad',
-        profilePostDesc: 'Rentals, Jobs, Preloved Items, Local Deals',
         profileFavTitle: 'My Saved Items',
-        profileFavDesc: 'Quick access to your bookmarked listings',
         profileNoticeTitle: '📌 Community Guidelines',
         profileNotice1: '• Free local listing platform across Malaysia. Tap any listing to contact the poster directly via WhatsApp.',
         profileNotice2: '• Safety Reminder: Always inspect items or properties in person before transferring any deposit.',
@@ -950,18 +1180,24 @@
       ms: {
         brandTitle: 'DamaJitong',
         autoLocBtn: '📍GPS',
-        searchPlaceholder: 'Cari sewa, kerja, Penang/BM...',
+        heroHeadline: 'Komuniti Tempatan MY · Sewa, Kerja & Peniaga',
+        heroSub: '0% Komisen · Navigasi Terus · WhatsApp Pantas',
+        searchPlaceholder: 'Cari rumah sewa, kerja, terpakai, kedai...',
+        quickHistory: 'Rekod',
+        quickFav: 'Simpanan',
+        quickMyPosts: 'Iklan Saya',
+        bigHouseTitle: 'Rumah Sewa',
+        bigHouseSub: 'Terus pemilik & harga berpatutan',
+        bigJobTitle: 'Kerja Kosong',
+        bigJobSub: 'Jawatan menarik & terus mohon',
         hotCityLabel: 'Hot:',
         resetBtn: 'Reset',
-        idx4dTitle: 'Keputusan 4D Live',
-        idx4dSub: 'Semak & Siaran Rasmi',
-        idxForumTitle: 'Forum Komuniti MY',
+        idxForumTitle: 'Forum MY',
         idxForumSub: 'Sembang · Makan & Soal',
-        dailyBoardTitle: 'Info Harian Malaysia',
-        dailyBoardSub: 'Kadar Semasa · Minyak Khamis',
+        idxMapTitle: 'Navigasi',
+        idxMapSub: 'Cari kedai & laluan',
         rateCnyLabel: 'MYR ke CNY',
         rateSgdLabel: 'SGD ke MYR',
-        catAll: 'Semua',
         catHouse: 'Rumah Sewa',
         catJob: 'Kerja Kosong',
         catSecond: 'Terpakai',
@@ -989,12 +1225,10 @@
         navProfile: 'Saya',
         favPageTitle: '⭐ Iklan Disimpan',
         emptyFav: 'Belum ada iklan disimpan. Buka mana-mana iklan dan tekan Simpan!',
-        profileWelcome: 'Selamat Datang ke DamaJitong',
+        profileWelcome: 'Pelawat Tempatan DamaJitong',
         profileSub: 'Platform Iklan Percuma Komuniti Malaysia',
         profilePostTitle: 'Muat Naik Iklan Percuma',
-        profilePostDesc: 'Rumah sewa, kerja kosong, barang terpakai',
-        profileFavTitle: 'Senarai Simpanan Saya',
-        profileFavDesc: 'Lihat semula iklan yang telah disimpan',
+        profileFavTitle: 'Senarai Simpanan',
         profileNoticeTitle: '📌 Panduan Pengguna',
         profileNotice1: '• Platform iklan percuma seluruh Malaysia. Tekan iklan untuk terus berhubung melalui WhatsApp.',
         profileNotice2: '• Peringatan Keselamatan: Sila berjumpa secara bersemuka sebelum membayar sebarang deposit.',
@@ -1100,8 +1334,8 @@
         if (json && json.rates && json.rates.CNY && json.rates.SGD) {
           const myrToCny = json.rates.CNY.toFixed(2);
           const sgdToMyr = (1 / json.rates.SGD).toFixed(2);
-          document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${myrToCny} CNY`;
-          document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${sgdToMyr} MYR`;
+          document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${myrToCny}`;
+          document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${sgdToMyr}`;
           return;
         }
       } catch (e) {}
@@ -1110,8 +1344,8 @@
         const res2 = await fetch('https://open.er-api.com/v6/latest/MYR');
         const json2 = await res2.json();
         if (json2 && json2.rates) {
-          document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${json2.rates.CNY.toFixed(2)} CNY`;
-          document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${(1 / json2.rates.SGD).toFixed(2)} MYR`;
+          document.getElementById('rateCnyDisplay').innerText = `1 MYR ≈ ${json2.rates.CNY.toFixed(2)}`;
+          document.getElementById('rateSgdDisplay').innerText = `1 SGD ≈ ${(1 / json2.rates.SGD).toFixed(2)}`;
         }
       } catch (e2) {}
     }
@@ -1160,31 +1394,25 @@
       if (fabMapEl) {
         fabMapEl.textContent = lang === 'en' ? 'Routes' : (lang === 'ms' ? 'Laluan' : '查路线');
       }
-      const merchTitleEl = document.getElementById('profileMerchantTitle');
-      if (merchTitleEl) {
-        merchTitleEl.textContent = lang === 'en' ? 'Merchant Listing · Prime Pin' : (lang === 'ms' ? 'Daftar Peniaga · Pin Utama' : '商家入驻 · 首页黄金置顶');
-      }
-      const merchDescEl = document.getElementById('profileMerchantDesc');
-      if (merchDescEl) {
-        merchDescEl.textContent = lang === 'en' ? 'Free MY Listing · Map Traffic Boost' : (lang === 'ms' ? 'Daftar Percuma · Trafik Peta' : '全马商户免费入驻 · 地图导流曝光');
-      }
 
       document.getElementById('brandTitle').innerText = t.brandTitle;
+      document.getElementById('heroBannerHeadline').innerText = t.heroHeadline;
+      document.getElementById('heroBannerSub').innerText = t.heroSub;
       document.getElementById('searchInput').placeholder = t.searchPlaceholder;
-      if (document.getElementById('idx4dTitle')) document.getElementById('idx4dTitle').innerText = t.idx4dTitle;
-      if (document.getElementById('idx4dSub')) document.getElementById('idx4dSub').innerText = t.idx4dSub;
+      document.getElementById('quickHistoryText').innerText = t.quickHistory;
+      document.getElementById('quickFavText').innerText = t.quickFav;
+      document.getElementById('quickMyPostsText').innerText = t.quickMyPosts;
+      document.getElementById('bigCardHouseTitle').innerText = t.bigHouseTitle;
+      document.getElementById('bigCardHouseSub').innerText = t.bigHouseSub;
+      document.getElementById('bigCardJobTitle').innerText = t.bigJobTitle;
+      document.getElementById('bigCardJobSub').innerText = t.bigJobSub;
+
       if (document.getElementById('idxForumTitle')) document.getElementById('idxForumTitle').innerText = t.idxForumTitle;
       if (document.getElementById('idxForumSub')) document.getElementById('idxForumSub').innerText = t.idxForumSub;
-      document.getElementById('dailyBoardTitle').innerText = t.dailyBoardTitle;
-      document.getElementById('dailyBoardSub').innerText = t.dailyBoardSub;
+      if (document.getElementById('idxMapTitle')) document.getElementById('idxMapTitle').innerText = t.idxMapTitle;
+      if (document.getElementById('idxMapSub')) document.getElementById('idxMapSub').innerText = t.idxMapSub;
       document.getElementById('rateCnyLabel').innerText = t.rateCnyLabel;
       document.getElementById('rateSgdLabel').innerText = t.rateSgdLabel;
-
-      document.getElementById('catTextAll').innerText = t.catAll;
-      document.getElementById('catTextHouse').innerText = t.catHouse;
-      document.getElementById('catTextJob').innerText = t.catJob;
-      document.getElementById('catTextSecond').innerText = t.catSecond;
-      document.getElementById('catTextShop').innerText = t.catShop;
       document.getElementById('topFreePostBtn').innerText = t.freePostBtn;
 
       if (document.getElementById('navHomeText')) document.getElementById('navHomeText').innerText = t.navHome;
@@ -1195,9 +1423,7 @@
       document.getElementById('profileWelcome').innerText = t.profileWelcome;
       document.getElementById('profileSub').innerText = t.profileSub;
       document.getElementById('profilePostTitle').innerText = t.profilePostTitle;
-      document.getElementById('profilePostDesc').innerText = t.profilePostDesc;
       document.getElementById('profileFavTitle').innerText = t.profileFavTitle;
-      document.getElementById('profileFavDesc').innerText = t.profileFavDesc;
       document.getElementById('profileNoticeTitle').innerText = t.profileNoticeTitle;
       document.getElementById('profileNotice1').innerText = t.profileNotice1;
       document.getElementById('profileNotice2').innerText = t.profileNotice2;
@@ -1220,6 +1446,7 @@
       document.getElementById('postDesc').placeholder = t.descPlaceholder;
       document.getElementById('submitBtn').innerText = t.submitBtn;
 
+      renderPortalIconGrid();
       renderPostGalleryGrid();
       renderPosts();
       renderFavs();
@@ -1337,66 +1564,13 @@
 
     function getCategoryVisual(cat, post = {}) {
       const t = I18N[currentLang];
-      const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''} ${post.desc_en || ''} ${post.desc_ms || ''} ${post.category || ''}`.toLowerCase();
-
-      if (/美食|饮食|吃饭|餐厅|茶室|咖啡|火锅|烧烤|宵夜|小吃|kopitiam|food|restaurant|cafe|makan/.test(text)) {
-        return {
-          img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
-          bg: 'from-red-600 to-rose-600',
-          icon: '🍜',
-          label: t.cardLabels['本地优惠']
-        };
-      }
-      if (/汽车|车行|修车|保养|冷气|轮胎|洗车|kereta|car|auto|service/.test(text)) {
-        return {
-          img: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=400&q=80',
-          bg: 'from-red-600 to-rose-600',
-          icon: '🔧',
-          label: t.cardLabels['本地优惠']
-        };
-      }
-      if (/酒店|民宿|客房|住宿|hotel|homestay|resort|stay/.test(text)) {
-        return {
-          img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80',
-          bg: 'from-blue-600 to-indigo-600',
-          icon: '🏨',
-          label: t.cardLabels['找房子']
-        };
-      }
-
       const map = {
-        '找房子': {
-          img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80',
-          bg: 'from-blue-600 to-indigo-600',
-          icon: '🏢',
-          label: t.cardLabels['找房子']
-        },
-        '找工作': {
-          img: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=400&q=80',
-          bg: 'from-emerald-600 to-teal-600',
-          icon: '💼',
-          label: t.cardLabels['找工作']
-        },
-        '二手闲置': {
-          img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80',
-          bg: 'from-amber-500 to-orange-600',
-          icon: '📦',
-          label: t.cardLabels['二手闲置']
-        },
-        '本地优惠': {
-          img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
-          bg: 'from-red-600 to-rose-600',
-          icon: '🔥',
-          label: t.cardLabels['本地优惠']
-        }
+        '找房子': { bg: 'from-blue-600 to-indigo-600', icon: '🏢', label: t.cardLabels['找房子'] },
+        '找工作': { bg: 'from-emerald-600 to-teal-600', icon: '💼', label: t.cardLabels['找工作'] },
+        '二手闲置': { bg: 'from-amber-500 to-orange-600', icon: '📦', label: t.cardLabels['二手闲置'] },
+        '本地优惠': { bg: 'from-red-600 to-rose-600', icon: '🏪', label: t.cardLabels['本地优惠'] }
       };
-
-      return map[cat] || {
-        img: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=400&q=80',
-        bg: 'from-gray-600 to-gray-800',
-        icon: '📌',
-        label: 'Info'
-      };
+      return map[cat] || { bg: 'from-gray-600 to-gray-800', icon: '📌', label: 'Info' };
     }
 
     function createPostCardHTML(post) {
@@ -1431,9 +1605,9 @@
              <img src="${photos[0]}" alt="${localizedTitle}" loading="lazy" class="w-full h-full object-cover" />
              ${multiBadgeHTML}
            </div>`
-        : `<div class="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-gray-100 shadow-xs bg-gradient-to-br ${vis.bg}">
-             <img src="${vis.img}" alt="${vis.label}" loading="lazy" onerror="this.style.display='none'" class="w-full h-full object-cover" />
-             <span class="absolute bottom-1 right-1 bg-black/65 text-white text-[10px] leading-none px-1.5 py-1 rounded-md backdrop-blur-[1px]">${vis.label}</span>
+        : `<div class="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-gray-100 shadow-xs bg-gradient-to-br ${vis.bg} flex flex-col items-center justify-center text-white">
+             <span class="text-2xl mb-1">${vis.icon}</span>
+             <span class="text-[10px] font-bold bg-black/25 px-2 py-0.5 rounded-full">${vis.label}</span>
            </div>`;
 
       return `
@@ -1467,6 +1641,7 @@
     }
 
     function openDetailModal(postId) {
+      recordBrowseHistory(postId);
       const post = allPosts.find(p => p.id === postId);
       if (!post) {
         window.location.href = `/detail.html?id=${postId}`;
@@ -1761,21 +1936,6 @@
       listEl.innerHTML = filtered.map(createPostCardHTML).join('');
     }
 
-    function selectCategory(cat) {
-      currentCategory = cat;
-      document.querySelectorAll('.cat-item').forEach(btn => {
-        if (btn.dataset.cat === cat) {
-          btn.classList.add('bg-red-50', 'text-red-600');
-          btn.classList.remove('text-gray-600');
-        } else {
-          btn.classList.remove('bg-red-50', 'text-red-600');
-          btn.classList.add('text-gray-600');
-        }
-      });
-      syncSubFilterVisibility(cat);
-      renderPosts();
-    }
-
     function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
     function openPostModal() {
       capturedPostCoords = null;
@@ -1913,13 +2073,21 @@
         is_pinned: false
       };
 
-      const { error } = await supabaseClient.from('posts').insert([newPost]);
+      const { data: insertedRows, error } = await supabaseClient.from('posts').insert([newPost]).select('id');
       btn.disabled = false;
       btn.innerText = t.submitBtn;
 
       if (error) {
         alert('Error: ' + error.message);
         return;
+      }
+
+      if (insertedRows && insertedRows[0]?.id) {
+        try {
+          const myIds = JSON.parse(localStorage.getItem(MY_POST_IDS_KEY) || '[]');
+          myIds.unshift(insertedRows[0].id);
+          localStorage.setItem(MY_POST_IDS_KEY, JSON.stringify(myIds.slice(0, 50)));
+        } catch (_) {}
       }
 
       dailyLog[todayKey] = (dailyLog[todayKey] || 0) + 1;
@@ -1933,10 +2101,12 @@
     }
 
     function switchTab(tab) {
-      ['mainTab', 'favTab', 'profileTab'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      ['mainTab', 'favTab', 'historyTab', 'myPostsTab', 'profileTab'].forEach(id => {
+        document.getElementById(id)?.classList.add('hidden');
+      });
       ['navMain', 'navNews', 'navFav', 'navProfile'].forEach(id => {
-        document.getElementById(id).classList.remove('text-red-600');
-        document.getElementById(id).classList.add('text-gray-400');
+        document.getElementById(id)?.classList.remove('text-red-600');
+        document.getElementById(id)?.classList.add('text-gray-400');
       });
 
       if (tab === 'main') {
@@ -1946,6 +2116,12 @@
         renderFavs();
         document.getElementById('favTab').classList.remove('hidden');
         document.getElementById('navFav').classList.replace('text-gray-400', 'text-red-600');
+      } else if (tab === 'history') {
+        renderBrowseHistory();
+        document.getElementById('historyTab').classList.remove('hidden');
+      } else if (tab === 'myPosts') {
+        renderMyPosts();
+        document.getElementById('myPostsTab').classList.remove('hidden');
       } else if (tab === 'profile') {
         document.getElementById('profileTab').classList.remove('hidden');
         document.getElementById('navProfile').classList.replace('text-gray-400', 'text-red-600');
