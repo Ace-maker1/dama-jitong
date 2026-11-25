@@ -19,7 +19,7 @@ function getMytDateStr(offsetDays = 0) {
     const myt = new Date(utc + 8 * 3600000 + offsetDays * 86400000);
     return myt.toISOString().slice(0, 10);
   } catch (_) {
-    return '2026-11-21';
+    return '2026-11-25';
   }
 }
 
@@ -54,8 +54,11 @@ function normalizeDrawRecord(item, fallbackDate = '') {
   const p1 = fmt4(item.first ?? item.p1 ?? item['1st']);
   const p2 = fmt4(item.second ?? item.p2 ?? item['2nd']);
   const p3 = fmt4(item.third ?? item.p3 ?? item['3rd']);
+  const special = pad4List(item.special, 10);
+  const consolation = pad4List(item.consolation, 10);
 
-  if (p1 === '----' && p2 === '----' && p3 === '----') return null;
+  const hasAnyNumber = [p1, p2, p3, ...special, ...consolation].some(n => /^\d{4}$/.test(n));
+  if (!hasAnyNumber) return null;
 
   return {
     drawNo: String(item.draw_no ?? item.drawNo ?? ''),
@@ -63,8 +66,8 @@ function normalizeDrawRecord(item, fallbackDate = '') {
     p1,
     p2,
     p3,
-    special: pad4List(item.special, 10),
-    consolation: pad4List(item.consolation, 10)
+    special,
+    consolation
   };
 }
 
@@ -75,7 +78,7 @@ function extractItemsArray(payload) {
   if (Array.isArray(payload.data?.draws)) return payload.data.draws;
   if (Array.isArray(payload.data)) return payload.data;
   if (Array.isArray(payload.results)) return payload.results;
-  if (payload.data && typeof payload.data === 'object' && (payload.data.first || payload.data.p1)) {
+  if (payload.data && typeof payload.data === 'object' && (payload.data.first || payload.data.p1 || payload.data.special)) {
     return [payload.data];
   }
   return [];
@@ -101,7 +104,6 @@ async function fetchJsonSafe(url, ms = 6500) {
   }
 }
 
-// 查询已存在的 (company_id, draw_date) 组合，用于判断是否为全新一期开奖
 async function getExistingDrawKeys(url, key, rows) {
   const existing = new Set();
   const dates = [...new Set(rows.map(r => r.draw_date).filter(Boolean))];
@@ -126,7 +128,6 @@ async function getExistingDrawKeys(url, key, rows) {
   return existing;
 }
 
-// 发送合规的 4D 开奖更新通知（仅在新一期入库时触发一次）
 async function send4DUpdatePush(newDraws, drawDate) {
   const appId = process.env.ONESIGNAL_APP_ID;
   const restApiKey = process.env.ONESIGNAL_REST_API_KEY;
@@ -162,7 +163,6 @@ async function send4DUpdatePush(newDraws, drawDate) {
   }
 }
 
-// 写入 Supabase 历史表，并在检测到全新开奖期数时触发推送
 async function saveToSupabaseHistory(resultsMap, fallbackDate) {
   const url = process.env.SUPABASE_URL || 'https://uhgukdqggvyaepkvlugg.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
@@ -236,7 +236,7 @@ module.exports = async function handler(req, res) {
       const seen = new Set();
       for (const item of list) {
         const board = normalizeDrawRecord(item, todayStr);
-        if (!board || board.p1 === '----') continue;
+        if (!board) continue;
         const uid = `${board.drawDate}_${board.drawNo}`;
         if (seen.has(uid)) continue;
         seen.add(uid);
@@ -253,7 +253,7 @@ module.exports = async function handler(req, res) {
       const comp = normalizeCompanyKey(item.operator || item.operator_name);
       if (!comp) continue;
       const board = normalizeDrawRecord(item, todayStr);
-      if (!board || board.p1 === '----') continue;
+      if (!board) continue;
 
       results[comp] = board;
       const existIdx = history[comp].findIndex(h => h.drawDate === board.drawDate);
@@ -265,7 +265,7 @@ module.exports = async function handler(req, res) {
     }
 
     const syncMeta = await saveToSupabaseHistory(results, todayStr);
-    const hitCount = COMPANIES.filter(c => results[c].p1 !== '----').length;
+    const hitCount = COMPANIES.filter(c => results[c].p1 !== '----' || results[c].special.some(n => /^\d{4}$/.test(n))).length;
 
     return res.status(200).json({
       ok: true,
