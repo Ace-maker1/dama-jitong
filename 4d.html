@@ -653,7 +653,7 @@
               p2: r.p2 || '----',
               p3: r.p3 || '----',
               special: Array.isArray(r.special) && r.special.length === 10 ? r.special : Array(10).fill('----'),
-              consolation: Array(10).fill('----')
+              consolation: Array.isArray(r.consolation) && r.consolation.length === 10 ? r.consolation : Array(10).fill('----')
             };
           }
         });
