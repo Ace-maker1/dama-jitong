@@ -357,15 +357,26 @@
     </button>
   </nav>
 
-  <!-- 帖子详情弹窗 -->
-  <div id="detailModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[88vh] overflow-y-auto relative">
-      <button onclick="closeDetailModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-gray-100/90 text-gray-700 flex items-center justify-center font-bold z-10 shadow">✕</button>
+  <!-- 高级多图轮播 + 缩略图 + 详情弹窗 -->
+  <div id="detailModal" class="fixed inset-0 bg-black/65 z-50 hidden flex items-end sm:items-center justify-center">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 max-h-[90vh] overflow-y-auto relative">
+      <button onclick="closeDetailModal()" class="absolute right-3.5 top-3.5 w-8 h-8 rounded-full bg-black/65 text-white flex items-center justify-center font-bold z-20 shadow">✕</button>
       <div id="detailContent"></div>
     </div>
   </div>
 
-  <!-- 发布新帖弹窗 -->
+  <!-- 全屏高清看图灯箱（Lightbox） -->
+  <div id="lightboxModal" onclick="closeLightbox()" class="fixed inset-0 bg-black/95 z-[60] hidden flex flex-col items-center justify-center p-3">
+    <button type="button" onclick="closeLightbox()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 text-white font-bold flex items-center justify-center">✕</button>
+    <div id="lightboxCounter" class="text-white/80 text-xs font-mono mb-2">1 / 1</div>
+    <img id="lightboxImg" src="" onclick="event.stopPropagation(); nextLightboxPhoto();" class="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl cursor-pointer" />
+    <div class="flex items-center gap-4 mt-4">
+      <button type="button" onclick="event.stopPropagation(); prevLightboxPhoto();" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">‹ 上一张</button>
+      <button type="button" onclick="event.stopPropagation(); nextLightboxPhoto();" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-4 py-2 rounded-full">下一张 ›</button>
+    </div>
+  </div>
+
+  <!-- 发布新帖弹窗（支持最多 6 张图九宫格上传） -->
   <div id="postModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -374,15 +385,16 @@
       </div>
       <form id="postForm" onsubmit="submitPost(event)" class="space-y-3">
         <div>
-          <label id="labelPhoto" class="block text-xs font-bold text-gray-700 mb-1">上传实拍照片 (可选，更吸引关注)</label>
-          <div class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition overflow-hidden">
-            <div id="imagePlaceholder" class="flex flex-col items-center justify-center text-gray-400 pointer-events-none">
+          <div class="flex items-center justify-between mb-1.5">
+            <label id="labelPhoto" class="block text-xs font-bold text-gray-700">上传实拍照片（最多 6 张，首张为封面）</label>
+            <span id="postPhotoBadge" class="text-[11px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-full">0 / 6</span>
+          </div>
+          <div id="postGalleryGrid" class="grid grid-cols-3 gap-2">
+            <label id="imagePlaceholder" class="relative flex flex-col items-center justify-center aspect-square border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-gray-100 transition cursor-pointer overflow-hidden">
               <span class="text-2xl mb-1">📷</span>
-              <span id="photoHintText" class="text-xs font-medium">点击拍照或从相册选图</span>
-            </div>
-            <img id="imagePreview" src="" class="hidden w-full h-full object-cover pointer-events-none" />
-            <input type="file" id="postImageInput" accept="image/*" onchange="previewImage(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-            <button type="button" id="removeImgBtn" onclick="clearSelectedImage(event)" class="hidden absolute top-2 right-2 z-20 bg-black/70 text-white text-xs px-2.5 py-1 rounded-full font-bold shadow">✕</button>
+              <span id="photoHintText" class="text-[11px] font-medium text-gray-500 px-1 text-center leading-tight">添加照片</span>
+              <input type="file" id="postImageInput" accept="image/*" multiple onchange="previewImage(event)" class="hidden" />
+            </label>
           </div>
         </div>
 
@@ -436,9 +448,49 @@
     const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const MAX_POST_PHOTOS = 6;
 
     let capturedPostCoords = null;
     let nearbyUserCoords = null;
+    let postPhotoItems = []; // 每项 { file, dataUrl }
+    let activeDetailImages = [];
+    let activeDetailIndex = 0;
+    let lightboxPhotos = [];
+    let lightboxIndex = 0;
+
+    // 提取帖子全部图片（兼容 image_url、images 数组、以及描述末尾 [[IMGS:[...]]]）
+    function extractPostImages(post) {
+      const urls = [];
+      const pushUrl = (u) => {
+        if (typeof u === 'string' && u.trim() && !urls.includes(u.trim())) {
+          urls.push(u.trim());
+        }
+      };
+
+      pushUrl(post?.image_url);
+
+      if (Array.isArray(post?.images)) {
+        post.images.forEach(pushUrl);
+      }
+
+      const rawBlob = `${post?.description || ''} ${post?.desc_zh || ''} ${post?.desc_en || ''} ${post?.desc_ms || ''}`;
+      const match = rawBlob.match(/\[\[IMGS:(\[[\s\S]*?\])\]\]/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(match[1]);
+          if (Array.isArray(parsed)) parsed.forEach(pushUrl);
+        } catch (_) {}
+      }
+
+      return urls;
+    }
+
+    function cleanDisplayDescription(rawText = '') {
+      return String(rawText || '')
+        .replace(/\[\[IMGS:[\s\S]*?\]\]/g, '')
+        .replace(/\[\[MAP:[^\]]+\]\]/g, '')
+        .trim();
+    }
 
     function parseNumberFromText(raw) {
       if (!raw) return null;
@@ -549,18 +601,20 @@
       );
     }
 
-    function packLocationIntoDesc(rawDesc, exactAddr, coords) {
-      const cleanDesc = (rawDesc || '').replace(/\[\[MAP:[^\]]+\]\]/g, '').trim();
+    function packLocationIntoDesc(rawDesc, exactAddr, coords, extraUrls = []) {
+      const cleanDesc = cleanDisplayDescription(rawDesc);
       const addrPart = (exactAddr || '').trim();
       const lines = [];
       if (addrPart) lines.push(`📍 地址：${addrPart}`);
       if (cleanDesc) lines.push(cleanDesc);
-      const bodyText = lines.join('\n');
+      let bodyText = lines.join('\n');
       if (coords && typeof coords.lat === 'number' && typeof coords.lng === 'number') {
-        return `${bodyText}\n[[MAP:${coords.lat},${coords.lng}|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+        bodyText = `${bodyText}\n[[MAP:${coords.lat},${coords.lng}|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+      } else if (addrPart) {
+        bodyText = `${bodyText}\n[[MAP:,|${addrPart.replace(/\|/g, ' ')}]]`.trim();
       }
-      if (addrPart) {
-        return `${bodyText}\n[[MAP:,|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+      if (Array.isArray(extraUrls) && extraUrls.length > 1) {
+        bodyText = `${bodyText}\n[[IMGS:${JSON.stringify(extraUrls)}]]`.trim();
       }
       return bodyText;
     }
@@ -799,8 +853,8 @@
         profileNotice1: '• 本平台为全马用户提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。',
         profileNotice2: '• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。',
         modalPostHeader: '发布大马本地信息',
-        labelPhoto: '上传实拍照片 (可选，更吸引关注)',
-        photoHint: '点击拍照或从相册选图',
+        labelPhoto: '上传实拍照片（最多 6 张，首张为封面）',
+        photoHint: '添加照片',
         labelCat: '信息分类 *',
         labelCity: '所在州属 / 直辖区 *',
         labelTitle: '信息标题 *',
@@ -811,7 +865,7 @@
         labelDesc: '详细描述',
         descPlaceholder: '填写具体位置、条件要求、联系方式补充...',
         submitBtn: '立即发布上线',
-        uploadingImg: '正在上传实拍照片...',
+        uploadingImg: '正在压缩上传多图...',
         syncingCloud: '正在自动生成三语并写入云端...',
         spamAlert: '⚠️ 内容包含违规或敏感词汇（如博彩、非法借贷、刷单等），系统已自动拦截！',
         phoneAlert: '⚠️ 请输入有效的马来西亚 WhatsApp 手机号码（例如 0123456789 或 60123456789）！',
@@ -872,8 +926,8 @@
         profileNotice1: '• Free local listing platform across Malaysia. Tap any listing to contact the poster directly via WhatsApp.',
         profileNotice2: '• Safety Reminder: Always inspect items or properties in person before transferring any deposit.',
         modalPostHeader: 'Post a Local Listing',
-        labelPhoto: 'Upload Photo (Optional, gets more views)',
-        photoHint: 'Tap to take photo or choose from gallery',
+        labelPhoto: 'Upload Photos (Up to 6, 1st is Cover)',
+        photoHint: 'Add Photo',
         labelCat: 'Category *',
         labelCity: 'State / Federal Territory *',
         labelTitle: 'Listing Title *',
@@ -884,7 +938,7 @@
         labelDesc: 'Description',
         descPlaceholder: 'Location details, requirements, contact notes...',
         submitBtn: 'Publish Now',
-        uploadingImg: 'Uploading photo...',
+        uploadingImg: 'Compressing & uploading photos...',
         syncingCloud: 'Generating trilingual & saving...',
         spamAlert: '⚠️ Restricted keywords detected (gambling/loan/scam). Submission blocked.',
         phoneAlert: '⚠️ Please enter a valid Malaysia WhatsApp number (e.g. 0123456789 or 60123456789).',
@@ -945,8 +999,8 @@
         profileNotice1: '• Platform iklan percuma seluruh Malaysia. Tekan iklan untuk terus berhubung melalui WhatsApp.',
         profileNotice2: '• Peringatan Keselamatan: Sila berjumpa secara bersemuka sebelum membayar sebarang deposit.',
         modalPostHeader: 'Muat Naik Iklan Baru',
-        labelPhoto: 'Muat Naik Gambar (Pilihan)',
-        photoHint: 'Tekan untuk ambil gambar atau pilih galeri',
+        labelPhoto: 'Muat Naik Gambar (Maksimum 6 Gambar)',
+        photoHint: 'Tambah Gambar',
         labelCat: 'Kategori *',
         labelCity: 'Negeri / Wilayah Persekutuan *',
         labelTitle: 'Tajuk Iklan *',
@@ -957,7 +1011,7 @@
         labelDesc: 'Keterangan Lanjut',
         descPlaceholder: 'Lokasi tepat, syarat-syarat, maklumat tambahan...',
         submitBtn: 'Hantar Iklan Sekarang',
-        uploadingImg: 'Memuat naik gambar...',
+        uploadingImg: 'Memampat & memuat naik gambar...',
         syncingCloud: 'Menjana 3 bahasa & menyimpan...',
         spamAlert: '⚠️ Kata kunci terlarang dikesan (judi/pinjaman haram). Penghantaran disekat.',
         phoneAlert: '⚠️ Sila masukkan nombor WhatsApp Malaysia yang sah (cth: 0123456789 atau 60123456789).',
@@ -972,7 +1026,6 @@
     let allPosts = [];
     let currentCategory = '全部';
     let savedIds = JSON.parse(localStorage.getItem('dama_favs') || '[]');
-    let selectedFile = null;
     let translationCache = {};
 
     function getRegionDisplayName(val, lang = currentLang) {
@@ -1167,23 +1220,65 @@
       document.getElementById('postDesc').placeholder = t.descPlaceholder;
       document.getElementById('submitBtn').innerText = t.submitBtn;
 
+      renderPostGalleryGrid();
       renderPosts();
       renderFavs();
     }
 
-    function previewImage(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      selectedFile = file;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const preview = document.getElementById('imagePreview');
-        preview.src = e.target.result;
-        preview.classList.remove('hidden');
-        document.getElementById('imagePlaceholder').classList.add('hidden');
-        document.getElementById('removeImgBtn').classList.remove('hidden');
-      };
-      reader.readAsDataURL(file);
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderPostGalleryGrid() {
+      const t = I18N[currentLang];
+      const grid = document.getElementById('postGalleryGrid');
+      const badge = document.getElementById('postPhotoBadge');
+      if (!grid) return;
+      if (badge) badge.innerText = `${postPhotoItems.length} / ${MAX_POST_PHOTOS}`;
+
+      const cards = postPhotoItems.map((item, idx) => `
+        <div class="relative aspect-square rounded-2xl overflow-hidden border ${idx === 0 ? 'border-2 border-red-500' : 'border-gray-200'} bg-gray-100">
+          <img src="${item.dataUrl}" class="w-full h-full object-cover" />
+          ${idx === 0 ? `<span class="absolute top-1.5 left-1.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">${currentLang === 'en' ? 'COVER' : (currentLang === 'ms' ? 'KULIT' : '封面')}</span>` : ''}
+          <button type="button" onclick="removePostPhoto(${idx})" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 text-white text-xs font-bold flex items-center justify-center">✕</button>
+        </div>
+      `).join('');
+
+      const addTile = postPhotoItems.length < MAX_POST_PHOTOS ? `
+        <label id="imagePlaceholder" class="relative flex flex-col items-center justify-center aspect-square border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-gray-100 transition cursor-pointer overflow-hidden">
+          <span class="text-2xl mb-1">📷</span>
+          <span id="photoHintText" class="text-[11px] font-medium text-gray-500 px-1 text-center leading-tight">${t.photoHint}</span>
+          <input type="file" id="postImageInput" accept="image/*" multiple onchange="previewImage(event)" class="hidden" />
+        </label>
+      ` : '';
+
+      grid.innerHTML = cards + addTile;
+    }
+
+    async function previewImage(event) {
+      const files = Array.from(event.target.files || []);
+      event.target.value = '';
+      if (!files.length) return;
+      const remain = MAX_POST_PHOTOS - postPhotoItems.length;
+      if (remain <= 0) return;
+
+      for (const f of files.slice(0, remain)) {
+        try {
+          const dataUrl = await readFileAsDataUrl(f);
+          postPhotoItems.push({ file: f, dataUrl });
+        } catch (_) {}
+      }
+      renderPostGalleryGrid();
+    }
+
+    function removePostPhoto(idx) {
+      postPhotoItems.splice(idx, 1);
+      renderPostGalleryGrid();
     }
 
     function clearSelectedImage(event) {
@@ -1191,15 +1286,11 @@
         event.preventDefault();
         event.stopPropagation();
       }
-      selectedFile = null;
-      document.getElementById('postImageInput').value = '';
-      document.getElementById('imagePreview').src = '';
-      document.getElementById('imagePreview').classList.add('hidden');
-      document.getElementById('imagePlaceholder').classList.remove('hidden');
-      document.getElementById('removeImgBtn').classList.add('hidden');
+      postPhotoItems = [];
+      renderPostGalleryGrid();
     }
 
-    function compressImage(file, maxWidth = 1000, quality = 0.8) {
+    function compressImage(file, maxWidth = 1080, quality = 0.8) {
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -1314,6 +1405,7 @@
       const dateStr = new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric' });
       const displayCat = t.cats[post.category] || post.category;
       const displayCity = getRegionDisplayName(post.city, currentLang);
+      const photos = extractPostImages(post);
 
       const localizedTitle =
         (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
@@ -1330,8 +1422,15 @@
         ? `<span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-medium">${t.freshBadge}</span>`
         : '';
 
-      const rightMediaHTML = post.image_url
-        ? `<img src="${post.image_url}" alt="${localizedTitle}" class="w-24 h-24 rounded-xl object-cover shrink-0 border border-gray-100 shadow-xs" />`
+      const multiBadgeHTML = photos.length > 1
+        ? `<span class="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">📷 ${photos.length}图</span>`
+        : '';
+
+      const rightMediaHTML = photos.length > 0
+        ? `<div class="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-gray-100 shadow-xs bg-gray-100">
+             <img src="${photos[0]}" alt="${localizedTitle}" loading="lazy" class="w-full h-full object-cover" />
+             ${multiBadgeHTML}
+           </div>`
         : `<div class="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-gray-100 shadow-xs bg-gradient-to-br ${vis.bg}">
              <img src="${vis.img}" alt="${vis.label}" loading="lazy" onerror="this.style.display='none'" class="w-full h-full object-cover" />
              <span class="absolute bottom-1 right-1 bg-black/65 text-white text-[10px] leading-none px-1.5 py-1 rounded-md backdrop-blur-[1px]">${vis.label}</span>
@@ -1339,7 +1438,7 @@
 
       return `
         <div class="bg-white rounded-2xl p-3.5 shadow-sm border ${post.is_pinned ? 'border-amber-300 bg-amber-50/15' : 'border-gray-100'} transition">
-          <div onclick="window.location.href='/detail.html?id=${post.id}'" class="flex justify-between gap-3 cursor-pointer">
+          <div onclick="openDetailModal(${post.id})" class="flex justify-between gap-3 cursor-pointer">
             <div class="flex-1 min-w-0 flex flex-col justify-between">
               <div>
                 <div class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
@@ -1365,6 +1464,134 @@
           </div>
         </div>
       `;
+    }
+
+    function openDetailModal(postId) {
+      const post = allPosts.find(p => p.id === postId);
+      if (!post) {
+        window.location.href = `/detail.html?id=${postId}`;
+        return;
+      }
+
+      const t = I18N[currentLang];
+      const photos = extractPostImages(post);
+      activeDetailImages = photos;
+      activeDetailIndex = 0;
+
+      const localizedTitle =
+        (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
+        post.title;
+      const localizedPrice =
+        (currentLang === 'en' ? post.price_en : (currentLang === 'ms' ? post.price_ms : post.price_zh)) ||
+        post.price;
+      const rawDesc =
+        (currentLang === 'en' ? post.desc_en : (currentLang === 'ms' ? post.desc_ms : post.desc_zh)) ||
+        post.description || '';
+      const cleanDesc = cleanDisplayDescription(rawDesc) || t.noDesc;
+      const waDigits = normalizeMalaysiaWhatsapp(post.whatsapp);
+      const waLink = `https://wa.me/${waDigits}?text=${encodeURIComponent(t.waGreeting(localizedTitle))}`;
+      const isFaved = savedIds.includes(post.id);
+
+      const galleryHTML = photos.length > 0 ? `
+        <div class="mb-3.5">
+          <div class="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-xs">
+            <img id="detailMainImg" src="${photos[0]}" onclick="openLightbox(activeDetailImages, activeDetailIndex)" class="w-full h-full object-cover cursor-zoom-in transition" />
+            <span id="detailPhotoCounter" class="absolute top-2.5 left-2.5 bg-black/70 text-white text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full backdrop-blur-xs">1 / ${photos.length}</span>
+            <span class="absolute bottom-2.5 right-2.5 bg-black/65 text-white text-[10px] font-bold px-2 py-1 rounded-full">🔍 点击放大</span>
+            ${photos.length > 1 ? `
+              <button type="button" onclick="shiftDetailPhoto(-1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/75 text-white font-bold flex items-center justify-center">‹</button>
+              <button type="button" onclick="shiftDetailPhoto(1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/55 hover:bg-black/75 text-white font-bold flex items-center justify-center">›</button>
+            ` : ''}
+          </div>
+          ${photos.length > 1 ? `
+            <div id="detailThumbStrip" class="flex items-center gap-2 overflow-x-auto no-scrollbar mt-2 pb-1">
+              ${photos.map((u, idx) => `
+                <button type="button" onclick="selectDetailPhoto(${idx})" class="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition ${idx === 0 ? 'border-red-600 scale-102' : 'border-transparent opacity-70 hover:opacity-100'}">
+                  <img src="${u}" class="w-full h-full object-cover" />
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      ` : '';
+
+      document.getElementById('detailContent').innerHTML = `
+        ${galleryHTML}
+        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span class="bg-blue-50 text-blue-600 text-[11px] font-bold px-2 py-0.5 rounded">${t.cats[post.category] || post.category}</span>
+          <span class="text-xs text-gray-500">📍 ${getRegionDisplayName(post.city, currentLang)}</span>
+        </div>
+        <h3 class="font-black text-gray-900 text-base leading-snug mb-2">${localizedTitle}</h3>
+        <div class="text-red-600 font-black text-lg mb-3">${localizedPrice}</div>
+        <div class="bg-gray-50 border border-gray-200/80 rounded-2xl p-3 text-xs text-gray-700 whitespace-pre-line leading-relaxed mb-3">${cleanDesc}</div>
+        <div class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">${t.safetyTip}</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="toggleFav(${post.id}); openDetailModal(${post.id});" class="py-2.5 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 bg-white hover:bg-gray-50">
+            ${isFaved ? t.favedBtn : t.favBtn}
+          </button>
+          <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center flex items-center justify-center shadow-xs">
+            ${t.waBtn}
+          </a>
+        </div>
+        <div class="mt-2.5 text-center">
+          <a href="/detail.html?id=${post.id}" class="text-[11px] text-blue-600 font-semibold hover:underline">打开独立详情页与地图导航 ›</a>
+        </div>
+      `;
+
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function selectDetailPhoto(idx) {
+      if (!activeDetailImages.length) return;
+      activeDetailIndex = (idx + activeDetailImages.length) % activeDetailImages.length;
+      const mainImg = document.getElementById('detailMainImg');
+      const counter = document.getElementById('detailPhotoCounter');
+      if (mainImg) mainImg.src = activeDetailImages[activeDetailIndex];
+      if (counter) counter.innerText = `${activeDetailIndex + 1} / ${activeDetailImages.length}`;
+
+      const strip = document.getElementById('detailThumbStrip');
+      if (strip) {
+        Array.from(strip.children).forEach((btn, i) => {
+          btn.className = i === activeDetailIndex
+            ? 'w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 border-red-600 transition'
+            : 'w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 border-transparent opacity-70 hover:opacity-100 transition';
+        });
+      }
+    }
+
+    function shiftDetailPhoto(delta) {
+      selectDetailPhoto(activeDetailIndex + delta);
+    }
+
+    function openLightbox(photos, startIdx = 0) {
+      if (!Array.isArray(photos) || !photos.length) return;
+      lightboxPhotos = photos;
+      lightboxIndex = startIdx;
+      updateLightboxView();
+      document.getElementById('lightboxModal').classList.remove('hidden');
+    }
+
+    function updateLightboxView() {
+      const img = document.getElementById('lightboxImg');
+      const ctr = document.getElementById('lightboxCounter');
+      if (img) img.src = lightboxPhotos[lightboxIndex];
+      if (ctr) ctr.innerText = `${lightboxIndex + 1} / ${lightboxPhotos.length}`;
+    }
+
+    function nextLightboxPhoto() {
+      if (!lightboxPhotos.length) return;
+      lightboxIndex = (lightboxIndex + 1) % lightboxPhotos.length;
+      updateLightboxView();
+    }
+
+    function prevLightboxPhoto() {
+      if (!lightboxPhotos.length) return;
+      lightboxIndex = (lightboxIndex - 1 + lightboxPhotos.length) % lightboxPhotos.length;
+      updateLightboxView();
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightboxModal').classList.add('hidden');
     }
 
     function renderPosts() {
@@ -1509,7 +1736,6 @@
         if (currentCategory === '本地优惠') {
           const da = typeof a._distKm === 'number' ? a._distKm : 9999;
           const db = typeof b._distKm === 'number' ? b._distKm : 9999;
-          // 附近 15km 圈内优先排在远处之前；同在附近圈内时，付费置顶（is_pinned）优先，再按距离近远排
           const nearA = da <= 15 ? 0 : 1;
           const nearB = db <= 15 ? 0 : 1;
           if (nearA !== nearB) return nearA - nearB;
@@ -1557,6 +1783,7 @@
       const btn = document.getElementById('postGpsBtn');
       if (statusEl) statusEl.classList.add('hidden');
       if (btn) btn.innerText = '📍 抓当前定位';
+      renderPostGalleryGrid();
       document.getElementById('postModal').classList.remove('hidden');
     }
     function closePostModal() {
@@ -1592,15 +1819,10 @@
 
       const rawTitle = document.getElementById('postTitle').value.trim();
       const exactAddr = (document.getElementById('postExactAddress')?.value || '').trim();
-      const rawDesc = packLocationIntoDesc(
-        document.getElementById('postDesc').value.trim(),
-        exactAddr,
-        capturedPostCoords
-      );
       const rawPrice = document.getElementById('postPrice').value.trim();
       const normalizedWa = normalizeMalaysiaWhatsapp(document.getElementById('postWhatsapp').value.trim());
 
-      if (containsSpamContent(rawTitle) || containsSpamContent(rawDesc)) {
+      if (containsSpamContent(rawTitle) || containsSpamContent(document.getElementById('postDesc').value.trim())) {
         alert(t.spamAlert);
         return;
       }
@@ -1621,23 +1843,25 @@
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
 
-      let uploadedImageUrl = null;
+      const uploadedImageUrls = [];
 
-      if (selectedFile) {
+      if (postPhotoItems.length > 0) {
         btn.innerText = t.uploadingImg;
         try {
-          const compressedBlob = await compressImage(selectedFile);
-          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
-          const { error: uploadError } = await supabaseClient.storage
-            .from('images')
-            .upload(fileName, compressedBlob, { contentType: 'image/jpeg' });
+          for (const item of postPhotoItems) {
+            const compressedBlob = await compressImage(item.file);
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
+            const { error: uploadError } = await supabaseClient.storage
+              .from('images')
+              .upload(fileName, compressedBlob, { contentType: 'image/jpeg' });
 
-          if (uploadError) throw uploadError;
+            if (uploadError) throw uploadError;
 
-          const { data: urlData } = supabaseClient.storage
-            .from('images')
-            .getPublicUrl(fileName);
-          uploadedImageUrl = urlData.publicUrl;
+            const { data: urlData } = supabaseClient.storage
+              .from('images')
+              .getPublicUrl(fileName);
+            if (urlData?.publicUrl) uploadedImageUrls.push(urlData.publicUrl);
+          }
         } catch (err) {
           alert('Upload Error: ' + err.message);
           btn.disabled = false;
@@ -1645,6 +1869,13 @@
           return;
         }
       }
+
+      const rawDesc = packLocationIntoDesc(
+        document.getElementById('postDesc').value.trim(),
+        exactAddr,
+        capturedPostCoords,
+        uploadedImageUrls
+      );
 
       btn.innerText = t.syncingCloud;
       const postCat = document.getElementById('postCategory').value;
@@ -1678,7 +1909,7 @@
         desc_zh: dZh || rawDesc,
         desc_en: dEn || rawDesc,
         desc_ms: dMs || rawDesc,
-        image_url: uploadedImageUrl,
+        image_url: uploadedImageUrls[0] || null,
         is_pinned: false
       };
 
@@ -1694,6 +1925,7 @@
       dailyLog[todayKey] = (dailyLog[todayKey] || 0) + 1;
       try { localStorage.setItem(DAILY_POST_LOG_KEY, JSON.stringify(dailyLog)); } catch (err) {}
 
+      postPhotoItems = [];
       capturedPostCoords = null;
       document.getElementById('postForm').reset();
       closePostModal();
