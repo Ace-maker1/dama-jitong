@@ -5,6 +5,28 @@ const DEFAULT_CORS_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
+// 违禁/高风险关键词黑名单（防恶意广告连坐）
+const BANNED_KEYWORDS = [
+  "4d下注", "万字下注", "买万字", "包中", "心水字", "稳赢", "稳赚",
+  "在线投注", "网上投注", "线上赌场", "真人娱乐", "老虎机", "体育博彩",
+  "casino", "betting", "bookmaker", "slot", "judi", "4d online", "toto online",
+  "洗黑钱", "洗钱", "跑分", "刷单", "贷款包过", "高利贷", "ah long", "scam"
+];
+
+function detectBannedContent(fieldsObj) {
+  const combined = Object.values(fieldsObj || {})
+    .filter((v) => typeof v === "string")
+    .join(" ")
+    .toLowerCase();
+
+  const matched = BANNED_KEYWORDS.filter((kw) => combined.includes(kw.toLowerCase()));
+  return {
+    blocked: matched.length > 0,
+    matchedKeywords: matched,
+    reason: matched.length > 0 ? `检测到违禁/敏感词：${matched.join(", ")}` : "",
+  };
+}
+
 function buildResponse(statusCode, payload, extraHeaders = {}) {
   return {
     statusCode,
@@ -194,8 +216,21 @@ exports.handler = async (event) => {
     }
 
     const finalData = normalizeParsedFields(extractedObj);
+    const moderation = detectBannedContent(finalData);
+
+    if (moderation.blocked) {
+      return buildResponse(422, {
+        success: false,
+        blocked: true,
+        error: moderation.reason,
+        matchedKeywords: moderation.matchedKeywords,
+        data: finalData,
+      });
+    }
+
     return buildResponse(200, {
       success: true,
+      blocked: false,
       data: finalData,
     });
   } catch (err) {
