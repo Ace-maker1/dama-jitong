@@ -96,7 +96,7 @@
   <!-- 主页面内容 -->
   <main id="mainTab" class="flex-1 pb-6">
 
-    <!-- 搜索兜底：附近实时推荐 + 点击自动导航并沉淀入库（置顶在搜索结果上方，手机端不被键盘遮挡） -->
+    <!-- 搜索兜底：附近实时推荐 + 点击自动导航并沉淀入库 -->
     <section id="smartDiscoverySection" class="hidden mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-md border-2 border-amber-300 space-y-2.5">
       <div class="flex items-center justify-between gap-2">
         <div class="min-w-0">
@@ -110,7 +110,6 @@
 
     <!-- 门户视觉核心区：双大横卡 + 10 宫格矢量图标导航 -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 space-y-3.5">
-      <!-- 双大横卡：房屋出租 / 招聘信息 -->
       <div class="grid grid-cols-2 gap-2.5">
         <button type="button" onclick="selectPortalTile('找房子', '')"
                 class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-50 to-blue-100/90 border border-blue-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
@@ -118,7 +117,6 @@
             <div id="bigCardHouseTitle" class="font-black text-[15px] text-slate-900">房屋出租</div>
             <div id="bigCardHouseSub" class="text-[11px] text-slate-500 mt-0.5 leading-tight">好房直租 价格优惠</div>
           </div>
-          <!-- 内嵌矢量楼宇图标 -->
           <svg class="absolute right-2 bottom-1.5 w-12 h-12 opacity-90" viewBox="0 0 48 48" fill="none">
             <rect x="8" y="10" width="20" height="32" rx="4" fill="#2563EB"/>
             <rect x="24" y="18" width="16" height="24" rx="3" fill="#60A5FA"/>
@@ -136,7 +134,6 @@
             <div id="bigCardJobTitle" class="font-black text-[15px] text-slate-900">招聘信息</div>
             <div id="bigCardJobSub" class="text-[11px] text-slate-500 mt-0.5 leading-tight">优质职位 岗位多多</div>
           </div>
-          <!-- 内嵌矢量公文包图标 -->
           <svg class="absolute right-2 bottom-1.5 w-12 h-12 opacity-95" viewBox="0 0 48 48" fill="none">
             <rect x="17" y="9" width="14" height="6" rx="2" stroke="#EA580C" stroke-width="3"/>
             <rect x="6" y="14" width="36" height="26" rx="6" fill="#F97316"/>
@@ -146,7 +143,6 @@
         </button>
       </div>
 
-      <!-- 10 宫格高辨识度矢量图标导航（2排 x 5列，零版权风险，免找图） -->
       <div id="portalIconGrid" class="grid grid-cols-5 gap-y-3 gap-x-1 text-center pt-0.5"></div>
     </section>
 
@@ -176,7 +172,6 @@
         </a>
       </div>
 
-      <!-- 汇率与油价一行精简展示 -->
       <div class="grid grid-cols-3 gap-1.5 text-center text-[11px]">
         <div class="bg-gray-50 rounded-xl py-1.5 px-1 border border-gray-100">
           <div class="text-[9px] text-gray-400">RON95 / 97</div>
@@ -206,25 +201,23 @@
       </div>
     </section>
 
-    <!-- 多维过滤器面板（按当前分类切换） -->
+    <!-- 多维过滤器面板 -->
     <section id="smartFilterPanel" class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 space-y-2 text-xs">
       <div class="flex items-center justify-between">
         <span id="filterPanelTitle" class="font-bold text-gray-700 text-[11px]">🎛️ 精准筛选条件</span>
         <button type="button" id="clearSubFilterBtn" onclick="resetSubFilters()" class="text-[10px] text-gray-400 hover:text-red-600 font-semibold">清空筛选项</button>
       </div>
 
-      <!-- 全部信息快捷金额上限 -->
       <div id="subfilter-全部" class="subfilter-box grid grid-cols-2 gap-2">
         <input id="allMaxPrice" type="number" oninput="renderPosts()" placeholder="最高预算/价格 RM（可选）"
                class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white focus:border-red-500 focus:outline-none">
         <select id="allSortBy" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
-          <option id="sortOptDefault" value="default">排序：置顶 + 最新</option>
+          <option id="sortOptDefault" value="default">排序：有图/置顶 + 最新</option>
           <option id="sortOptAsc" value="price_asc">价格从低到高</option>
           <option id="sortOptDesc" value="price_desc">价格从高到低</option>
         </select>
       </div>
 
-      <!-- 找房子专属筛选项 -->
       <div id="subfilter-找房子" class="subfilter-box hidden grid grid-cols-2 gap-2">
         <select id="propDealFilter" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
           <option value="">租房 / 买房</option>
@@ -246,7 +239,6 @@
                class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white focus:border-red-500 focus:outline-none">
       </div>
 
-      <!-- 找工作专属筛选项 -->
       <div id="subfilter-找工作" class="subfilter-box hidden grid grid-cols-2 gap-2">
         <select id="jobModeFilter" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
           <option value="">上班方式</option>
@@ -273,7 +265,6 @@
         </select>
       </div>
 
-      <!-- 二手闲置专属筛选项 -->
       <div id="subfilter-二手闲置" class="subfilter-box hidden grid grid-cols-2 gap-2">
         <select id="prelovedCatFilter" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
           <option value="">闲置品类</option>
@@ -289,7 +280,6 @@
                class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:bg-white focus:border-red-500 focus:outline-none">
       </div>
 
-      <!-- 本地商家专属筛选项 -->
       <div id="subfilter-本地优惠" class="subfilter-box hidden space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <select id="bizCatFilter" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
@@ -306,6 +296,13 @@
             <option value="15">15 km 以内</option>
             <option value="30">30 km 以内</option>
           </select>
+        </div>
+        <!-- Halal / 餐饮清真状态快捷筛选 -->
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px]">
+          <button type="button" onclick="selectHalalFilter('')" id="halalBtn-all" class="halal-filter-btn px-2 py-1 rounded-full bg-slate-800 text-white font-bold shrink-0">全部餐饮</button>
+          <button type="button" onclick="selectHalalFilter('halal')" id="halalBtn-halal" class="halal-filter-btn px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold shrink-0">🟢 JAKIM Halal</button>
+          <button type="button" onclick="selectHalalFilter('friendly')" id="halalBtn-friendly" class="halal-filter-btn px-2 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold shrink-0">🟡 穆斯林友好/无猪</button>
+          <button type="button" onclick="selectHalalFilter('non-halal')" id="halalBtn-non-halal" class="halal-filter-btn px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">🔴 非清真 Non-Halal</button>
         </div>
         <div class="flex items-center justify-between gap-2">
           <span id="bizGpsHint" class="text-[10px] text-emerald-700 font-medium truncate">📍 附近优先 + 付费置顶排序</span>
@@ -474,7 +471,7 @@
     </div>
   </div>
 
-  <!-- 发布新帖弹窗（支持最多 6 张图九宫格上传） -->
+  <!-- 发布新帖弹窗（支持最多 6 张图九宫格上传 + Halal 状态选择） -->
   <div id="postModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -511,6 +508,17 @@
             <select id="postCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm"></select>
           </div>
         </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">清真 / 餐饮属性（未核实可不选，避免误标）</label>
+          <select id="postHalalStatus" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
+            <option value="">未标注 / 依门店现场为准</option>
+            <option value="halal">🟢 JAKIM 认证清真 (Halal Certified)</option>
+            <option value="friendly">🟡 无猪肉·穆斯林友好 (Pork-Free / Muslim-Friendly)</option>
+            <option value="non-halal">🔴 非清真 (Non-Halal)</option>
+          </select>
+        </div>
+
         <div>
           <label id="labelTitle" class="block text-xs font-bold text-gray-700 mb-1">信息标题 *</label>
           <input type="text" id="postTitle" required placeholder="例如：【屋主直租】槟城 Gurney 海景套房" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
@@ -550,6 +558,7 @@
     const MAX_POST_PHOTOS = 6;
     const BROWSE_HISTORY_KEY = 'dama_browse_history_v1';
     const MY_POST_IDS_KEY = 'dama_my_post_ids_v1';
+    const SEEN_IMG_HASHES_KEY = 'dama_seen_img_hashes_v1';
 
     let capturedPostCoords = null;
     let nearbyUserCoords = null;
@@ -559,10 +568,11 @@
     let lightboxPhotos = [];
     let lightboxIndex = 0;
     let activePortalKey = 'all';
+    let activeHalalFilter = '';
     let discoveryTimer = null;
     let discoverySeq = 0;
 
-    // 10 宫格纯代码矢量图标配置（零版权风险、生活高频分类、无金融敏感词）
+    // 10 宫格纯代码矢量图标配置
     const PORTAL_TILES = [
       {
         key: 'all', cat: '全部', kw: '',
@@ -661,6 +671,97 @@
       }
     }
 
+    function selectHalalFilter(statusVal) {
+      activeHalalFilter = statusVal || '';
+      const map = {
+        '': 'halalBtn-all',
+        'halal': 'halalBtn-halal',
+        'friendly': 'halalBtn-friendly',
+        'non-halal': 'halalBtn-non-halal'
+      };
+      Object.entries(map).forEach(([k, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (k === activeHalalFilter) {
+          el.classList.add('ring-2', 'ring-offset-1', 'ring-red-500', 'scale-105');
+        } else {
+          el.classList.remove('ring-2', 'ring-offset-1', 'ring-red-500', 'scale-105');
+        }
+      });
+      renderPosts();
+    }
+
+    // 识别 Halal 三态：宁缺毋滥，不瞎猜 JAKIM 认证
+    function detectHalalStatus(post = {}) {
+      const explicitMatch = `${post.description || ''} ${post.desc_zh || ''}`.match(/\[\[HALAL:(halal|friendly|non-halal)\]\]/i);
+      if (explicitMatch) return explicitMatch[1].toLowerCase();
+
+      const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''}`.toLowerCase();
+      if (/烧腊|猪肉|肉骨茶|bak kut teh|char siew|siew yuk|pork|babi|non-halal|非清真|beer|pub|bar\b|酒馆/.test(text)) {
+        return 'non-halal';
+      }
+      if (/jakim|halal certified|清真认证/.test(text)) {
+        return 'halal';
+      }
+      if (/halal|nasi kandar|mamak|warung|restoran melayu|muslim friendly|pork-free|无猪肉|穆斯林友好/.test(text)) {
+        return 'friendly';
+      }
+      return '';
+    }
+
+    function getHalalBadgeHTML(post) {
+      const st = detectHalalStatus(post);
+      if (st === 'halal') {
+        return `<span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">🟢 Halal</span>`;
+      }
+      if (st === 'friendly') {
+        return `<span class="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded">🟡 Muslim-Friendly</span>`;
+      }
+      if (st === 'non-halal') {
+        return `<span class="text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded">🔴 Non-Halal</span>`;
+      }
+      return '';
+    }
+
+    // 规范化店名用于防重比对
+    function normalizeShopName(rawTitle = '') {
+      return String(rawTitle || '')
+        .replace(/^【[^】]+】/g, '')
+        .replace(/\[[^\]]+\]/g, '')
+        .replace(/\b(sdn bhd|bhd|enterprise|trading|malaysia|penang|kl|johor|ipoh)\b/gi, '')
+        .replace(/[^\u4e00-\u9fa5a-z0-9]/gi, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    // 查找疑似已收录的同城店铺，支持认领/覆盖更新
+    function findDuplicateCandidate(title, city, exactAddr) {
+      const normNew = normalizeShopName(title);
+      if (!normNew || normNew.length < 2) return null;
+      const addrKey = String(exactAddr || '').trim().toLowerCase().slice(0, 18);
+
+      return allPosts.find(p => {
+        const sameCity = !city || city === '全马' || !p.city || p.city === '全马' || p.city === city;
+        if (!sameCity) return false;
+        const normOld = normalizeShopName(p.title || p.title_zh || '');
+        if (!normOld) return false;
+        const nameMatch = normOld === normNew || (normNew.length >= 4 && normOld.includes(normNew)) || (normOld.length >= 4 && normNew.includes(normOld));
+        const addrMatch = addrKey.length >= 6 && String(p.description || '').toLowerCase().includes(addrKey);
+        return nameMatch || (addrMatch && normOld.slice(0, 3) === normNew.slice(0, 3));
+      }) || null;
+    }
+
+    // 计算文件 SHA-256 指纹用于去重
+    async function computeBlobHash(blob) {
+      try {
+        const buf = await blob.arrayBuffer();
+        const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+        return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 24);
+      } catch (_) {
+        return `${blob.size}_${blob.type}`;
+      }
+    }
+
     function recordBrowseHistory(postId) {
       try {
         let list = JSON.parse(localStorage.getItem(BROWSE_HISTORY_KEY) || '[]');
@@ -727,6 +828,7 @@
       return String(rawText || '')
         .replace(/\[\[IMGS:[\s\S]*?\]\]/g, '')
         .replace(/\[\[MAP:[^\]]+\]\]/g, '')
+        .replace(/\[\[HALAL:[^\]]+\]\]/gi, '')
         .trim();
     }
 
@@ -931,18 +1033,18 @@
             `;
           }).join('');
         }
-      }, immediate ? 50 : 350);
+      }, immediate ? 20 : 250);
     }
 
-    async function handleDiscoverySelect(idx) {
+    // 零延迟秒跳：先立即跳转导航，后台异步沉淀入库
+    function handleDiscoverySelect(idx) {
       const list = window._discoveredPlacesCache || [];
       const item = list[idx];
       if (!item) return;
 
       const t = I18N[currentLang];
-      const indTag = inferIndustryTag(`${item.name} ${item.addr} ${document.getElementById('searchInput')?.value || ''}`);
-      const fullTitle = `【收录商户·${indTag}】${item.name}`;
-      const packedDesc = `📍 地址：${item.addr}\n由用户搜索自动收录至大马吉通本地目录\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`;
+      const destQuery = `${item.name}, ${item.addr}`;
+      const navUrl = `/map.html?dest=${encodeURIComponent(destQuery)}&lat=${item.lat}&lng=${item.lng}`;
 
       const alreadyExists = allPosts.some(p =>
         String(p.title || '').toLowerCase().includes(item.name.toLowerCase()) &&
@@ -950,41 +1052,32 @@
       );
 
       if (!alreadyExists) {
-        try {
-          const [tZh, tEn, tMs] = await Promise.all([
-            translateSnippet(fullTitle, 'zh'),
-            translateSnippet(fullTitle, 'en'),
-            translateSnippet(fullTitle, 'ms')
-          ]);
-          const { data: inserted } = await supabaseClient.from('posts').insert([{
-            category: '本地优惠',
-            city: item.city || '全马',
-            title: fullTitle,
-            title_zh: tZh || fullTitle,
-            title_en: tEn || fullTitle,
-            title_ms: tMs || fullTitle,
-            price: t.defaultStorePrice,
-            price_zh: '到店咨询 / 实惠价',
-            price_en: 'Visit Store',
-            price_ms: 'Rujuk Kedai',
-            whatsapp: '601125490636',
-            description: packedDesc,
-            desc_zh: packedDesc,
-            desc_en: packedDesc,
-            desc_ms: packedDesc,
-            image_url: null,
-            is_pinned: false
-          }]).select('*');
+        const indTag = inferIndustryTag(`${item.name} ${item.addr} ${document.getElementById('searchInput')?.value || ''}`);
+        const fullTitle = `【收录商户·${indTag}】${item.name}`;
+        const packedDesc = `📍 地址：${item.addr}\n由用户搜索自动收录至大马吉通本地目录\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`;
 
-          if (inserted && inserted[0]) {
-            allPosts.unshift(inserted[0]);
-            recordBrowseHistory(inserted[0].id);
-          }
-        } catch (_) {}
+        supabaseClient.from('posts').insert([{
+          category: '本地优惠',
+          city: item.city || '全马',
+          title: fullTitle,
+          title_zh: fullTitle,
+          title_en: `[Local Directory · ${indTag}] ${item.name}`,
+          title_ms: `[Direktori Tempatan · ${indTag}] ${item.name}`,
+          price: t.defaultStorePrice,
+          price_zh: '到店咨询 / 实惠价',
+          price_en: 'Visit Store',
+          price_ms: 'Rujuk Kedai',
+          whatsapp: '601125490636',
+          description: packedDesc,
+          desc_zh: packedDesc,
+          desc_en: packedDesc,
+          desc_ms: packedDesc,
+          image_url: null,
+          is_pinned: false
+        }]).then(() => {}).catch(() => {});
       }
 
-      const destQuery = `${item.name}, ${item.addr}`;
-      window.location.href = `/map.html?dest=${encodeURIComponent(destQuery)}&lat=${item.lat}&lng=${item.lng}`;
+      window.location.href = navUrl;
     }
 
     function locateForNearbyBiz() {
@@ -1012,6 +1105,8 @@
     }
 
     function resetSubFilters() {
+      activeHalalFilter = '';
+      selectHalalFilter('');
       ['allMaxPrice', 'propMaxPrice', 'propMinSize', 'jobMinSalary', 'prelovedMaxBudget'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -1060,7 +1155,7 @@
       );
     }
 
-    function packLocationIntoDesc(rawDesc, exactAddr, coords, extraUrls = []) {
+    function packLocationIntoDesc(rawDesc, exactAddr, coords, extraUrls = [], halalStatus = '') {
       const cleanDesc = cleanDisplayDescription(rawDesc);
       const addrPart = (exactAddr || '').trim();
       const lines = [];
@@ -1071,6 +1166,9 @@
         bodyText = `${bodyText}\n[[MAP:${coords.lat},${coords.lng}|${addrPart.replace(/\|/g, ' ')}]]`.trim();
       } else if (addrPart) {
         bodyText = `${bodyText}\n[[MAP:,|${addrPart.replace(/\|/g, ' ')}]]`.trim();
+      }
+      if (halalStatus) {
+        bodyText = `${bodyText}\n[[HALAL:${halalStatus}]]`.trim();
       }
       if (Array.isArray(extraUrls) && extraUrls.length > 1) {
         bodyText = `${bodyText}\n[[IMGS:${JSON.stringify(extraUrls)}]]`.trim();
@@ -1299,7 +1397,7 @@
         filterPanelTitle: '🎛️ 精准筛选条件',
         clearSubFilterBtn: '清空筛选项',
         allMaxPricePh: '最高预算/价格 RM（可选）',
-        sortOptDefault: '排序：置顶 + 最新',
+        sortOptDefault: '排序：有图/置顶 + 最新',
         sortOptAsc: '价格从低到高',
         sortOptDesc: '价格从高到低',
         propDealAny: '租房 / 买房',
@@ -1471,7 +1569,7 @@
         filterPanelTitle: '🎛️ Smart Filters',
         clearSubFilterBtn: 'Clear',
         allMaxPricePh: 'Max Budget / Price RM (Optional)',
-        sortOptDefault: 'Sort: Featured + Latest',
+        sortOptDefault: 'Sort: Photos/Top + Latest',
         sortOptAsc: 'Price: Low to High',
         sortOptDesc: 'Price: High to Low',
         propDealAny: 'Rent / Buy',
@@ -1643,7 +1741,7 @@
         filterPanelTitle: '🎛️ Penapis Tepat',
         clearSubFilterBtn: 'Kosongkan',
         allMaxPricePh: 'Bajet / Harga Maksimum RM',
-        sortOptDefault: 'Susunan: Pilihan + Terkini',
+        sortOptDefault: 'Susunan: Gambar/Pilihan + Terkini',
         sortOptAsc: 'Harga: Rendah ke Tinggi',
         sortOptDesc: 'Harga: Tinggi ke Rendah',
         propDealAny: 'Sewa / Beli',
@@ -2187,12 +2285,14 @@
       });
     }
 
+    // 拉取更多记录（最多 3000 条）确保 2,700+ 收录商户皆可被检索
     async function fetchPosts() {
       const { data, error } = await supabaseClient
         .from('posts')
         .select('*')
         .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(3000);
 
       if (error) {
         console.error('Supabase Error:', error);
@@ -2256,6 +2356,7 @@
       const displayCat = t.cats[post.category] || post.category;
       const displayCity = getRegionDisplayName(post.city, currentLang);
       const photos = extractPostImages(post);
+      const halalBadge = getHalalBadgeHTML(post);
 
       const localizedTitle =
         (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
@@ -2291,6 +2392,7 @@
                 <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                   <span class="text-[11px] text-gray-500 font-medium">📍 ${displayCity}</span>
                   ${distBadgeHTML}
+                  ${halalBadge}
                   ${freshBadgeHTML}
                 </div>
                 <h3 class="font-black text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${localizedTitle}</h3>
@@ -2319,6 +2421,7 @@
                   <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded">${displayCat}</span>
                   <span class="text-[11px] text-gray-400 truncate">📍 ${displayCity}</span>
                   ${distBadgeHTML}
+                  ${halalBadge}
                   ${freshBadgeHTML}
                 </div>
                 <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${localizedTitle}</h3>
@@ -2368,6 +2471,7 @@
       const waDigits = normalizeMalaysiaWhatsapp(post.whatsapp);
       const waLink = `https://wa.me/${waDigits}?text=${encodeURIComponent(t.waGreeting(localizedTitle))}`;
       const isFaved = savedIds.includes(post.id);
+      const halalBadge = getHalalBadgeHTML(post);
 
       const zoomHint = currentLang === 'en' ? '🔍 Zoom' : (currentLang === 'ms' ? '🔍 Besarkan' : '🔍 点击放大');
       const fullDetailBtnText = currentLang === 'en'
@@ -2402,6 +2506,7 @@
         <div class="flex items-center gap-2 mb-1.5 flex-wrap">
           <span class="bg-blue-50 text-blue-600 text-[11px] font-bold px-2 py-0.5 rounded">${t.cats[post.category] || post.category}</span>
           <span class="text-xs text-gray-500">📍 ${getRegionDisplayName(post.city, currentLang)}</span>
+          ${halalBadge}
         </div>
         <h3 class="font-black text-gray-900 text-base leading-snug mb-2">${localizedTitle}</h3>
         <div class="text-red-600 font-black text-lg mb-3">${localizedPrice}</div>
@@ -2486,7 +2591,7 @@
       const hiddenIds = getHiddenPostIds();
       const reportCounts = getReportCounts();
 
-      const hasFilter = (city !== '全马') || (currentCategory !== '全部') || Boolean(rawKeyword);
+      const hasFilter = (city !== '全马') || (currentCategory !== '全部') || Boolean(rawKeyword) || Boolean(activeHalalFilter);
       const resetBtn = document.getElementById('resetFilterBtn');
       if (resetBtn) resetBtn.classList.toggle('hidden', !hasFilter);
 
@@ -2500,8 +2605,9 @@
         if (hiddenIds.includes(p.id) || (reportCounts[p.id] || 0) >= 3) return false;
         if (containsSpamContent(p.title) || containsSpamContent(p.description)) return false;
 
+        const isDirectoryShop = String(p.title || '').startsWith('【收录商户');
         const ageMs = Date.now() - new Date(p.created_at).getTime();
-        if (!p.is_pinned && ageMs > 7 * 86400000) return false;
+        if (!p.is_pinned && !isDirectoryShop && ageMs > 30 * 86400000) return false;
 
         const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
         const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
@@ -2509,6 +2615,10 @@
         const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.desc_en || ''} ${p.desc_ms || ''} ${p.price || ''} ${p.city || ''}`.toLowerCase();
         const matchKey = searchTerms.length === 0 || searchTerms.some(term => searchBlob.includes(term));
         if (!matchCity || !matchCat || !matchKey) return false;
+
+        if (activeHalalFilter) {
+          if (detectHalalStatus(p) !== activeHalalFilter) return false;
+        }
 
         const numPrice = parseNumberFromText(p.price);
 
@@ -2631,6 +2741,12 @@
         const pinA = a.is_pinned ? 1 : 0;
         const pinB = b.is_pinned ? 1 : 0;
         if (pinB !== pinA) return pinB - pinA;
+
+        // 默认排序时优先把已有实拍封面图的商家排在前面展示
+        const hasImgA = a.image_url ? 1 : 0;
+        const hasImgB = b.image_url ? 1 : 0;
+        if (!rawKeyword && hasImgB !== hasImgA) return hasImgB - hasImgA;
+
         return new Date(b.created_at) - new Date(a.created_at);
       });
 
@@ -2642,7 +2758,7 @@
         return;
       }
 
-      listEl.innerHTML = filtered.map(createPostCardHTML).join('');
+      listEl.innerHTML = filtered.slice(0, 120).map(createPostCardHTML).join('');
       scheduleSmartDiscovery(rawKeyword, city, filtered.length, immediateDiscovery);
     }
 
@@ -2692,6 +2808,7 @@
       const exactAddr = (document.getElementById('postExactAddress')?.value || '').trim();
       const rawPrice = document.getElementById('postPrice').value.trim();
       const normalizedWa = normalizeMalaysiaWhatsapp(document.getElementById('postWhatsapp').value.trim());
+      const halalStatus = document.getElementById('postHalalStatus')?.value || '';
 
       if (containsSpamContent(rawTitle) || containsSpamContent(document.getElementById('postDesc').value.trim())) {
         alert(t.spamAlert);
@@ -2711,16 +2828,40 @@
         return;
       }
 
+      const postCat = document.getElementById('postCategory').value;
+      const postCity = document.getElementById('postCity').value;
+
+      // 检测是否已存在同城相似店铺，支持老板直接认领/覆盖更新
+      let claimTargetPost = null;
+      const dupCandidate = findDuplicateCandidate(rawTitle, postCity, exactAddr);
+      if (dupCandidate) {
+        const oldCleanTitle = String(dupCandidate.title || '').replace(/^【[^】]+】/, '').trim();
+        const confirmOverwrite = confirm(
+          `检测到平台已有相似记录：“${oldCleanTitle}”(${dupCandidate.city || '全马'})。\n\n` +
+          `点击【确定】将直接认领并覆盖更新该条记录（保留原帖基础，更新您的实拍图、WhatsApp 与描述，避免重复）；\n` +
+          `点击【取消】则作为独立新帖发布。`
+        );
+        if (confirmOverwrite) {
+          claimTargetPost = dupCandidate;
+        }
+      }
+
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
 
       const uploadedImageUrls = [];
+      let seenHashes = [];
+      try { seenHashes = JSON.parse(localStorage.getItem(SEEN_IMG_HASHES_KEY) || '[]'); } catch (_) {}
 
       if (postPhotoItems.length > 0) {
         btn.innerText = t.uploadingImg;
         try {
           for (const item of postPhotoItems) {
             const compressedBlob = await compressImage(item.file);
+            const imgHash = await computeBlobHash(compressedBlob);
+            if (seenHashes.includes(imgHash)) {
+              continue;
+            }
             const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`;
             const { error: uploadError } = await supabaseClient.storage
               .from('images')
@@ -2731,8 +2872,12 @@
             const { data: urlData } = supabaseClient.storage
               .from('images')
               .getPublicUrl(fileName);
-            if (urlData?.publicUrl) uploadedImageUrls.push(urlData.publicUrl);
+            if (urlData?.publicUrl) {
+              uploadedImageUrls.push(urlData.publicUrl);
+              seenHashes.push(imgHash);
+            }
           }
+          localStorage.setItem(SEEN_IMG_HASHES_KEY, JSON.stringify(seenHashes.slice(-200)));
         } catch (err) {
           alert('Upload Error: ' + err.message);
           btn.disabled = false;
@@ -2745,12 +2890,11 @@
         document.getElementById('postDesc').value.trim(),
         exactAddr,
         capturedPostCoords,
-        uploadedImageUrls
+        uploadedImageUrls,
+        halalStatus
       );
 
       btn.innerText = t.syncingCloud;
-      const postCat = document.getElementById('postCategory').value;
-      const postCity = document.getElementById('postCity').value;
 
       const [tZh, tEn, tMs, pZh, pEn, pMs, dZh, dEn, dMs] = await Promise.all([
         translateSnippet(rawTitle, 'zh'),
@@ -2764,7 +2908,7 @@
         rawDesc ? translateSnippet(rawDesc, 'ms') : Promise.resolve('')
       ]);
 
-      const newPost = {
+      const payload = {
         category: postCat,
         city: postCity,
         title: rawTitle,
@@ -2780,23 +2924,39 @@
         desc_zh: dZh || rawDesc,
         desc_en: dEn || rawDesc,
         desc_ms: dMs || rawDesc,
-        image_url: uploadedImageUrls[0] || null,
-        is_pinned: false
+        image_url: uploadedImageUrls[0] || (claimTargetPost ? claimTargetPost.image_url : null),
+        is_pinned: claimTargetPost ? Boolean(claimTargetPost.is_pinned) : false
       };
 
-      const { data: insertedRows, error } = await supabaseClient.from('posts').insert([newPost]).select('id');
-      btn.disabled = false;
-      btn.innerText = t.submitBtn;
-
-      if (error) {
-        alert('Error: ' + error.message);
-        return;
+      let savedPostId = null;
+      if (claimTargetPost) {
+        const { data: updatedRows, error: upErr } = await supabaseClient
+          .from('posts')
+          .update(payload)
+          .eq('id', claimTargetPost.id)
+          .select('id');
+        btn.disabled = false;
+        btn.innerText = t.submitBtn;
+        if (upErr) {
+          alert('Error: ' + upErr.message);
+          return;
+        }
+        savedPostId = updatedRows?.[0]?.id || claimTargetPost.id;
+      } else {
+        const { data: insertedRows, error } = await supabaseClient.from('posts').insert([payload]).select('id');
+        btn.disabled = false;
+        btn.innerText = t.submitBtn;
+        if (error) {
+          alert('Error: ' + error.message);
+          return;
+        }
+        savedPostId = insertedRows?.[0]?.id || null;
       }
 
-      if (insertedRows && insertedRows[0]?.id) {
+      if (savedPostId) {
         try {
           const myIds = JSON.parse(localStorage.getItem(MY_POST_IDS_KEY) || '[]');
-          myIds.unshift(insertedRows[0].id);
+          myIds.unshift(savedPostId);
           localStorage.setItem(MY_POST_IDS_KEY, JSON.stringify(myIds.slice(0, 50)));
         } catch (_) {}
       }
