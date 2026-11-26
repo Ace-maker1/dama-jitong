@@ -182,12 +182,12 @@
     <section class="mx-3 mt-2.5 bg-white rounded-2xl px-3 py-2 shadow-sm border border-gray-100">
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
         <span id="hotCityLabel" class="text-gray-400 shrink-0 font-medium">热门：</span>
-        <button type="button" onclick="selectQuickCity('全马')" data-quick-city="全马" class="quick-city-btn px-2.5 py-1 rounded-full bg-red-600 text-white font-bold shrink-0 transition">全马</button>
-        <button type="button" onclick="selectQuickCity('槟城')" data-quick-city="槟城" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">槟城·威省</button>
-        <button type="button" onclick="selectQuickCity('怡保')" data-quick-city="怡保" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">怡保 Ipoh</button>
-        <button type="button" onclick="selectQuickCity('吉隆坡')" data-quick-city="吉隆坡" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">吉隆坡 KL</button>
-        <button type="button" onclick="selectQuickCity('雪兰莪')" data-quick-city="雪兰莪" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">雪兰莪</button>
-        <button type="button" onclick="selectQuickCity('柔佛')" data-quick-city="柔佛" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">新山 JB</button>
+        <button type="button" id="qCity-all" onclick="selectQuickCity('全马')" data-quick-city="全马" class="quick-city-btn px-2.5 py-1 rounded-full bg-red-600 text-white font-bold shrink-0 transition">全马</button>
+        <button type="button" id="qCity-penang" onclick="selectQuickCity('槟城')" data-quick-city="槟城" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">槟城·威省</button>
+        <button type="button" id="qCity-ipoh" onclick="selectQuickCity('霹雳')" data-quick-city="霹雳" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">怡保 Ipoh</button>
+        <button type="button" id="qCity-kl" onclick="selectQuickCity('吉隆坡')" data-quick-city="吉隆坡" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">吉隆坡 KL</button>
+        <button type="button" id="qCity-selangor" onclick="selectQuickCity('雪兰莪')" data-quick-city="雪兰莪" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">雪兰莪</button>
+        <button type="button" id="qCity-jb" onclick="selectQuickCity('柔佛')" data-quick-city="柔佛" class="quick-city-btn px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-red-50 shrink-0 transition">新山 JB</button>
       </div>
     </section>
 
@@ -319,6 +319,18 @@
     <!-- 云端实时帖子列表 -->
     <section class="px-3 space-y-2.5" id="postList">
       <div id="loadingText" class="text-center py-12 text-gray-400 text-sm">正在连接云端数据库加载最新动态...</div>
+    </section>
+
+    <!-- 搜索兜底：附近实时推荐 + 点击自动导航并沉淀入库 -->
+    <section id="smartDiscoverySection" class="hidden mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-amber-200 space-y-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div id="discoveryTitle" class="font-black text-xs text-amber-950 truncate">✨ 附近实时推荐 · 点击导航并自动收录</div>
+          <div id="discoverySub" class="text-[10px] text-amber-700 truncate">本地库暂无匹配时，自动为你检索附近相关商家，点选即带路并入库</div>
+        </div>
+        <span id="discoveryBadge" class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full shrink-0">实时发现</span>
+      </div>
+      <div id="discoveryList" class="space-y-2"></div>
     </section>
   </main>
 
@@ -531,6 +543,7 @@
     const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const GEO_PROXY_URL = '/api/geo-proxy';
     const MAX_POST_PHOTOS = 6;
     const BROWSE_HISTORY_KEY = 'dama_browse_history_v1';
     const MY_POST_IDS_KEY = 'dama_my_post_ids_v1';
@@ -543,6 +556,8 @@
     let lightboxPhotos = [];
     let lightboxIndex = 0;
     let activePortalKey = 'all';
+    let discoveryTimer = null;
+    let discoverySeq = 0;
 
     // 10 宫格纯代码矢量图标配置（零版权风险、生活高频分类、无金融敏感词）
     const PORTAL_TILES = [
@@ -750,6 +765,192 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
+    // 搜索词口语清洗（如“想吃猪脚饭”“我想找理发店”“哪里有修车” -> “猪脚饭”“理发店”“修车”）
+    function cleanSearchIntent(rawKw) {
+      let q = String(rawKw || '').trim();
+      if (!q) return '';
+      q = q
+        .replace(/^(我想找|我要找|想找|想吃|我想吃|想喝|想修|想剪|找一下|帮我找|哪里有|附近有|附近|请问|有没有)+/gi, '')
+        .replace(/(在哪里|怎么去|推荐|一下|吧|呀|呢)+$/gi, '')
+        .trim();
+      return q || String(rawKw || '').trim();
+    }
+
+    // 推断行业标签
+    function inferIndustryTag(text) {
+      const s = String(text || '').toLowerCase();
+      if (/klinik|poliklinik|clinic|dental|pharmacy|诊所|牙科|药房|医疗|养生/.test(s)) return '便民医疗';
+      if (/hair|salon|barber|beauty|spa|理发|美发|美容|剪发|按摩/.test(s)) return '美容美发';
+      if (/car|auto|workshop|bengkel|tyre|tire|aircond|修车|汽车|洗车|轮胎|冷气|维修|水电|搬家/.test(s)) return '生活服务';
+      return '本地美食';
+    }
+
+    // 当本地搜索结果较少（< 3条）时，自动调用 /api/geo-proxy 检索附近真实商家
+    function scheduleSmartDiscovery(rawKeyword, cityVal, localMatchCount) {
+      const sec = document.getElementById('smartDiscoverySection');
+      const listEl = document.getElementById('discoveryList');
+      clearTimeout(discoveryTimer);
+
+      const coreQuery = cleanSearchIntent(rawKeyword);
+      if (!coreQuery || coreQuery.length < 1 || localMatchCount >= 3) {
+        if (sec) sec.classList.add('hidden');
+        return;
+      }
+
+      const seq = ++discoverySeq;
+      discoveryTimer = setTimeout(async () => {
+        if (seq !== discoverySeq) return;
+        const t = I18N[currentLang];
+        if (sec) sec.classList.remove('hidden');
+        if (listEl) {
+          listEl.innerHTML = `<div class="text-center py-4 text-xs text-amber-700">${t.discoverySearching}</div>`;
+        }
+
+        const regionObj = MY_REGIONS.find(r => r.value === cityVal) || null;
+        const areaText = (cityVal && cityVal !== '全马')
+          ? getRegionDisplayName(cityVal, 'en')
+          : 'Malaysia';
+        const fullTextQuery = `${coreQuery} ${areaText}, Malaysia`;
+
+        try {
+          const res = await fetch(GEO_PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'places_search',
+              textQuery: fullTextQuery,
+              languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+              regionCode: 'MY',
+              maxResultCount: 5,
+              ...(nearbyUserCoords ? {
+                lat: nearbyUserCoords.lat,
+                lng: nearbyUserCoords.lng,
+                radius: 25000.0
+              } : (regionObj && regionObj.lat && regionObj.lng ? {
+                lat: regionObj.lat,
+                lng: regionObj.lng,
+                radius: 25000.0
+              } : {}))
+            })
+          });
+
+          if (seq !== discoverySeq) return;
+          const data = res.ok ? await res.json() : null;
+          const places = Array.isArray(data?.places) ? data.places : [];
+
+          if (places.length === 0) {
+            if (listEl) {
+              listEl.innerHTML = `<div class="text-center py-3 text-xs text-gray-400">${t.discoveryEmpty}</div>`;
+            }
+            return;
+          }
+
+          window._discoveredPlacesCache = places.map((pl, idx) => {
+            const pLat = pl.location?.latitude;
+            const pLng = pl.location?.longitude;
+            const name = pl.displayName?.text || coreQuery;
+            const addr = pl.formattedAddress || areaText;
+            const distKm = (nearbyUserCoords && typeof pLat === 'number' && typeof pLng === 'number')
+              ? calcDistanceKm(nearbyUserCoords.lat, nearbyUserCoords.lng, pLat, pLng)
+              : null;
+            return {
+              idx,
+              name,
+              addr,
+              lat: typeof pLat === 'number' ? pLat : (regionObj?.lat || 5.4141),
+              lng: typeof pLng === 'number' ? pLng : (regionObj?.lng || 100.3288),
+              city: (cityVal && cityVal !== '全马') ? cityVal : (regionObj?.value || '全马'),
+              distKm
+            };
+          });
+
+          if (listEl) {
+            listEl.innerHTML = window._discoveredPlacesCache.map(item => {
+              const distText = typeof item.distKm === 'number' ? ` · ${item.distKm.toFixed(1)} km` : '';
+              const gmapQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.addr)}`;
+              return `
+                <div class="bg-amber-50/50 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
+                  <div onclick="handleDiscoverySelect(${item.idx})" class="min-w-0 flex-1 cursor-pointer">
+                    <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
+                    <div class="text-[11px] text-gray-500 truncate mt-0.5">📍 ${item.addr}${distText}</div>
+                    <div class="text-[10px] text-amber-700 font-semibold mt-1">${t.discoveryActionHint}</div>
+                  </div>
+                  <div class="flex flex-col gap-1 shrink-0">
+                    <button type="button" onclick="handleDiscoverySelect(${item.idx})"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-2xs transition">
+                      ${t.discoveryNavBtn}
+                    </button>
+                    <a href="${gmapQueryUrl}" target="_blank" rel="noopener noreferrer"
+                       class="bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 text-[10px] font-bold px-2 py-1 rounded-lg text-center transition">
+                      Google Map
+                    </a>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        } catch (err) {
+          if (seq === discoverySeq && listEl) {
+            listEl.innerHTML = `<div class="text-center py-3 text-xs text-gray-400">${t.discoveryEmpty}</div>`;
+          }
+        }
+      }, 380);
+    }
+
+    // 点击推荐商家：自动沉淀进 Supabase posts 表并跳转站内导航 /map.html
+    async function handleDiscoverySelect(idx) {
+      const list = window._discoveredPlacesCache || [];
+      const item = list[idx];
+      if (!item) return;
+
+      const t = I18N[currentLang];
+      const indTag = inferIndustryTag(`${item.name} ${item.addr} ${document.getElementById('searchInput')?.value || ''}`);
+      const fullTitle = `【收录商户·${indTag}】${item.name}`;
+      const packedDesc = `📍 地址：${item.addr}\n由用户搜索自动收录至大马吉通本地目录\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`;
+
+      const alreadyExists = allPosts.some(p =>
+        String(p.title || '').toLowerCase().includes(item.name.toLowerCase()) &&
+        String(p.description || '').toLowerCase().includes(item.addr.toLowerCase().slice(0, 24))
+      );
+
+      if (!alreadyExists) {
+        try {
+          const [tZh, tEn, tMs] = await Promise.all([
+            translateSnippet(fullTitle, 'zh'),
+            translateSnippet(fullTitle, 'en'),
+            translateSnippet(fullTitle, 'ms')
+          ]);
+          const { data: inserted } = await supabaseClient.from('posts').insert([{
+            category: '本地优惠',
+            city: item.city || '全马',
+            title: fullTitle,
+            title_zh: tZh || fullTitle,
+            title_en: tEn || fullTitle,
+            title_ms: tMs || fullTitle,
+            price: t.defaultStorePrice,
+            price_zh: '到店咨询 / 实惠价',
+            price_en: 'Visit Store',
+            price_ms: 'Rujuk Kedai',
+            whatsapp: '601125490636',
+            description: packedDesc,
+            desc_zh: packedDesc,
+            desc_en: packedDesc,
+            desc_ms: packedDesc,
+            image_url: null,
+            is_pinned: false
+          }]).select('*');
+
+          if (inserted && inserted[0]) {
+            allPosts.unshift(inserted[0]);
+            recordBrowseHistory(inserted[0].id);
+          }
+        } catch (_) {}
+      }
+
+      const destQuery = `${item.name}, ${item.addr}`;
+      window.location.href = `/map.html?dest=${encodeURIComponent(destQuery)}&lat=${item.lat}&lng=${item.lng}`;
+    }
+
     function locateForNearbyBiz() {
       const t = I18N[currentLang];
       const btn = document.getElementById('bizLocateBtn');
@@ -863,7 +1064,8 @@
     ];
 
     function expandSearchTerms(rawKeyword) {
-      const kw = (rawKeyword || '').trim().toLowerCase();
+      const cleaned = cleanSearchIntent(rawKeyword);
+      const kw = (cleaned || rawKeyword || '').trim().toLowerCase();
       if (!kw) return [];
       const terms = new Set([kw]);
       for (const group of SEARCH_SYNONYM_GROUPS) {
@@ -1037,6 +1239,7 @@
         bigJobTitle: '招聘信息',
         bigJobSub: '优质职位 岗位多多',
         hotCityLabel: '热门：',
+        quickCities: { all: '全马', penang: '槟城·威省', ipoh: '怡保 Ipoh', kl: '吉隆坡 KL', selangor: '雪兰莪', jb: '新山 JB' },
         resetBtn: '重置',
         backHomeBtn: '← 返回首页',
         idxForumTitle: '大马吹水站',
@@ -1103,6 +1306,14 @@
         bizGpsUnsupported: '📍 当前设备不支持定位',
         bizLocateBtn: '📍 定位附近',
         bizLocatedBtn: '✅ 已定位',
+        discoveryTitle: '✨ 附近实时推荐 · 点击导航并自动收录',
+        discoverySub: '本地库暂无足够匹配时，自动检索附近相关商家，点选即带路并沉淀入库',
+        discoveryBadge: '实时发现',
+        discoverySearching: '正在为你检索附近相关商家...',
+        discoveryEmpty: '附近暂未检索到相关店面，可点底部“+”免费发布需求或换个关键词试试。',
+        discoveryActionHint: '点选：自动沉淀至平台并开启导航',
+        discoveryNavBtn: '🧭 导航',
+        defaultStorePrice: '到店咨询 / 实惠价',
         catHouse: '找房子',
         catJob: '找工作',
         catSecond: '二手闲置',
@@ -1111,7 +1322,7 @@
         countUnit: '条',
         freePostBtn: '📝 免费发帖',
         loading: '正在连接云端数据库加载最新动态...',
-        emptyList: '当前筛选条件下暂无信息，可点“重置”或点底部“+”发布！',
+        emptyList: '当前筛选条件下暂无信息，下方为你实时检索附近相关商家：',
         pinnedTag: '置顶',
         pinnedPrefix: '置顶 · ',
         publishedSuffix: '发布',
@@ -1199,6 +1410,7 @@
         bigJobTitle: 'Jobs',
         bigJobSub: 'Quality roles & fast hiring',
         hotCityLabel: 'Hot:',
+        quickCities: { all: 'All MY', penang: 'Penang', ipoh: 'Ipoh', kl: 'KL', selangor: 'Selangor', jb: 'Johor Bahru' },
         resetBtn: 'Reset',
         backHomeBtn: '← Home',
         idxForumTitle: 'MY Forum',
@@ -1265,6 +1477,14 @@
         bizGpsUnsupported: '📍 GPS not supported on this device',
         bizLocateBtn: '📍 Nearby',
         bizLocatedBtn: '✅ Located',
+        discoveryTitle: '✨ Nearby Live Picks · Navigate & Auto-Save',
+        discoverySub: 'Few local matches yet — finding nearby places. Tap to navigate & save to directory.',
+        discoveryBadge: 'Live Discovery',
+        discoverySearching: 'Searching nearby places for you...',
+        discoveryEmpty: 'No nearby places found for this query. Try another keyword or tap "+".',
+        discoveryActionHint: 'Tap: Save to directory & open navigation',
+        discoveryNavBtn: '🧭 Route',
+        defaultStorePrice: 'Visit Store',
         catHouse: 'Property',
         catJob: 'Jobs',
         catSecond: 'Preloved',
@@ -1273,7 +1493,7 @@
         countUnit: 'posts',
         freePostBtn: '📝 Post Free Ad',
         loading: 'Loading latest posts from cloud...',
-        emptyList: 'No posts match filters. Tap Reset or "+" to post!',
+        emptyList: 'Few local matches yet — showing nearby places below:',
         pinnedTag: 'TOP',
         pinnedPrefix: 'Featured · ',
         publishedSuffix: '',
@@ -1361,6 +1581,7 @@
         bigJobTitle: 'Kerja Kosong',
         bigJobSub: 'Jawatan menarik & terus mohon',
         hotCityLabel: 'Hot:',
+        quickCities: { all: 'Semua MY', penang: 'Penang', ipoh: 'Ipoh', kl: 'KL', selangor: 'Selangor', jb: 'Johor Bahru' },
         resetBtn: 'Reset',
         backHomeBtn: '← Utama',
         idxForumTitle: 'Forum MY',
@@ -1427,6 +1648,14 @@
         bizGpsUnsupported: '📍 GPS tidak disokong pada peranti ini',
         bizLocateBtn: '📍 Berdekatan',
         bizLocatedBtn: '✅ Lokasi Aktif',
+        discoveryTitle: '✨ Cadangan Berdekatan · Pandu & Simpan',
+        discoverySub: 'Carian tempatan terhad — mencari lokasi berdekatan untuk pandu arah & simpan.',
+        discoveryBadge: 'Penemuan Langsung',
+        discoverySearching: 'Mencari lokasi berdekatan untuk anda...',
+        discoveryEmpty: 'Tiada lokasi berdekatan ditemui. Cuba kata kunci lain atau tekan "+".',
+        discoveryActionHint: 'Tekan: Simpan direktori & buka navigasi',
+        discoveryNavBtn: '🧭 Laluan',
+        defaultStorePrice: 'Rujuk Kedai',
         catHouse: 'Rumah Sewa',
         catJob: 'Kerja Kosong',
         catSecond: 'Terpakai',
@@ -1435,7 +1664,7 @@
         countUnit: 'iklan',
         freePostBtn: '📝 Iklan Percuma',
         loading: 'Memuatkan iklan terkini...',
-        emptyList: 'Tiada iklan sepadan. Tekan Reset atau "+" untuk muat naik!',
+        emptyList: 'Tiada iklan sepadan di sini — lihat cadangan berdekatan di bawah:',
         pinnedTag: 'PILIHAN',
         pinnedPrefix: 'Taja · ',
         publishedSuffix: '',
@@ -1709,6 +1938,17 @@
 
       const hotLabel = document.getElementById('hotCityLabel');
       if (hotLabel) hotLabel.innerText = t.hotCityLabel;
+
+      if (t.quickCities) {
+        Object.keys(t.quickCities).forEach(k => {
+          const el = document.getElementById(`qCity-${k}`);
+          if (el) el.innerText = t.quickCities[k];
+        });
+      }
+
+      if (document.getElementById('discoveryTitle')) document.getElementById('discoveryTitle').innerText = t.discoveryTitle;
+      if (document.getElementById('discoverySub')) document.getElementById('discoverySub').innerText = t.discoverySub;
+      if (document.getElementById('discoveryBadge')) document.getElementById('discoveryBadge').innerText = t.discoveryBadge;
 
       const resetBtn = document.getElementById('resetFilterBtn');
       if (resetBtn) resetBtn.innerText = t.resetBtn;
@@ -2346,11 +2586,14 @@
       document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
 
       if (filtered.length === 0) {
-        listEl.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
+        const emptyMsg = rawKeyword ? t.emptyList : t.emptyList;
+        listEl.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm shadow-sm">${emptyMsg}</div>`;
+        scheduleSmartDiscovery(rawKeyword, city, 0);
         return;
       }
 
       listEl.innerHTML = filtered.map(createPostCardHTML).join('');
+      scheduleSmartDiscovery(rawKeyword, city, filtered.length);
     }
 
     function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
