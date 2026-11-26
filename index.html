@@ -67,12 +67,15 @@
 
   <!-- 悬浮胶囊搜索框 + 三项快捷入口条（浏览记录 / 我的收藏 / 我的帖子） -->
   <div class="relative z-20 -mt-5 mx-3 bg-white rounded-2xl shadow-md border border-gray-100 p-3">
-    <div class="relative mb-2.5">
-      <input type="text" id="searchInput" oninput="onSearchInput()" placeholder="找房子、找工作、找二手、搜商家..."
-             class="w-full bg-gray-100 text-gray-800 text-xs rounded-full pl-9 pr-8 py-2.5 focus:bg-white focus:ring-2 focus:ring-red-500/30 focus:outline-none transition font-medium">
-      <span class="absolute left-3.5 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
-      <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
-    </div>
+    <form onsubmit="handleSearchSubmit(event)" class="relative mb-2.5 flex items-center gap-1.5">
+      <div class="relative flex-1">
+        <input type="search" id="searchInput" enterkeyhint="search" oninput="onSearchInput()" placeholder="找房子、找工作、找二手、搜商家..."
+               class="w-full bg-gray-100 text-gray-800 text-xs rounded-full pl-9 pr-8 py-2.5 focus:bg-white focus:ring-2 focus:ring-red-500/30 focus:outline-none transition font-medium">
+        <span class="absolute left-3.5 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
+        <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
+      </div>
+      <button type="submit" id="searchSubmitBtn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-full shrink-0 shadow-2xs transition">搜索</button>
+    </form>
 
     <div class="grid grid-cols-3 divide-x divide-gray-100 text-center text-xs font-bold text-gray-700 pt-0.5">
       <button type="button" onclick="switchTab('history')" class="flex items-center justify-center gap-1.5 py-1 hover:text-red-600 transition">
@@ -92,6 +95,18 @@
 
   <!-- 主页面内容 -->
   <main id="mainTab" class="flex-1 pb-6">
+
+    <!-- 搜索兜底：附近实时推荐 + 点击自动导航并沉淀入库（置顶在搜索结果上方，手机端不被键盘遮挡） -->
+    <section id="smartDiscoverySection" class="hidden mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-md border-2 border-amber-300 space-y-2.5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div id="discoveryTitle" class="font-black text-xs text-amber-950 truncate">✨ 附近实时推荐 · 点击导航并自动收录</div>
+          <div id="discoverySub" class="text-[10px] text-amber-700 truncate">本地库暂无匹配时，自动检索附近相关商家，点选即带路并入库</div>
+        </div>
+        <span id="discoveryBadge" class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full shrink-0">实时发现</span>
+      </div>
+      <div id="discoveryList" class="space-y-2"></div>
+    </section>
 
     <!-- 门户视觉核心区：双大横卡 + 10 宫格矢量图标导航 -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 space-y-3.5">
@@ -319,18 +334,6 @@
     <!-- 云端实时帖子列表 -->
     <section class="px-3 space-y-2.5" id="postList">
       <div id="loadingText" class="text-center py-12 text-gray-400 text-sm">正在连接云端数据库加载最新动态...</div>
-    </section>
-
-    <!-- 搜索兜底：附近实时推荐 + 点击自动导航并沉淀入库 -->
-    <section id="smartDiscoverySection" class="hidden mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-amber-200 space-y-2.5">
-      <div class="flex items-center justify-between gap-2">
-        <div class="min-w-0">
-          <div id="discoveryTitle" class="font-black text-xs text-amber-950 truncate">✨ 附近实时推荐 · 点击导航并自动收录</div>
-          <div id="discoverySub" class="text-[10px] text-amber-700 truncate">本地库暂无匹配时，自动为你检索附近相关商家，点选即带路并入库</div>
-        </div>
-        <span id="discoveryBadge" class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full shrink-0">实时发现</span>
-      </div>
-      <div id="discoveryList" class="space-y-2"></div>
     </section>
   </main>
 
@@ -765,7 +768,6 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // 搜索词口语清洗（如“想吃猪脚饭”“我想找理发店”“哪里有修车” -> “猪脚饭”“理发店”“修车”）
     function cleanSearchIntent(rawKw) {
       let q = String(rawKw || '').trim();
       if (!q) return '';
@@ -776,7 +778,6 @@
       return q || String(rawKw || '').trim();
     }
 
-    // 推断行业标签
     function inferIndustryTag(text) {
       const s = String(text || '').toLowerCase();
       if (/klinik|poliklinik|clinic|dental|pharmacy|诊所|牙科|药房|医疗|养生/.test(s)) return '便民医疗';
@@ -785,8 +786,29 @@
       return '本地美食';
     }
 
-    // 当本地搜索结果较少（< 3条）时，自动调用 /api/geo-proxy 检索附近真实商家
-    function scheduleSmartDiscovery(rawKeyword, cityVal, localMatchCount) {
+    async function fallbackNominatimPlaces(coreQuery, areaText, regionObj) {
+      try {
+        const q = `${coreQuery} ${areaText} Malaysia`.trim();
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=my&limit=5&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const rows = await res.json();
+        if (!Array.isArray(rows)) return [];
+        return rows.map(r => {
+          const pLat = parseFloat(r.lat);
+          const pLng = parseFloat(r.lon);
+          if (Number.isNaN(pLat) || Number.isNaN(pLng)) return null;
+          const parts = String(r.display_name || '').split(',');
+          const name = (r.name || parts[0] || coreQuery).trim();
+          const addr = parts.slice(0, 4).join(',').trim() || areaText;
+          return { name, addr, lat: pLat, lng: pLng };
+        }).filter(Boolean);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function scheduleSmartDiscovery(rawKeyword, cityVal, localMatchCount, immediate = false) {
       const sec = document.getElementById('smartDiscoverySection');
       const listEl = document.getElementById('discoveryList');
       clearTimeout(discoveryTimer);
@@ -803,7 +825,7 @@
         const t = I18N[currentLang];
         if (sec) sec.classList.remove('hidden');
         if (listEl) {
-          listEl.innerHTML = `<div class="text-center py-4 text-xs text-amber-700">${t.discoverySearching}</div>`;
+          listEl.innerHTML = `<div class="text-center py-4 text-xs text-amber-700 font-semibold animate-pulse">${t.discoverySearching}</div>`;
         }
 
         const regionObj = MY_REGIONS.find(r => r.value === cityVal) || null;
@@ -811,6 +833,8 @@
           ? getRegionDisplayName(cityVal, 'en')
           : 'Malaysia';
         const fullTextQuery = `${coreQuery} ${areaText}, Malaysia`;
+
+        let normalizedList = [];
 
         try {
           const res = await fetch(GEO_PROXY_URL, {
@@ -834,70 +858,82 @@
             })
           });
 
-          if (seq !== discoverySeq) return;
-          const data = res.ok ? await res.json() : null;
-          const places = Array.isArray(data?.places) ? data.places : [];
-
-          if (places.length === 0) {
-            if (listEl) {
-              listEl.innerHTML = `<div class="text-center py-3 text-xs text-gray-400">${t.discoveryEmpty}</div>`;
-            }
-            return;
+          if (res.ok) {
+            const data = await res.json();
+            const places = Array.isArray(data?.places) ? data.places : [];
+            normalizedList = places.map(pl => {
+              const pLat = pl.location?.latitude;
+              const pLng = pl.location?.longitude;
+              const name = pl.displayName?.text || coreQuery;
+              const addr = pl.formattedAddress || areaText;
+              return {
+                name,
+                addr,
+                lat: typeof pLat === 'number' ? pLat : (regionObj?.lat || 5.4141),
+                lng: typeof pLng === 'number' ? pLng : (regionObj?.lng || 100.3288)
+              };
+            });
           }
+        } catch (_) {}
 
-          window._discoveredPlacesCache = places.map((pl, idx) => {
-            const pLat = pl.location?.latitude;
-            const pLng = pl.location?.longitude;
-            const name = pl.displayName?.text || coreQuery;
-            const addr = pl.formattedAddress || areaText;
-            const distKm = (nearbyUserCoords && typeof pLat === 'number' && typeof pLng === 'number')
-              ? calcDistanceKm(nearbyUserCoords.lat, nearbyUserCoords.lng, pLat, pLng)
-              : null;
-            return {
-              idx,
-              name,
-              addr,
-              lat: typeof pLat === 'number' ? pLat : (regionObj?.lat || 5.4141),
-              lng: typeof pLng === 'number' ? pLng : (regionObj?.lng || 100.3288),
-              city: (cityVal && cityVal !== '全马') ? cityVal : (regionObj?.value || '全马'),
-              distKm
-            };
-          });
+        if (seq !== discoverySeq) return;
 
+        if (normalizedList.length === 0) {
+          normalizedList = await fallbackNominatimPlaces(coreQuery, areaText, regionObj);
+        }
+
+        if (seq !== discoverySeq) return;
+
+        if (normalizedList.length === 0) {
           if (listEl) {
-            listEl.innerHTML = window._discoveredPlacesCache.map(item => {
-              const distText = typeof item.distKm === 'number' ? ` · ${item.distKm.toFixed(1)} km` : '';
-              const gmapQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.addr)}`;
-              return `
-                <div class="bg-amber-50/50 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
-                  <div onclick="handleDiscoverySelect(${item.idx})" class="min-w-0 flex-1 cursor-pointer">
-                    <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
-                    <div class="text-[11px] text-gray-500 truncate mt-0.5">📍 ${item.addr}${distText}</div>
-                    <div class="text-[10px] text-amber-700 font-semibold mt-1">${t.discoveryActionHint}</div>
-                  </div>
-                  <div class="flex flex-col gap-1 shrink-0">
-                    <button type="button" onclick="handleDiscoverySelect(${item.idx})"
-                            class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-2xs transition">
-                      ${t.discoveryNavBtn}
-                    </button>
-                    <a href="${gmapQueryUrl}" target="_blank" rel="noopener noreferrer"
-                       class="bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 text-[10px] font-bold px-2 py-1 rounded-lg text-center transition">
-                      Google Map
-                    </a>
-                  </div>
-                </div>
-              `;
-            }).join('');
-          }
-        } catch (err) {
-          if (seq === discoverySeq && listEl) {
             listEl.innerHTML = `<div class="text-center py-3 text-xs text-gray-400">${t.discoveryEmpty}</div>`;
           }
+          return;
         }
-      }, 380);
+
+        window._discoveredPlacesCache = normalizedList.map((item, idx) => {
+          const distKm = (nearbyUserCoords && typeof item.lat === 'number' && typeof item.lng === 'number')
+            ? calcDistanceKm(nearbyUserCoords.lat, nearbyUserCoords.lng, item.lat, item.lng)
+            : null;
+          return {
+            idx,
+            name: item.name,
+            addr: item.addr,
+            lat: item.lat,
+            lng: item.lng,
+            city: (cityVal && cityVal !== '全马') ? cityVal : (regionObj?.value || '全马'),
+            distKm
+          };
+        });
+
+        if (listEl) {
+          listEl.innerHTML = window._discoveredPlacesCache.map(item => {
+            const distText = typeof item.distKm === 'number' ? ` · ${item.distKm.toFixed(1)} km` : '';
+            const gmapQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.addr)}`;
+            return `
+              <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
+                <div onclick="handleDiscoverySelect(${item.idx})" class="min-w-0 flex-1 cursor-pointer">
+                  <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
+                  <div class="text-[11px] text-gray-500 truncate mt-0.5">📍 ${item.addr}${distText}</div>
+                  <div class="text-[10px] text-amber-700 font-semibold mt-1">${t.discoveryActionHint}</div>
+                </div>
+                <div class="flex flex-col gap-1 shrink-0">
+                  <button type="button" onclick="handleDiscoverySelect(${item.idx})"
+                          class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-2xs transition">
+                    ${t.discoveryNavBtn}
+                  </button>
+                  <a href="${gmapQueryUrl}" target="_blank" rel="noopener noreferrer"
+                     class="bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 text-[10px] font-bold px-2 py-1 rounded-lg text-center transition">
+                    Google Map
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }, immediate ? 50 : 350);
     }
 
-    // 点击推荐商家：自动沉淀进 Supabase posts 表并跳转站内导航 /map.html
     async function handleDiscoverySelect(idx) {
       const list = window._discoveredPlacesCache || [];
       const item = list[idx];
@@ -1163,10 +1199,21 @@
       renderPosts();
     }
 
+    function handleSearchSubmit(e) {
+      if (e) e.preventDefault();
+      const inp = document.getElementById('searchInput');
+      if (inp) inp.blur();
+      renderPosts(true);
+      const disc = document.getElementById('smartDiscoverySection');
+      if (disc && !disc.classList.contains('hidden')) {
+        disc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
     function onSearchInput() {
       const val = document.getElementById('searchInput').value;
       document.getElementById('clearSearchBtn').classList.toggle('hidden', !val.trim());
-      renderPosts();
+      renderPosts(false);
     }
 
     function clearSearchInput() {
@@ -1231,6 +1278,7 @@
         heroHeadline: '全马华人本地生活 · 租房求职商家直通',
         heroSub: '零佣金免费发布 · 一键导航到店 · WhatsApp 直聊',
         searchPlaceholder: '找房子、找工作、找二手、搜商家...',
+        searchBtnText: '搜索',
         quickHistory: '浏览记录',
         quickFav: '我的收藏',
         quickMyPosts: '我的帖子',
@@ -1322,7 +1370,7 @@
         countUnit: '条',
         freePostBtn: '📝 免费发帖',
         loading: '正在连接云端数据库加载最新动态...',
-        emptyList: '当前筛选条件下暂无信息，下方为你实时检索附近相关商家：',
+        emptyList: '当前筛选条件下暂无信息，上方已为你实时检索附近相关商家。',
         pinnedTag: '置顶',
         pinnedPrefix: '置顶 · ',
         publishedSuffix: '发布',
@@ -1402,6 +1450,7 @@
         heroHeadline: 'Malaysia Local Life · Rentals, Jobs & Merchants',
         heroSub: '0% Commission · Direct Navigation · Instant WhatsApp',
         searchPlaceholder: 'Search rentals, jobs, preloved, merchants...',
+        searchBtnText: 'Search',
         quickHistory: 'History',
         quickFav: 'Saved',
         quickMyPosts: 'My Posts',
@@ -1493,7 +1542,7 @@
         countUnit: 'posts',
         freePostBtn: '📝 Post Free Ad',
         loading: 'Loading latest posts from cloud...',
-        emptyList: 'Few local matches yet — showing nearby places below:',
+        emptyList: 'No local matches yet — see live nearby picks above.',
         pinnedTag: 'TOP',
         pinnedPrefix: 'Featured · ',
         publishedSuffix: '',
@@ -1573,6 +1622,7 @@
         heroHeadline: 'Komuniti Tempatan MY · Sewa, Kerja & Peniaga',
         heroSub: '0% Komisen · Navigasi Terus · WhatsApp Pantas',
         searchPlaceholder: 'Cari rumah sewa, kerja, terpakai, kedai...',
+        searchBtnText: 'Cari',
         quickHistory: 'Rekod',
         quickFav: 'Simpanan',
         quickMyPosts: 'Iklan Saya',
@@ -1664,7 +1714,7 @@
         countUnit: 'iklan',
         freePostBtn: '📝 Iklan Percuma',
         loading: 'Memuatkan iklan terkini...',
-        emptyList: 'Tiada iklan sepadan di sini — lihat cadangan berdekatan di bawah:',
+        emptyList: 'Tiada iklan sepadan — lihat cadangan berdekatan di atas.',
         pinnedTag: 'PILIHAN',
         pinnedPrefix: 'Taja · ',
         publishedSuffix: '',
@@ -1946,6 +1996,7 @@
         });
       }
 
+      if (document.getElementById('searchSubmitBtn')) document.getElementById('searchSubmitBtn').innerText = t.searchBtnText;
       if (document.getElementById('discoveryTitle')) document.getElementById('discoveryTitle').innerText = t.discoveryTitle;
       if (document.getElementById('discoverySub')) document.getElementById('discoverySub').innerText = t.discoverySub;
       if (document.getElementById('discoveryBadge')) document.getElementById('discoveryBadge').innerText = t.discoveryBadge;
@@ -2426,7 +2477,7 @@
       document.getElementById('lightboxModal').classList.add('hidden');
     }
 
-    function renderPosts() {
+    function renderPosts(immediateDiscovery = false) {
       const t = I18N[currentLang];
       const city = document.getElementById('cityFilter').value;
       const rawKeyword = document.getElementById('searchInput').value.trim();
@@ -2586,14 +2637,13 @@
       document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
 
       if (filtered.length === 0) {
-        const emptyMsg = rawKeyword ? t.emptyList : t.emptyList;
-        listEl.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm shadow-sm">${emptyMsg}</div>`;
-        scheduleSmartDiscovery(rawKeyword, city, 0);
+        listEl.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
+        scheduleSmartDiscovery(rawKeyword, city, 0, immediateDiscovery);
         return;
       }
 
       listEl.innerHTML = filtered.map(createPostCardHTML).join('');
-      scheduleSmartDiscovery(rawKeyword, city, filtered.length);
+      scheduleSmartDiscovery(rawKeyword, city, filtered.length, immediateDiscovery);
     }
 
     function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
