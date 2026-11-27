@@ -34,9 +34,9 @@
       </button>
     </div>
 
-    <h1 id="pageTitle" class="font-black text-lg tracking-tight">🚦 新马关卡实时路况监控</h1>
+    <h1 id="pageTitle" class="font-black text-lg tracking-tight">🚦 新马关卡实时路况与堵车预计</h1>
     <p id="pageSub" class="text-[11px] text-emerald-100 mt-0.5">
-      兀兰长堤 · 大士第二通道 · 官方源每 3–5 分钟更新一帧
+      兀兰 & 大士双向预计车程 · 实时关卡抓拍 · 缩时回放
     </p>
   </header>
 
@@ -56,23 +56,18 @@
     </div>
   </section>
 
-  <!-- 通道实时拥堵评估看板 -->
-  <section class="mx-3 mt-2.5 grid grid-cols-2 gap-2 text-xs">
-    <div class="bg-white rounded-2xl p-3 shadow-xs border border-gray-100">
-      <div class="flex items-center justify-between mb-1">
-        <span id="woodlandsCardName" class="font-black text-gray-800 text-[11px]">兀兰长堤 Woodlands</span>
-        <span id="woodlandsBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">评估中</span>
-      </div>
-      <div id="woodlandsEstText" class="text-[11px] text-gray-600 font-semibold">--</div>
+  <!-- 4 向路段实时堵车耗时看板（类似 Checkpoint.sg 分段预计分钟数） -->
+  <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-xs border border-gray-100 space-y-2.5">
+    <div class="flex items-center justify-between gap-2">
+      <span id="estBoardTitle" class="font-black text-xs text-gray-900">⏱️ 各路段预计通行时间（含当前路况）</span>
+      <span id="estSourceBadge" class="text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">实时测算</span>
     </div>
-
-    <div class="bg-white rounded-2xl p-3 shadow-xs border border-gray-100">
-      <div class="flex items-center justify-between mb-1">
-        <span id="tuasCardName" class="font-black text-gray-800 text-[11px]">大士通道 Tuas</span>
-        <span id="tuasBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">评估中</span>
-      </div>
-      <div id="tuasEstText" class="text-[11px] text-gray-600 font-semibold">--</div>
+    <div id="routeEstimatesGrid" class="grid grid-cols-1 gap-2">
+      <div class="text-center py-4 text-xs text-gray-400">正在测算各路段实时堵车时间...</div>
     </div>
+    <p id="estDisclaimerText" class="text-[10px] text-gray-400 leading-snug">
+      * 预计时间为关卡桥梁与引道车辆通行耗时（不含大楼内人工柜台查验）。
+    </p>
   </section>
 
   <!-- 通道切换 Tab -->
@@ -125,11 +120,20 @@
         backHome: '← 返回首页',
         refresh: '🔄 刷新',
         refreshing: '⏳ 同步中...',
-        pageTitle: '🚦 新马关卡实时路况监控',
-        pageSub: '兀兰长堤 · 大士第二通道 · 官方源每 3–5 分钟更新一帧',
+        pageTitle: '🚦 新马关卡实时路况与堵车预计',
+        pageSub: '兀兰 & 大士双向预计车程 · 实时关卡抓拍 · 缩时回放',
         rateLabel: '实时参考汇率',
         autoCountdownLabel: '自动检测',
         syncLabel: '最近检测',
+        estBoardTitle: '⏱️ 各路段预计通行时间（含当前路况）',
+        estSourceLive: 'Google 实时路况',
+        estSourceModel: '时段参考预测',
+        estDisclaimer: '* 预计时间为关卡桥梁与引道车辆通行耗时（不含大楼内人工柜台查验）。',
+        minUnit: '分钟',
+        delayLabel: (m) => m > 0 ? `比畅通多堵 +${m} 分钟` : '目前基本畅通',
+        levelHeavy: '严重拥堵 🔴',
+        levelModerate: '车多缓慢 🟡',
+        levelSmooth: '一路畅通 🟢',
         loading: '正在获取新马关卡最新路况...',
         syncFailed: '同步失败',
         timeoutMsg: '路况接口暂时超时，请点击右上角“刷新”再试。',
@@ -141,31 +145,29 @@
         timelapsePlay: '▶️ 车流缩时回放',
         timelapseWait: '⏳ 等待下一帧积累',
         timelapseStop: '⏹️ 停止回放',
-        frameCountLabel: (n) => n > 1 ? `已缓存 ${n} 帧 · 可回放` : `已同步最新帧（每3-5分更新）`,
+        frameCountLabel: (n) => n > 1 ? `已缓存 ${n} 帧 · 可回放` : `已同步最新帧（官方约3–5分更新）`,
         imgFallback: '当前画面暂时无法加载，请点右上角刷新',
         noImg: '暂无最新抓拍画面，请点击右上角“刷新”重试',
-        linksHeader: '🔗 官方路况与导航入口',
-        woodlandsName: '兀兰长堤 Woodlands',
-        tuasName: '大士通道 Tuas',
-        statusPeak: '高峰车多 🔴',
-        statusModerate: '车流平稳 🟡',
-        statusSmooth: '通行顺畅 🟢',
-        estPeakW: '预计通关约 45–75 分钟',
-        estModW: '预计通关约 25–40 分钟',
-        estSmoothW: '预计通关约 15–25 分钟',
-        estPeakT: '预计通关约 35–55 分钟',
-        estModT: '预计通关约 20–30 分钟',
-        estSmoothT: '预计通关约 10–20 分钟'
+        linksHeader: '🔗 官方路况与导航入口'
       },
       en: {
         backHome: '← Home',
         refresh: '🔄 Refresh',
         refreshing: '⏳ Syncing...',
-        pageTitle: '🚦 SG-MY Causeway Live Monitor',
-        pageSub: 'Woodlands · Tuas · Official LTA feed updates every 3–5 mins',
+        pageTitle: '🚦 SG-MY Causeway Live & Jam ETA',
+        pageSub: '4-Way Bridge Travel Time · Live Cams · Time-Lapse Replay',
         rateLabel: 'Live Exchange Rate',
         autoCountdownLabel: 'Auto Check',
         syncLabel: 'Last Checked',
+        estBoardTitle: '⏱️ Estimated Crossing Time by Segment',
+        estSourceLive: 'Google Live Traffic',
+        estSourceModel: 'Peak-Hour Model',
+        estDisclaimer: '* Estimated vehicle travel time across bridge & approach roads (excludes indoor counter queues).',
+        minUnit: 'mins',
+        delayLabel: (m) => m > 0 ? `+${m} mins delay vs clear` : 'Clear flow right now',
+        levelHeavy: 'Heavy Jam 🔴',
+        levelModerate: 'Slow / Moderate 🟡',
+        levelSmooth: 'Smooth Flow 🟢',
         loading: 'Fetching latest SG-MY checkpoint traffic...',
         syncFailed: 'Sync failed',
         timeoutMsg: 'Traffic feed timed out. Tap Refresh above to try again.',
@@ -177,31 +179,29 @@
         timelapsePlay: '▶️ Time-Lapse Replay',
         timelapseWait: '⏳ Collecting frames',
         timelapseStop: '⏹️ Stop Replay',
-        frameCountLabel: (n) => n > 1 ? `${n} frames cached · Ready` : `Latest frame (updates ~3–5m)`,
+        frameCountLabel: (n) => n > 1 ? `${n} frames cached · Ready` : `Latest frame (LTA updates ~3–5m)`,
         imgFallback: 'Feed temporarily unavailable. Tap Refresh above.',
         noImg: 'No live feed available right now. Tap Refresh to retry.',
-        linksHeader: '🔗 Official Traffic & Navigation',
-        woodlandsName: 'Woodlands Causeway',
-        tuasName: 'Tuas Second Link',
-        statusPeak: 'Heavy Traffic 🔴',
-        statusModerate: 'Moderate Flow 🟡',
-        statusSmooth: 'Smooth Flow 🟢',
-        estPeakW: 'Est. clearance ~45–75 mins',
-        estModW: 'Est. clearance ~25–40 mins',
-        estSmoothW: 'Est. clearance ~15–25 mins',
-        estPeakT: 'Est. clearance ~35–55 mins',
-        estModT: 'Est. clearance ~20–30 mins',
-        estSmoothT: 'Est. clearance ~10–20 mins'
+        linksHeader: '🔗 Official Traffic & Navigation'
       },
       ms: {
         backHome: '← Utama',
         refresh: '🔄 Muat Semula',
         refreshing: '⏳ Menyegerak...',
-        pageTitle: '🚦 Pemantauan Langsung Tambak SG-MY',
-        pageSub: 'Woodlands · Tuas · Kamera rasmi dikemas kini setiap 3–5 min',
+        pageTitle: '🚦 Trafik Langsung & Anggaran Masa Tambak',
+        pageSub: 'Masa Laluan 4 Arah · Kamera Langsung · Main Semula',
         rateLabel: 'Kadar Tukaran Semasa',
         autoCountdownLabel: 'Semak Auto',
         syncLabel: 'Semakan Terakhir',
+        estBoardTitle: '⏱️ Anggaran Masa Perjalanan Mengikut Laluan',
+        estSourceLive: 'Trafik Langsung Google',
+        estSourceModel: 'Anggaran Waktu Puncak',
+        estDisclaimer: '* Anggaran masa kenderaan merentasi jambatan & susur masuk (tidak termasuk barisan kaunter dalam bangunan).',
+        minUnit: 'minit',
+        delayLabel: (m) => m > 0 ? `Lewat +${m} minit berbanding lancar` : 'Aliran lancar sekarang',
+        levelHeavy: 'Sesak Teruk 🔴',
+        levelModerate: 'Perlahan / Sederhana 🟡',
+        levelSmooth: 'Lancar 🟢',
         loading: 'Memuatkan status trafik pusat pemeriksaan...',
         syncFailed: 'Gagal disegerak',
         timeoutMsg: 'Sambungan trafik tamat masa. Tekan Muat Semula untuk cuba lagi.',
@@ -216,18 +216,7 @@
         frameCountLabel: (n) => n > 1 ? `${n} bingkai disimpan · Sedia` : `Bingkai terkini (kemas kini ~3–5m)`,
         imgFallback: 'Paparan sementara tidak tersedia. Tekan Muat Semula.',
         noImg: 'Tiada paparan tersedia buat masa ini. Tekan Muat Semula.',
-        linksHeader: '🔗 Pautan Trafik Rasmi & Navigasi',
-        woodlandsName: 'Tambak Woodlands',
-        tuasName: 'Laluan Kedua Tuas',
-        statusPeak: 'Sesak Teruk 🔴',
-        statusModerate: 'Aliran Sederhana 🟡',
-        statusSmooth: 'Lancar 🟢',
-        estPeakW: 'Anggaran pelepasan ~45–75 min',
-        estModW: 'Anggaran pelepasan ~25–40 min',
-        estSmoothW: 'Anggaran pelepasan ~15–25 min',
-        estPeakT: 'Anggaran pelepasan ~35–55 min',
-        estModT: 'Anggaran pelepasan ~20–30 min',
-        estSmoothT: 'Anggaran pelepasan ~10–20 min'
+        linksHeader: '🔗 Pautan Trafik Rasmi & Navigasi'
       }
     };
 
@@ -236,6 +225,7 @@
 
     let activeCorridor = 'all';
     let latestCameras = [];
+    let latestEstimates = [];
     let latestLinks = [];
     let lastSyncedIso = '';
     let countdownSec = 30;
@@ -247,47 +237,62 @@
       return obj[lang] || obj.zh || obj.en || obj.ms || '';
     }
 
-    function updateCongestionEstimate() {
+    function renderRouteEstimates() {
+      const grid = document.getElementById('routeEstimatesGrid');
+      const srcBadge = document.getElementById('estSourceBadge');
+      if (!grid) return;
       const t = TRAFFIC_I18N[currentTrafficLang];
-      const now = new Date();
-      const sgHour = Number(now.toLocaleString('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', hour12: false }));
-      const sgDay = now.toLocaleString('en-US', { timeZone: 'Asia/Singapore', weekday: 'short' });
-      const isWeekend = sgDay === 'Sat' || sgDay === 'Sun';
 
-      const isPeak = (!isWeekend && ((sgHour >= 6 && sgHour <= 9) || (sgHour >= 17 && sgHour <= 21))) ||
-                     (isWeekend && ((sgHour >= 9 && sgHour <= 13) || (sgHour >= 18 && sgHour <= 22)));
-      const isModerate = (sgHour >= 10 && sgHour <= 16) || (sgHour >= 22 && sgHour <= 23);
+      const filtered = activeCorridor === 'all'
+        ? latestEstimates
+        : latestEstimates.filter(r => r.corridor === activeCorridor);
 
-      const wBadge = document.getElementById('woodlandsBadge');
-      const wEst = document.getElementById('woodlandsEstText');
-      const tBadge = document.getElementById('tuasBadge');
-      const tEst = document.getElementById('tuasEstText');
+      if (!filtered.length) return;
 
-      if (isPeak) {
-        wBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700';
-        wBadge.textContent = t.statusPeak;
-        wEst.textContent = t.estPeakW;
-
-        tBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700';
-        tBadge.textContent = t.statusPeak;
-        tEst.textContent = t.estPeakT;
-      } else if (isModerate) {
-        wBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
-        wBadge.textContent = t.statusModerate;
-        wEst.textContent = t.estModW;
-
-        tBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
-        tBadge.textContent = t.statusModerate;
-        tEst.textContent = t.estModT;
-      } else {
-        wBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
-        wBadge.textContent = t.statusSmooth;
-        wEst.textContent = t.estSmoothW;
-
-        tBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
-        tBadge.textContent = t.statusSmooth;
-        tEst.textContent = t.estSmoothT;
+      const hasGoogleLive = filtered.some(r => r.source === 'google_live');
+      if (srcBadge) {
+        srcBadge.textContent = hasGoogleLive ? t.estSourceLive : t.estSourceModel;
       }
+
+      grid.innerHTML = filtered.map(item => {
+        const titleText = pickLangText(item.title, currentTrafficLang);
+        const segText = pickLangText(item.segment, currentTrafficLang);
+        const isHeavy = item.level === 'heavy';
+        const isMod = item.level === 'moderate';
+
+        const pillClass = isHeavy
+          ? 'bg-rose-100 text-rose-700'
+          : (isMod ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800');
+        const levelLabel = isHeavy ? t.levelHeavy : (isMod ? t.levelModerate : t.levelSmooth);
+        const barColor = isHeavy ? 'bg-rose-500' : (isMod ? 'bg-amber-500' : 'bg-emerald-500');
+        const pct = Math.min(100, Math.max(18, Math.round((item.estMins / 60) * 100)));
+
+        return `
+          <div class="rounded-xl border border-gray-100 bg-gray-50/70 p-2.5 space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-black text-xs text-gray-900 truncate">${titleText}</div>
+                <div class="text-[10px] text-gray-500 truncate">${segText}</div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="font-black text-base text-slate-900 leading-none">
+                  ${item.estMins} <span class="text-[10px] font-bold text-gray-500">${t.minUnit}</span>
+                </div>
+                <span class="inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full ${pillClass}">
+                  ${levelLabel}
+                </span>
+              </div>
+            </div>
+            <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full ${barColor} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-gray-500 font-medium">
+              <span>${t.delayLabel(item.delayMins)}</span>
+              <span class="font-mono text-[9px] text-gray-400">${item.direction}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function getFrameStore() {
@@ -377,8 +382,8 @@
       document.getElementById('rateLabel').textContent = t.rateLabel;
       document.getElementById('autoCountdownLabel').textContent = t.autoCountdownLabel;
       document.getElementById('syncLabel').textContent = t.syncLabel;
-      document.getElementById('woodlandsCardName').textContent = t.woodlandsName;
-      document.getElementById('tuasCardName').textContent = t.tuasName;
+      document.getElementById('estBoardTitle').textContent = t.estBoardTitle;
+      document.getElementById('estDisclaimerText').textContent = t.estDisclaimer;
       document.getElementById('tab-all').textContent = t.tabAll;
       document.getElementById('tab-woodlands').textContent = t.tabWoodlands;
       document.getElementById('tab-tuas').textContent = t.tabTuas;
@@ -391,7 +396,7 @@
         document.getElementById('lastSyncText').textContent = formatTimeShort(lastSyncedIso);
       }
 
-      updateCongestionEstimate();
+      renderRouteEstimates();
       renderCameras();
       renderLinks(latestLinks);
     }
@@ -404,6 +409,7 @@
           ? 'corridor-btn py-2 rounded-xl bg-emerald-600 text-white transition'
           : 'corridor-btn py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-emerald-50 transition';
       });
+      renderRouteEstimates();
       renderCameras();
     }
 
@@ -517,6 +523,7 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         latestCameras = Array.isArray(data?.cameras) ? data.cameras : [];
+        latestEstimates = Array.isArray(data?.routeEstimates) ? data.routeEstimates : [];
         saveCameraFrames(latestCameras);
 
         if (Array.isArray(data?.jbLinks)) {
@@ -527,7 +534,7 @@
           lastSyncedIso = data.updatedAt;
           document.getElementById('lastSyncText').textContent = formatTimeShort(lastSyncedIso);
         }
-        updateCongestionEstimate();
+        renderRouteEstimates();
         renderCameras();
       } catch (err) {
         console.error('Traffic load error:', err);
