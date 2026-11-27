@@ -299,7 +299,10 @@
             <option value="CarRepair">🔧 汽车维修 / 洗车</option>
             <option value="Food">🍜 美食 / 餐饮</option>
             <option value="Beauty">💇 理发 / 美容</option>
-            <option value="HomeService">🛠️ 装修 / 水电 / 搬家</option>
+            <option value="HomeService">🛠️ 冷气 / 水电 / 装修</option>
+            <option value="Cleaning">🧹 清洁服务</option>
+            <option value="Visa">🛂 签证办理</option>
+            <option value="Clinic">🏥 医疗诊所</option>
             <option value="Other">其他</option>
           </select>
           <select id="bizRadiusFilter" onchange="renderPosts()" class="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold">
@@ -673,16 +676,86 @@
     const TITLE_TAG_MAP = {
       '本地美食': { zh: '本地美食', en: 'Food & Dining', ms: 'Makanan' },
       '生活服务': { zh: '生活服务', en: 'Services', ms: 'Servis' },
+      '冷气水电': { zh: '冷气水电', en: 'Aircond & Fix', ms: 'Baik Pulih' },
+      '清洁服务': { zh: '清洁服务', en: 'Cleaning', ms: 'Cuci' },
       '便民医疗': { zh: '便民医疗', en: 'Clinic & Health', ms: 'Klinik & Kesihatan' },
       '美容美发': { zh: '美容美发', en: 'Beauty & Spa', ms: 'Kecantikan' },
-      '汽车服务': { zh: '汽车服务', en: 'Auto Care', ms: 'Bengkel Kereta' },
+      '汽车维修': { zh: '汽车维修', en: 'Auto Care', ms: 'Bengkel Kereta' },
+      '汽车服务': { zh: '汽车维修', en: 'Auto Care', ms: 'Bengkel Kereta' },
       '签证办理': { zh: '签证办理', en: 'Visa Services', ms: 'Perkhidmatan Visa' },
       '收录商户': { zh: '收录商户', en: 'Directory', ms: 'Direktori' }
     };
 
-    function localizeCardTitle(rawTitle, lang = currentLang) {
+    const TYPE_TO_CN_TAG = {
+      auto: '汽车维修',
+      home_fix: '冷气水电',
+      clean: '清洁服务',
+      visa: '签证办理',
+      clinic: '便民医疗',
+      food: '本地美食',
+      beauty: '美容美发',
+      general: '生活服务'
+    };
+
+    // 统一单源高精度分类引擎（剔除历史误打前缀干扰，按互斥优先级判定真实行业）
+    function resolveMerchantType(rawText) {
+      const cleaned = String(rawText || '')
+        .replace(/【收录商户[^】]*】/g, ' ')
+        .replace(/\[(?:local directory|direktori tempatan)[^\]]*\]/gi, ' ')
+        .toLowerCase();
+
+      // 1. 优先判定汽车维修 / 汽车冷气 / 轮胎 / 洗车 / 喷漆 / 车行（必须在普通冷气/维修前判定）
+      if (/(car\s*aircond|auto\s*aircond|automotive|car\s*wash|car\s*care|car\s*repair|car\s*service|workshop|bengkel|tyre|tire|alignment|exhaust|gearbox|battery\s*car|panel\s*beating|spray\s*paint|used\s*car|motor\s*service|修车|汽车|汽修|洗车|轮胎|汽车冷气|保养|喷漆|钣金|机油|电箱|摩哆维修|摩托车维修)/.test(cleaned)) {
+        return 'auto';
+      }
+
+      // 2. 清洁服务（避免被普通家政/装修吞掉）
+      if (/(cleaning\s*service|house\s*cleaning|office\s*cleaning|carpet\s*cleaning|sofa\s*cleaning|cuci\s*rumah|cuci\s*sofa|clean\s*service|清洁|保洁|洗地毯|洗沙发|钟点女佣|家政清洁)/.test(cleaned)) {
+        return 'clean';
+      }
+
+      // 3. 家用冷气 / 水电 / 装修 / 搬家 / 门锁 / 屋顶
+      if (/(aircond|air-cond|air\s*cond|plumber|plumbing|wiring|electrical|electrician|renovation|contractor|roofing|waterproofing|locksmith|mover|lori\s*sewa|pindah\s*rumah|冷气|空调|水电|电工|水管|通渠|装修|油漆|搬家|搬运|罗里|开锁|防水|屋顶)/.test(cleaned)) {
+        return 'home_fix';
+      }
+
+      // 4. 签证办理 / MM2H / 准证 / 护照（全词匹配 \bvisa\b，彻底排除 Invisalign 隐适美牙科）
+      const isDentalOrClinic = /(klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|orthodontic|pharmacy|farmasi|hospital|诊所|牙科|药房|医院|中医)/.test(cleaned);
+      if (!isDentalOrClinic && (/\b(visa|mm2h|passport|pasport|permit|immigration|imigresen)\b/.test(cleaned) || /(签证|第二家园|工作准证|学生签|旅游签|护照|续签|移民代办)/.test(cleaned))) {
+        return 'visa';
+      }
+
+      // 5. 医疗诊所 / 牙科 / 中医 / 药房
+      if (isDentalOrClinic || /(医疗|养生|保健|推拿|针灸|体检)/.test(cleaned)) {
+        return 'clinic';
+      }
+
+      // 6. 美食餐饮
+      if (/(kitchen|laksa|cafe|kopitiam|restaurant|restoran|food|makan|nasi|mee|dim\s*sum|bakery|bistro|steamboat|bbq|kafe|warung|mamak|茶室|美食|餐厅|饭店|小吃|火锅|烧烤|咖啡|奶茶|烧腊|鸡饭|板面|点心|面包)/.test(cleaned)) {
+        return 'food';
+      }
+
+      // 7. 美容美发 / 美甲 / SPA
+      if (/(salon|saloon|hair|barber|beauty|spa|facial|nail|eyelash|massage|理发|美发|剪发|烫染|美容|美甲|美睫|护肤|按摩)/.test(cleaned)) {
+        return 'beauty';
+      }
+
+      return 'general';
+    }
+
+    function localizeCardTitle(rawTitle, lang = currentLang, fullPost = null) {
       let s = String(rawTitle || '').trim();
-      if (!s || lang === 'zh') return s;
+      if (!s) return s;
+
+      // 如果传入了完整帖子且带有【收录商户·...】前缀，自动用真实行业纠正历史错标前缀
+      if (fullPost && /^【收录商户/.test(s)) {
+        const blob = `${fullPost.title || ''} ${fullPost.description || ''}`;
+        const realType = resolveMerchantType(blob);
+        const realCnTag = TYPE_TO_CN_TAG[realType] || '生活服务';
+        s = s.replace(/^【收录商户[^】]*】/, `【收录商户·${realCnTag}】`);
+      }
+
+      if (lang === 'zh') return s;
 
       s = s.replace(/【([^】]+)】/g, (_, inner) => {
         const parts = inner.split(/[·・/]/).map(x => x.trim()).filter(Boolean);
@@ -956,13 +1029,8 @@
     }
 
     function inferIndustryTag(text) {
-      const s = String(text || '').toLowerCase();
-      const isMedicalOrDental = /klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|pharmacy|farmasi|诊所|牙科|药房|便民医疗/.test(s);
-      if (!isMedicalOrDental && (/\bvisa\b|\bmm2h\b|\bpassport\b|\bpasport\b|\bpermit\b/.test(s) || /签证|第二家园|工作准证|学生签|护照|移民代办/.test(s))) return '签证办理';
-      if (isMedicalOrDental || /医疗|养生/.test(s)) return '便民医疗';
-      if (/hair|salon|barber|beauty|spa|理发|美发|美容|剪发|按摩/.test(s)) return '美容美发';
-      if (/car|auto|workshop|bengkel|tyre|tire|aircond|修车|汽车|洗车|轮胎|冷气|维修|水电|搬家/.test(s)) return '生活服务';
-      return '本地美食';
+      const mType = resolveMerchantType(text);
+      return TYPE_TO_CN_TAG[mType] || '生活服务';
     }
 
     async function fallbackNominatimPlaces(coreQuery, areaText, regionObj) {
@@ -1543,7 +1611,10 @@
         bizCatCar: '🔧 汽车维修 / 洗车',
         bizCatFood: '🍜 美食 / 餐饮',
         bizCatBeauty: '💇 理发 / 美容',
-        bizCatHome: '🛠️ 装修 / 水电 / 搬家',
+        bizCatHome: '🛠️ 冷气 / 水电 / 装修',
+        bizCatClean: '🧹 清洁服务',
+        bizCatVisa: '🛂 签证办理',
+        bizCatClinic: '🏥 医疗诊所',
         bizCatOther: '其他',
         bizRadiusAny: '附近不限距离',
         bizRadius5: '5 km 以内',
@@ -1717,7 +1788,10 @@
         bizCatCar: '🔧 Auto Repair / Wash',
         bizCatFood: '🍜 Food & Dining',
         bizCatBeauty: '💇 Hair & Beauty',
-        bizCatHome: '🛠️ Renovation / Fix',
+        bizCatHome: '🛠️ Aircond / Fix / Reno',
+        bizCatClean: '🧹 Cleaning Services',
+        bizCatVisa: '🛂 Visa Services',
+        bizCatClinic: '🏥 Clinic & Medical',
         bizCatOther: 'Other',
         bizRadiusAny: 'Any Distance',
         bizRadius5: 'Within 5 km',
@@ -1891,7 +1965,10 @@
         bizCatCar: '🔧 Bengkel / Cuci Kereta',
         bizCatFood: '🍜 Makanan & Minuman',
         bizCatBeauty: '💇 Rambut & Kecantikan',
-        bizCatHome: '🛠️ Ubah Suai / Baik Pulih',
+        bizCatHome: '🛠️ Aircond / Baik Pulih',
+        bizCatClean: '🧹 Servis Pembersihan',
+        bizCatVisa: '🛂 Perkhidmatan Visa',
+        bizCatClinic: '🏥 Klinik & Kesihatan',
         bizCatOther: 'Lain-lain',
         bizRadiusAny: 'Semua Jarak',
         bizRadius5: 'Dalam 5 km',
@@ -2058,7 +2135,10 @@
       setOptText('bizCatFilter', 2, t.bizCatFood);
       setOptText('bizCatFilter', 3, t.bizCatBeauty);
       setOptText('bizCatFilter', 4, t.bizCatHome);
-      setOptText('bizCatFilter', 5, t.bizCatOther);
+      setOptText('bizCatFilter', 5, t.bizCatClean);
+      setOptText('bizCatFilter', 6, t.bizCatVisa);
+      setOptText('bizCatFilter', 7, t.bizCatClinic);
+      setOptText('bizCatFilter', 8, t.bizCatOther);
 
       setOptText('bizRadiusFilter', 0, t.bizRadiusAny);
       setOptText('bizRadiusFilter', 1, t.bizRadius5);
@@ -2443,38 +2523,52 @@
 
     function getCategoryVisual(cat, post = {}) {
       const t = I18N[currentLang];
-      const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''} ${post.desc_en || ''} ${post.desc_ms || ''}`.toLowerCase();
+      const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''} ${post.desc_en || ''} ${post.desc_ms || ''}`;
+      const mType = resolveMerchantType(text);
 
-      const isMedicalOrDental = /klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|pharmacy|farmasi|诊所|牙科|药房|便民医疗/.test(text);
-      if (!isMedicalOrDental && (/\bvisa\b|\bmm2h\b|\bpassport\b|\bpasport\b|\bpermit\b/.test(text) || /签证|第二家园|工作准证|学生签|护照|移民代办/.test(text))) {
+      if (mType === 'visa') {
         return {
           bg: 'from-violet-500 to-purple-600',
           icon: '🛂',
           label: currentLang === 'en' ? 'Visa' : (currentLang === 'ms' ? 'Visa' : '签证办理')
         };
       }
-      if (isMedicalOrDental || /医疗|养生|保健/.test(text)) {
+      if (mType === 'clinic') {
         return {
           bg: 'from-teal-500 to-emerald-600',
           icon: '🏥',
           label: currentLang === 'en' ? 'Clinic' : (currentLang === 'ms' ? 'Klinik' : '医疗诊所')
         };
       }
-      if (/kitchen|laksa|cafe|kopitiam|restaurant|food|makan|nasi|炒|烧腊|茶室|美食|火锅|烧烤|咖啡/.test(text)) {
+      if (mType === 'auto') {
+        return {
+          bg: 'from-emerald-600 to-green-700',
+          icon: '🔧',
+          label: currentLang === 'en' ? 'Auto Care' : (currentLang === 'ms' ? 'Bengkel' : '汽车维修')
+        };
+      }
+      if (mType === 'clean') {
+        return {
+          bg: 'from-cyan-500 to-teal-600',
+          icon: '🧹',
+          label: currentLang === 'en' ? 'Cleaning' : (currentLang === 'ms' ? 'Cuci' : '清洁服务')
+        };
+      }
+      if (mType === 'home_fix') {
+        return {
+          bg: 'from-indigo-500 to-blue-700',
+          icon: '🛠️',
+          label: currentLang === 'en' ? 'Aircond/Fix' : (currentLang === 'ms' ? 'Baik Pulih' : '冷气/水电')
+        };
+      }
+      if (mType === 'food') {
         return {
           bg: 'from-amber-500 to-orange-600',
           icon: '🍜',
           label: currentLang === 'en' ? 'Food' : (currentLang === 'ms' ? 'Makanan' : '美食餐饮')
         };
       }
-      if (/car wash|auto|workshop|bengkel|tyre|tire|aircond|修车|汽车|洗车|轮胎|冷气|维修/.test(text)) {
-        return {
-          bg: 'from-slate-600 to-blue-700',
-          icon: '🔧',
-          label: currentLang === 'en' ? 'Auto/Fix' : (currentLang === 'ms' ? 'Bengkel' : '汽车/维修')
-        };
-      }
-      if (/salon|hair|beauty|spa|理发|美发|美容|按摩/.test(text)) {
+      if (mType === 'beauty') {
         return {
           bg: 'from-pink-500 to-rose-600',
           icon: '💇',
@@ -2503,7 +2597,7 @@
       const rawLocTitle =
         (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
         post.title;
-      const localizedTitle = localizeCardTitle(rawLocTitle, currentLang);
+      const localizedTitle = localizeCardTitle(rawLocTitle, currentLang, post);
       const localizedPrice =
         (currentLang === 'en' ? post.price_en : (currentLang === 'ms' ? post.price_ms : post.price_zh)) ||
         post.price;
@@ -2604,7 +2698,7 @@
       const rawLocTitle =
         (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
         post.title;
-      const localizedTitle = localizeCardTitle(rawLocTitle, currentLang);
+      const localizedTitle = localizeCardTitle(rawLocTitle, currentLang, post);
       const localizedPrice =
         (currentLang === 'en' ? post.price_en : (currentLang === 'ms' ? post.price_ms : post.price_zh)) ||
         post.price;
@@ -2786,17 +2880,26 @@
           : (p.city === city || legacyTargets.includes(city));
         const matchCat = (currentCategory === '全部' || p.category === currentCategory);
         const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.desc_en || ''} ${p.desc_ms || ''} ${p.price || ''} ${p.city || ''}`.toLowerCase();
+        const mType = resolveMerchantType(searchBlob);
         const isVisaQuery = activePortalKey === 'visa' || /^(签证|visa)$/i.test(rawKeyword);
-        const isMedicalPost = /klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|pharmacy|farmasi|诊所|牙科|药房|便民医疗/.test(searchBlob);
-        const matchKey = searchTerms.length === 0 || (
-          !(isVisaQuery && isMedicalPost) &&
-          searchTerms.some(term => {
-            if (/^[a-z0-9]+$/i.test(term)) {
-              return new RegExp(`\\b${term}\\b`, 'i').test(searchBlob);
-            }
-            return searchBlob.includes(term);
-          })
-        );
+        const isAutoQuery = activePortalKey === 'auto' || /^(修车|汽车维修|bengkel|auto care)$/i.test(rawKeyword);
+        const isHomeFixQuery = activePortalKey === 'reno' || /^(冷气|水电|维修|aircond|plumber|wiring)$/i.test(rawKeyword);
+        const isCleanQuery = activePortalKey === 'clean' || /^(清洁|保洁|cleaning|cuci)$/i.test(rawKeyword);
+        const isFoodQuery = activePortalKey === 'food' || /^(美食|探店|makan|food)$/i.test(rawKeyword);
+
+        let matchKey = searchTerms.length === 0 || searchTerms.some(term => {
+          if (/^[a-z0-9]+$/i.test(term)) {
+            return new RegExp(`\\b${term}\\b`, 'i').test(searchBlob);
+          }
+          return searchBlob.includes(term);
+        });
+
+        if (isVisaQuery && mType !== 'visa') matchKey = false;
+        if (isAutoQuery && mType !== 'auto') matchKey = false;
+        if (isHomeFixQuery && mType !== 'home_fix') matchKey = false;
+        if (isCleanQuery && mType !== 'clean') matchKey = false;
+        if (isFoodQuery && mType !== 'food') matchKey = false;
+
         if (!matchCity || !matchCat || !matchKey) return false;
 
         if (activeHalalFilter) {
@@ -2882,18 +2985,15 @@
           const coords = extractCoordsFromPost(p);
           p._distKm = (refCoords && coords) ? calcDistanceKm(refCoords.lat, refCoords.lng, coords.lat, coords.lng) : null;
 
-          const bizRegexMap = {
-            CarRepair: /修车|汽车|保养|轮胎|洗车|冷气|workshop|car|auto/i,
-            Food: /美食|餐厅|茶室|咖啡|火锅|烧烤|板面|鸡饭|food|cafe|kopitiam|makan/i,
-            Beauty: /理发|美发|美容|spa|salon|hair/i,
-            HomeService: /装修|水电|搬家|冷气维修|plumber|renovation/i
-          };
+          if (bCat === 'CarRepair' && mType !== 'auto') return false;
+          if (bCat === 'Food' && mType !== 'food') return false;
+          if (bCat === 'Beauty' && mType !== 'beauty') return false;
+          if (bCat === 'HomeService' && mType !== 'home_fix') return false;
+          if (bCat === 'Cleaning' && mType !== 'clean') return false;
+          if (bCat === 'Visa' && mType !== 'visa') return false;
+          if (bCat === 'Clinic' && mType !== 'clinic') return false;
+          if (bCat === 'Other' && ['auto', 'food', 'beauty', 'home_fix', 'clean', 'visa', 'clinic'].includes(mType)) return false;
 
-          if (bCat && bCat !== 'Other' && bizRegexMap[bCat] && !bizRegexMap[bCat].test(searchBlob)) return false;
-          if (bCat === 'Other') {
-            const anyBiz = Object.values(bizRegexMap).some(rx => rx.test(searchBlob));
-            if (anyBiz) return false;
-          }
           if (maxRadius < 999 && typeof p._distKm === 'number' && p._distKm > maxRadius) return false;
         }
 
