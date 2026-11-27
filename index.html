@@ -607,7 +607,6 @@
     let renderDisplayLimit = 80;
     let lastFilteredList = [];
 
-    // 10 宫格纯代码矢量图标配置（已将签证办理加入并配置三语）
     const PORTAL_TILES = [
       {
         key: 'all', cat: '全部', kw: '',
@@ -734,7 +733,7 @@
       }
       renderPortalIconGrid();
       syncSubFilterVisibility(currentCategory);
-      renderPosts();
+      renderPosts(Boolean(kw));
       const anchor = document.getElementById('feedAnchor');
       if (anchor && key !== 'all') {
         anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1114,7 +1113,8 @@
       }, immediate ? 20 : 250);
     }
 
-    function handleDiscoverySelect(idx) {
+    // 等待写入云端成功（最多等 1.5 秒防卡死），再跳转导航，防止页面跳转掐断网络请求
+    async function handleDiscoverySelect(idx) {
       const list = window._discoveredPlacesCache || [];
       const item = list[idx];
       if (!item) return;
@@ -1135,7 +1135,7 @@
         const fullTitle = `【收录商户·${indTag}】${item.name}`;
         const packedDesc = `📍 地址：${item.addr}\n由用户搜索自动收录至大马吉通本地目录\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`;
 
-        supabaseClient.from('posts').insert([{
+        const payload = {
           category: '本地优惠',
           city: item.city || '全马',
           title: fullTitle,
@@ -1153,7 +1153,22 @@
           desc_ms: `📍 Alamat: ${item.addr}\nDitambah ke Direktori Tempatan DamaJitong\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`,
           image_url: null,
           is_pinned: false
-        }]).then(() => {}).catch(() => {});
+        };
+
+        try {
+          await Promise.race([
+            supabaseClient.from('posts').insert([payload]).then(({ data, error }) => {
+              if (error) {
+                console.error('Auto-save insert error:', error);
+              } else if (data && data[0]) {
+                allPosts.unshift(data[0]);
+              }
+            }),
+            new Promise(resolve => setTimeout(resolve, 1500))
+          ]);
+        } catch (err) {
+          console.error('Auto-save failed:', err);
+        }
       }
 
       window.location.href = navUrl;
@@ -2378,7 +2393,6 @@
       });
     }
 
-    // 全自动分页循环拉取全库数据（突破 Supabase 单次 1000 条限制，首屏秒开 + 后台补齐）
     async function fetchPosts() {
       const PAGE_SIZE = 1000;
       let from = 0;
