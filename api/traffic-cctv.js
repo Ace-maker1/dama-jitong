@@ -1,5 +1,5 @@
 // /api/traffic-cctv.js
-// 拉取新加坡-柔佛新马关卡实时交通快照（免申请 Key，带容错、缓存头与三语字段）
+// 拉取新加坡-柔佛新马关卡实时交通快照（带容错、缓存头、三语字段与直达关卡导航坐标）
 
 const CAUSEWAY_CAMERAS = [
   {
@@ -127,6 +127,36 @@ export default async function handler(req, res) {
 
   const jbLinks = [
     {
+      id: 'nav_woodlands',
+      title: {
+        zh: '🧭 一键导航：新山 CIQ / 兀兰关卡',
+        en: '🧭 Navigate: JB CIQ / Woodlands Checkpoint',
+        ms: '🧭 Navigasi: CIQ JB / Pusat Pemeriksaan Woodlands'
+      },
+      desc: {
+        zh: '自动锁定第一通道关卡坐标并开启路线规划',
+        en: 'Auto-set First Link checkpoint destination on map',
+        ms: 'Tetapkan destinasi Tambak Johor secara automatik'
+      },
+      url: '/map.html?dest=Woodlands%20Checkpoint%20%2F%20JB%20CIQ&lat=1.4457&lng=103.7691',
+      external: false
+    },
+    {
+      id: 'nav_tuas',
+      title: {
+        zh: '🧭 一键导航：大士第二通道 (Tuas / Linkedua)',
+        en: '🧭 Navigate: Tuas Checkpoint / Second Link',
+        ms: '🧭 Navigasi: Pusat Pemeriksaan Tuas / Laluan Kedua'
+      },
+      desc: {
+        zh: '自动锁定第二通道关卡坐标并开启路线规划',
+        en: 'Auto-set Second Link checkpoint destination on map',
+        ms: 'Tetapkan destinasi Laluan Kedua Tuas secara automatik'
+      },
+      url: '/map.html?dest=Tuas%20Checkpoint%20%2F%20Second%20Link&lat=1.3489&lng=103.6361',
+      external: false
+    },
+    {
       id: 'llm',
       title: {
         zh: 'LLM 大马大道局官网',
@@ -155,21 +185,6 @@ export default async function handler(req, res) {
       },
       url: 'https://onemotoring.lta.gov.sg',
       external: true
-    },
-    {
-      id: 'map',
-      title: {
-        zh: '大马吉通出行导航',
-        en: 'DamaJitong Route Navigation',
-        ms: 'Navigasi Laluan DamaJitong'
-      },
-      desc: {
-        zh: '一键规划前往新山 CIQ / 兀兰 / 大士路线',
-        en: 'Plan routes to JB CIQ, Woodlands or Tuas',
-        ms: 'Rancang laluan ke CIQ JB, Woodlands atau Tuas'
-      },
-      url: '/map.html',
-      external: false
     }
   ];
 
