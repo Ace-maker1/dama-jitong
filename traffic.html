@@ -36,7 +36,7 @@
 
     <h1 id="pageTitle" class="font-black text-lg tracking-tight">🚦 新马关卡实时路况监控</h1>
     <p id="pageSub" class="text-[11px] text-emerald-100 mt-0.5">
-      兀兰长堤 Woodlands · 大士第二通道 Tuas · 15 秒高频刷新 + 缩时回放
+      兀兰长堤 · 大士第二通道 · 官方源每 3–5 分钟更新一帧
     </p>
   </header>
 
@@ -47,11 +47,11 @@
       <div id="sgdRateText" class="font-black text-blue-600">1 SGD ≈ 3.19 MYR</div>
     </div>
     <div class="text-center">
-      <div id="autoCountdownLabel" class="text-[10px] text-gray-400">自动刷新</div>
-      <div id="autoCountdownText" class="font-extrabold text-emerald-600">15s</div>
+      <div id="autoCountdownLabel" class="text-[10px] text-gray-400">自动检测</div>
+      <div id="autoCountdownText" class="font-extrabold text-emerald-600">30s</div>
     </div>
     <div class="text-right">
-      <div id="syncLabel" class="text-[10px] text-gray-400">最近同步</div>
+      <div id="syncLabel" class="text-[10px] text-gray-400">最近检测</div>
       <div id="lastSyncText" class="font-bold text-gray-700">--:--:--</div>
     </div>
   </section>
@@ -124,12 +124,12 @@
       zh: {
         backHome: '← 返回首页',
         refresh: '🔄 刷新',
-        refreshing: '⏳ 刷新中...',
+        refreshing: '⏳ 同步中...',
         pageTitle: '🚦 新马关卡实时路况监控',
-        pageSub: '兀兰长堤 Woodlands · 大士第二通道 Tuas · 15 秒高频刷新 + 缩时回放',
+        pageSub: '兀兰长堤 · 大士第二通道 · 官方源每 3–5 分钟更新一帧',
         rateLabel: '实时参考汇率',
-        autoCountdownLabel: '自动刷新',
-        syncLabel: '最近同步',
+        autoCountdownLabel: '自动检测',
+        syncLabel: '最近检测',
         loading: '正在获取新马关卡最新路况...',
         syncFailed: '同步失败',
         timeoutMsg: '路况接口暂时超时，请点击右上角“刷新”再试。',
@@ -139,8 +139,9 @@
         emptyCorridor: '当前通道暂无镜头数据',
         zoomHint: '🔍 点击放大',
         timelapsePlay: '▶️ 车流缩时回放',
+        timelapseWait: '⏳ 等待下一帧积累',
         timelapseStop: '⏹️ 停止回放',
-        frameCountLabel: (n) => `已缓存 ${n} 帧动态`,
+        frameCountLabel: (n) => n > 1 ? `已缓存 ${n} 帧 · 可回放` : `已同步最新帧（每3-5分更新）`,
         imgFallback: '当前画面暂时无法加载，请点右上角刷新',
         noImg: '暂无最新抓拍画面，请点击右上角“刷新”重试',
         linksHeader: '🔗 官方路况与导航入口',
@@ -161,10 +162,10 @@
         refresh: '🔄 Refresh',
         refreshing: '⏳ Syncing...',
         pageTitle: '🚦 SG-MY Causeway Live Monitor',
-        pageSub: 'Woodlands Causeway · Tuas Second Link · 15s Live Feed + Time-Lapse',
+        pageSub: 'Woodlands · Tuas · Official LTA feed updates every 3–5 mins',
         rateLabel: 'Live Exchange Rate',
-        autoCountdownLabel: 'Auto Sync',
-        syncLabel: 'Last Synced',
+        autoCountdownLabel: 'Auto Check',
+        syncLabel: 'Last Checked',
         loading: 'Fetching latest SG-MY checkpoint traffic...',
         syncFailed: 'Sync failed',
         timeoutMsg: 'Traffic feed timed out. Tap Refresh above to try again.',
@@ -174,8 +175,9 @@
         emptyCorridor: 'No camera feeds for this corridor',
         zoomHint: '🔍 Tap to Zoom',
         timelapsePlay: '▶️ Time-Lapse Replay',
+        timelapseWait: '⏳ Collecting frames',
         timelapseStop: '⏹️ Stop Replay',
-        frameCountLabel: (n) => `${n} frames cached`,
+        frameCountLabel: (n) => n > 1 ? `${n} frames cached · Ready` : `Latest frame (updates ~3–5m)`,
         imgFallback: 'Feed temporarily unavailable. Tap Refresh above.',
         noImg: 'No live feed available right now. Tap Refresh to retry.',
         linksHeader: '🔗 Official Traffic & Navigation',
@@ -196,10 +198,10 @@
         refresh: '🔄 Muat Semula',
         refreshing: '⏳ Menyegerak...',
         pageTitle: '🚦 Pemantauan Langsung Tambak SG-MY',
-        pageSub: 'Tambak Woodlands · Laluan Kedua Tuas · Kemas kini 15s + Main Semula',
+        pageSub: 'Woodlands · Tuas · Kamera rasmi dikemas kini setiap 3–5 min',
         rateLabel: 'Kadar Tukaran Semasa',
-        autoCountdownLabel: 'Auto Segerak',
-        syncLabel: 'Kemaskini Terakhir',
+        autoCountdownLabel: 'Semak Auto',
+        syncLabel: 'Semakan Terakhir',
         loading: 'Memuatkan status trafik pusat pemeriksaan...',
         syncFailed: 'Gagal disegerak',
         timeoutMsg: 'Sambungan trafik tamat masa. Tekan Muat Semula untuk cuba lagi.',
@@ -209,8 +211,9 @@
         emptyCorridor: 'Tiada kamera untuk laluan ini',
         zoomHint: '🔍 Tekan untuk Besarkan',
         timelapsePlay: '▶️ Main Semula Trafik',
+        timelapseWait: '⏳ Tunggu bingkai baharu',
         timelapseStop: '⏹️ Henti Main',
-        frameCountLabel: (n) => `${n} bingkai disimpan`,
+        frameCountLabel: (n) => n > 1 ? `${n} bingkai disimpan · Sedia` : `Bingkai terkini (kemas kini ~3–5m)`,
         imgFallback: 'Paparan sementara tidak tersedia. Tekan Muat Semula.',
         noImg: 'Tiada paparan tersedia buat masa ini. Tekan Muat Semula.',
         linksHeader: '🔗 Pautan Trafik Rasmi & Navigasi',
@@ -235,7 +238,7 @@
     let latestCameras = [];
     let latestLinks = [];
     let lastSyncedIso = '';
-    let countdownSec = 15;
+    let countdownSec = 30;
     let activeTimelapseTimers = {};
 
     function pickLangText(obj, lang = currentTrafficLang) {
@@ -247,7 +250,6 @@
     function updateCongestionEstimate() {
       const t = TRAFFIC_I18N[currentTrafficLang];
       const now = new Date();
-      // 马来西亚/新加坡本地时区小时与星期
       const sgHour = Number(now.toLocaleString('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', hour12: false }));
       const sgDay = now.toLocaleString('en-US', { timeZone: 'Asia/Singapore', weekday: 'short' });
       const isWeekend = sgDay === 'Sat' || sgDay === 'Sun';
@@ -338,12 +340,7 @@
 
       const store = getFrameStore();
       const frames = Array.isArray(store[camId]) ? store[camId] : [];
-      if (frames.length < 2) {
-        // 如果目前只有1帧，用轻微呼吸刷新提示已处于实时监控
-        const curSrc = imgEl.src.split('?')[0];
-        imgEl.src = `${curSrc}?t=${Date.now()}`;
-        return;
-      }
+      if (frames.length < 2) return;
 
       let idx = 0;
       btn.textContent = t.timelapseStop;
@@ -447,6 +444,7 @@
         const camTime = formatTimeShort(cam.timestamp);
         const safeTitle = titleText.replace(/'/g, "\\'");
         const cachedCount = Array.isArray(store[cam.id]) ? store[cam.id].length : 1;
+        const canReplay = cachedCount >= 2;
 
         return `
           <div class="bg-white rounded-2xl overflow-hidden shadow-xs border border-gray-100">
@@ -474,9 +472,9 @@
               </div>
               <div class="px-3 py-2 bg-gray-50/80 flex items-center justify-between gap-2">
                 <span class="text-[10px] text-gray-500 font-medium">${t.frameCountLabel(cachedCount)}</span>
-                <button type="button" id="tlBtn-${cam.id}" onclick="toggleCameraTimelapse('${cam.id}')"
-                        class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg transition">
-                  ${t.timelapsePlay}
+                <button type="button" id="tlBtn-${cam.id}" ${canReplay ? '' : 'disabled'} onclick="toggleCameraTimelapse('${cam.id}')"
+                        class="text-[10px] font-bold ${canReplay ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} px-2.5 py-1 rounded-lg transition">
+                  ${canReplay ? t.timelapsePlay : t.timelapseWait}
                 </button>
               </div>
             ` : `
@@ -512,7 +510,7 @@
       const t = TRAFFIC_I18N[currentTrafficLang];
       const btn = document.getElementById('refreshBtn');
       if (showSpin && btn) btn.textContent = t.refreshing;
-      countdownSec = 15;
+      countdownSec = 30;
 
       try {
         const res = await fetch('/api/traffic-cctv');
@@ -573,7 +571,7 @@
     setInterval(() => {
       countdownSec -= 1;
       if (countdownSec <= 0) {
-        countdownSec = 15;
+        countdownSec = 30;
         loadTrafficCameras(false);
       }
       const el = document.getElementById('autoCountdownText');
