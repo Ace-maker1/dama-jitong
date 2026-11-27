@@ -160,7 +160,7 @@
           <span>·</span>
           <a id="footerContactBtn" href="#" target="_blank" rel="noopener" class="hover:text-gray-600 underline">联系与删改通道</a>
         </div>
-        <div>© 2026 大马吉通 DamaJitong.com · 马来西亚本地生活目录</div>
+        <div id="txtCopyright">© 2026 大马吉通 DamaJitong.com · 马来西亚本地生活目录</div>
       </footer>
     </main>
 
@@ -187,7 +187,8 @@
         loading: '正在加载详细信息...', pin: '🔥 置顶推荐', transBtn: '🌐 翻译成中文', origBtn: '↩ 显示原文',
         zoomHint: '🔍 点击放大', lbPrev: '‹ 上一张', lbNext: '下一张 ›',
         transDone: '已自动翻译为中文', navSub: '大马吉通站内实景地图 · 语音带路', navGo: '🧭 站内导航',
-        extNav: '外部App直达：',
+        extNav: '外部App直达：', addrPrefix: '📍 地址：',
+        autoDirNote: '由用户搜索自动收录至大马吉通本地目录',
         descTitle: '详细信息说明', noDesc: '发布者未填写更多补充说明。',
         ownerTitle: '信息说明与店主权益', freeBadge: '免费认证',
         ownerBody: '本页门店基础信息由公开商业资料整理收录，旨在方便本地用户检索与导航。若您是本店负责人，欢迎免费认领店铺、更新营业时间与招牌优惠；如需修改联系方式或申请下架，请联系平台客服立即处理。',
@@ -198,6 +199,7 @@
         safeTitle: '大马吉通安全交易提醒', safeBody: '线下看房、面试或二手面交请尽量选择公共场所，核实对方身份与物品状况后再付款，切勿提前转账定金。',
         relatedTitle: '同类热门推荐', fav: '☆ 收藏', faved: '⭐ 已收藏', bottomNav: '导航', waBtn: '联系 WhatsApp',
         footerPrivacy: '隐私政策 (PDPA)', footerTerms: '免责声明与协议', footerContact: '联系与删改通道',
+        copyright: '© 2026 大马吉通 DamaJitong.com · 马来西亚本地生活目录',
         waHello: (title) => `你好，我在【大马吉通】看到贵店信息：${title}，想咨询一下！`,
         cats: { '找房子': '找房子', '找工作': '找工作', '二手闲置': '二手闲置', '本地优惠': '本地商家' }
       },
@@ -206,7 +208,8 @@
         loading: 'Loading details...', pin: '🔥 Featured', transBtn: '🌐 Translate to English', origBtn: '↩ Original',
         zoomHint: '🔍 Tap to Zoom', lbPrev: '‹ Prev', lbNext: 'Next ›',
         transDone: 'Auto-translated to English', navSub: 'In-App Navigation & Voice Guidance', navGo: '🧭 In-App Map',
-        extNav: 'Open in App:',
+        extNav: 'Open in App:', addrPrefix: '📍 Address: ',
+        autoDirNote: 'Added to DamaJitong Local Directory via search · Tap to navigate',
         descTitle: 'Description', noDesc: 'No additional description provided.',
         ownerTitle: 'Listing Notice & Owner Rights', freeBadge: 'Free Claim',
         ownerBody: 'Basic business details are compiled from publicly available sources to help local users navigate. If you are the owner, claim your listing for free to update hours or promos, or contact us anytime for edits/removal.',
@@ -217,6 +220,7 @@
         safeTitle: 'Safety Reminder', safeBody: 'Meet in public places and verify details before making any advance payment or deposit.',
         relatedTitle: 'Similar Listings', fav: '☆ Save', faved: '⭐ Saved', bottomNav: 'Map', waBtn: 'WhatsApp Now',
         footerPrivacy: 'Privacy Policy (PDPA)', footerTerms: 'Disclaimer & Terms', footerContact: 'Contact / Removal',
+        copyright: '© 2026 DamaJitong.com · Malaysia Local Directory',
         waHello: (title) => `Hi, I found your business "${title}" on DamaJitong and would like to inquire!`,
         cats: { '找房子': 'Property', '找工作': 'Jobs', '二手闲置': 'Preloved', '本地优惠': 'Local Biz' }
       },
@@ -225,7 +229,8 @@
         loading: 'Memuatkan butiran...', pin: '🔥 Pilihan', transBtn: '🌐 Terjemah ke BM', origBtn: '↩ Teks Asal',
         zoomHint: '🔍 Tekan Besarkan', lbPrev: '‹ Sebelum', lbNext: 'Seterusnya ›',
         transDone: 'Diterjemah ke Bahasa Melayu', navSub: 'Navigasi Terus & Panduan Suara', navGo: '🧭 Peta Dalam App',
-        extNav: 'Buka di App:',
+        extNav: 'Buka di App:', addrPrefix: '📍 Alamat: ',
+        autoDirNote: 'Ditambah ke Direktori Tempatan DamaJitong melalui carian · Tekan untuk navigasi',
         descTitle: 'Keterangan Lanjut', noDesc: 'Tiada maklumat tambahan dinyatakan.',
         ownerTitle: 'Notis Penyenaraian & Hak Pemilik', freeBadge: 'Tuntutan Percuma',
         ownerBody: 'Maklumat asas perniagaan dikumpulkan daripada sumber terbuka untuk memudahkan navigasi pengguna. Jika anda pemilik premis, tuntut profil secara percuma atau hubungi kami untuk pindaan/pemadaman.',
@@ -236,10 +241,78 @@
         safeTitle: 'Tip Keselamatan', safeBody: 'Sila berjumpa di tempat awam dan sahkan maklumat sebelum membuat sebarang bayaran pendahuluan.',
         relatedTitle: 'Iklan Berkaitan', fav: '☆ Simpan', faved: '⭐ Disimpan', bottomNav: 'Peta', waBtn: 'Hubungi WhatsApp',
         footerPrivacy: 'Dasar Privasi (PDPA)', footerTerms: 'Penafian & Terma', footerContact: 'Hubungi / Padam Data',
+        copyright: '© 2026 DamaJitong.com · Direktori Tempatan Malaysia',
         waHello: (title) => `Salam, saya jumpa kedai anda "${title}" di DamaJitong. Boleh saya bertanya?`,
         cats: { '找房子': 'Rumah Sewa', '找工作': 'Kerja Kosong', '二手闲置': 'Terpakai', '本地优惠': 'Perniagaan' }
       }
     };
+
+    const TAG_TRANSLATIONS = {
+      '本地美食': { zh: '本地美食', en: 'Food & Dining', ms: 'Makanan' },
+      '生活服务': { zh: '生活服务', en: 'Services', ms: 'Servis' },
+      '便民医疗': { zh: '便民医疗', en: 'Clinic & Health', ms: 'Klinik & Kesihatan' },
+      '美容美发': { zh: '美容美发', en: 'Beauty & Spa', ms: 'Kecantikan' },
+      '汽车服务': { zh: '汽车服务', en: 'Auto Care', ms: 'Bengkel Kereta' },
+      '收录商户': { zh: '收录商户', en: 'Directory', ms: 'Direktori' }
+    };
+
+    // 按当前语言清洗标题前缀里的中文词句
+    function localizeTitleString(rawTitle, lang) {
+      let s = String(rawTitle || '').trim();
+      if (!s) return '';
+
+      if (lang !== 'zh') {
+        s = s.replace(/【([^】]+)】/g, (_, inner) => {
+          const parts = inner.split(/[·・/]/).map(x => x.trim()).filter(Boolean);
+          const mapped = parts.map(p => {
+            if (TAG_TRANSLATIONS[p]) return TAG_TRANSLATIONS[p][lang] || TAG_TRANSLATIONS[p].en;
+            if (/[\u4e00-\u9fa5]/.test(p)) return lang === 'ms' ? 'Direktori' : 'Directory';
+            return p;
+          });
+          return `[${mapped.join(' · ')}] `;
+        });
+
+        s = s.replace(/\[([^\]]+)\]/g, (_, inner) => {
+          const parts = inner.split(/[·・/]/).map(x => x.trim()).filter(Boolean);
+          const mapped = parts.map(p => {
+            if (TAG_TRANSLATIONS[p]) return TAG_TRANSLATIONS[p][lang] || TAG_TRANSLATIONS[p].en;
+            if (/[\u4e00-\u9fa5]/.test(p)) return lang === 'ms' ? 'Direktori' : 'Directory';
+            return p;
+          });
+          return `[${mapped.join(' · ')}]`;
+        });
+
+        // 兜底清除任何残留的纯中文中括号或“·中文”片段
+        s = s.replace(/·[\u4e00-\u9fa5]+/g, (m) => {
+          const word = m.slice(1);
+          if (TAG_TRANSLATIONS[word]) return ` · ${TAG_TRANSLATIONS[word][lang] || TAG_TRANSLATIONS[word].en}`;
+          return '';
+        });
+      }
+
+      return s.replace(/\s{2,}/g, ' ').trim();
+    }
+
+    // 按当前语言清洗描述正文里的中文前缀与固定句
+    function localizeDescriptionString(rawDesc, lang) {
+      const t = DETAIL_I18N[lang] || DETAIL_I18N.zh;
+      let d = String(rawDesc || '')
+        .replace(/\n?\[\[MAP:[^\]]+\]\]/g, '')
+        .replace(/\n?\[\[IMGS:[\s\S]*?\]\]/g, '')
+        .replace(/\n?\[\[HALAL:[^\]]+\]\]/gi, '')
+        .trim();
+
+      if (!d) return t.noDesc;
+
+      if (lang !== 'zh') {
+        d = d.replace(/📍\s*地址[：:]\s*/g, t.addrPrefix);
+        d = d.replace(/由用户搜索自动收录至大马吉通本地目录/g, t.autoDirNote);
+        d = d.replace(/全马本地生活目录收录，支持一键导航到店/g, t.autoDirNote);
+        d = d.replace(/[\u4e00-\u9fa5]{2,}[：:]\s*/g, '');
+      }
+
+      return d.replace(/\n{3,}/g, '\n\n').trim() || t.noDesc;
+    }
 
     const DETAIL_TRANS_CACHE_KEY = 'dama_trans_cache_v1';
     let detailTransCache = {};
@@ -363,7 +436,7 @@
         addr = cleanMapText(match[2] || '');
       }
       if (!addr) {
-        const addrLine = raw.match(/📍\s*地址[：:]\s*([^\n\[]+)/);
+        const addrLine = raw.match(/📍\s*(?:地址|Address|Alamat)[：:]\s*([^\n\[]+)/i);
         if (addrLine) addr = cleanMapText(addrLine[1]);
       }
       const cleanDesc = raw
@@ -382,9 +455,15 @@
 
     function getLocalizedField(post, baseField, lang) {
       if (!post) return '';
-      if (lang === 'en') return post[`${baseField}_en`] || post[baseField] || '';
-      if (lang === 'ms') return post[`${baseField}_ms`] || post[baseField] || '';
-      return post[`${baseField}_zh`] || post[baseField] || '';
+      let val = '';
+      if (lang === 'en') val = post[`${baseField}_en`] || post[baseField] || '';
+      else if (lang === 'ms') val = post[`${baseField}_ms`] || post[baseField] || '';
+      else val = post[`${baseField}_zh`] || post[baseField] || '';
+
+      if (baseField === 'title') {
+        return localizeTitleString(val, lang);
+      }
+      return val;
     }
 
     function detectDetailTextLang(text) {
@@ -470,12 +549,9 @@
       const rawLocalizedDesc = (lang === 'en' && p.desc_en)
         ? p.desc_en
         : ((lang === 'ms' && p.desc_ms) ? p.desc_ms : (p.desc_zh || mapMeta.cleanDesc));
-      const baseDesc = (rawLocalizedDesc || '')
-        .replace(/\n?\[\[MAP:[^\]]+\]\]/g, '')
-        .replace(/\n?\[\[IMGS:[\s\S]*?\]\]/g, '')
-        .trim() || t.noDesc;
+      const baseDesc = localizeDescriptionString(rawLocalizedDesc, lang);
 
-      document.title = `${localizedTitle} - 大马吉通 MY`;
+      document.title = `${localizedTitle} - DamaJitong MY`;
       document.getElementById('txtBack').innerText = t.back;
       document.getElementById('txtHeader').innerText = t.header;
       document.getElementById('shareBtn').innerText = t.share;
@@ -500,6 +576,7 @@
       document.getElementById('txtFooterPrivacy').innerText = t.footerPrivacy;
       document.getElementById('txtFooterTerms').innerText = t.footerTerms;
       document.getElementById('footerContactBtn').innerText = t.footerContact;
+      document.getElementById('txtCopyright').innerText = t.copyright;
 
       renderHeroGallery(extractAllPostPhotos(p), 0);
 
@@ -574,10 +651,10 @@
       const t = DETAIL_I18N[lang];
       const btn = document.getElementById('transBtn');
       const mapMeta = extractMapMeta(currentPost);
-      const cleanOrigDesc = mapMeta.cleanDesc || currentPost.description || t.noDesc;
+      const cleanOrigDesc = localizeDescriptionString(mapMeta.cleanDesc || currentPost.description || t.noDesc, lang);
 
       if (!isAuto && isTranslated) {
-        document.getElementById('postTitle').innerText = currentPost.title;
+        document.getElementById('postTitle').innerText = localizeTitleString(currentPost.title, lang);
         document.getElementById('postDesc').innerText = cleanOrigDesc;
         document.getElementById('transTag').classList.add('hidden');
         btn.innerText = t.transBtn;
@@ -589,11 +666,11 @@
       btn.innerText = '⏳...';
       try {
         const [newTitle, newDesc] = await Promise.all([
-          translateDetailText(currentPost.title, lang),
-          mapMeta.cleanDesc ? translateDetailText(mapMeta.cleanDesc, lang) : Promise.resolve(t.noDesc)
+          translateDetailText(localizeTitleString(currentPost.title, lang), lang),
+          mapMeta.cleanDesc ? translateDetailText(cleanOrigDesc, lang) : Promise.resolve(t.noDesc)
         ]);
-        document.getElementById('postTitle').innerText = newTitle;
-        document.getElementById('postDesc').innerText = newDesc;
+        document.getElementById('postTitle').innerText = localizeTitleString(newTitle, lang);
+        document.getElementById('postDesc').innerText = localizeDescriptionString(newDesc, lang);
         const tag = document.getElementById('transTag');
         tag.innerText = t.transDone;
         tag.classList.remove('hidden');
