@@ -158,29 +158,40 @@
       <div id="portalIconGrid" class="grid grid-cols-5 gap-y-3 gap-x-1 text-center pt-0.5"></div>
     </section>
 
-    <!-- 快捷工具条：大马吹水站 + 实时汇率油价速览 -->
+    <!-- 快捷工具条：大马吹水站 + 关卡 CCTV + 出行导航 + 实时汇率油价速览 -->
     <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-xs border border-gray-100 space-y-2.5">
-      <div class="flex items-center justify-between gap-2">
-        <a href="/forum.html" class="flex-1 bg-gradient-to-r from-indigo-50 to-blue-50/70 hover:from-indigo-100/80 border border-indigo-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-base">💬</span>
+      <div class="grid grid-cols-3 gap-1.5">
+        <a href="/forum.html" class="bg-gradient-to-r from-indigo-50 to-blue-50/70 hover:from-indigo-100/80 border border-indigo-100 rounded-xl px-2.5 py-2 flex items-center justify-between transition min-w-0">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm shrink-0">💬</span>
             <div class="min-w-0">
-              <div id="idxForumTitle" class="font-black text-xs text-indigo-950 truncate">大马吹水站</div>
-              <div id="idxForumSub" class="text-[10px] text-indigo-600 truncate">本地吹水 · 探店问答</div>
+              <div id="idxForumTitle" class="font-black text-[11px] text-indigo-950 truncate">大马吹水站</div>
+              <div id="idxForumSub" class="text-[9px] text-indigo-600 truncate">本地吹水问答</div>
             </div>
           </div>
-          <span class="text-indigo-400 font-bold text-sm">›</span>
+          <span class="text-indigo-400 font-bold text-xs shrink-0">›</span>
         </a>
 
-        <a href="/map.html" class="flex-1 bg-gradient-to-r from-emerald-50 to-teal-50/70 hover:from-emerald-100/80 border border-emerald-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-base">🧭</span>
+        <a href="/traffic.html" class="bg-gradient-to-r from-amber-50 to-orange-50/80 hover:from-amber-100/80 border border-amber-200/80 rounded-xl px-2.5 py-2 flex items-center justify-between transition min-w-0">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm shrink-0">🚦</span>
             <div class="min-w-0">
-              <div id="idxMapTitle" class="font-black text-xs text-emerald-950 truncate">出行导航</div>
-              <div id="idxMapSub" class="text-[10px] text-emerald-600 truncate">一键搜店 · 路线规划</div>
+              <div id="idxCctvTitle" class="font-black text-[11px] text-amber-950 truncate">关卡 CCTV</div>
+              <div id="idxCctvSub" class="text-[9px] text-amber-700 truncate">兀兰·大士路况</div>
             </div>
           </div>
-          <span class="text-emerald-500 font-bold text-sm">›</span>
+          <span class="text-amber-500 font-bold text-xs shrink-0">›</span>
+        </a>
+
+        <a href="/map.html" class="bg-gradient-to-r from-emerald-50 to-teal-50/70 hover:from-emerald-100/80 border border-emerald-100 rounded-xl px-2.5 py-2 flex items-center justify-between transition min-w-0">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm shrink-0">🧭</span>
+            <div class="min-w-0">
+              <div id="idxMapTitle" class="font-black text-[11px] text-emerald-950 truncate">出行导航</div>
+              <div id="idxMapSub" class="text-[9px] text-emerald-600 truncate">搜店路线规划</div>
+            </div>
+          </div>
+          <span class="text-emerald-500 font-bold text-xs shrink-0">›</span>
         </a>
       </div>
 
@@ -1572,9 +1583,11 @@
         resetBtn: '重置',
         backHomeBtn: '← 返回首页',
         idxForumTitle: '大马吹水站',
-        idxForumSub: '本地吹水 · 探店问答',
+        idxForumSub: '本地吹水问答',
+        idxCctvTitle: '关卡 CCTV',
+        idxCctvSub: '兀兰·大士路况',
         idxMapTitle: '出行导航',
-        idxMapSub: '一键搜店 · 路线规划',
+        idxMapSub: '搜店路线规划',
         rateCnyLabel: '马币兑人民币',
         rateSgdLabel: '新币兑马币',
         filterPanelTitle: '🎛️ 精准筛选条件',
@@ -1749,9 +1762,11 @@
         resetBtn: 'Reset',
         backHomeBtn: '← Home',
         idxForumTitle: 'MY Forum',
-        idxForumSub: 'Chat · Food & Q&A',
+        idxForumSub: 'Chat & Q&A',
+        idxCctvTitle: 'Causeway CCTV',
+        idxCctvSub: 'Woodlands & Tuas',
         idxMapTitle: 'Navigation',
-        idxMapSub: 'Find places & routes',
+        idxMapSub: 'Places & routes',
         rateCnyLabel: 'MYR to CNY',
         rateSgdLabel: 'SGD to MYR',
         filterPanelTitle: '🎛️ Smart Filters',
@@ -1926,9 +1941,11 @@
         resetBtn: 'Reset',
         backHomeBtn: '← Utama',
         idxForumTitle: 'Forum MY',
-        idxForumSub: 'Sembang · Makan & Soal',
+        idxForumSub: 'Sembang & Soal',
+        idxCctvTitle: 'CCTV Tambak',
+        idxCctvSub: 'Woodlands & Tuas',
         idxMapTitle: 'Navigasi',
-        idxMapSub: 'Cari kedai & laluan',
+        idxMapSub: 'Kedai & laluan',
         rateCnyLabel: 'MYR ke CNY',
         rateSgdLabel: 'SGD ke MYR',
         filterPanelTitle: '🎛️ Penapis Tepat',
@@ -2328,6 +2345,8 @@
 
       if (document.getElementById('idxForumTitle')) document.getElementById('idxForumTitle').innerText = t.idxForumTitle;
       if (document.getElementById('idxForumSub')) document.getElementById('idxForumSub').innerText = t.idxForumSub;
+      if (document.getElementById('idxCctvTitle')) document.getElementById('idxCctvTitle').innerText = t.idxCctvTitle;
+      if (document.getElementById('idxCctvSub')) document.getElementById('idxCctvSub').innerText = t.idxCctvSub;
       if (document.getElementById('idxMapTitle')) document.getElementById('idxMapTitle').innerText = t.idxMapTitle;
       if (document.getElementById('idxMapSub')) document.getElementById('idxMapSub').innerText = t.idxMapSub;
       document.getElementById('rateCnyLabel').innerText = t.rateCnyLabel;
