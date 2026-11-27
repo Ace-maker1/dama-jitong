@@ -607,7 +607,7 @@
     let renderDisplayLimit = 80;
     let lastFilteredList = [];
 
-    // 10 宫格纯代码矢量图标配置
+    // 10 宫格纯代码矢量图标配置（已将签证办理加入并配置三语）
     const PORTAL_TILES = [
       {
         key: 'all', cat: '全部', kw: '',
@@ -640,10 +640,10 @@
         svg: '<path d="M4 12h16a8 8 0 01-16 0zm3-5h2v3H7V7zm4-1h2v4h-2V6zm4 1h2v3h-2V7z" fill="white"/>'
       },
       {
-        key: 'move', cat: '本地优惠', kw: '搬家',
-        zh: '搬家搬运', en: 'Moving', ms: 'Pindah',
-        bg: 'from-amber-500 to-yellow-600',
-        svg: '<path d="M3 7h11v8H3V7zm12 3h3l3 3v2h-6v-5zM7 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4z" fill="white"/>'
+        key: 'visa', cat: '本地优惠', kw: '签证',
+        zh: '签证办理', en: 'Visa Services', ms: 'Perkhidmatan Visa',
+        bg: 'from-violet-500 to-purple-600',
+        svg: '<path d="M5 4h10l4 4v12a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1zm3 5a2 2 0 100 4 2 2 0 000-4zm-2 6h6v1.5H6V15zm7-5h3v1.5h-3V10zm0 3h3v1.5h-3V13z" fill="white"/>'
       },
       {
         key: 'clean', cat: '本地优惠', kw: '清洁',
@@ -670,6 +670,40 @@
         svg: '<path d="M12 4L3 11h3v9h5v-5h2v5h5v-9h3L12 4z" fill="white"/>'
       }
     ];
+
+    const TITLE_TAG_MAP = {
+      '本地美食': { zh: '本地美食', en: 'Food & Dining', ms: 'Makanan' },
+      '生活服务': { zh: '生活服务', en: 'Services', ms: 'Servis' },
+      '便民医疗': { zh: '便民医疗', en: 'Clinic & Health', ms: 'Klinik & Kesihatan' },
+      '美容美发': { zh: '美容美发', en: 'Beauty & Spa', ms: 'Kecantikan' },
+      '汽车服务': { zh: '汽车服务', en: 'Auto Care', ms: 'Bengkel Kereta' },
+      '签证办理': { zh: '签证办理', en: 'Visa Services', ms: 'Perkhidmatan Visa' },
+      '收录商户': { zh: '收录商户', en: 'Directory', ms: 'Direktori' }
+    };
+
+    function localizeCardTitle(rawTitle, lang = currentLang) {
+      let s = String(rawTitle || '').trim();
+      if (!s || lang === 'zh') return s;
+
+      s = s.replace(/【([^】]+)】/g, (_, inner) => {
+        const parts = inner.split(/[·・/]/).map(x => x.trim()).filter(Boolean);
+        const mapped = parts.map(p => TITLE_TAG_MAP[p]?.[lang] || (/[\u4e00-\u9fa5]/.test(p) ? (lang === 'ms' ? 'Direktori' : 'Directory') : p));
+        return `[${mapped.join(' · ')}] `;
+      });
+
+      s = s.replace(/\[([^\]]+)\]/g, (_, inner) => {
+        const parts = inner.split(/[·・/]/).map(x => x.trim()).filter(Boolean);
+        const mapped = parts.map(p => TITLE_TAG_MAP[p]?.[lang] || (/[\u4e00-\u9fa5]/.test(p) ? (lang === 'ms' ? 'Direktori' : 'Directory') : p));
+        return `[${mapped.join(' · ')}]`;
+      });
+
+      s = s.replace(/·[\u4e00-\u9fa5]+/g, (m) => {
+        const word = m.slice(1);
+        return TITLE_TAG_MAP[word]?.[lang] ? ` · ${TITLE_TAG_MAP[word][lang]}` : '';
+      });
+
+      return s.replace(/\s{2,}/g, ' ').trim();
+    }
 
     function renderPortalIconGrid() {
       const grid = document.getElementById('portalIconGrid');
@@ -728,7 +762,6 @@
       renderPosts();
     }
 
-    // 识别 Halal 三态：宁缺毋滥，不瞎猜 JAKIM 认证
     function detectHalalStatus(post = {}) {
       const explicitMatch = `${post.description || ''} ${post.desc_zh || ''}`.match(/\[\[HALAL:(halal|friendly|non-halal)\]\]/i);
       if (explicitMatch) return explicitMatch[1].toLowerCase();
@@ -760,7 +793,6 @@
       return '';
     }
 
-    // 规范化店名用于防重比对
     function normalizeShopName(rawTitle = '') {
       return String(rawTitle || '')
         .replace(/^【[^】]+】/g, '')
@@ -771,7 +803,6 @@
         .trim();
     }
 
-    // 查找疑似已收录的同城店铺，支持认领/覆盖更新
     function findDuplicateCandidate(title, city, exactAddr) {
       const normNew = normalizeShopName(title);
       if (!normNew || normNew.length < 2) return null;
@@ -788,7 +819,6 @@
       }) || null;
     }
 
-    // 计算文件 SHA-256 指纹用于去重
     async function computeBlobHash(blob) {
       try {
         const buf = await blob.arrayBuffer();
@@ -861,12 +891,21 @@
       return urls;
     }
 
-    function cleanDisplayDescription(rawText = '') {
-      return String(rawText || '')
+    function cleanDisplayDescription(rawText = '', lang = currentLang) {
+      let d = String(rawText || '')
         .replace(/\[\[IMGS:[\s\S]*?\]\]/g, '')
         .replace(/\[\[MAP:[^\]]+\]\]/g, '')
         .replace(/\[\[HALAL:[^\]]+\]\]/gi, '')
         .trim();
+
+      if (lang !== 'zh' && d) {
+        const t = I18N[lang];
+        d = d.replace(/📍\s*地址[：:]\s*/g, t.addrPrefix);
+        d = d.replace(/由用户搜索自动收录至大马吉通本地目录/g, t.autoDirNote);
+        d = d.replace(/全马本地生活目录收录，支持一键导航到店/g, t.autoDirNote);
+        d = d.replace(/[\u4e00-\u9fa5]{2,}[：:]\s*/g, '');
+      }
+      return d.trim();
     }
 
     function parseNumberFromText(raw) {
@@ -919,6 +958,7 @@
 
     function inferIndustryTag(text) {
       const s = String(text || '').toLowerCase();
+      if (/visa|mm2h|passport|pasport|permit|签证|第二家园|准证|护照|移民/.test(s)) return '签证办理';
       if (/klinik|poliklinik|clinic|dental|pharmacy|诊所|牙科|药房|医疗|养生/.test(s)) return '便民医疗';
       if (/hair|salon|barber|beauty|spa|理发|美发|美容|剪发|按摩/.test(s)) return '美容美发';
       if (/car|auto|workshop|bengkel|tyre|tire|aircond|修车|汽车|洗车|轮胎|冷气|维修|水电|搬家/.test(s)) return '生活服务';
@@ -1073,7 +1113,6 @@
       }, immediate ? 20 : 250);
     }
 
-    // 零延迟秒跳：先立即跳转导航，后台异步沉淀入库
     function handleDiscoverySelect(idx) {
       const list = window._discoveredPlacesCache || [];
       const item = list[idx];
@@ -1090,6 +1129,8 @@
 
       if (!alreadyExists) {
         const indTag = inferIndustryTag(`${item.name} ${item.addr} ${document.getElementById('searchInput')?.value || ''}`);
+        const enTag = TITLE_TAG_MAP[indTag]?.en || 'Services';
+        const msTag = TITLE_TAG_MAP[indTag]?.ms || 'Servis';
         const fullTitle = `【收录商户·${indTag}】${item.name}`;
         const packedDesc = `📍 地址：${item.addr}\n由用户搜索自动收录至大马吉通本地目录\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`;
 
@@ -1098,8 +1139,8 @@
           city: item.city || '全马',
           title: fullTitle,
           title_zh: fullTitle,
-          title_en: `[Local Directory · ${indTag}] ${item.name}`,
-          title_ms: `[Direktori Tempatan · ${indTag}] ${item.name}`,
+          title_en: `[Local Directory · ${enTag}] ${item.name}`,
+          title_ms: `[Direktori Tempatan · ${msTag}] ${item.name}`,
           price: t.defaultStorePrice,
           price_zh: '到店咨询 / 实惠价',
           price_en: 'Visit Store',
@@ -1107,8 +1148,8 @@
           whatsapp: '601125490636',
           description: packedDesc,
           desc_zh: packedDesc,
-          desc_en: packedDesc,
-          desc_ms: packedDesc,
+          desc_en: `📍 Address: ${item.addr}\nAdded to DamaJitong Local Directory via search\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`,
+          desc_ms: `📍 Alamat: ${item.addr}\nDitambah ke Direktori Tempatan DamaJitong\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`,
           image_url: null,
           is_pinned: false
         }]).then(() => {}).catch(() => {});
@@ -1194,7 +1235,7 @@
     }
 
     function packLocationIntoDesc(rawDesc, exactAddr, coords, extraUrls = [], halalStatus = '') {
-      const cleanDesc = cleanDisplayDescription(rawDesc);
+      const cleanDesc = cleanDisplayDescription(rawDesc, 'zh');
       const addrPart = (exactAddr || '').trim();
       const lines = [];
       if (addrPart) lines.push(`📍 地址：${addrPart}`);
@@ -1232,7 +1273,8 @@
       ['租房', '房子', '房间', '套房', 'condo', '公寓', 'rumah', 'sewa', 'bilik', 'rent', 'room'],
       ['招聘', '工作', '兼职', '薪资', 'kerja', 'kosong', 'jawatan', 'job', 'hiring', 'part time'],
       ['二手', '闲置', '转让', 'terpakai', 'preloved', 'used', 'second hand'],
-      ['美食', '探店', '优惠', '商家', 'makan', 'food', 'promo', 'kedai', 'kopitiam', 'clinic', 'workshop']
+      ['美食', '探店', '优惠', '商家', 'makan', 'food', 'promo', 'kedai', 'kopitiam', 'clinic', 'workshop'],
+      ['签证', 'visa', 'mm2h', '第二家园', '工作准证', '学生签', 'passport', 'pasport', '续签', '移民', 'permit']
     ];
 
     function expandSearchTerms(rawKeyword) {
@@ -1504,6 +1546,8 @@
         discoveryActionHint: '点选：自动沉淀至平台并开启导航',
         discoveryNavBtn: '🧭 导航',
         defaultStorePrice: '到店咨询 / 实惠价',
+        addrPrefix: '📍 地址：',
+        autoDirNote: '由用户搜索自动收录至大马吉通本地目录',
         catHouse: '找房子',
         catJob: '找工作',
         catSecond: '二手闲置',
@@ -1676,6 +1720,8 @@
         discoveryActionHint: 'Tap: Save to directory & open navigation',
         discoveryNavBtn: '🧭 Route',
         defaultStorePrice: 'Visit Store',
+        addrPrefix: '📍 Address: ',
+        autoDirNote: 'Added to DamaJitong Local Directory via search · Tap to navigate',
         catHouse: 'Property',
         catJob: 'Jobs',
         catSecond: 'Preloved',
@@ -1848,6 +1894,8 @@
         discoveryActionHint: 'Tekan: Simpan direktori & buka navigasi',
         discoveryNavBtn: '🧭 Laluan',
         defaultStorePrice: 'Rujuk Kedai',
+        addrPrefix: '📍 Alamat: ',
+        autoDirNote: 'Ditambah ke Direktori Tempatan DamaJitong · Tekan untuk navigasi',
         catHouse: 'Rumah Sewa',
         catJob: 'Kerja Kosong',
         catSecond: 'Terpakai',
@@ -2366,7 +2414,6 @@
           }
         }
 
-        // 第一页拉完立刻渲染首屏，后续分页在后台静默追加并更新总数
         allPosts = merged;
         renderPosts();
 
@@ -2383,6 +2430,13 @@
       const t = I18N[currentLang];
       const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''} ${post.desc_en || ''} ${post.desc_ms || ''}`.toLowerCase();
 
+      if (/visa|mm2h|passport|pasport|permit|签证|第二家园|准证|护照|移民/.test(text)) {
+        return {
+          bg: 'from-violet-500 to-purple-600',
+          icon: '🛂',
+          label: currentLang === 'en' ? 'Visa' : (currentLang === 'ms' ? 'Visa' : '签证办理')
+        };
+      }
       if (/klinik|poliklinik|clinic|dental|pharmacy|farmasi|诊所|牙科|药房|医疗|养生|保健/.test(text)) {
         return {
           bg: 'from-teal-500 to-emerald-600',
@@ -2430,9 +2484,10 @@
       const photos = extractPostImages(post);
       const halalBadge = getHalalBadgeHTML(post);
 
-      const localizedTitle =
+      const rawLocTitle =
         (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
         post.title;
+      const localizedTitle = localizeCardTitle(rawLocTitle, currentLang);
       const localizedPrice =
         (currentLang === 'en' ? post.price_en : (currentLang === 'ms' ? post.price_ms : post.price_zh)) ||
         post.price;
@@ -2530,16 +2585,17 @@
       activeDetailImages = photos;
       activeDetailIndex = 0;
 
-      const localizedTitle =
+      const rawLocTitle =
         (currentLang === 'en' ? post.title_en : (currentLang === 'ms' ? post.title_ms : post.title_zh)) ||
         post.title;
+      const localizedTitle = localizeCardTitle(rawLocTitle, currentLang);
       const localizedPrice =
         (currentLang === 'en' ? post.price_en : (currentLang === 'ms' ? post.price_ms : post.price_zh)) ||
         post.price;
       const rawDesc =
         (currentLang === 'en' ? post.desc_en : (currentLang === 'ms' ? post.desc_ms : post.desc_zh)) ||
         post.description || '';
-      const cleanDesc = cleanDisplayDescription(rawDesc) || t.noDesc;
+      const cleanDesc = cleanDisplayDescription(rawDesc, currentLang) || t.noDesc;
       const waDigits = normalizeMalaysiaWhatsapp(post.whatsapp);
       const waLink = `https://wa.me/${waDigits}?text=${encodeURIComponent(t.waGreeting(localizedTitle))}`;
       const isFaved = savedIds.includes(post.id);
@@ -2660,7 +2716,6 @@
     }
 
     function paintVisibleSlice() {
-      const t = I18N[currentLang];
       const listEl = document.getElementById('postList');
       const loadMoreWrap = document.getElementById('loadMoreWrap');
       const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -2709,7 +2764,6 @@
         const ageMs = Date.now() - new Date(p.created_at).getTime();
         if (!p.is_pinned && !isDirectoryShop && ageMs > 30 * 86400000) return false;
 
-        // 选具体州属时仅匹配该州属或旧州名映射，避免“全马”杂项混入各州首屏
         const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
         const matchCity = (city === '全马')
           ? true
@@ -2845,7 +2899,6 @@
         const pinB = b.is_pinned ? 1 : 0;
         if (pinB !== pinA) return pinB - pinA;
 
-        // 默认排序时优先把已有实拍封面图的商家排在前面，并按 ID 尾数轻量分散避免单店霸屏
         const hasImgA = a.image_url ? 1 : 0;
         const hasImgB = b.image_url ? 1 : 0;
         if (!rawKeyword && hasImgB !== hasImgA) return hasImgB - hasImgA;
@@ -2941,7 +2994,6 @@
       const postCat = document.getElementById('postCategory').value;
       const postCity = document.getElementById('postCity').value;
 
-      // 检测是否已存在同城相似店铺，支持老板直接认领/覆盖更新
       let claimTargetPost = null;
       const dupCandidate = findDuplicateCandidate(rawTitle, postCity, exactAddr);
       if (dupCandidate) {
