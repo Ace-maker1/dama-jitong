@@ -12,21 +12,33 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #eef0f4; -webkit-tap-highlight-color: transparent; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .glass-pill { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .card-elevated { transition: transform 0.16s ease, box-shadow 0.16s ease; }
+    .card-elevated:active { transform: scale(0.992); }
+    @keyframes shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .skeleton-box {
+      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
   </style>
   <!-- Google AdSense 自动广告与审核验证脚本 -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4770023285363817"
      crossorigin="anonymous"></script>
 </head>
-<body class="max-w-md mx-auto bg-gray-100 min-h-screen flex flex-col relative shadow-2xl">
+<body class="max-w-md mx-auto bg-[#f5f6f8] min-h-screen flex flex-col relative shadow-[0_0_40px_rgba(15,23,42,0.12)]">
 
   <!-- 顶部沉浸式横幅 + 地区/三语 + 悬浮胶囊搜索框 -->
-  <header class="relative bg-gradient-to-br from-red-600 via-orange-600 to-amber-500 text-white pt-3 pb-7 px-3.5 shadow-md overflow-hidden">
+  <header class="relative bg-gradient-to-br from-red-600 via-rose-600 to-orange-500 text-white pt-3.5 pb-8 px-4 shadow-md overflow-hidden rounded-b-[26px]">
     <!-- 纯代码装饰矢量几何背景（零外链图片） -->
-    <svg class="absolute right-0 bottom-0 w-44 h-36 opacity-15 pointer-events-none" viewBox="0 0 200 160" fill="none">
-      <circle cx="150" cy="40" r="65" fill="white"/>
+    <svg class="absolute right-0 bottom-0 w-48 h-40 opacity-15 pointer-events-none" viewBox="0 0 200 160" fill="none">
+      <circle cx="155" cy="35" r="70" fill="white"/>
       <rect x="25" y="75" width="28" height="85" rx="4" fill="white"/>
       <rect x="62" y="45" width="34" height="115" rx="4" fill="white"/>
       <rect x="105" y="65" width="30" height="95" rx="4" fill="white"/>
@@ -35,46 +47,46 @@
 
     <div class="relative z-10 flex items-center justify-between gap-2 mb-3">
       <!-- 左侧 Logo + 州属选择 -->
-      <div class="flex items-center space-x-2 shrink-0">
-        <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-9 h-9 rounded-xl object-cover shadow-sm bg-[#F8F6F0] border border-white/40">
+      <div class="flex items-center space-x-2.5 shrink-0">
+        <img src="/icon.png?v=4" sizes="1024x1024" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-10 h-10 rounded-2xl object-cover shadow-md bg-[#F8F6F0] border-2 border-white/60">
         <div>
-          <div class="flex items-center space-x-1">
-            <span id="brandTitle" class="font-black text-base tracking-tight">大马吉通</span>
-            <span class="text-[9px] bg-white/25 px-1.5 py-0.5 rounded font-extrabold">MY</span>
+          <div class="flex items-center space-x-1.5">
+            <span id="brandTitle" class="font-black text-[17px] tracking-tight">大马吉通</span>
+            <span class="text-[9px] bg-white/25 glass-pill px-1.5 py-0.5 rounded-md font-extrabold tracking-wider">MY PRO</span>
           </div>
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 mt-0.5">
             <select id="cityFilter" onchange="onCityDropdownChange()" class="bg-transparent text-white text-[11px] font-semibold focus:outline-none cursor-pointer -ml-1 max-w-[155px]">
             </select>
-            <button onclick="autoDetectState()" id="autoStateBtn" title="自动定位所在州属" class="text-[10px] bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded font-bold shrink-0">📍定位</button>
+            <button onclick="autoDetectState()" id="autoStateBtn" title="自动定位所在州属" class="text-[10px] bg-white/20 hover:bg-white/30 glass-pill px-2 py-0.5 rounded-full font-bold shrink-0 transition">📍定位</button>
           </div>
         </div>
       </div>
 
       <!-- 右侧三语切换器 -->
-      <div class="flex items-center bg-black/20 rounded-full p-0.5 text-[11px] font-bold shrink-0">
-        <button onclick="setLang('zh')" id="langBtn-zh" class="px-2 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
-        <button onclick="setLang('en')" id="langBtn-en" class="px-2 py-0.5 rounded-full text-white/90 hover:text-white transition">EN</button>
-        <button onclick="setLang('ms')" id="langBtn-ms" class="px-2 py-0.5 rounded-full text-white/90 hover:text-white transition">BM</button>
+      <div class="flex items-center bg-black/20 glass-pill rounded-full p-0.5 text-[11px] font-bold shrink-0 border border-white/15">
+        <button onclick="setLang('zh')" id="langBtn-zh" class="px-2.5 py-0.5 rounded-full bg-white text-red-600 transition">CN</button>
+        <button onclick="setLang('en')" id="langBtn-en" class="px-2.5 py-0.5 rounded-full text-white/90 hover:text-white transition">EN</button>
+        <button onclick="setLang('ms')" id="langBtn-ms" class="px-2.5 py-0.5 rounded-full text-white/90 hover:text-white transition">BM</button>
       </div>
     </div>
 
     <!-- 横幅标语 -->
     <div class="relative z-10 px-0.5">
       <div id="heroBannerHeadline" class="font-black text-[17px] tracking-tight leading-snug drop-shadow-xs">全马华人本地生活 · 租房求职商家直通</div>
-      <div id="heroBannerSub" class="text-[11px] text-amber-100 mt-0.5">零佣金免费发布 · 一键导航到店 · WhatsApp 直聊</div>
+      <div id="heroBannerSub" class="text-[11px] text-amber-100/95 mt-0.5 font-medium">零佣金免费发布 · 一键导航到店 · WhatsApp 直聊</div>
     </div>
   </header>
 
   <!-- 悬浮胶囊搜索框 + 三项快捷入口条（浏览记录 / 我的收藏 / 我的帖子） -->
-  <div class="relative z-20 -mt-5 mx-3 bg-white rounded-2xl shadow-md border border-gray-100 p-3">
+  <div class="relative z-20 -mt-5 mx-3 bg-white rounded-2xl shadow-[0_6px_20px_rgba(15,23,42,0.06)] border border-gray-100/90 p-3">
     <form onsubmit="handleSearchSubmit(event)" class="relative mb-2.5 flex items-center gap-1.5">
       <div class="relative flex-1">
         <input type="search" id="searchInput" enterkeyhint="search" oninput="onSearchInput()" placeholder="找房子、找工作、找二手、搜商家..."
-               class="w-full bg-gray-100 text-gray-800 text-xs rounded-full pl-9 pr-8 py-2.5 focus:bg-white focus:ring-2 focus:ring-red-500/30 focus:outline-none transition font-medium">
+               class="w-full bg-gray-100/90 text-gray-800 text-xs rounded-full pl-9 pr-8 py-2.5 focus:bg-white focus:ring-2 focus:ring-red-500/30 focus:outline-none transition font-medium">
         <span class="absolute left-3.5 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
         <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
       </div>
-      <button type="submit" id="searchSubmitBtn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-full shrink-0 shadow-2xs transition">搜索</button>
+      <button type="submit" id="searchSubmitBtn" class="bg-gradient-to-r from-red-600 to-orange-600 hover:opacity-95 text-white text-xs font-bold px-4 py-2.5 rounded-full shrink-0 shadow-xs transition">搜索</button>
     </form>
 
     <div class="grid grid-cols-3 divide-x divide-gray-100 text-center text-xs font-bold text-gray-700 pt-0.5">
@@ -109,10 +121,10 @@
     </section>
 
     <!-- 门户视觉核心区：双大横卡 + 10 宫格矢量图标导航 -->
-    <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 space-y-3.5">
+    <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-xs border border-gray-100 space-y-3.5">
       <div class="grid grid-cols-2 gap-2.5">
         <button type="button" onclick="selectPortalTile('找房子', '')"
-                class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-50 to-blue-100/90 border border-blue-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
+                class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100/90 border border-blue-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
           <div class="relative z-10 pr-8">
             <div id="bigCardHouseTitle" class="font-black text-[15px] text-slate-900">房屋出租</div>
             <div id="bigCardHouseSub" class="text-[11px] text-slate-500 mt-0.5 leading-tight">好房直租 价格优惠</div>
@@ -129,7 +141,7 @@
         </button>
 
         <button type="button" onclick="selectPortalTile('找工作', '')"
-                class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 to-orange-100/90 border border-orange-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
+                class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 via-orange-50 to-amber-100/90 border border-orange-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
           <div class="relative z-10 pr-8">
             <div id="bigCardJobTitle" class="font-black text-[15px] text-slate-900">招聘信息</div>
             <div id="bigCardJobSub" class="text-[11px] text-slate-500 mt-0.5 leading-tight">优质职位 岗位多多</div>
@@ -147,9 +159,9 @@
     </section>
 
     <!-- 快捷工具条：大马吹水站 + 实时汇率油价速览 -->
-    <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 space-y-2.5">
+    <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-xs border border-gray-100 space-y-2.5">
       <div class="flex items-center justify-between gap-2">
-        <a href="/forum.html" class="flex-1 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
+        <a href="/forum.html" class="flex-1 bg-gradient-to-r from-indigo-50 to-blue-50/70 hover:from-indigo-100/80 border border-indigo-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
           <div class="flex items-center gap-2 min-w-0">
             <span class="text-base">💬</span>
             <div class="min-w-0">
@@ -160,7 +172,7 @@
           <span class="text-indigo-400 font-bold text-sm">›</span>
         </a>
 
-        <a href="/map.html" class="flex-1 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
+        <a href="/map.html" class="flex-1 bg-gradient-to-r from-emerald-50 to-teal-50/70 hover:from-emerald-100/80 border border-emerald-100 rounded-xl px-3 py-2 flex items-center justify-between transition">
           <div class="flex items-center gap-2 min-w-0">
             <span class="text-base">🧭</span>
             <div class="min-w-0">
@@ -173,15 +185,15 @@
       </div>
 
       <div class="grid grid-cols-3 gap-1.5 text-center text-[11px]">
-        <div class="bg-gray-50 rounded-xl py-1.5 px-1 border border-gray-100">
+        <div class="bg-gray-50/90 rounded-xl py-1.5 px-1 border border-gray-100">
           <div class="text-[9px] text-gray-400">RON95 / 97</div>
           <div id="fuelPriceDisplay" class="font-extrabold text-red-600">RM 1.99 <span class="text-gray-400 font-normal">/ 4.00</span></div>
         </div>
-        <div class="bg-gray-50 rounded-xl py-1.5 px-1 border border-gray-100">
+        <div class="bg-gray-50/90 rounded-xl py-1.5 px-1 border border-gray-100">
           <div id="rateCnyLabel" class="text-[9px] text-gray-400">马币兑人民币</div>
           <div id="rateCnyDisplay" class="font-extrabold text-amber-600">1 MYR ≈ 1.62</div>
         </div>
-        <div class="bg-gray-50 rounded-xl py-1.5 px-1 border border-gray-100">
+        <div class="bg-gray-50/90 rounded-xl py-1.5 px-1 border border-gray-100">
           <div id="rateSgdLabel" class="text-[9px] text-gray-400">新币兑马币</div>
           <div id="rateSgdDisplay" class="font-extrabold text-blue-600">1 SGD ≈ 3.19</div>
         </div>
@@ -189,7 +201,7 @@
     </section>
 
     <!-- 热门城市快捷切换胶囊 -->
-    <section class="mx-3 mt-2.5 bg-white rounded-2xl px-3 py-2 shadow-sm border border-gray-100">
+    <section class="mx-3 mt-2.5 bg-white rounded-2xl px-3 py-2 shadow-xs border border-gray-100">
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
         <span id="hotCityLabel" class="text-gray-400 shrink-0 font-medium">热门：</span>
         <button type="button" id="qCity-all" onclick="selectQuickCity('全马')" data-quick-city="全马" class="quick-city-btn px-2.5 py-1 rounded-full bg-red-600 text-white font-bold shrink-0 transition">全马</button>
@@ -202,7 +214,7 @@
     </section>
 
     <!-- 多维过滤器面板 -->
-    <section id="smartFilterPanel" class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 space-y-2 text-xs">
+    <section id="smartFilterPanel" class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-xs border border-gray-100 space-y-2 text-xs">
       <div class="flex items-center justify-between">
         <span id="filterPanelTitle" class="font-bold text-gray-700 text-[11px]">🎛️ 精准筛选条件</span>
         <button type="button" id="clearSubFilterBtn" onclick="resetSubFilters()" class="text-[10px] text-gray-400 hover:text-red-600 font-semibold">清空筛选项</button>
@@ -314,11 +326,12 @@
     </section>
 
     <!-- 列表标题栏 -->
-    <div id="feedAnchor" class="mx-4 mt-4 mb-2 flex items-center justify-between">
+    <div id="feedAnchor" class="mx-4 mt-4 mb-2.5 flex items-center justify-between">
       <div class="flex items-center space-x-2 min-w-0">
-        <span class="w-1 h-4 bg-red-600 rounded-full shrink-0"></span>
-        <h2 class="font-extrabold text-gray-800 text-sm truncate" id="listHeaderTitle">全马最新动态</h2>
-        <span id="postCountBadge" class="text-[11px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium shrink-0">0</span>
+        <span class="w-1.5 h-4 bg-gradient-to-b from-red-600 to-orange-500 rounded-full shrink-0"></span>
+        <h2 class="font-black text-gray-800 text-sm truncate" id="listHeaderTitle">全马最新动态</h2>
+        <span id="postCountBadge" class="text-[11px] bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-bold shrink-0">0</span>
+        <span id="syncIndicatorBadge" class="hidden text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-semibold animate-pulse shrink-0">同步全库中...</span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button type="button" onclick="resetAllFilters()" id="resetFilterBtn" class="hidden text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full hover:bg-amber-200 transition">重置</button>
@@ -328,10 +341,30 @@
       </div>
     </div>
 
-    <!-- 云端实时帖子列表 -->
+    <!-- 云端实时帖子列表（内置骨架屏加载动画） -->
     <section class="px-3 space-y-2.5" id="postList">
-      <div id="loadingText" class="text-center py-12 text-gray-400 text-sm">正在连接云端数据库加载最新动态...</div>
+      <div class="bg-white rounded-2xl p-3.5 shadow-xs border border-gray-100 space-y-2.5">
+        <div class="skeleton-box h-36 w-full rounded-xl"></div>
+        <div class="skeleton-box h-4 w-3/4 rounded"></div>
+        <div class="skeleton-box h-3 w-1/2 rounded"></div>
+      </div>
+      <div class="bg-white rounded-2xl p-3.5 shadow-xs border border-gray-100 flex justify-between gap-3">
+        <div class="flex-1 space-y-2">
+          <div class="skeleton-box h-3 w-24 rounded"></div>
+          <div class="skeleton-box h-4 w-full rounded"></div>
+          <div class="skeleton-box h-3 w-28 rounded"></div>
+        </div>
+        <div class="skeleton-box w-20 h-20 rounded-xl shrink-0"></div>
+      </div>
     </section>
+
+    <!-- 底部加载更多按钮 -->
+    <div id="loadMoreWrap" class="hidden px-3 pt-3">
+      <button type="button" id="loadMoreBtn" onclick="loadMoreRender()"
+              class="w-full py-2.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-xs font-bold text-gray-700 shadow-2xs transition">
+        加载更多动态
+      </button>
+    </div>
   </main>
 
   <!-- 收藏页面 -->
@@ -429,7 +462,7 @@
   </main>
 
   <!-- 底部5键导航栏 -->
-  <nav class="fixed bottom-0 max-w-md w-full bg-white border-t border-gray-200 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+  <nav class="fixed bottom-0 max-w-md w-full bg-white/95 glass-pill border-t border-gray-200/80 grid grid-cols-5 items-center py-1.5 z-30 shadow-[0_-4px_16px_rgba(15,23,42,0.05)]">
     <button onclick="switchTab('main')" id="navMain" class="flex flex-col items-center text-red-600">
       <span class="text-lg">🏠</span>
       <span id="navHomeText" class="text-[10px] font-bold mt-0.5">首页</span>
@@ -571,6 +604,8 @@
     let activeHalalFilter = '';
     let discoveryTimer = null;
     let discoverySeq = 0;
+    let renderDisplayLimit = 80;
+    let lastFilteredList = [];
 
     // 10 宫格纯代码矢量图标配置
     const PORTAL_TILES = [
@@ -657,6 +692,7 @@
     function selectPortalTile(cat, kw = '', key = 'all') {
       activePortalKey = key || 'all';
       currentCategory = cat || '全部';
+      renderDisplayLimit = 80;
       const searchEl = document.getElementById('searchInput');
       if (searchEl) {
         searchEl.value = kw || '';
@@ -673,6 +709,7 @@
 
     function selectHalalFilter(statusVal) {
       activeHalalFilter = statusVal || '';
+      renderDisplayLimit = 80;
       const map = {
         '': 'halalBtn-all',
         'halal': 'halalBtn-halal',
@@ -1106,6 +1143,7 @@
 
     function resetSubFilters() {
       activeHalalFilter = '';
+      renderDisplayLimit = 80;
       selectHalalFilter('');
       ['allMaxPrice', 'propMaxPrice', 'propMinSize', 'jobMinSalary', 'prelovedMaxBudget'].forEach(id => {
         const el = document.getElementById(id);
@@ -1286,12 +1324,14 @@
     }
 
     function selectQuickCity(cityVal) {
+      renderDisplayLimit = 80;
       document.getElementById('cityFilter').value = cityVal;
       syncQuickCityButtons(cityVal);
       renderPosts();
     }
 
     function onCityDropdownChange() {
+      renderDisplayLimit = 80;
       const val = document.getElementById('cityFilter').value;
       syncQuickCityButtons(val);
       renderPosts();
@@ -1299,6 +1339,7 @@
 
     function handleSearchSubmit(e) {
       if (e) e.preventDefault();
+      renderDisplayLimit = 80;
       const inp = document.getElementById('searchInput');
       if (inp) inp.blur();
       renderPosts(true);
@@ -1309,18 +1350,21 @@
     }
 
     function onSearchInput() {
+      renderDisplayLimit = 80;
       const val = document.getElementById('searchInput').value;
       document.getElementById('clearSearchBtn').classList.toggle('hidden', !val.trim());
       renderPosts(false);
     }
 
     function clearSearchInput() {
+      renderDisplayLimit = 80;
       document.getElementById('searchInput').value = '';
       document.getElementById('clearSearchBtn').classList.add('hidden');
       renderPosts();
     }
 
     function resetAllFilters() {
+      renderDisplayLimit = 80;
       document.getElementById('searchInput').value = '';
       document.getElementById('clearSearchBtn').classList.add('hidden');
       document.getElementById('cityFilter').value = '全马';
@@ -2074,9 +2118,9 @@
       ['zh', 'en', 'ms'].forEach(l => {
         const btn = document.getElementById(`langBtn-${l}`);
         if (l === lang) {
-          btn.className = 'px-2 py-0.5 rounded-full bg-white text-red-600 transition shadow-xs';
+          btn.className = 'px-2.5 py-0.5 rounded-full bg-white text-red-600 transition shadow-xs';
         } else {
-          btn.className = 'px-2 py-0.5 rounded-full text-white/90 hover:text-white transition';
+          btn.className = 'px-2.5 py-0.5 rounded-full text-white/90 hover:text-white transition';
         }
       });
 
@@ -2285,26 +2329,54 @@
       });
     }
 
-    // 拉取更多记录（最多 3000 条）确保 2,700+ 收录商户皆可被检索
+    // 全自动分页循环拉取全库数据（突破 Supabase 单次 1000 条限制，首屏秒开 + 后台补齐）
     async function fetchPosts() {
-      const { data, error } = await supabaseClient
-        .from('posts')
-        .select('*')
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(3000);
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let merged = [];
+      const seenIds = new Set();
+      const syncBadge = document.getElementById('syncIndicatorBadge');
+      if (syncBadge) syncBadge.classList.remove('hidden');
 
-      if (error) {
-        console.error('Supabase Error:', error);
-        document.getElementById('postList').innerHTML = `
-          <div class="bg-white rounded-2xl p-6 text-center shadow-sm">
-            <p class="text-red-500 font-bold text-sm mb-1">Load Failed</p>
-            <p class="text-xs text-gray-400">${error.message}</p>
-          </div>`;
-        return;
+      while (true) {
+        const { data, error } = await supabaseClient
+          .from('posts')
+          .select('*')
+          .order('is_pinned', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) {
+          console.error('Supabase Error:', error);
+          if (merged.length === 0) {
+            document.getElementById('postList').innerHTML = `
+              <div class="bg-white rounded-2xl p-6 text-center shadow-sm">
+                <p class="text-red-500 font-bold text-sm mb-1">Load Failed</p>
+                <p class="text-xs text-gray-400">${error.message}</p>
+              </div>`;
+          }
+          break;
+        }
+
+        const rows = data || [];
+        for (const row of rows) {
+          if (!seenIds.has(row.id)) {
+            seenIds.add(row.id);
+            merged.push(row);
+          }
+        }
+
+        // 第一页拉完立刻渲染首屏，后续分页在后台静默追加并更新总数
+        allPosts = merged;
+        renderPosts();
+
+        if (rows.length < PAGE_SIZE || merged.length >= 15000) {
+          break;
+        }
+        from += PAGE_SIZE;
       }
-      allPosts = data || [];
-      renderPosts();
+
+      if (syncBadge) syncBadge.classList.add('hidden');
     }
 
     function getCategoryVisual(cat, post = {}) {
@@ -2375,16 +2447,16 @@
 
       if (photos.length > 0) {
         const multiBadgeHTML = photos.length > 1
-          ? `<span class="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-xs">📷 1/${photos.length}</span>`
+          ? `<span class="absolute bottom-2 right-2 bg-black/70 glass-pill text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">📷 1/${photos.length}</span>`
           : '';
         return `
-          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border ${post.is_pinned ? 'border-amber-300 bg-amber-50/15' : 'border-gray-100'} transition">
+          <div class="card-elevated bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md border ${post.is_pinned ? 'border-amber-300 bg-amber-50/15' : 'border-gray-100'}">
             <div onclick="openDetailModal(${post.id})" class="cursor-pointer">
               <div class="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
                 <img src="${photos[0]}" alt="${localizedTitle}" loading="lazy" class="w-full h-full object-cover" />
-                <div class="absolute top-2 left-2 flex items-center gap-1.5">
+                <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                   ${post.is_pinned ? `<span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs">${t.pinnedTag}</span>` : ''}
-                  <span class="bg-black/65 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">${displayCat}</span>
+                  <span class="bg-black/65 glass-pill text-white text-[10px] font-bold px-2 py-0.5 rounded-md">${displayCat}</span>
                 </div>
                 ${multiBadgeHTML}
               </div>
@@ -2396,7 +2468,7 @@
                   ${freshBadgeHTML}
                 </div>
                 <h3 class="font-black text-gray-900 text-[15px] leading-snug line-clamp-2 mb-2">${localizedTitle}</h3>
-                <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-gray-50">
+                <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-50">
                   <span class="text-red-600 font-black text-base truncate">${localizedPrice}</span>
                   <div class="flex items-center gap-2 shrink-0">
                     <span class="text-[11px] text-gray-400">${post.is_pinned ? t.pinnedPrefix : ''}${dateStr}${t.publishedSuffix}</span>
@@ -2412,7 +2484,7 @@
       }
 
       return `
-        <div class="bg-white rounded-2xl p-3.5 shadow-sm border ${post.is_pinned ? 'border-amber-300 bg-amber-50/15' : 'border-gray-100'} transition">
+        <div class="card-elevated bg-white rounded-2xl p-3.5 shadow-xs hover:shadow-md border ${post.is_pinned ? 'border-amber-300 bg-amber-50/15' : 'border-gray-100'}">
           <div onclick="openDetailModal(${post.id})" class="flex justify-between gap-3 cursor-pointer">
             <div class="flex-1 min-w-0 flex flex-col justify-between">
               <div>
@@ -2582,12 +2654,40 @@
       document.getElementById('lightboxModal').classList.add('hidden');
     }
 
+    function loadMoreRender() {
+      renderDisplayLimit += 80;
+      paintVisibleSlice();
+    }
+
+    function paintVisibleSlice() {
+      const t = I18N[currentLang];
+      const listEl = document.getElementById('postList');
+      const loadMoreWrap = document.getElementById('loadMoreWrap');
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+      const visibleSlice = lastFilteredList.slice(0, renderDisplayLimit);
+      listEl.innerHTML = visibleSlice.map(createPostCardHTML).join('');
+
+      if (lastFilteredList.length > renderDisplayLimit) {
+        const remain = lastFilteredList.length - renderDisplayLimit;
+        if (loadMoreWrap) loadMoreWrap.classList.remove('hidden');
+        if (loadMoreBtn) {
+          loadMoreBtn.innerText = currentLang === 'en'
+            ? `Load More (${remain} remaining)`
+            : (currentLang === 'ms' ? `Muat Lagi (Baki ${remain})` : `加载更多动态（还有 ${remain} 条）`);
+        }
+      } else if (loadMoreWrap) {
+        loadMoreWrap.classList.add('hidden');
+      }
+    }
+
     function renderPosts(immediateDiscovery = false) {
       const t = I18N[currentLang];
       const city = document.getElementById('cityFilter').value;
       const rawKeyword = document.getElementById('searchInput').value.trim();
       const searchTerms = expandSearchTerms(rawKeyword);
       const listEl = document.getElementById('postList');
+      const loadMoreWrap = document.getElementById('loadMoreWrap');
       const hiddenIds = getHiddenPostIds();
       const reportCounts = getReportCounts();
 
@@ -2758,15 +2858,17 @@
         return new Date(b.created_at) - new Date(a.created_at);
       });
 
+      lastFilteredList = filtered;
       document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
 
       if (filtered.length === 0) {
+        if (loadMoreWrap) loadMoreWrap.classList.add('hidden');
         listEl.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
         scheduleSmartDiscovery(rawKeyword, city, 0, immediateDiscovery);
         return;
       }
 
-      listEl.innerHTML = filtered.slice(0, 120).map(createPostCardHTML).join('');
+      paintVisibleSlice();
       scheduleSmartDiscovery(rawKeyword, city, filtered.length, immediateDiscovery);
     }
 
