@@ -3365,22 +3365,22 @@
     </div>
     <p class="text-[11px] text-slate-400">© 2026 DamaJitong.com · All Rights Reserved</p>
   </footer>
-  <!-- 发布身份选择弹窗：个人发帖 vs 商家入驻 -->
+  <!-- 发布身份选择弹窗：个人发帖 vs 商家入驻（支持 CN / EN / BM 三语） -->
   <div id="publishChoiceModal" onclick="closePublishChoiceModal()" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center p-3">
     <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-3">
       <div class="flex items-center justify-between">
-        <h3 class="font-black text-base text-gray-900">选择发布类型</h3>
+        <h3 id="pubChoiceTitle" class="font-black text-base text-gray-900">选择发布类型</h3>
         <button type="button" onclick="closePublishChoiceModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
       </div>
-      <p class="text-xs text-gray-500">请选择你要发布的身份或页面：</p>
+      <p id="pubChoiceSub" class="text-xs text-gray-500">请选择你要发布的身份或页面：</p>
 
       <button type="button" onclick="closePublishChoiceModal(); openPostModal();"
               class="w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-gray-200 hover:border-red-400 hover:bg-red-50/40 transition text-left">
         <div class="flex items-center gap-3 min-w-0">
           <span class="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0">📝</span>
           <div class="min-w-0">
-            <div class="font-extrabold text-sm text-gray-900">个人 / 普通信息发布</div>
-            <div class="text-[11px] text-gray-500 truncate">租房、找工作、二手闲置、普通分类信息</div>
+            <div id="pubUserTitle" class="font-extrabold text-sm text-gray-900">个人 / 普通信息发布</div>
+            <div id="pubUserDesc" class="text-[11px] text-gray-500 truncate">租房、找工作、二手闲置、普通分类信息</div>
           </div>
         </div>
         <span class="text-gray-400 font-bold text-lg shrink-0">›</span>
@@ -3391,8 +3391,8 @@
         <div class="flex items-center gap-3 min-w-0">
           <span class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shrink-0">🏪</span>
           <div class="min-w-0">
-            <div class="font-extrabold text-sm text-amber-950">商家入驻与认证中心</div>
-            <div class="text-[11px] text-amber-800/85 truncate">实体门店上地图导航、AI 自动填表、官方认证</div>
+            <div id="pubBizTitle" class="font-extrabold text-sm text-amber-950">商家入驻与认证中心</div>
+            <div id="pubBizDesc" class="text-[11px] text-amber-800/85 truncate">实体门店上地图导航、AI 自动填表、官方认证</div>
           </div>
         </div>
         <span class="text-amber-600 font-bold text-lg shrink-0">›</span>
@@ -3401,10 +3401,49 @@
   </div>
 
   <script>
+    const PUBLISH_CHOICE_I18N = {
+      zh: {
+        title: '选择发布类型',
+        sub: '请选择你要发布的身份或页面：',
+        userTitle: '个人 / 普通信息发布',
+        userDesc: '租房、找工作、二手闲置、普通分类信息',
+        bizTitle: '商家入驻与认证中心',
+        bizDesc: '实体门店上地图导航、AI 自动填表、官方认证'
+      },
+      en: {
+        title: 'Choose Listing Type',
+        sub: 'Select how you would like to publish:',
+        userTitle: 'Personal / General Listing',
+        userDesc: 'Rentals, jobs, preloved items & general classifieds',
+        bizTitle: 'Merchant Registration & Verification',
+        bizDesc: 'Storefront map navigation, AI auto-fill & verified badge'
+      },
+      ms: {
+        title: 'Pilih Jenis Iklan',
+        sub: 'Sila pilih kategori siaran anda:',
+        userTitle: 'Iklan Individu / Umum',
+        userDesc: 'Rumah sewa, kerja kosong, barangan terpakai & iklan umum',
+        bizTitle: 'Pendaftaran & Pengesahan Peniaga',
+        bizDesc: 'Navigasi peta kedai, auto-isi AI & lencana peniaga sah'
+      }
+    };
+
     function openPublishChoiceModal() {
+      const lang = (typeof currentLang !== 'undefined' && PUBLISH_CHOICE_I18N[currentLang])
+        ? currentLang
+        : (localStorage.getItem('dama_lang') || 'zh');
+      const t = PUBLISH_CHOICE_I18N[lang] || PUBLISH_CHOICE_I18N.zh;
+      document.getElementById('pubChoiceTitle').textContent = t.title;
+      document.getElementById('pubChoiceSub').textContent = t.sub;
+      document.getElementById('pubUserTitle').textContent = t.userTitle;
+      document.getElementById('pubUserDesc').textContent = t.userDesc;
+      document.getElementById('pubBizTitle').textContent = t.bizTitle;
+      document.getElementById('pubBizDesc').textContent = t.bizDesc;
+
       const el = document.getElementById('publishChoiceModal');
       if (el) el.classList.remove('hidden');
     }
+
     function closePublishChoiceModal() {
       const el = document.getElementById('publishChoiceModal');
       if (el) el.classList.add('hidden');
