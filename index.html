@@ -123,7 +123,7 @@
     <!-- 门户视觉核心区：双大横卡 + 10 宫格矢量图标导航 -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-xs border border-gray-100 space-y-3.5">
       <div class="grid grid-cols-2 gap-2.5">
-        <button type="button" onclick="selectPortalTile('找房子', '')"
+        <button type="button" onclick="selectPortalTile('找房子', '', 'rent')"
                 class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100/90 border border-blue-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
           <div class="relative z-10 pr-8">
             <div id="bigCardHouseTitle" class="font-black text-[15px] text-slate-900">房屋出租</div>
@@ -140,7 +140,7 @@
           </svg>
         </button>
 
-        <button type="button" onclick="selectPortalTile('找工作', '')"
+        <button type="button" onclick="selectPortalTile('找工作', '', 'job')"
                 class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-50 via-orange-50 to-amber-100/90 border border-orange-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
           <div class="relative z-10 pr-8">
             <div id="bigCardJobTitle" class="font-black text-[15px] text-slate-900">招聘信息</div>
@@ -612,61 +612,61 @@
 
     const PORTAL_TILES = [
       {
-        key: 'all', cat: '全部', kw: '',
+        key: 'all', cat: '全部', filterMode: 'all',
         zh: '全部信息', en: 'All Posts', ms: 'Semua',
         bg: 'from-rose-500 to-red-600',
         svg: '<path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z" fill="white"/>'
       },
       {
-        key: 'second', cat: '二手闲置', kw: '',
+        key: 'second', cat: '二手闲置', filterMode: 'preloved',
         zh: '交易市场', en: 'Preloved', ms: 'Terpakai',
         bg: 'from-amber-400 to-orange-500',
         svg: '<path d="M6 7h12l-1 12H7L6 7zm3-2a3 3 0 016 0v2H9V5z" fill="white"/>'
       },
       {
-        key: 'car', cat: '二手闲置', kw: '车',
+        key: 'car', cat: '二手闲置', filterMode: 'car_trade',
         zh: '汽车买卖', en: 'Vehicles', ms: 'Kereta',
         bg: 'from-sky-500 to-blue-600',
         svg: '<path d="M5 11l2-5h10l2 5v6h-2v-2H7v2H5v-6zm3 1a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm8 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" fill="white"/>'
       },
       {
-        key: 'shop', cat: '本地优惠', kw: '',
+        key: 'shop', cat: '本地优惠', filterMode: 'merchant_all',
         zh: '本地商家', en: 'Merchants', ms: 'Peniaga',
         bg: 'from-orange-500 to-red-600',
         svg: '<path d="M4 9l2-5h12l2 5v2a2 2 0 01-2 2v7H6v-7a2 2 0 01-2-2V9zm5 5v4h6v-4H9z" fill="white"/>'
       },
       {
-        key: 'food', cat: '本地优惠', kw: '美食',
+        key: 'food', cat: '本地优惠', filterMode: 'type_food',
         zh: '美食探店', en: 'Food Hunt', ms: 'Makanan',
         bg: 'from-red-500 to-pink-600',
         svg: '<path d="M4 12h16a8 8 0 01-16 0zm3-5h2v3H7V7zm4-1h2v4h-2V6zm4 1h2v3h-2V7z" fill="white"/>'
       },
       {
-        key: 'visa', cat: '本地优惠', kw: '签证',
+        key: 'visa', cat: '本地优惠', filterMode: 'type_visa',
         zh: '签证办理', en: 'Visa Services', ms: 'Perkhidmatan Visa',
         bg: 'from-violet-500 to-purple-600',
         svg: '<path d="M5 4h10l4 4v12a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1zm3 5a2 2 0 100 4 2 2 0 000-4zm-2 6h6v1.5H6V15zm7-5h3v1.5h-3V10zm0 3h3v1.5h-3V13z" fill="white"/>'
       },
       {
-        key: 'clean', cat: '本地优惠', kw: '清洁',
+        key: 'clean', cat: '本地优惠', filterMode: 'type_clean',
         zh: '清洁服务', en: 'Cleaning', ms: 'Cuci',
         bg: 'from-cyan-500 to-teal-600',
         svg: '<path d="M11 3h2v7h5l1 9H5l1-9h5V3zm-2 10v4h2v-4H9zm4 0v4h2v-4h-2z" fill="white"/>'
       },
       {
-        key: 'reno', cat: '本地优惠', kw: '冷气',
+        key: 'reno', cat: '本地优惠', filterMode: 'type_home_fix',
         zh: '冷气水电', en: 'Aircond/Fix', ms: 'Baik Pulih',
         bg: 'from-indigo-500 to-blue-700',
         svg: '<path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.2 2.2-2-2 2.2-2.2z" fill="white"/>'
       },
       {
-        key: 'auto', cat: '本地优惠', kw: '修车',
+        key: 'auto', cat: '本地优惠', filterMode: 'type_auto',
         zh: '汽车维修', en: 'Auto Care', ms: 'Bengkel',
         bg: 'from-emerald-500 to-green-600',
         svg: '<path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 4a4 4 0 110 8 4 4 0 010-8z" fill="white"/>'
       },
       {
-        key: 'sale', cat: '找房子', kw: '售',
+        key: 'sale', cat: '找房子', filterMode: 'house_sale',
         zh: '房屋买卖', en: 'Buy Home', ms: 'Beli Rumah',
         bg: 'from-blue-600 to-indigo-700',
         svg: '<path d="M12 4L3 11h3v9h5v-5h2v5h5v-9h3L12 4z" fill="white"/>'
@@ -697,7 +697,7 @@
       general: '生活服务'
     };
 
-    // 统一单源高精度分类引擎（先判冷气餐饮/美食/诊所/签证/汽车，避免带“冷气”字样的饭店、火锅、海鲜楼误入冷气水电）
+    // 统一单源高精度分类引擎（冷气餐饮/美食/诊所/签证/汽车严格分开，不再把吃饭的冷气店误判为冷气水电）
     function resolveMerchantType(rawText) {
       const cleaned = String(rawText || '')
         .replace(/【收录商户[^】]*】/g, ' ')
@@ -710,7 +710,7 @@
         return 'clinic';
       }
 
-      // 2. 签证办理 / MM2H / 准证 / 护照
+      // 2. 签证办理 / MM2H / 准证 / 护照（全词匹配 \bvisa\b，不误伤 Invisalign）
       if (/\b(visa|mm2h|passport|pasport|permit|immigration|imigresen)\b/.test(cleaned) || /(签证|第二家园|工作准证|学生签|旅游签|护照|续签|移民代办)/.test(cleaned)) {
         return 'visa';
       }
@@ -720,8 +720,8 @@
         return 'auto';
       }
 
-      // 4. 美食餐饮（含冷气酒楼/冷气海鲜/冷气火锅/冷气饭店等带“冷气”字样的餐饮场所）
-      const hasDiningWord = /(kitchen|laksa|cafe|kopitiam|restaurant|restoran|seafood|food|makan|nasi|mee|dim\s*sum|bakery|bistro|steamboat|bbq|kafe|warung|mamak|茶室|美食|餐厅|饭店|海鲜|酒楼|火锅|烧烤|咖啡|奶茶|烧腊|鸡饭|板面|点心|面包|小炒|大炒)/.test(cleaned);
+      // 4. 美食餐饮（含冷气酒楼、冷气海鲜阁、冷气火锅、冷气饭店等带“冷气”字样的吃饭场所）
+      const hasDiningWord = /(kitchen|laksa|cafe|kopitiam|restaurant|restoran|seafood|food|makan|nasi|mee|dim\s*sum|bakery|bistro|steamboat|bbq|kafe|warung|mamak|茶室|美食|餐厅|饭店|海鲜|酒楼|火锅|烧烤|咖啡|奶茶|烧腊|鸡饭|板面|点心|面包|小炒|大炒|海鲜阁|冷气阁|冷气房)/.test(cleaned);
       const hasRepairAction = /(安装|维修|修理|清洗|加雪|加氟|检修|上门|水电|电工|水管|通渠|装修|油漆|搬家|搬运|罗里|开锁|防水|屋顶|service|repair|install|plumber|wiring|electrical|electrician|renovation|contractor|mover)/.test(cleaned);
       if (hasDiningWord && !hasRepairAction) {
         return 'food';
@@ -789,7 +789,7 @@
         const isActive = activePortalKey === tile.key;
         const label = tile[currentLang] || tile.zh;
         return `
-          <button type="button" onclick="selectPortalTile('${tile.cat}', '${tile.kw}', '${tile.key}')"
+          <button type="button" onclick="selectPortalTile('${tile.cat}', '${tile.filterMode}', '${tile.key}')"
                   class="flex flex-col items-center group focus:outline-none">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-br ${tile.bg} flex items-center justify-center shadow-xs transition-transform group-active:scale-95 ${isActive ? 'ring-2 ring-offset-2 ring-red-500 scale-105' : ''}">
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">${tile.svg}</svg>
@@ -800,18 +800,27 @@
       }).join('');
     }
 
-    function selectPortalTile(cat, kw = '', key = 'all') {
+    function selectPortalTile(cat, filterMode = 'all', key = 'all') {
       activePortalKey = key || 'all';
       currentCategory = cat || '全部';
       renderDisplayLimit = 80;
       const searchEl = document.getElementById('searchInput');
       if (searchEl) {
-        searchEl.value = kw || '';
-        document.getElementById('clearSearchBtn')?.classList.toggle('hidden', !kw);
+        searchEl.value = '';
+        document.getElementById('clearSearchBtn')?.classList.add('hidden');
+      }
+      const bizSel = document.getElementById('bizCatFilter');
+      if (bizSel) {
+        if (filterMode === 'type_auto') bizSel.value = 'CarRepair';
+        else if (filterMode === 'type_food') bizSel.value = 'Food';
+        else if (filterMode === 'type_home_fix') bizSel.value = 'HomeService';
+        else if (filterMode === 'type_clean') bizSel.value = 'Cleaning';
+        else if (filterMode === 'type_visa') bizSel.value = 'Visa';
+        else bizSel.value = '';
       }
       renderPortalIconGrid();
       syncSubFilterVisibility(currentCategory);
-      renderPosts(Boolean(kw));
+      renderPosts(false);
       const anchor = document.getElementById('feedAnchor');
       if (anchor && key !== 'all') {
         anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1500,7 +1509,7 @@
       document.getElementById('cityFilter').value = '全马';
       syncQuickCityButtons('全马');
       resetSubFilters();
-      selectPortalTile('全部', '', 'all');
+      selectPortalTile('全部', 'all', 'all');
     }
 
     function autoDetectState() {
@@ -2860,13 +2869,16 @@
       const hiddenIds = getHiddenPostIds();
       const reportCounts = getReportCounts();
 
-      const hasFilter = (city !== '全马') || (currentCategory !== '全部') || Boolean(rawKeyword) || Boolean(activeHalalFilter);
+      const hasFilter = (city !== '全马') || (activePortalKey !== 'all') || (currentCategory !== '全部') || Boolean(rawKeyword) || Boolean(activeHalalFilter);
       const resetBtn = document.getElementById('resetFilterBtn');
       if (resetBtn) resetBtn.classList.toggle('hidden', !hasFilter);
 
+      const activeTile = PORTAL_TILES.find(tl => tl.key === activePortalKey);
       const displayCityHeader = getRegionDisplayName(city, currentLang);
-      const catLabel = currentCategory === '全部' ? '' : ` · ${t.cats[currentCategory] || currentCategory}`;
-      document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${catLabel}${t.latestSuffix}`;
+      const headerLabel = (activeTile && activePortalKey !== 'all')
+        ? ` · ${activeTile[currentLang] || activeTile.zh}`
+        : (currentCategory === '全部' ? '' : ` · ${t.cats[currentCategory] || currentCategory}`);
+      document.getElementById('listHeaderTitle').innerText = `${displayCityHeader}${headerLabel}${t.latestSuffix}`;
 
       const refCoords = nearbyUserCoords || (MY_REGIONS.find(r => r.value === city && r.lat && r.lng) || null);
 
@@ -2874,33 +2886,48 @@
         if (hiddenIds.includes(p.id) || (reportCounts[p.id] || 0) >= 3) return false;
         if (containsSpamContent(p.title) || containsSpamContent(p.description)) return false;
 
-        const isDirectoryShop = String(p.title || '').startsWith('【收录商户');
-        const ageMs = Date.now() - new Date(p.created_at).getTime();
-        if (!p.is_pinned && !isDirectoryShop && ageMs > 30 * 86400000) return false;
-
         const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
         const matchCity = (city === '全马')
           ? true
           : (p.city === city || legacyTargets.includes(city));
-        const matchCat = (currentCategory === '全部' || p.category === currentCategory);
+        if (!matchCity) return false;
+
         const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.desc_en || ''} ${p.desc_ms || ''} ${p.price || ''} ${p.city || ''}`.toLowerCase();
         const mType = resolveMerchantType(searchBlob);
-        const isVisaQuery = activePortalKey === 'visa' || /^(签证|visa)$/i.test(rawKeyword);
-        const isAutoQuery = activePortalKey === 'auto' || /^(修车|汽车维修|bengkel|auto care)$/i.test(rawKeyword);
-        const isHomeFixQuery = activePortalKey === 'reno' || /^(冷气|水电|aircond|plumber|wiring)$/i.test(rawKeyword);
 
-        let matchKey = searchTerms.length === 0 || searchTerms.some(term => {
+        // 按 10 宫格 / 分类精准归属匹配，避免因分类名或关键词过严变成 0 条
+        if (activePortalKey === 'second') {
+          const isPreloved = p.category === '二手闲置' || /二手|闲置|转让|preloved|terpakai|used/i.test(searchBlob);
+          if (!isPreloved) return false;
+        } else if (activePortalKey === 'car') {
+          const isCarSale = /(汽车|轿车|车行|二手车|新车|kereta|car\s*sale|used\s*car|auto\s*dealer)/i.test(searchBlob) || mType === 'auto';
+          if (!isCarSale) return false;
+        } else if (activePortalKey === 'shop') {
+          if (p.category !== '本地优惠') return false;
+        } else if (activePortalKey === 'food') {
+          if (mType !== 'food') return false;
+        } else if (activePortalKey === 'visa') {
+          if (mType !== 'visa') return false;
+        } else if (activePortalKey === 'clean') {
+          if (mType !== 'clean') return false;
+        } else if (activePortalKey === 'reno') {
+          if (mType !== 'home_fix') return false;
+        } else if (activePortalKey === 'auto') {
+          if (mType !== 'auto') return false;
+        } else if (activePortalKey === 'sale') {
+          const isHouseSale = p.category === '找房子' && (/售|卖|sale|jual|买房|房产/i.test(searchBlob) || !/租|sewa|rent/i.test(searchBlob));
+          if (!isHouseSale && p.category !== '找房子') return false;
+        } else if (currentCategory !== '全部') {
+          if (p.category !== currentCategory) return false;
+        }
+
+        const matchKey = searchTerms.length === 0 || searchTerms.some(term => {
           if (/^[a-z0-9]+$/i.test(term)) {
             return new RegExp(`\\b${term}\\b`, 'i').test(searchBlob);
           }
           return searchBlob.includes(term);
         });
-
-        if (isVisaQuery && mType !== 'visa') matchKey = false;
-        if (isAutoQuery && mType !== 'auto') matchKey = false;
-        if (isHomeFixQuery && mType !== 'home_fix') matchKey = false;
-
-        if (!matchCity || !matchCat || !matchKey) return false;
+        if (!matchKey) return false;
 
         if (activeHalalFilter) {
           if (detectHalalStatus(p) !== activeHalalFilter) return false;
@@ -2908,7 +2935,7 @@
 
         const numPrice = parseNumberFromText(p.price);
 
-        if (currentCategory === '全部') {
+        if (currentCategory === '全部' && activePortalKey === 'all') {
           const maxP = Number(document.getElementById('allMaxPrice')?.value || 0);
           if (maxP > 0 && numPrice !== null && numPrice > maxP) return false;
         }
