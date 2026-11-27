@@ -1138,12 +1138,18 @@
               const pLng = pl.location?.longitude;
               const name = pl.displayName?.text || coreQuery;
               const addr = pl.formattedAddress || areaText;
-              return {
-                name,
-                addr,
-                lat: typeof pLat === 'number' ? pLat : (regionObj?.lat || 5.4141),
-                lng: typeof pLng === 'number' ? pLng : (regionObj?.lng || 100.3288)
-              };
+              const rawPhone = pl.internationalPhoneNumber || pl.nationalPhoneNumber || '';
+            const phoneDigits = String(rawPhone).replace(/[^0-9]/g, '');
+            const cleanWa = phoneDigits.startsWith('0')
+              ? ('60' + phoneDigits.slice(1))
+              : (phoneDigits.startsWith('60') ? phoneDigits : '');
+            return {
+              name,
+              addr,
+              phone: cleanWa,
+              lat: typeof pLat === 'number' ? pLat : (regionObj?.lat || 5.4141),
+              lng: typeof pLng === 'number' ? pLng : (regionObj?.lng || 100.3288)
+            };
             });
           }
         } catch (_) {}
@@ -1171,6 +1177,7 @@
             idx,
             name: item.name,
             addr: item.addr,
+            phone: item.phone || '',
             lat: item.lat,
             lng: item.lng,
             city: (cityVal && cityVal !== '全马') ? cityVal : (regionObj?.value || '全马'),
@@ -1238,7 +1245,7 @@
           price_zh: '到店咨询 / 实惠价',
           price_en: 'Visit Store',
           price_ms: 'Rujuk Kedai',
-          whatsapp: '601125490636',
+          whatsapp: item.phone || 'NO_PHONE',
           description: packedDesc,
           desc_zh: packedDesc,
           desc_en: `📍 Address: ${item.addr}\nAdded to DamaJitong Local Directory via search\n[[MAP:${item.lat},${item.lng}|${item.addr.replace(/\|/g, ' ')}]]`,
@@ -2738,8 +2745,20 @@
         (currentLang === 'en' ? post.desc_en : (currentLang === 'ms' ? post.desc_ms : post.desc_zh)) ||
         post.description || '';
       const cleanDesc = cleanDisplayDescription(rawDesc, currentLang) || t.noDesc;
-      const waDigits = normalizeMalaysiaWhatsapp(post.whatsapp);
-      const waLink = `https://wa.me/${waDigits}?text=${encodeURIComponent(t.waGreeting(localizedTitle))}`;
+      const rawWaStr = String(post.whatsapp || '').trim();
+   const waDigits = rawWaStr === 'NO_PHONE' ? '' : normalizeMalaysiaWhatsapp(rawWaStr);
+   const isMyMobile = waDigits.startsWith('601') && waDigits.length >= 10 && waDigits.length <= 12;
+   const isMyLandline = waDigits.startsWith('60') && !waDigits.startsWith('601') && waDigits.length >= 9;
+
+   const waLink = isMyMobile
+     ? `https://wa.me/${waDigits}?text=${encodeURIComponent(t.waGreeting(localizedTitle))}`
+     : (isMyLandline ? `tel:+${waDigits}` : '/merchant.html');
+
+   const contactBtnLabel = isMyMobile
+     ? t.waBtn
+     : (isMyLandline
+         ? (currentLang === 'en' ? `📞 Call +${waDigits}` : (currentLang === 'ms' ? `📞 Hubungi +${waDigits}` : `📞 拨打门店 +${waDigits}`))
+         : (currentLang === 'en' ? '🏪 Claim & Add Phone' : (currentLang === 'ms' ? '🏪 Tuntut Kedai Ini' : '🏪 店主免费认领绑定电话')));
       const isFaved = savedIds.includes(post.id);
       const halalBadge = getHalalBadgeHTML(post);
 
@@ -2786,8 +2805,8 @@
           <button type="button" onclick="toggleFav(${post.id}); openDetailModal(${post.id});" class="py-2.5 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 bg-white hover:bg-gray-50">
             ${isFaved ? t.favedBtn : t.favBtn}
           </button>
-          <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center flex items-center justify-center shadow-xs">
-            ${t.waBtn}
+          <a href="${waLink}"  class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center flex items-center justify-center shadow-xs">
+            ${contactBtnLabel}
           </a>
         </div>
         <a href="/detail.html?id=${post.id}"
