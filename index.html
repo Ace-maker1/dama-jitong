@@ -485,10 +485,10 @@
       <span class="text-lg">📰</span>
       <span id="navNewsText" class="text-[10px] font-medium mt-0.5">实时新闻</span>
     </a>
-    <a href="/merchant.html" class="flex flex-col items-center -mt-6">
+    <button onclick="openPostModal()" class="flex flex-col items-center -mt-6">
       <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-red-600 to-orange-500 text-white flex items-center justify-center text-2xl shadow-lg border-4 border-white hover:scale-105 transition">+</div>
       <span id="navPostText" class="text-[10px] font-bold text-gray-700 mt-0.5">发布</span>
-    </a>
+    </button>
     <button onclick="switchTab('fav')" id="navFav" class="flex flex-col items-center text-gray-400">
       <span class="text-lg">🔖</span>
       <span id="navFavText" class="text-[10px] font-medium mt-0.5">收藏</span>
@@ -708,35 +708,42 @@
       general: '生活服务'
     };
 
+    // 统一单源高精度分类引擎（冷气餐饮/美食/诊所/签证/汽车严格分开，不再把吃饭的冷气店误判为冷气水电）
     function resolveMerchantType(rawText) {
       const cleaned = String(rawText || '')
         .replace(/【收录商户[^】]*】/g, ' ')
         .replace(/\[(?:local directory|direktori tempatan)[^\]]*\]/gi, ' ')
         .toLowerCase();
 
+      // 1. 医疗诊所 / 牙科 / 中医 / 药房
       const isDentalOrClinic = /(klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|orthodontic|pharmacy|farmasi|hospital|诊所|牙科|药房|医院|中医)/.test(cleaned);
       if (isDentalOrClinic || /(医疗|养生|保健|推拿|针灸|体检)/.test(cleaned)) {
         return 'clinic';
       }
 
+      // 2. 签证办理 / MM2H / 准证 / 护照（全词匹配 \bvisa\b，不误伤 Invisalign）
       if (/\b(visa|mm2h|passport|pasport|permit|immigration|imigresen)\b/.test(cleaned) || /(签证|第二家园|工作准证|学生签|旅游签|护照|续签|移民代办)/.test(cleaned)) {
         return 'visa';
       }
 
+      // 3. 汽车维修 / 汽车冷气 / 轮胎 / 洗车 / 喷漆 / 车行
       if (/(car\s*aircond|auto\s*aircond|automotive|car\s*wash|car\s*care|car\s*repair|car\s*service|workshop|bengkel|tyre|tire|alignment|exhaust|gearbox|battery\s*car|panel\s*beating|spray\s*paint|used\s*car|motor\s*service|修车|汽车|汽修|洗车|轮胎|汽车冷气|保养|喷漆|钣金|机油|电箱|摩哆维修|摩托车维修)/.test(cleaned)) {
         return 'auto';
       }
 
+      // 4. 美食餐饮（含冷气酒楼、冷气海鲜阁、冷气火锅、冷气饭店等带“冷气”字样的吃饭场所）
       const hasDiningWord = /(kitchen|laksa|cafe|kopitiam|restaurant|restoran|seafood|food|makan|nasi|mee|dim\s*sum|bakery|bistro|steamboat|bbq|kafe|warung|mamak|茶室|美食|餐厅|饭店|海鲜|酒楼|火锅|烧烤|咖啡|奶茶|烧腊|鸡饭|板面|点心|面包|小炒|大炒|海鲜阁|冷气阁|冷气房)/.test(cleaned);
       const hasRepairAction = /(安装|维修|修理|清洗|加雪|加氟|检修|上门|水电|电工|水管|通渠|装修|油漆|搬家|搬运|罗里|开锁|防水|屋顶|service|repair|install|plumber|wiring|electrical|electrician|renovation|contractor|mover)/.test(cleaned);
       if (hasDiningWord && !hasRepairAction) {
         return 'food';
       }
 
+      // 5. 清洁服务
       if (/(cleaning\s*service|house\s*cleaning|office\s*cleaning|carpet\s*cleaning|sofa\s*cleaning|cuci\s*rumah|cuci\s*sofa|clean\s*service|清洁|保洁|洗地毯|洗沙发|钟点女佣|家政清洁)/.test(cleaned)) {
         return 'clean';
       }
 
+      // 6. 家用冷气 / 水电 / 装修 / 搬家
       if (/(aircond|air-cond|air\s*cond|plumber|plumbing|wiring|electrical|electrician|renovation|contractor|roofing|waterproofing|locksmith|mover|lori\s*sewa|pindah\s*rumah|冷气|空调|水电|电工|水管|通渠|装修|油漆|搬家|搬运|罗里|开锁|防水|屋顶)/.test(cleaned)) {
         return 'home_fix';
       }
@@ -745,6 +752,7 @@
         return 'food';
       }
 
+      // 7. 美容美发 / 美甲 / SPA
       if (/(salon|saloon|hair|barber|beauty|spa|facial|nail|eyelash|massage|理发|美发|剪发|烫染|美容|美甲|美睫|护肤|按摩)/.test(cleaned)) {
         return 'beauty';
       }
@@ -2906,6 +2914,7 @@
         const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.desc_en || ''} ${p.desc_ms || ''} ${p.price || ''} ${p.city || ''}`.toLowerCase();
         const mType = resolveMerchantType(searchBlob);
 
+        // 按 10 宫格 / 分类精准归属匹配，避免因分类名或关键词过严变成 0 条
         if (activePortalKey === 'second') {
           const isPreloved = p.category === '二手闲置' || /二手|闲置|转让|preloved|terpakai|used/i.test(searchBlob);
           if (!isPreloved) return false;
