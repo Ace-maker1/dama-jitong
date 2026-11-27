@@ -2609,8 +2609,11 @@
         const ageMs = Date.now() - new Date(p.created_at).getTime();
         if (!p.is_pinned && !isDirectoryShop && ageMs > 30 * 86400000) return false;
 
+        // 选具体州属时仅匹配该州属或旧州名映射，避免“全马”杂项混入各州首屏
         const legacyTargets = LEGACY_CITY_MAP[p.city] || [];
-        const matchCity = (city === '全马' || p.city === city || p.city === '全马' || legacyTargets.includes(city));
+        const matchCity = (city === '全马')
+          ? true
+          : (p.city === city || legacyTargets.includes(city));
         const matchCat = (currentCategory === '全部' || p.category === currentCategory);
         const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.desc_en || ''} ${p.desc_ms || ''} ${p.price || ''} ${p.city || ''}`.toLowerCase();
         const matchKey = searchTerms.length === 0 || searchTerms.some(term => searchBlob.includes(term));
@@ -2742,10 +2745,15 @@
         const pinB = b.is_pinned ? 1 : 0;
         if (pinB !== pinA) return pinB - pinA;
 
-        // 默认排序时优先把已有实拍封面图的商家排在前面展示
+        // 默认排序时优先把已有实拍封面图的商家排在前面，并按 ID 尾数轻量分散避免单店霸屏
         const hasImgA = a.image_url ? 1 : 0;
         const hasImgB = b.image_url ? 1 : 0;
         if (!rawKeyword && hasImgB !== hasImgA) return hasImgB - hasImgA;
+        if (!rawKeyword && hasImgA && hasImgB) {
+          const bucketA = (Number(a.id) || 0) % 7;
+          const bucketB = (Number(b.id) || 0) % 7;
+          if (bucketA !== bucketB) return bucketA - bucketB;
+        }
 
         return new Date(b.created_at) - new Date(a.created_at);
       });
