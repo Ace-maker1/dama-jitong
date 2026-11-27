@@ -113,7 +113,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="min-w-0">
           <div id="discoveryTitle" class="font-black text-xs text-amber-950 truncate">✨ 附近实时推荐 · 点击导航并自动收录</div>
-          <div id="discoverySub" class="text-[10px] text-amber-700 truncate">本地库暂无匹配时，自动检索附近相关商家，点选即带路并入库</div>
+          <div id="discoverySub" class="text-[10px] text-amber-700 truncate">本地库暂无匹配时，自动检索附近相关商家，点选即带路并沉淀入库</div>
         </div>
         <span id="discoveryBadge" class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full shrink-0">实时发现</span>
       </div>
@@ -958,8 +958,9 @@
 
     function inferIndustryTag(text) {
       const s = String(text || '').toLowerCase();
-      if (/visa|mm2h|passport|pasport|permit|签证|第二家园|准证|护照|移民/.test(s)) return '签证办理';
-      if (/klinik|poliklinik|clinic|dental|pharmacy|诊所|牙科|药房|医疗|养生/.test(s)) return '便民医疗';
+      const isMedicalOrDental = /klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|pharmacy|farmasi|诊所|牙科|药房|便民医疗/.test(s);
+      if (!isMedicalOrDental && (/\bvisa\b|\bmm2h\b|\bpassport\b|\bpasport\b|\bpermit\b/.test(s) || /签证|第二家园|工作准证|学生签|护照|移民代办/.test(s))) return '签证办理';
+      if (isMedicalOrDental || /医疗|养生/.test(s)) return '便民医疗';
       if (/hair|salon|barber|beauty|spa|理发|美发|美容|剪发|按摩/.test(s)) return '美容美发';
       if (/car|auto|workshop|bengkel|tyre|tire|aircond|修车|汽车|洗车|轮胎|冷气|维修|水电|搬家/.test(s)) return '生活服务';
       return '本地美食';
@@ -2430,14 +2431,15 @@
       const t = I18N[currentLang];
       const text = `${post.title || ''} ${post.title_zh || ''} ${post.title_en || ''} ${post.title_ms || ''} ${post.description || ''} ${post.desc_zh || ''} ${post.desc_en || ''} ${post.desc_ms || ''}`.toLowerCase();
 
-      if (/visa|mm2h|passport|pasport|permit|签证|第二家园|准证|护照|移民/.test(text)) {
+      const isMedicalOrDental = /klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|pharmacy|farmasi|诊所|牙科|药房|便民医疗/.test(text);
+      if (!isMedicalOrDental && (/\bvisa\b|\bmm2h\b|\bpassport\b|\bpasport\b|\bpermit\b/.test(text) || /签证|第二家园|工作准证|学生签|护照|移民代办/.test(text))) {
         return {
           bg: 'from-violet-500 to-purple-600',
           icon: '🛂',
           label: currentLang === 'en' ? 'Visa' : (currentLang === 'ms' ? 'Visa' : '签证办理')
         };
       }
-      if (/klinik|poliklinik|clinic|dental|pharmacy|farmasi|诊所|牙科|药房|医疗|养生|保健/.test(text)) {
+      if (isMedicalOrDental || /医疗|养生|保健/.test(text)) {
         return {
           bg: 'from-teal-500 to-emerald-600',
           icon: '🏥',
@@ -2770,7 +2772,17 @@
           : (p.city === city || legacyTargets.includes(city));
         const matchCat = (currentCategory === '全部' || p.category === currentCategory);
         const searchBlob = `${p.title || ''} ${p.title_en || ''} ${p.title_ms || ''} ${p.description || ''} ${p.desc_en || ''} ${p.desc_ms || ''} ${p.price || ''} ${p.city || ''}`.toLowerCase();
-        const matchKey = searchTerms.length === 0 || searchTerms.some(term => searchBlob.includes(term));
+        const isVisaQuery = activePortalKey === 'visa' || /^(签证|visa)$/i.test(rawKeyword);
+        const isMedicalPost = /klinik|poliklinik|clinic|dental|pergigian|invisalign|braces|pharmacy|farmasi|诊所|牙科|药房|便民医疗/.test(searchBlob);
+        const matchKey = searchTerms.length === 0 || (
+          !(isVisaQuery && isMedicalPost) &&
+          searchTerms.some(term => {
+            if (/^[a-z0-9]+$/i.test(term)) {
+              return new RegExp(`\\b${term}\\b`, 'i').test(searchBlob);
+            }
+            return searchBlob.includes(term);
+          })
+        );
         if (!matchCity || !matchCat || !matchKey) return false;
 
         if (activeHalalFilter) {
