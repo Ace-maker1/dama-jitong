@@ -40,7 +40,7 @@
         <div class="w-10 h-10 bg-red-600 text-white rounded-xl flex items-center justify-center font-black text-xl">吉</div>
         <div>
           <h1 class="font-extrabold text-gray-900 text-base">大马吉通 MY · 运营总控台</h1>
-          <p class="text-xs text-green-600 font-medium">● 已安全登录并连接云端数据库</p>
+          <p id="syncStatusText" class="text-xs text-green-600 font-medium">● 已安全登录并连接云端数据库</p>
         </div>
       </div>
       <div class="flex items-center space-x-2">
@@ -99,23 +99,36 @@
 
     <!-- 搜索与筛选 -->
     <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 mb-4 flex flex-wrap gap-2.5">
-      <input type="text" id="adminSearch" oninput="renderAdminList()" placeholder="搜索标题、手机号、城市..." 
+      <input type="text" id="adminSearch" oninput="resetAdminRenderLimit(); renderAdminList()" placeholder="搜索标题、手机号、城市..." 
              class="flex-1 min-w-[200px] border border-gray-200 bg-gray-50 rounded-xl px-3.5 py-2 text-sm focus:outline-none">
-      <select id="adminCatFilter" onchange="renderAdminList()" class="border border-gray-200 bg-gray-50 rounded-xl px-3 py-2 text-sm">
+      <select id="adminCatFilter" onchange="resetAdminRenderLimit(); renderAdminList()" class="border border-gray-200 bg-gray-50 rounded-xl px-3 py-2 text-sm">
         <option value="全部">全部分类</option>
         <option value="找房子">找房子</option>
         <option value="找工作">找工作</option>
         <option value="二手闲置">二手闲置</option>
         <option value="本地优惠">本地商家</option>
       </select>
+      <select id="adminImgFilter" onchange="resetAdminRenderLimit(); renderAdminList()" class="border border-gray-200 bg-gray-50 rounded-xl px-3 py-2 text-sm">
+        <option value="all">全部图片状态</option>
+        <option value="has_img">仅看有图</option>
+        <option value="no_img">仅看无图</option>
+      </select>
       <button onclick="loadAdminPosts()" class="bg-gray-800 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-gray-700">
-        🔄 刷新数据
+        🔄 刷新全库
       </button>
     </div>
 
     <!-- 内容管理列表 -->
     <div id="adminPostList" class="space-y-3">
       <div class="text-center py-12 text-gray-400 text-sm">正在加载数据...</div>
+    </div>
+
+    <!-- 分批加载更多按钮 -->
+    <div id="adminLoadMoreWrap" class="hidden mt-4">
+      <button type="button" id="adminLoadMoreBtn" onclick="loadMoreAdminRows()"
+              class="w-full py-3 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 text-xs font-bold text-gray-700 shadow-xs transition">
+        加载更多记录
+      </button>
     </div>
   </div>
 
@@ -126,6 +139,8 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let postsData = [];
+    let adminVisibleLimit = 100;
+    let lastAdminFiltered = [];
 
     if (sessionStorage.getItem('dama_admin_auth') === 'true') {
       showDashboard();
@@ -183,20 +198,52 @@
       }
     }
 
+    // 全自动分页循环拉取全库数据（突破 Supabase 单次 1000 条限制）
     async function loadAdminPosts() {
-      const { data, error } = await supabaseClient
-        .from('posts')
-        .select('*')
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false });
+      const PAGE_SIZE = 1000;
+      let from = 0;
+      let merged = [];
+      const seenIds = new Set();
+      const statusEl = document.getElementById('syncStatusText');
 
-      if (error) {
-        alert('加载失败：' + error.message);
-        return;
+      while (true) {
+        if (statusEl) {
+          statusEl.textContent = `⏳ 正在全量同步云端数据（已拉取 ${merged.length} 条）...`;
+        }
+
+        const { data, error } = await supabaseClient
+          .from('posts')
+          .select('*')
+          .order('is_pinned', { ascending: false })
+          .order('id', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) {
+          alert('加载失败：' + error.message);
+          break;
+        }
+
+        const rows = data || [];
+        for (const row of rows) {
+          if (!seenIds.has(row.id)) {
+            seenIds.add(row.id);
+            merged.push(row);
+          }
+        }
+
+        postsData = merged;
+        updateStats();
+        renderAdminList();
+
+        if (rows.length < PAGE_SIZE || merged.length >= 20000) {
+          break;
+        }
+        from += PAGE_SIZE;
       }
-      postsData = data || [];
-      updateStats();
-      renderAdminList();
+
+      if (statusEl) {
+        statusEl.textContent = `● 已安全登录并连接云端数据库（全库共 ${postsData.length} 条）`;
+      }
     }
 
     function updateStats() {
@@ -207,30 +254,29 @@
       document.getElementById('statToday').innerText = postsData.filter(p => new Date(p.created_at).toDateString() === todayStr).length;
     }
 
-    function renderAdminList() {
-      const kw = document.getElementById('adminSearch').value.trim().toLowerCase();
-      const cat = document.getElementById('adminCatFilter').value;
+    function resetAdminRenderLimit() {
+      adminVisibleLimit = 100;
+    }
+
+    function loadMoreAdminRows() {
+      adminVisibleLimit += 100;
+      paintAdminSlice();
+    }
+
+    function paintAdminSlice() {
       const container = document.getElementById('adminPostList');
+      const wrap = document.getElementById('adminLoadMoreWrap');
+      const btn = document.getElementById('adminLoadMoreBtn');
+      const slice = lastAdminFiltered.slice(0, adminVisibleLimit);
 
-      const filtered = postsData.filter(p => {
-        const matchCat = cat === '全部' || p.category === cat;
-        const matchKw = !kw || p.title.toLowerCase().includes(kw) || (p.title_en && p.title_en.toLowerCase().includes(kw)) || p.city.toLowerCase().includes(kw) || (p.whatsapp && p.whatsapp.includes(kw));
-        return matchCat && matchKw;
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm">没有匹配的帖子记录</div>`;
-        return;
-      }
-
-      container.innerHTML = filtered.map(p => {
+      container.innerHTML = slice.map(p => {
         const timeStr = new Date(p.created_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         const hasTrilingual = Boolean(p.title_en && p.title_ms);
         return `
           <div class="bg-white rounded-2xl p-4 shadow-sm border ${p.is_pinned ? 'border-red-300 bg-red-50/15' : 'border-gray-100'} flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-start space-x-3 min-w-0">
               ${p.image_url 
-                ? `<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover shrink-0 border border-gray-200" />` 
+                ? `<img src="${p.image_url}" loading="lazy" class="w-16 h-16 rounded-xl object-cover shrink-0 border border-gray-200" />` 
                 : `<div class="w-16 h-16 rounded-xl bg-gray-100 text-gray-400 flex items-center justify-center text-xs shrink-0">无图</div>`
               }
               <div class="min-w-0">
@@ -262,6 +308,43 @@
           </div>
         `;
       }).join('');
+
+      if (lastAdminFiltered.length > adminVisibleLimit) {
+        const remain = lastAdminFiltered.length - adminVisibleLimit;
+        wrap.classList.remove('hidden');
+        btn.innerText = `加载更多记录（当前显示 ${adminVisibleLimit} / 共 ${lastAdminFiltered.length} 条，还有 ${remain} 条）`;
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+
+    function renderAdminList() {
+      const kw = document.getElementById('adminSearch').value.trim().toLowerCase();
+      const cat = document.getElementById('adminCatFilter').value;
+      const imgMode = document.getElementById('adminImgFilter')?.value || 'all';
+      const container = document.getElementById('adminPostList');
+
+      const filtered = postsData.filter(p => {
+        const matchCat = cat === '全部' || p.category === cat;
+        const matchImg = imgMode === 'all' || (imgMode === 'has_img' ? Boolean(p.image_url) : !p.image_url);
+        const matchKw = !kw ||
+          String(p.id).includes(kw) ||
+          (p.title && p.title.toLowerCase().includes(kw)) ||
+          (p.title_en && p.title_en.toLowerCase().includes(kw)) ||
+          (p.city && p.city.toLowerCase().includes(kw)) ||
+          (p.whatsapp && p.whatsapp.includes(kw));
+        return matchCat && matchImg && matchKw;
+      });
+
+      lastAdminFiltered = filtered;
+
+      if (filtered.length === 0) {
+        document.getElementById('adminLoadMoreWrap')?.classList.add('hidden');
+        container.innerHTML = `<div class="bg-white rounded-2xl p-10 text-center text-gray-400 text-sm">没有匹配的帖子记录</div>`;
+        return;
+      }
+
+      paintAdminSlice();
     }
 
     async function renewPost(id) {
