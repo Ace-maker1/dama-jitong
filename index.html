@@ -850,8 +850,11 @@
       grid.innerHTML = PORTAL_TILES.map(tile => {
         const isActive = activePortalKey === tile.key;
         const label = tile[currentLang] || tile.zh;
+        const clickAction = tile.key === 'car'
+          ? `window.location.href='/cars.html'`
+          : `selectPortalTile('${tile.cat}', '${tile.filterMode}', '${tile.key}')`;
         return `
-          <button type="button" onclick="selectPortalTile('${tile.cat}', '${tile.filterMode}', '${tile.key}')"
+          <button type="button" onclick="${clickAction}"
                   class="flex flex-col items-center group focus:outline-none">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-br ${tile.bg} flex items-center justify-center shadow-xs transition-transform group-active:scale-95 ${isActive ? 'ring-2 ring-offset-2 ring-red-500 scale-105' : ''}">
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">${tile.svg}</svg>
