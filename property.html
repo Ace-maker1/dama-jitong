@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>大马吉通 · 租房与买房 (Direct Owner & Verified Property Malaysia)</title>
+  <link rel="icon" type="image/png" sizes="1024x1024" href="/icon.png?v=4">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="/icon.png?v=4">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #eef0f4; -webkit-tap-highlight-color: transparent; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .glass-pill { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .card-elevated { transition: transform 0.16s ease, box-shadow 0.16s ease; }
+    .card-elevated:active { transform: scale(0.992); }
+  </style>
+</head>
+<body class="max-w-md mx-auto bg-[#f5f6f8] min-h-screen flex flex-col relative shadow-[0_0_40px_rgba(15,23,42,0.12)]">
+
+  <!-- 顶部导航横幅 -->
+  <header class="relative bg-gradient-to-br from-slate-900 via-teal-950 to-emerald-900 text-white pt-3.5 pb-7 px-4 shadow-md overflow-hidden rounded-b-[26px]">
+    <svg class="absolute right-0 bottom-0 w-44 h-36 opacity-10 pointer-events-none" viewBox="0 0 200 160" fill="none">
+      <circle cx="155" cy="40" r="65" fill="white"/>
+      <path d="M25 75 L100 22 L175 75 V145 H25 Z" fill="white"/>
+    </svg>
+
+    <div class="relative z-10 flex items-center justify-between gap-2 mb-2.5">
+      <div class="flex items-center gap-2 min-w-0">
+        <a href="/" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold shrink-0 transition">←</a>
+        <img src="/icon.png?v=4" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-9 h-9 rounded-xl object-cover border border-white/50 bg-[#F8F6F0] shrink-0">
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 id="propPageTitle" class="font-black text-[16px] tracking-tight truncate">大马吉通 · 租房买房</h1>
+            <span class="text-[9px] bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded font-black shrink-0">ZERO AGENT TRAP</span>
+          </div>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <select id="propCityFilter" onchange="renderProperties()" class="bg-transparent text-emerald-200 text-[11px] font-semibold focus:outline-none cursor-pointer -ml-1 max-w-[140px]"></select>
+            <button type="button" onclick="detectPropGps(true)" id="propGpsBtn" class="text-[10px] bg-white/15 hover:bg-white/25 px-2 py-0.5 rounded-full font-bold shrink-0">📍定位</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 三语切换 -->
+      <div class="flex items-center bg-black/30 glass-pill rounded-full p-0.5 text-[11px] font-bold shrink-0 border border-white/15">
+        <button onclick="setPropLang('zh')" id="pLang-zh" class="px-2 py-0.5 rounded-full bg-white text-emerald-950 transition">CN</button>
+        <button onclick="setPropLang('en')" id="pLang-en" class="px-2 py-0.5 rounded-full text-white/85 transition">EN</button>
+        <button onclick="setPropLang('ms')" id="pLang-ms" class="px-2 py-0.5 rounded-full text-white/85 transition">BM</button>
+      </div>
+    </div>
+
+    <div class="relative z-10 flex items-center justify-between gap-2">
+      <div>
+        <div id="propHeroHeadline" class="font-extrabold text-sm text-white">无中介钓鱼盘 · 实景实价直连房东/经纪</div>
+        <div id="propHeroSub" class="text-[11px] text-emerald-200/90 mt-0.5">屋主直租过滤 · 家具与押金透明 · 一键导航看房</div>
+      </div>
+      <button type="button" onclick="openListPropModal()" id="topListPropBtn" class="bg-gradient-to-r from-emerald-400 to-teal-400 hover:opacity-95 text-slate-950 font-black text-xs px-3.5 py-2 rounded-full shadow-md shrink-0">
+        + 免费放盘
+      </button>
+    </div>
+  </header>
+
+  <!-- 租售主切换 + 搜索 + 快捷防坑开关 -->
+  <section class="relative z-20 -mt-4 mx-3 bg-white rounded-2xl shadow-[0_6px_20px_rgba(15,23,42,0.07)] border border-gray-100 p-3 space-y-2.5">
+    <!-- 买卖租主模式切换胶囊 -->
+    <div class="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-full text-xs font-extrabold">
+      <button type="button" onclick="setDealMode('rent')" id="dealBtn-rent" class="py-1.5 rounded-full bg-emerald-600 text-white shadow-2xs transition">🏠 房屋出租 (Rent)</button>
+      <button type="button" onclick="setDealMode('sale')" id="dealBtn-sale" class="py-1.5 rounded-full text-gray-600 transition">🏡 房屋买卖 (Buy)</button>
+      <button type="button" onclick="setDealMode('all')" id="dealBtn-all" class="py-1.5 rounded-full text-gray-600 transition">📋 全部房源</button>
+    </div>
+
+    <div class="flex items-center gap-1.5">
+      <div class="relative flex-1">
+        <input type="search" id="propSearchInput" oninput="renderProperties()" placeholder="搜项目名/地区：如 Gurney, Tanjung Tokong, Condo, Room..."
+               class="w-full bg-gray-100/90 text-gray-800 text-xs rounded-full pl-8 pr-7 py-2.5 focus:bg-white focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition font-medium">
+        <span class="absolute left-3 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
+        <button type="button" id="clearPropSearchBtn" onclick="document.getElementById('propSearchInput').value=''; renderProperties();" class="hidden absolute right-2.5 top-2 text-gray-400 text-xs font-bold">✕</button>
+      </div>
+      <button type="button" onclick="resetPropFilters()" id="resetPropBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-3 py-2.5 rounded-full shrink-0">重置</button>
+    </div>
+
+    <!-- 针对 PropertyGuru 痛点的快捷过滤开关 -->
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
+      <button type="button" onclick="togglePropQuickTag('ownerDirect')" id="pPill-ownerDirect" class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold shrink-0 transition">
+        👤 仅看屋主直租/直售
+      </button>
+      <button type="button" onclick="togglePropQuickTag('fullyFurnished')" id="pPill-fullyFurnished" class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-bold shrink-0 transition">
+        🛋️ 全套家具 Fully Furnished
+      </button>
+      <button type="button" onclick="togglePropQuickTag('nearLrtMrt')" id="pPill-nearLrtMrt" class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold shrink-0 transition">
+        🚇 近 LRT/MRT/商圈
+      </button>
+      <button type="button" onclick="togglePropQuickTag('lowDeposit')" id="pPill-lowDeposit" class="px-2.5 py-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200 font-bold shrink-0 transition">
+        💰 押金透明/可商量
+      </button>
+    </div>
+
+    <!-- 房型快速筛选条 -->
+    <div id="propTypeBar" class="grid grid-cols-6 gap-1 text-center pt-0.5">
+      <button type="button" onclick="selectPropType('')" data-ptype="" id="ptypeBtn-all" class="ptype-btn py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px]">全部</button>
+      <button type="button" onclick="selectPropType('Condo')" data-ptype="Condo" id="ptypeBtn-Condo" class="ptype-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">Condo</button>
+      <button type="button" onclick="selectPropType('Terrace')" data-ptype="Terrace" id="ptypeBtn-Terrace" class="ptype-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">排屋</button>
+      <button type="button" onclick="selectPropType('Semi-D')" data-ptype="Semi-D" id="ptypeBtn-Semi-D" class="ptype-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">半独立</button>
+      <button type="button" onclick="selectPropType('Room')" data-ptype="Room" id="ptypeBtn-Room" class="ptype-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">房间</button>
+      <button type="button" onclick="selectPropType('Commercial')" data-ptype="Commercial" id="ptypeBtn-Commercial" class="ptype-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">商铺/办公</button>
+    </div>
+  </section>
+
+  <!-- 专业多维过滤器（预算上限 + 卧室数 + 面积 sqft + 家具程度 + 排序） -->
+  <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-xs border border-gray-100 space-y-2 text-xs">
+    <div class="grid grid-cols-3 gap-1.5">
+      <select id="propPriceFilter" onchange="renderProperties()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">租金/售价预算</option>
+        <option value="0-1500">RM 1,500 以下</option>
+        <option value="1500-3000">RM 1,500 - 3,000</option>
+        <option value="3000-6000">RM 3,000 - 6,000</option>
+        <option value="6000-450000">RM 450k 以下(买)</option>
+        <option value="450000-1200000">RM 450k - 1.2M</option>
+        <option value="1200000-99999999">RM 1.2M 以上</option>
+      </select>
+
+      <select id="propRoomsFilter" onchange="renderProperties()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">房间数 Rooms</option>
+        <option value="1">1 房 / Studio</option>
+        <option value="2">2 房</option>
+        <option value="3">3 房</option>
+        <option value="4">4 房及以上</option>
+      </select>
+
+      <select id="propSqftFilter" onchange="renderProperties()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">面积 sqft</option>
+        <option value="500">500 sqft 以上</option>
+        <option value="850">850 sqft 以上</option>
+        <option value="1200">1,200 sqft 以上</option>
+        <option value="2000">2,000 sqft 以上</option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-1.5">
+      <select id="propFurnishFilter" onchange="renderProperties()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">家具配置 Furnishing</option>
+        <option value="Fully Furnished">全套家具 Fully Furnished</option>
+        <option value="Partially Furnished">部分家具 Partially Furnished</option>
+        <option value="Unfurnished">空屋 Unfurnished</option>
+      </select>
+
+      <select id="propSortBy" onchange="renderProperties()" class="bg-emerald-50/80 border border-emerald-200 text-emerald-950 rounded-xl px-2 py-1.5 text-[11px] font-bold">
+        <option value="default">排序：推荐+最新</option>
+        <option value="nearest">距离看房点最近</option>
+        <option value="price_asc">价格从低到高</option>
+        <option value="price_desc">价格从高到低</option>
+        <option value="sqft_desc">面积从大到小</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- 房源列表标题栏 -->
+  <div class="mx-4 mt-3.5 mb-2 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-1.5 h-4 bg-emerald-600 rounded-full"></span>
+      <h2 id="propListHeading" class="font-black text-gray-800 text-sm">精选屋主直租与认证房源</h2>
+      <span id="propCountBadge" class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">0 套</span>
+    </div>
+    <span id="propGpsStatusText" class="text-[10px] text-emerald-700 font-semibold"></span>
+  </div>
+
+  <!-- 房源列表容器 -->
+  <main id="propListContainer" class="px-3 pb-24 space-y-3 flex-1">
+    <div id="propLoadingText" class="bg-white rounded-2xl p-8 text-center text-gray-400 text-xs shadow-xs">正在加载全马实时房源...</div>
+  </main>
+
+  <!-- 底部快捷导航 -->
+  <nav class="fixed bottom-0 max-w-md w-full bg-white/95 glass-pill border-t border-gray-200 grid grid-cols-3 items-center py-2 z-30 text-center">
+    <a href="/" class="flex flex-col items-center text-gray-500 hover:text-red-600">
+      <span class="text-base">🏠</span>
+      <span id="pNavHomeTxt" class="text-[10px] font-bold mt-0.5">返回首页</span>
+    </a>
+    <button type="button" onclick="openListPropModal()" class="flex flex-col items-center -mt-5">
+      <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center text-xl font-black shadow-lg border-4 border-white">+</div>
+      <span id="pNavListTxt" class="text-[10px] font-extrabold text-emerald-700 mt-0.5">免费放盘</span>
+    </button>
+    <a href="/map.html" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
+      <span class="text-base">🧭</span>
+      <span id="pNavMapTxt" class="text-[10px] font-bold mt-0.5">导航看房</span>
+    </a>
+  </nav>
+
+  <!-- 房源详情弹窗 -->
+  <div id="propDetailModal" onclick="closePropDetail()" class="fixed inset-0 bg-black/65 z-50 hidden flex items-end sm:items-center justify-center">
+    <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 max-h-[92vh] overflow-y-auto relative">
+      <button onclick="closePropDetail()" class="absolute right-3.5 top-3.5 w-8 h-8 rounded-full bg-black/65 text-white flex items-center justify-center font-bold z-20">✕</button>
+      <div id="propDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- 发布租房/买房表单弹窗 -->
+  <div id="listPropModal" onclick="closeListPropModal()" class="fixed inset-0 bg-black/65 z-50 hidden flex items-end sm:items-center justify-center">
+    <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 id="modalPropTitle" class="font-black text-base text-gray-900">🏠 发布租房 / 买房信息</h3>
+          <p id="modalPropSub" class="text-[11px] text-gray-500">请如实填写户型、面积与租金/售价，拒绝假房源钓鱼</p>
+        </div>
+        <button type="button" onclick="closeListPropModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <form id="listPropForm" onsubmit="submitPropertyListing(event)" class="space-y-3 text-xs">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label id="lblPropPhotos" class="font-bold text-gray-700">实拍房源照片（最多 6 张，建议含客厅、卧室、厨房、卫浴）</label>
+            <span id="propPhotoCount" class="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">0 / 6</span>
+          </div>
+          <div id="propPhotoGrid" class="grid grid-cols-3 gap-2"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label id="lblDealKind" class="block font-bold text-gray-700 mb-1">租售类型 *</label>
+            <select id="pDealKind" onchange="updatePropPriceLabel()" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="rent">🏠 出租 For Rent</option>
+              <option value="sale">🏡 出售 For Sale</option>
+            </select>
+          </div>
+          <div>
+            <label id="lblPropSeller" class="block font-bold text-gray-700 mb-1">发布身份 *</label>
+            <select id="pSellerKind" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="owner">👤 屋主直租/直售 (Owner)</option>
+              <option value="agent">🏢 地产经纪 (Agent)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label id="lblPropCity" class="block font-bold text-gray-700 mb-1">所在州属 *</label>
+            <select id="pCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold"></select>
+          </div>
+          <div>
+            <label id="lblPropType" class="block font-bold text-gray-700 mb-1">房型结构 *</label>
+            <select id="pType" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="Condo">公寓 Condo / Apartment</option>
+              <option value="Terrace">排屋 Terrace / Link</option>
+              <option value="Semi-D">半独立 Semi-D / Bungalow</option>
+              <option value="Room">单间 / 套房 Room</option>
+              <option value="Commercial">商铺 / 办公 Commercial</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label id="lblPropTitle" class="block font-bold text-gray-700 mb-1">公寓/小区名称与亮点 *</label>
+          <input type="text" id="pTitle" required placeholder="例如：Tanjung Tokong 海景 3房2卫 全套家具"
+                 class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label id="lblRooms" class="block font-bold text-gray-700 mb-1">房间数 *</label>
+            <input type="number" id="pRooms" required min="0" max="20" placeholder="3"
+                   class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+          </div>
+          <div>
+            <label id="lblSqft" class="block font-bold text-gray-700 mb-1">面积 (sqft) *</label>
+            <input type="number" id="pSqft" required min="80" max="50000" placeholder="1050"
+                   class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+          </div>
+          <div>
+            <label id="lblFurnish" class="block font-bold text-gray-700 mb-1">家具状态 *</label>
+            <select id="pFurnish" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="Fully Furnished">全套家具</option>
+              <option value="Partially Furnished">部分家具</option>
+              <option value="Unfurnished">空屋</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label id="lblPropPrice" class="block font-bold text-emerald-800 mb-1">月租 (RM/月) *</label>
+            <input type="number" id="pPrice" required min="100" placeholder="例如：2200"
+                   class="w-full border border-emerald-200 bg-emerald-50/40 rounded-xl p-2.5 font-bold text-emerald-800">
+          </div>
+          <div>
+            <label id="lblPropWa" class="block font-bold text-gray-700 mb-1">WhatsApp 号码 *</label>
+            <input type="text" id="pWhatsapp" required placeholder="0123456789"
+                   class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+          </div>
+        </div>
+
+        <!-- 特色亮点勾选 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-2.5 space-y-1.5">
+          <div id="lblPropPerks" class="font-bold text-gray-700 text-[11px]">✨ 房源亮点标签（可多选）：</div>
+          <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkNearTransit" class="rounded text-emerald-600"> <span id="txtChkTransit">近 LRT/MRT/巴士站</span></label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkLowDep" class="rounded text-emerald-600"> <span id="txtChkLowDep">押金透明/可商量</span></label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkAircond" checked class="rounded text-emerald-600"> <span id="txtChkAircond">配有冷气/热水器</span></label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkCarpark" checked class="rounded text-emerald-600"> <span id="txtChkCarpark">包含停车位 Carpark</span></label>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label id="lblPropAddr" class="font-bold text-gray-700">看房地址 / 路名（支持导航）</label>
+            <button type="button" onclick="capturePropGps()" id="pGpsBtn" class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">📍 抓当前定位</button>
+          </div>
+          <input type="text" id="pAddr" placeholder="例如：Jalan Tanjung Tokong, Penang"
+                 class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+        </div>
+
+        <div>
+          <label id="lblPropDesc" class="block font-bold text-gray-700 mb-1">房源详细描述</label>
+          <textarea id="pDesc" rows="2" placeholder="说明租客要求/看房时间、押金明细、周边配套..."
+                    class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5"></textarea>
+        </div>
+
+        <button type="submit" id="propSubmitBtn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black py-3 rounded-xl shadow-md hover:opacity-95 transition">
+          立即免费发布房源
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const PROP_REGIONS = [
+      { value: '全马', zh: '📍 全马各州', en: '📍 All Malaysia', ms: '📍 Seluruh Malaysia' },
+      { value: '槟城', zh: '📍 槟城·威省 Penang', en: '📍 Penang', ms: '📍 Pulau Pinang' },
+      { value: '吉隆坡', zh: '📍 吉隆坡 KL', en: '📍 Kuala Lumpur', ms: '📍 Kuala Lumpur' },
+      { value: '雪兰莪', zh: '📍 雪兰莪 Selangor', en: '📍 Selangor', ms: '📍 Selangor' },
+      { value: '柔佛', zh: '📍 柔佛·新山 Johor', en: '📍 Johor Bahru', ms: '📍 Johor' },
+      { value: '霹雳', zh: '📍 霹雳·怡保 Perak', en: '📍 Ipoh / Perak', ms: '📍 Perak' },
+      { value: '马六甲', zh: '📍 马六甲 Melaka', en: '📍 Melaka', ms: '📍 Melaka' },
+      { value: '森美兰', zh: '📍 森美兰 N.Sembilan', en: '📍 Negeri Sembilan', ms: '📍 Negeri Sembilan' },
+      { value: '吉打', zh: '📍 吉打 Kedah', en: '📍 Kedah', ms: '📍 Kedah' },
+      { value: '彭亨', zh: '📍 彭亨 Pahang', en: '📍 Pahang', ms: '📍 Pahang' },
+      { value: '沙巴', zh: '📍 沙巴 Sabah', en: '📍 Sabah', ms: '📍 Sabah' },
+      { value: '砂拉越', zh: '📍 砂拉越 Sarawak', en: '📍 Sarawak', ms: '📍 Sarawak' }
+    ];
+
+    const PROP_I18N = {
+      zh: {
+        pageTitle: '大马吉通 · 租房买房',
+        gpsBtn: '📍定位', gpsLocated: '✅已定位', gpsStatus: '📍 已按当前位置计算看房距离',
+        heroHeadline: '无中介钓鱼盘 · 实景实价直连房东/经纪',
+        heroSub: '屋主直租过滤 · 家具与押金透明 · 一键导航看房',
+        topListBtn: '+ 免费放盘',
+        dealRent: '🏠 房屋出租 (Rent)', dealSale: '🏡 房屋买卖 (Buy)', dealAll: '📋 全部房源',
+        searchPh: '搜项目名/地区：如 Gurney, Tanjung Tokong, Condo, Room...',
+        resetBtn: '重置',
+        pillOwner: '👤 仅看屋主直租/直售', pillFurn: '🛋️ 全套家具 Furnished', pillTransit: '🚇 近 LRT/MRT/商圈', pillDep: '💰 押金透明/可商量',
+        typeAll: '全部', typeCondo: 'Condo', typeTerrace: '排屋', typeSemiD: '半独立', typeRoom: '房间', typeComm: '商铺/办公',
+        priceAll: '租金/售价预算', roomsAll: '房间数 Rooms', roomsSuffix: ' 房', rooms4Plus: '4 房及以上',
+        sqftAll: '面积 sqft', sqftSuffix: ' sqft 以上',
+        furnAll: '家具配置 Furnishing', furnFull: '全套家具 Fully Furnished', furnPart: '部分家具 Partially Furnished', furnEmpty: '空屋 Unfurnished',
+        sortDefault: '排序：推荐+最新', sortNearest: '距离看房点最近', sortPriceAsc: '价格从低到高', sortPriceDesc: '价格从高到低', sortSqftDesc: '面积从大到小',
+        listHeading: '精选屋主直租与认证房源', unitProp: '套',
+        emptyTitle: '当前筛选条件下暂无匹配房源', emptySub: '你可以放宽预算或房型条件，或点击下方免费发布房源！', emptyBtn: '+ 立即免费放盘',
+        badgePinned: '置顶', badgeOwner: '👤 屋主直发', badgeAgent: '🏢 地产经纪', badgeRent: '出租 Rent', badgeSale: '出售 Sale',
+        badgeRooms: (r) => `🛏️ ${r}房`, badgeSqft: (s) => `📐 ${s.toLocaleString()} sqft`,
+        badgeTransit: '🚇 近交通', badgeLowDep: '💰 押金透明', badgeAircond: '❄️ 冷气/热水', badgeCarpark: '🅿️ 停车位',
+        perMonth: '/月', fullSalePrice: '售价 (For Sale)',
+        navHome: '返回首页', navList: '免费放盘', navMap: '导航看房',
+        detailRooms: '房间', detailSqft: '面积', detailFurn: '家具', detailKind: '类型',
+        detailNoDesc: '发布者未填写更多房源描述。', detailNavBtn: '🧭 导航去看房', detailWaBtn: '💬 WhatsApp 约看房',
+        modalTitle: '🏠 发布租房 / 买房信息', modalSub: '请如实填写户型、面积与租金/售价，拒绝假房源钓鱼',
+        lblPhotos: '实拍房源照片（最多 6 张，建议含客厅、卧室、厨房、卫浴）', addPhoto: '添加实拍',
+        lblDealKind: '租售类型 *', optRent: '🏠 出租 For Rent', optSale: '🏡 出售 For Sale',
+        lblSeller: '发布身份 *', optOwner: '👤 屋主直租/直售 (Owner)', optAgent: '🏢 地产经纪 (Agent)',
+        lblCity: '所在州属 *', lblType: '房型结构 *',
+        optCondo: '公寓 Condo / Apartment', optTerrace: '排屋 Terrace / Link', optSemiD: '半独立 Semi-D / Bungalow', optRoom: '单间 / 套房 Room', optComm: '商铺 / 办公 Commercial',
+        lblTitle: '公寓/小区名称与亮点 *', phTitle: '例如：Tanjung Tokong 海景 3房2卫 全套家具',
+        lblRooms: '房间数 *', lblSqft: '面积 (sqft) *', lblFurnish: '家具状态 *',
+        optFurnFull: '全套家具', optFurnPart: '部分家具', optFurnEmpty: '空屋',
+        lblPriceRent: '月租 (RM/月) *', lblPriceSale: '售价 (RM) *', phPriceRent: '例如：2200', phPriceSale: '例如：580000',
+        lblWa: 'WhatsApp 号码 *', lblPerks: '✨ 房源亮点标签（可多选）：',
+        chkTransit: '近 LRT/MRT/巴士站', chkLowDep: '押金透明/可商量', chkAircond: '配有冷气/热水器', chkCarpark: '包含停车位 Carpark',
+        lblAddr: '看房地址 / 路名（支持导航）', btnGrab: '📍 抓当前定位', btnGrabbed: '✅ 已锁定坐标', phAddr: '例如：Jalan Tanjung Tokong, Penang',
+        lblDesc: '房源详细描述', phDesc: '说明租客要求/看房时间、押金明细、周边配套...', btnSubmit: '立即免费发布房源', btnSubmitting: '正在上传照片与发布...'
+      },
+      en: {
+        pageTitle: 'DamaJitong · Property',
+        gpsBtn: '📍GPS', gpsLocated: '✅Located', gpsStatus: '📍 Distance calculated from your location',
+        heroHeadline: 'No Bait Listings · Direct Owner & Agent Viewing',
+        heroSub: 'Owner Filter · Furnishing & Deposit Clarity · 1-Tap Map',
+        topListBtn: '+ List Property',
+        dealRent: '🏠 For Rent', dealSale: '🏡 For Sale', dealAll: '📋 All Listings',
+        searchPh: 'Search project/area: Gurney, Tanjung Tokong, Condo, Room...',
+        resetBtn: 'Reset',
+        pillOwner: '👤 Direct Owner Only', pillFurn: '🛋️ Fully Furnished', pillTransit: '🚇 Near LRT/MRT', pillDep: '💰 Clear Deposit',
+        typeAll: 'All', typeCondo: 'Condo', typeTerrace: 'Terrace', typeSemiD: 'Semi-D', typeRoom: 'Room', typeComm: 'Commercial',
+        priceAll: 'Price / Rent RM', roomsAll: 'Rooms', roomsSuffix: ' Bed', rooms4Plus: '4+ Beds',
+        sqftAll: 'Size sqft', sqftSuffix: '+ sqft',
+        furnAll: 'Furnishing', furnFull: 'Fully Furnished', furnPart: 'Partially Furnished', furnEmpty: 'Unfurnished',
+        sortDefault: 'Sort: Featured + Latest', sortNearest: 'Nearest Viewing Point', sortPriceAsc: 'Price: Low to High', sortPriceDesc: 'Price: High to Low', sortSqftDesc: 'Size: Largest First',
+        listHeading: 'Direct Owner & Verified Properties', unitProp: 'units',
+        emptyTitle: 'No properties match current filters', emptySub: 'Try adjusting budget or property type, or post your listing free!', emptyBtn: '+ List Property Free',
+        badgePinned: 'TOP', badgeOwner: '👤 Direct Owner', badgeAgent: '🏢 Property Agent', badgeRent: 'For Rent', badgeSale: 'For Sale',
+        badgeRooms: (r) => `🛏️ ${r}R`, badgeSqft: (s) => `📐 ${s.toLocaleString()} sqft`,
+        badgeTransit: '🚇 Near Transit', badgeLowDep: '💰 Clear Deposit', badgeAircond: '❄️ Aircond/Heater', badgeCarpark: '🅿️ Carpark',
+        perMonth: '/mo', fullSalePrice: 'Asking Price (Sale)',
+        navHome: 'Home', navList: 'List Prop', navMap: 'Navigate',
+        detailRooms: 'Rooms', detailSqft: 'Size', detailFurn: 'Furnishing', detailKind: 'Listing',
+        detailNoDesc: 'No additional property details provided.', detailNavBtn: '🧭 Navigate to View', detailWaBtn: '💬 WhatsApp Lister',
+        modalTitle: '🏠 List Property (Rent / Sale)', modalSub: 'Enter accurate rooms, sqft & price (no fake bait listings)',
+        lblPhotos: 'Real Property Photos (Up to 6: living, rooms, kitchen)', addPhoto: 'Add Photo',
+        lblDealKind: 'Listing Type *', optRent: '🏠 For Rent', optSale: '🏡 For Sale',
+        lblSeller: 'Lister Role *', optOwner: '👤 Direct Owner', optAgent: '🏢 Property Agent',
+        lblCity: 'State *', lblType: 'Property Type *',
+        optCondo: 'Condo / Apartment', optTerrace: 'Terrace / Link', optSemiD: 'Semi-D / Bungalow', optRoom: 'Room', optComm: 'Commercial / Office',
+        lblTitle: 'Project / Residence Title *', phTitle: 'e.g. Tanjung Tokong Seaview 3R2B Fully Furnished',
+        lblRooms: 'Rooms *', lblSqft: 'Size (sqft) *', lblFurnish: 'Furnishing *',
+        optFurnFull: 'Fully Furnished', optFurnPart: 'Partially Furnished', optFurnEmpty: 'Unfurnished',
+        lblPriceRent: 'Monthly Rent (RM/mo) *', lblPriceSale: 'Sale Price (RM) *', phPriceRent: 'e.g. 2200', phPriceSale: 'e.g. 580000',
+        lblWa: 'WhatsApp Number *', lblPerks: '✨ Property Highlights (Multi-select):',
+        chkTransit: 'Near LRT/MRT/Bus', chkLowDep: 'Transparent/Flexible Deposit', chkAircond: 'Aircond & Water Heater', chkCarpark: 'Includes Carpark',
+        lblAddr: 'Viewing Address / Street', btnGrab: '📍 Grab GPS', btnGrabbed: '✅ GPS Locked', phAddr: 'e.g. Jalan Tanjung Tokong, Penang',
+        lblDesc: 'Property Description', phDesc: 'Tenant preference, viewing hours, deposit terms, amenities...', btnSubmit: 'Publish Listing Free', btnSubmitting: 'Uploading photos & publishing...'
+      },
+      ms: {
+        pageTitle: 'DamaJitong · Hartanah',
+        gpsBtn: '📍GPS', gpsLocated: '✅Lokasi', gpsStatus: '📍 Jarak dikira dari lokasi semasa anda',
+        heroHeadline: 'Tiada Iklan Pancing · Terus Pemilik & Ejen Sah',
+        heroSub: 'Tapis Pemilik · Info Perabot & Deposit · Navigasi Terus',
+        topListBtn: '+ Iklan Hartanah',
+        dealRent: '🏠 Untuk Disewa', dealSale: '🏡 Untuk Dijual', dealAll: '📋 Semua Hartanah',
+        searchPh: 'Cari projek/kawasan: Gurney, Tanjung Tokong, Condo, Bilik...',
+        resetBtn: 'Reset',
+        pillOwner: '👤 Terus Pemilik Sahaja', pillFurn: '🛋️ Lengkap Perabot', pillTransit: '🚇 Dekat LRT/MRT', pillDep: '💰 Deposit Jelas',
+        typeAll: 'Semua', typeCondo: 'Kondo', typeTerrace: 'Teres', typeSemiD: 'Semi-D', typeRoom: 'Bilik', typeComm: 'Komersial',
+        priceAll: 'Bajet Sewa / Beli RM', roomsAll: 'Bilik', roomsSuffix: ' Bilik', rooms4Plus: '4+ Bilik',
+        sqftAll: 'Keluasan sqft', sqftSuffix: '+ sqft',
+        furnAll: 'Perabot', furnFull: 'Lengkap Perabot (Fully)', furnPart: 'Separuh Perabot (Partial)', furnEmpty: 'Kosong (Unfurnished)',
+        sortDefault: 'Susunan: Pilihan + Terkini', sortNearest: 'Lokasi Paling Dekat', sortPriceAsc: 'Harga: Rendah ke Tinggi', sortPriceDesc: 'Harga: Tinggi ke Rendah', sortSqftDesc: 'Keluasan: Terbesar',
+        listHeading: 'Hartanah Terus Pemilik & Disahkan', unitProp: 'unit',
+        emptyTitle: 'Tiada hartanah sepadan dengan tapisan', emptySub: 'Cuba ubah bajet atau jenis hartanah, atau iklankan secara percuma!', emptyBtn: '+ Iklan Hartanah Percuma',
+        badgePinned: 'PILIHAN', badgeOwner: '👤 Terus Pemilik', badgeAgent: '🏢 Ejen Hartanah', badgeRent: 'Disewa', badgeSale: 'Dijual',
+        badgeRooms: (r) => `🛏️ ${r}Bilik`, badgeSqft: (s) => `📐 ${s.toLocaleString()} sqft`,
+        badgeTransit: '🚇 Dekat Transit', badgeLowDep: '💰 Deposit Jelas', badgeAircond: '❄️ Aircond/Pemanas', badgeCarpark: '🅿️ Petak Parkir',
+        perMonth: '/bln', fullSalePrice: 'Harga Jualan',
+        navHome: 'Utama', navList: 'Iklan', navMap: 'Navigasi',
+        detailRooms: 'Bilik', detailSqft: 'Keluasan', detailFurn: 'Perabot', detailKind: 'Jenis',
+        detailNoDesc: 'Tiada keterangan tambahan diberikan.', detailNavBtn: '🧭 Navigasi Lihat Rumah', detailWaBtn: '💬 WhatsApp Pengiklan',
+        modalTitle: '🏠 Iklankan Hartanah (Sewa / Jual)', modalSub: 'Isi bilangan bilik, keluasan & harga sebenar dengan tepat',
+        lblPhotos: 'Gambar Sebenar Hartanah (Maksimum 6)', addPhoto: 'Tambah Foto',
+        lblDealKind: 'Jenis Iklan *', optRent: '🏠 Untuk Disewa (Rent)', optSale: '🏡 Untuk Dijual (Sale)',
+        lblSeller: 'Peranan Pengiklan *', optOwner: '👤 Pemilik Sendiri (Owner)', optAgent: '🏢 Ejen Hartanah (Agent)',
+        lblCity: 'Negeri *', lblType: 'Jenis Hartanah *',
+        optCondo: 'Kondominium / Apartmen', optTerrace: 'Rumah Teres', optSemiD: 'Semi-D / Banglo', optRoom: 'Bilik', optComm: 'Kedai / Pejabat Komersial',
+        lblTitle: 'Nama Projek / Kondominium & Kelebihan *', phTitle: 'Cth: Tanjung Tokong 3 Bilik Lengkap Perabot',
+        lblRooms: 'Bilangan Bilik *', lblSqft: 'Keluasan (sqft) *', lblFurnish: 'Status Perabot *',
+        optFurnFull: 'Lengkap Perabot', optFurnPart: 'Separuh Perabot', optFurnEmpty: 'Kosong',
+        lblPriceRent: 'Sewa Bulanan (RM/bln) *', lblPriceSale: 'Harga Jualan (RM) *', phPriceRent: 'Cth: 2200', phPriceSale: 'Cth: 580000',
+        lblWa: 'Nombor WhatsApp *', lblPerks: '✨ Kelebihan Hartanah (Boleh Pilih Lebih Satu):',
+        chkTransit: 'Dekat LRT/MRT/Bas', chkLowDep: 'Deposit Jelas / Boleh Runding', chkAircond: 'Aircond & Pemanas Air', chkCarpark: 'Termasuk Tempat Letak Kereta',
+        lblAddr: 'Alamat Tepat / Jalan (Untuk Navigasi)', btnGrab: '📍 Guna GPS', btnGrabbed: '✅ GPS Dikunci', phAddr: 'Cth: Jalan Tanjung Tokong, Penang',
+        lblDesc: 'Keterangan Lanjut Hartanah', phDesc: 'Kriteria penyewa, masa tengok rumah, deposit, kemudahan...', btnSubmit: 'Hantar Iklan Hartanah Percuma', btnSubmitting: 'Memuat naik gambar & menghantar...'
+      }
+    };
+
+    let currentLang = localStorage.getItem('dama_lang') || 'zh';
+    let allPropPosts = [];
+    let dealMode = 'rent';
+    let selectedPropType = '';
+    let propQuickFlags = { ownerDirect: false, fullyFurnished: false, nearLrtMrt: false, lowDeposit: false };
+    let userGpsCoords = null;
+    let propPhotoItems = [];
+    let capturedPropCoords = null;
+
+    try {
+      const savedLoc = JSON.parse(localStorage.getItem('dama_last_live_loc_v1') || 'null');
+      if (savedLoc && typeof savedLoc.lat === 'number' && typeof savedLoc.lng === 'number') {
+        userGpsCoords = { lat: savedLoc.lat, lng: savedLoc.lng };
+      }
+    } catch (_) {}
+
+    function populatePropRegionSelects(lang) {
+      const topSel = document.getElementById('propCityFilter');
+      const formSel = document.getElementById('pCity');
+      const prevTop = topSel?.value || '全马';
+      const prevForm = formSel?.value || '槟城';
+
+      if (topSel) {
+        topSel.innerHTML = PROP_REGIONS.map(r => `<option value="${r.value}" class="text-gray-900">${r[lang] || r.zh}</option>`).join('');
+        topSel.value = prevTop;
+      }
+      if (formSel) {
+        formSel.innerHTML = PROP_REGIONS.filter(r => r.value !== '全马').map(r => `<option value="${r.value}">${(r[lang] || r.zh).replace(/^📍\s*/, '')}</option>`).join('');
+        formSel.value = prevForm;
+      }
+    }
+
+    function updatePropPriceLabel() {
+      const t = PROP_I18N[currentLang];
+      const kind = document.getElementById('pDealKind')?.value || 'rent';
+      const lbl = document.getElementById('lblPropPrice');
+      const inp = document.getElementById('pPrice');
+      if (lbl) lbl.innerText = kind === 'sale' ? t.lblPriceSale : t.lblPriceRent;
+      if (inp) inp.placeholder = kind === 'sale' ? t.phPriceSale : t.phPriceRent;
+    }
+
+    function setPropLang(lang) {
+      currentLang = PROP_I18N[lang] ? lang : 'zh';
+      localStorage.setItem('dama_lang', currentLang);
+      const t = PROP_I18N[currentLang];
+
+      ['zh', 'en', 'ms'].forEach(l => {
+        const b = document.getElementById(`pLang-${l}`);
+        if (b) b.className = l === currentLang ? 'px-2 py-0.5 rounded-full bg-white text-emerald-950 transition' : 'px-2 py-0.5 rounded-full text-white/85 transition';
+      });
+
+      populatePropRegionSelects(currentLang);
+
+      document.getElementById('propPageTitle').innerText = t.pageTitle;
+      document.getElementById('propGpsBtn').innerText = userGpsCoords ? t.gpsLocated : t.gpsBtn;
+      if (userGpsCoords) document.getElementById('propGpsStatusText').innerText = t.gpsStatus;
+      document.getElementById('propHeroHeadline').innerText = t.heroHeadline;
+      document.getElementById('propHeroSub').innerText = t.heroSub;
+      document.getElementById('topListBtn').innerText = t.topListBtn;
+
+      document.getElementById('dealBtn-rent').innerText = t.dealRent;
+      document.getElementById('dealBtn-sale').innerText = t.dealSale;
+      document.getElementById('dealBtn-all').innerText = t.dealAll;
+
+      document.getElementById('propSearchInput').placeholder = t.searchPh;
+      document.getElementById('resetPropBtn').innerText = t.resetBtn;
+
+      document.getElementById('pPill-ownerDirect').innerText = t.pillOwner;
+      document.getElementById('pPill-fullyFurnished').innerText = t.pillFurn;
+      document.getElementById('pPill-nearLrtMrt').innerText = t.pillTransit;
+      document.getElementById('pPill-lowDeposit').innerText = t.pillDep;
+
+      document.getElementById('ptypeBtn-all').innerText = t.typeAll;
+      document.getElementById('ptypeBtn-Condo').innerText = t.typeCondo;
+      document.getElementById('ptypeBtn-Terrace').innerText = t.typeTerrace;
+      document.getElementById('ptypeBtn-Semi-D').innerText = t.typeSemiD;
+      document.getElementById('ptypeBtn-Room').innerText = t.typeRoom;
+      document.getElementById('ptypeBtn-Commercial').innerText = t.typeComm;
+
+      const setOpt = (id, idx, txt) => {
+        const el = document.getElementById(id);
+        if (el && el.options[idx]) el.options[idx].text = txt;
+      };
+      setOpt('propPriceFilter', 0, t.priceAll);
+      setOpt('propRoomsFilter', 0, t.roomsAll);
+      setOpt('propRoomsFilter', 1, `1${t.roomsSuffix}`);
+      setOpt('propRoomsFilter', 2, `2${t.roomsSuffix}`);
+      setOpt('propRoomsFilter', 3, `3${t.roomsSuffix}`);
+      setOpt('propRoomsFilter', 4, t.rooms4Plus);
+
+      setOpt('propSqftFilter', 0, t.sqftAll);
+      setOpt('propSqftFilter', 1, `500${t.sqftSuffix}`);
+      setOpt('propSqftFilter', 2, `850${t.sqftSuffix}`);
+      setOpt('propSqftFilter', 3, `1,200${t.sqftSuffix}`);
+      setOpt('propSqftFilter', 4, `2,000${t.sqftSuffix}`);
+
+      setOpt('propFurnishFilter', 0, t.furnAll);
+      setOpt('propFurnishFilter', 1, t.furnFull);
+      setOpt('propFurnishFilter', 2, t.furnPart);
+      setOpt('propFurnishFilter', 3, t.furnEmpty);
+
+      setOpt('propSortBy', 0, t.sortDefault);
+      setOpt('propSortBy', 1, t.sortNearest);
+      setOpt('propSortBy', 2, t.sortPriceAsc);
+      setOpt('propSortBy', 3, t.sortPriceDesc);
+      setOpt('propSortBy', 4, t.sortSqftDesc);
+
+      document.getElementById('propListHeading').innerText = t.listHeading;
+      document.getElementById('pNavHomeTxt').innerText = t.navHome;
+      document.getElementById('pNavListTxt').innerText = t.navList;
+      document.getElementById('pNavMapTxt').innerText = t.navMap;
+
+      // Modal translations
+      document.getElementById('modalPropTitle').innerText = t.modalTitle;
+      document.getElementById('modalPropSub').innerText = t.modalSub;
+      document.getElementById('lblPropPhotos').innerText = t.lblPhotos;
+      document.getElementById('lblDealKind').innerText = t.lblDealKind;
+      setOpt('pDealKind', 0, t.optRent);
+      setOpt('pDealKind', 1, t.optSale);
+      document.getElementById('lblPropSeller').innerText = t.lblSeller;
+      setOpt('pSellerKind', 0, t.optOwner);
+      setOpt('pSellerKind', 1, t.optAgent);
+      document.getElementById('lblPropCity').innerText = t.lblCity;
+      document.getElementById('lblPropType').innerText = t.lblType;
+      setOpt('pType', 0, t.optCondo);
+      setOpt('pType', 1, t.optTerrace);
+      setOpt('pType', 2, t.optSemiD);
+      setOpt('pType', 3, t.optRoom);
+      setOpt('pType', 4, t.optComm);
+      document.getElementById('lblPropTitle').innerText = t.lblTitle;
+      document.getElementById('pTitle').placeholder = t.phTitle;
+      document.getElementById('lblRooms').innerText = t.lblRooms;
+      document.getElementById('lblSqft').innerText = t.lblSqft;
+      document.getElementById('lblFurnish').innerText = t.lblFurnish;
+      setOpt('pFurnish', 0, t.optFurnFull);
+      setOpt('pFurnish', 1, t.optFurnPart);
+      setOpt('pFurnish', 2, t.optFurnEmpty);
+      document.getElementById('lblPropWa').innerText = t.lblWa;
+      document.getElementById('lblPropPerks').innerText = t.lblPerks;
+      document.getElementById('txtChkTransit').innerText = t.chkTransit;
+      document.getElementById('txtChkLowDep').innerText = t.chkLowDep;
+      document.getElementById('txtChkAircond').innerText = t.chkAircond;
+      document.getElementById('txtChkCarpark').innerText = t.chkCarpark;
+      document.getElementById('lblPropAddr').innerText = t.lblAddr;
+      document.getElementById('pGpsBtn').innerText = capturedPropCoords ? t.btnGrabbed : t.btnGrab;
+      document.getElementById('pAddr').placeholder = t.phAddr;
+      document.getElementById('lblPropDesc').innerText = t.lblDesc;
+      document.getElementById('pDesc').placeholder = t.phDesc;
+      document.getElementById('propSubmitBtn').innerText = t.btnSubmit;
+      updatePropPriceLabel();
+
+      renderPropPhotoGrid();
+      renderProperties();
+    }
+
+    function setDealMode(mode) {
+      dealMode = mode;
+      ['rent', 'sale', 'all'].forEach(m => {
+        const b = document.getElementById(`dealBtn-${m}`);
+        if (!b) return;
+        b.className = m === mode
+          ? 'py-1.5 rounded-full bg-emerald-600 text-white shadow-2xs transition'
+          : 'py-1.5 rounded-full text-gray-600 transition';
+      });
+      renderProperties();
+    }
+
+    function detectPropGps(showAlert = false) {
+      if (!navigator.geolocation) return;
+      const t = PROP_I18N[currentLang];
+      const btn = document.getElementById('propGpsBtn');
+      if (btn) btn.innerText = '⏳...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userGpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (btn) btn.innerText = t.gpsLocated;
+          document.getElementById('propGpsStatusText').innerText = t.gpsStatus;
+          renderProperties();
+        },
+        () => {
+          if (btn) btn.innerText = t.gpsBtn;
+          if (showAlert) alert('Please allow browser GPS permission.');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function calcKm(lat1, lng1, lat2, lng2) {
+      if ([lat1, lng1, lat2, lng2].some(v => typeof v !== 'number' || Number.isNaN(v))) return null;
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function parsePropMeta(post) {
+      const rawDesc = `${post.description || ''} ${post.desc_zh || ''}`;
+      let meta = {};
+      const m = rawDesc.match(/\[\[PROP:(\{[\s\S]*?\})\]\]/);
+      if (m) {
+        try { meta = JSON.parse(m[1]); } catch (_) {}
+      }
+
+      const blob = `${post.title || ''} ${rawDesc}`;
+      const priceNum = Number(meta.price) || Number(String(post.price || '').replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)?.[1] || 0);
+      const roomsNum = Number(meta.rooms) || Number(blob.match(/(\d+)\s*(?:房|室|bilik|bed|r\b)/i)?.[1] || 0);
+      const sqftNum = Number(meta.sqft) || Number(blob.replace(/,/g, '').match(/(\d+(?:\.\d+)?)\s*(?:sqft|sq\.?\s*ft|平方尺)/i)?.[1] || 0);
+
+      let pType = meta.pType || '';
+      if (!pType) {
+        if (/condo|公寓|apartment|residence|suite/i.test(blob)) pType = 'Condo';
+        else if (/terrace|排屋|link/i.test(blob)) pType = 'Terrace';
+        else if (/semi-d|半独立|bungalow/i.test(blob)) pType = 'Semi-D';
+        else if (/room|房间|bilik/i.test(blob)) pType = 'Room';
+        else if (/commercial|shop|office|商铺|办公/i.test(blob)) pType = 'Commercial';
+        else pType = 'Condo';
+      }
+
+      let dealKind = meta.dealKind || '';
+      if (!dealKind) {
+        dealKind = (/sale|出售|jual|买房/i.test(blob) && !/租|sewa|rent/i.test(blob)) ? 'sale' : 'rent';
+      }
+
+      let coords = null;
+      const mapM = rawDesc.match(/\[\[MAP:([^,\]]*),([^\]]*)\|/);
+      if (mapM && !Number.isNaN(parseFloat(mapM[1])) && !Number.isNaN(parseFloat(mapM[2]))) {
+        coords = { lat: parseFloat(mapM[1]), lng: parseFloat(mapM[2]) };
+      }
+
+      const imgs = [];
+      if (post.image_url) imgs.push(post.image_url);
+      const imgM = rawDesc.match(/\[\[IMGS:(\[[\s\S]*?\])\]\]/);
+      if (imgM) {
+        try {
+          const arr = JSON.parse(imgM[1]);
+          if (Array.isArray(arr)) arr.forEach(u => { if (u && !imgs.includes(u)) imgs.push(u); });
+        } catch (_) {}
+      }
+
+      const cleanDesc = rawDesc
+        .replace(/\[\[PROP:\{[\s\S]*?\}\]\]/g, '')
+        .replace(/\[\[IMGS:[\s\S]*?\]\]/g, '')
+        .replace(/\[\[MAP:[^\]]+\]\]/g, '')
+        .trim();
+
+      return {
+        dealKind,
+        sellerKind: meta.sellerKind || (/屋主直租|屋主直售|direct owner|pemilik/i.test(blob) ? 'owner' : 'agent'),
+        pType,
+        rooms: roomsNum,
+        sqft: sqftNum,
+        furnish: meta.furnish || (/fully furnished|全套家具|lengkap perabot/i.test(blob) ? 'Fully Furnished' : (/unfurnished|空屋/i.test(blob) ? 'Unfurnished' : 'Partially Furnished')),
+        price: priceNum,
+        nearTransit: meta.nearTransit !== undefined ? Boolean(meta.nearTransit) : /lrt|mrt|ktm|bas|巴士|地铁/i.test(blob),
+        lowDeposit: meta.lowDeposit !== undefined ? Boolean(meta.lowDeposit) : /deposit|押金/i.test(blob),
+        aircond: meta.aircond !== undefined ? Boolean(meta.aircond) : /aircond|冷气/i.test(blob),
+        carpark: meta.carpark !== undefined ? Boolean(meta.carpark) : /carpark|parking|车位|停车/i.test(blob),
+        coords,
+        imgs,
+        cleanDesc
+      };
+    }
+
+    function isPropertyPost(post) {
+      const title = String(post.title || '');
+      const desc = String(post.description || '');
+      const blob = `${title} ${desc}`;
+      if (/\[\[PROP:\{/.test(blob)) return true;
+      if (/^【收录商户/.test(title.trim()) || post.category === '本地优惠') return false;
+      return post.category === '找房子' || /(condo|apartment|rumah sewa|bilik sewa|租房|出租|买房|出售|排屋|公寓)/i.test(blob);
+    }
+
+    async function loadPropertyPosts() {
+      const { data, error } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(1000);
+
+      if (error) {
+        document.getElementById('propListContainer').innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-red-500 text-xs">${error.message}</div>`;
+        return;
+      }
+
+      allPropPosts = (data || []).filter(isPropertyPost).map(p => ({
+        ...p,
+        _prop: parsePropMeta(p)
+      }));
+
+      renderProperties();
+    }
+
+    function togglePropQuickTag(key) {
+      propQuickFlags[key] = !propQuickFlags[key];
+      const btn = document.getElementById(`pPill-${key}`);
+      if (btn) {
+        if (propQuickFlags[key]) btn.classList.add('ring-2', 'ring-offset-1', 'ring-emerald-600');
+        else btn.classList.remove('ring-2', 'ring-offset-1', 'ring-emerald-600');
+      }
+      renderProperties();
+    }
+
+    function selectPropType(pType) {
+      selectedPropType = pType;
+      document.querySelectorAll('.ptype-btn').forEach(btn => {
+        const active = btn.dataset.ptype === pType;
+        btn.className = active
+          ? 'ptype-btn py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px]'
+          : 'ptype-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]';
+      });
+      renderProperties();
+    }
+
+    function resetPropFilters() {
+      document.getElementById('propSearchInput').value = '';
+      document.getElementById('propCityFilter').value = '全马';
+      document.getElementById('propPriceFilter').value = '';
+      document.getElementById('propRoomsFilter').value = '';
+      document.getElementById('propSqftFilter').value = '';
+      document.getElementById('propFurnishFilter').value = '';
+      document.getElementById('propSortBy').value = 'default';
+      propQuickFlags = { ownerDirect: false, fullyFurnished: false, nearLrtMrt: false, lowDeposit: false };
+      ['ownerDirect', 'fullyFurnished', 'nearLrtMrt', 'lowDeposit'].forEach(k => document.getElementById(`pPill-${k}`)?.classList.remove('ring-2', 'ring-offset-1', 'ring-emerald-600'));
+      setDealMode('rent');
+      selectPropType('');
+    }
+
+    function getPropRegionLabel(val) {
+      const r = PROP_REGIONS.find(x => x.value === val);
+      return r ? (r[currentLang] || r.zh).replace(/^📍\s*/, '') : val;
+    }
+
+    function renderProperties() {
+      const t = PROP_I18N[currentLang];
+      const kw = (document.getElementById('propSearchInput').value || '').trim().toLowerCase();
+      document.getElementById('clearPropSearchBtn').classList.toggle('hidden', !kw);
+
+      const city = document.getElementById('propCityFilter').value;
+      const priceRange = document.getElementById('propPriceFilter').value;
+      const minRooms = Number(document.getElementById('propRoomsFilter').value || 0);
+      const minSqft = Number(document.getElementById('propSqftFilter').value || 0);
+      const furnish = document.getElementById('propFurnishFilter').value;
+      const sortBy = document.getElementById('propSortBy').value;
+
+      const filtered = allPropPosts.filter(p => {
+        const pr = p._prop;
+        p._distKm = (userGpsCoords && pr.coords) ? calcKm(userGpsCoords.lat, userGpsCoords.lng, pr.coords.lat, pr.coords.lng) : null;
+
+        if (dealMode !== 'all' && pr.dealKind !== dealMode) return false;
+        if (city !== '全马' && p.city !== city) return false;
+        if (selectedPropType && pr.pType !== selectedPropType) return false;
+        if (furnish && pr.furnish !== furnish) return false;
+
+        if (propQuickFlags.ownerDirect && pr.sellerKind !== 'owner') return false;
+        if (propQuickFlags.fullyFurnished && pr.furnish !== 'Fully Furnished') return false;
+        if (propQuickFlags.nearLrtMrt && !pr.nearTransit) return false;
+        if (propQuickFlags.lowDeposit && !pr.lowDeposit) return false;
+
+        if (minRooms > 0 && pr.rooms > 0 && pr.rooms < minRooms) return false;
+        if (minSqft > 0 && pr.sqft > 0 && pr.sqft < minSqft) return false;
+
+        if (priceRange && pr.price > 0) {
+          const [minP, maxP] = priceRange.split('-').map(Number);
+          if (pr.price < minP || pr.price > maxP) return false;
+        }
+
+        if (kw) {
+          const blob = `${p.title || ''} ${pr.pType} ${pr.furnish} ${pr.cleanDesc} ${p.city || ''}`.toLowerCase();
+          if (!blob.includes(kw)) return false;
+        }
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        const pa = a._prop, pb = b._prop;
+        if (sortBy === 'nearest') return (a._distKm ?? 9999) - (b._distKm ?? 9999);
+        if (sortBy === 'price_asc') return (pa.price || 999999999) - (pb.price || 999999999);
+        if (sortBy === 'price_desc') return (pb.price || -1) - (pa.price || -1);
+        if (sortBy === 'sqft_desc') return (pb.sqft || 0) - (pa.sqft || 0);
+        const pinDiff = (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0);
+        if (pinDiff !== 0) return pinDiff;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      document.getElementById('propCountBadge').innerText = `${filtered.length} ${t.unitProp}`;
+      const container = document.getElementById('propListContainer');
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center shadow-xs border border-gray-100 space-y-2">
+            <div class="text-2xl">🏠</div>
+            <div class="font-bold text-gray-800 text-sm">${t.emptyTitle}</div>
+            <div class="text-xs text-gray-500">${t.emptySub}</div>
+            <button type="button" onclick="openListPropModal()" class="mt-2 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full">${t.emptyBtn}</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const pr = p._prop;
+        const distBadge = typeof p._distKm === 'number'
+          ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">📍 ${p._distKm < 1 ? Math.round(p._distKm * 1000) + 'm' : p._distKm.toFixed(1) + 'km'}</span>`
+          : '';
+        const sellerBadge = pr.sellerKind === 'owner'
+          ? `<span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">${t.badgeOwner}</span>`
+          : `<span class="text-[10px] font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded">${t.badgeAgent}</span>`;
+        const dealBadge = pr.dealKind === 'sale'
+          ? `<span class="text-[10px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded">${t.badgeSale}</span>`
+          : `<span class="text-[10px] font-bold bg-teal-100 text-teal-900 px-2 py-0.5 rounded">${t.badgeRent}</span>`;
+
+        const imgBlock = pr.imgs.length > 0
+          ? `<div class="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
+               <img src="${pr.imgs[0]}" loading="lazy" class="w-full h-full object-cover" />
+               <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
+                 ${p.is_pinned ? `<span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded">${t.badgePinned}</span>` : ''}
+                 ${dealBadge}
+                 ${sellerBadge}
+               </div>
+               ${pr.imgs.length > 1 ? `<span class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">📷 ${pr.imgs.length}</span>` : ''}
+             </div>`
+          : `<div class="px-3.5 pt-3 flex items-center gap-1.5 flex-wrap">${p.is_pinned ? `<span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded">${t.badgePinned}</span>` : ''}${dealBadge}${sellerBadge}</div>`;
+
+        const priceFormatted = pr.price > 0
+          ? `RM ${pr.price.toLocaleString()}${pr.dealKind === 'rent' ? t.perMonth : ''}`
+          : p.price;
+
+        return `
+          <div onclick="openPropDetail(${p.id})" class="card-elevated bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md border ${p.is_pinned ? 'border-amber-300' : 'border-gray-100'} cursor-pointer">
+            ${imgBlock}
+            <div class="p-3.5 space-y-2">
+              <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+                <span class="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded">${pr.pType}</span>
+                ${pr.rooms ? `<span class="bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded">${t.badgeRooms(pr.rooms)}</span>` : ''}
+                ${pr.sqft ? `<span class="bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded">${t.badgeSqft(pr.sqft)}</span>` : ''}
+                <span class="bg-gray-100 text-gray-600 font-semibold px-1.5 py-0.5 rounded">${pr.furnish}</span>
+                ${distBadge}
+              </div>
+
+              <h3 class="font-black text-gray-900 text-[15px] leading-snug line-clamp-2">${p.title}</h3>
+
+              <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+                ${pr.nearTransit ? `<span class="text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded font-semibold">${t.badgeTransit}</span>` : ''}
+                ${pr.lowDeposit ? `<span class="text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded font-semibold">${t.badgeLowDep}</span>` : ''}
+                ${pr.aircond ? `<span class="text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded font-semibold">${t.badgeAircond}</span>` : ''}
+                ${pr.carpark ? `<span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold">${t.badgeCarpark}</span>` : ''}
+              </div>
+
+              <div class="flex items-end justify-between pt-2 border-t border-gray-100">
+                <div>
+                  <div class="text-[10px] text-gray-400">${pr.dealKind === 'sale' ? t.fullSalePrice : t.dealRent}</div>
+                  <div class="text-emerald-700 font-black text-lg leading-tight">${priceFormatted}</div>
+                </div>
+                <div class="text-right text-[10px] text-gray-400">📍 ${getPropRegionLabel(p.city || '全马')}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openPropDetail(id) {
+      const t = PROP_I18N[currentLang];
+      const p = allPropPosts.find(x => x.id === id);
+      if (!p) return;
+      const pr = p._prop;
+      const waDigits = String(p.whatsapp || '').replace(/[^0-9]/g, '');
+      const cleanWa = waDigits.startsWith('01') ? ('60' + waDigits.slice(1)) : waDigits;
+      const waMsg = currentLang === 'en'
+        ? `Hi, I saw "${p.title}" (${p.price}) on DamaJitong Property. Is it still available for viewing?`
+        : (currentLang === 'ms'
+            ? `Salam, saya berminat dengan "${p.title}" (${p.price}) di DamaJitong. Masih kosong untuk tengok?`
+            : `你好，我在【大马吉通·租房买房】看到“${p.title}”（${p.price}），请问目前还在吗？可以预约看房吗？`);
+      const waUrl = cleanWa.startsWith('60') ? `https://wa.me/${cleanWa}?text=${encodeURIComponent(waMsg)}` : '#';
+      const navUrl = pr.coords
+        ? `/map.html?dest=${encodeURIComponent(p.title)}&lat=${pr.coords.lat}&lng=${pr.coords.lng}`
+        : `/map.html?dest=${encodeURIComponent(p.title + ' ' + (p.city || 'Malaysia'))}`;
+
+      const photosHtml = pr.imgs.length > 0
+        ? `<div class="space-y-2 mb-3">
+             <img id="propDetailHeroImg" src="${pr.imgs[0]}" class="w-full aspect-[4/3] object-cover rounded-2xl border border-gray-200" />
+             ${pr.imgs.length > 1 ? `<div class="flex gap-1.5 overflow-x-auto no-scrollbar">${pr.imgs.map(u => `<img src="${u}" onclick="document.getElementById('propDetailHeroImg').src='${u}'" class="w-14 h-14 rounded-xl object-cover border border-gray-200 cursor-pointer shrink-0">`).join('')}</div>` : ''}
+           </div>`
+        : '';
+
+      document.getElementById('propDetailBody').innerHTML = `
+        ${photosHtml}
+        <div class="flex items-center gap-1.5 flex-wrap mb-1.5">
+          <span class="text-[10px] font-extrabold ${pr.sellerKind === 'owner' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'} px-2 py-0.5 rounded">${pr.sellerKind === 'owner' ? t.badgeOwner : t.badgeAgent}</span>
+          <span class="text-xs text-gray-500">📍 ${getPropRegionLabel(p.city || '全马')}</span>
+        </div>
+        <h3 class="font-black text-gray-900 text-base leading-snug mb-2">${p.title}</h3>
+        <div class="text-emerald-700 font-black text-xl mb-3">${p.price}</div>
+
+        <div class="grid grid-cols-4 gap-1.5 text-center bg-gray-50 rounded-2xl p-2.5 border border-gray-200/80 mb-3 text-[11px]">
+          <div><div class="text-gray-400 text-[10px]">${t.detailRooms}</div><div class="font-extrabold text-gray-800">${pr.rooms || '--'}</div></div>
+          <div><div class="text-gray-400 text-[10px]">${t.detailSqft}</div><div class="font-extrabold text-gray-800">${pr.sqft || '--'}</div></div>
+          <div><div class="text-gray-400 text-[10px]">${t.detailFurn}</div><div class="font-extrabold text-gray-800 truncate">${pr.furnish}</div></div>
+          <div><div class="text-gray-400 text-[10px]">${t.detailKind}</div><div class="font-extrabold text-gray-800">${pr.dealKind === 'sale' ? t.badgeSale : t.badgeRent}</div></div>
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl p-3 text-xs text-gray-700 whitespace-pre-line leading-relaxed mb-3">${pr.cleanDesc || t.detailNoDesc}</div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <a href="${navUrl}" class="py-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs text-center">${t.detailNavBtn}</a>
+          <a href="${waUrl}" target="_blank" class="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs text-center shadow-xs">${t.detailWaBtn}</a>
+        </div>
+      `;
+      document.getElementById('propDetailModal').classList.remove('hidden');
+    }
+
+    function closePropDetail() {
+      document.getElementById('propDetailModal').classList.add('hidden');
+    }
+
+    function renderPropPhotoGrid() {
+      const t = PROP_I18N[currentLang];
+      const grid = document.getElementById('propPhotoGrid');
+      document.getElementById('propPhotoCount').innerText = `${propPhotoItems.length} / 6`;
+      const cards = propPhotoItems.map((it, idx) => `
+        <div class="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
+          <img src="${it.dataUrl}" class="w-full h-full object-cover" />
+          <button type="button" onclick="propPhotoItems.splice(${idx},1); renderPropPhotoGrid();" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-[10px] font-bold">✕</button>
+        </div>
+      `).join('');
+      const addSlot = propPhotoItems.length < 6
+        ? `<label class="aspect-square border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100">
+             <span class="text-xl">📷</span>
+             <span class="text-[10px] text-gray-500 mt-0.5">${t.addPhoto}</span>
+             <input type="file" accept="image/*" multiple onchange="onPropFilesPicked(event)" class="hidden" />
+           </label>`
+        : '';
+      grid.innerHTML = cards + addSlot;
+    }
+
+    function onPropFilesPicked(ev) {
+      const files = Array.from(ev.target.files || []).slice(0, 6 - propPhotoItems.length);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          propPhotoItems.push({ file, dataUrl: e.target.result });
+          renderPropPhotoGrid();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function openListPropModal() {
+      renderPropPhotoGrid();
+      updatePropPriceLabel();
+      document.getElementById('listPropModal').classList.remove('hidden');
+    }
+
+    function closeListPropModal() {
+      document.getElementById('listPropModal').classList.add('hidden');
+    }
+
+    function capturePropGps() {
+      if (!navigator.geolocation) return;
+      const t = PROP_I18N[currentLang];
+      const btn = document.getElementById('pGpsBtn');
+      btn.innerText = '⏳...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          capturedPropCoords = { lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)) };
+          btn.innerText = t.btnGrabbed;
+        },
+        () => { btn.innerText = t.btnGrab; },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function compressPropImg(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if (w > 1080) { h = Math.round((h * 1080) / w); w = 1080; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
+          };
+        };
+      });
+    }
+
+    async function submitPropertyListing(e) {
+      e.preventDefault();
+      const t = PROP_I18N[currentLang];
+      const priceNum = Number(document.getElementById('pPrice').value || 0);
+      if (priceNum <= 0) return;
+
+      let wa = document.getElementById('pWhatsapp').value.replace(/[^0-9]/g, '');
+      if (wa.startsWith('01')) wa = '60' + wa.slice(1);
+      if (!wa.startsWith('601') || wa.length < 10) {
+        alert('⚠️ Please enter a valid Malaysia WhatsApp number (e.g. 0123456789).');
+        return;
+      }
+
+      const btn = document.getElementById('propSubmitBtn');
+      btn.disabled = true;
+      btn.innerText = t.btnSubmitting;
+
+      const uploadedUrls = [];
+      for (const item of propPhotoItems) {
+        try {
+          const blob = await compressPropImg(item.file);
+          const fn = `prop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.jpg`;
+          const { error: upErr } = await supabaseClient.storage.from('images').upload(fn, blob, { contentType: 'image/jpeg' });
+          if (!upErr) {
+            const { data: uData } = supabaseClient.storage.from('images').getPublicUrl(fn);
+            if (uData?.publicUrl) uploadedUrls.push(uData.publicUrl);
+          }
+        } catch (_) {}
+      }
+
+      const dealKind = document.getElementById('pDealKind').value;
+      const sellerKind = document.getElementById('pSellerKind').value;
+      const city = document.getElementById('pCity').value;
+      const pType = document.getElementById('pType').value;
+      const title = document.getElementById('pTitle').value.trim();
+      const rooms = Number(document.getElementById('pRooms').value || 0);
+      const sqft = Number(document.getElementById('pSqft').value || 0);
+      const furnish = document.getElementById('pFurnish').value;
+      const addr = document.getElementById('pAddr').value.trim();
+      const userDesc = document.getElementById('pDesc').value.trim();
+
+      const propMeta = {
+        dealKind, sellerKind, pType, rooms, sqft, furnish, price: priceNum,
+        nearTransit: document.getElementById('chkNearTransit').checked,
+        lowDeposit: document.getElementById('chkLowDep').checked,
+        aircond: document.getElementById('chkAircond').checked,
+        carpark: document.getElementById('chkCarpark').checked
+      };
+
+      const lines = [];
+      if (addr) lines.push(`📍 Address: ${addr}`);
+      if (userDesc) lines.push(userDesc);
+      lines.push(`[[PROP:${JSON.stringify(propMeta)}]]`);
+      const effCoords = capturedPropCoords || userGpsCoords;
+      if (effCoords) lines.push(`[[MAP:${effCoords.lat},${effCoords.lng}|${(addr || city).replace(/\|/g, ' ')}]]`);
+      if (uploadedUrls.length > 1) lines.push(`[[IMGS:${JSON.stringify(uploadedUrls)}]]`);
+
+      const priceText = `RM ${priceNum.toLocaleString()}${dealKind === 'rent' ? '/月' : ''}`;
+      const packedDesc = lines.join('\n');
+
+      const { error } = await supabaseClient.from('posts').insert([{
+        category: '找房子',
+        city,
+        title,
+        title_zh: title,
+        title_en: title,
+        title_ms: title,
+        price: priceText,
+        price_zh: priceText,
+        price_en: priceText,
+        price_ms: priceText,
+        whatsapp: wa,
+        description: packedDesc,
+        desc_zh: packedDesc,
+        desc_en: packedDesc,
+        desc_ms: packedDesc,
+        image_url: uploadedUrls[0] || null,
+        is_pinned: false
+      }]);
+
+      btn.disabled = false;
+      btn.innerText = t.btnSubmit;
+
+      if (error) {
+        alert('Error: ' + error.message);
+        return;
+      }
+
+      propPhotoItems = [];
+      capturedPropCoords = null;
+      document.getElementById('listPropForm').reset();
+      closeListPropModal();
+      await loadPropertyPosts();
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const initMode = urlParams.get('mode');
+    if (initMode === 'sale' || initMode === 'rent' || initMode === 'all') {
+      dealMode = initMode;
+    }
+    setPropLang(currentLang);
+    setDealMode(dealMode);
+    detectPropGps(false);
+    loadPropertyPosts();
+  </script>
+</body>
+</html>
