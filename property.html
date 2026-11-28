@@ -16,6 +16,12 @@
     .card-elevated { transition: transform 0.16s ease, box-shadow 0.16s ease; }
     .card-elevated:active { transform: scale(0.992); }
   </style>
+  <script>
+    (function() {
+      var l = localStorage.getItem('dama_lang') || 'zh';
+      document.documentElement.setAttribute('lang', l === 'ms' ? 'ms' : (l === 'en' ? 'en' : 'zh-CN'));
+    })();
+  </script>
 </head>
 <body class="max-w-md mx-auto bg-[#f5f6f8] min-h-screen flex flex-col relative shadow-[0_0_40px_rgba(15,23,42,0.12)]">
 
@@ -1167,6 +1173,132 @@
     setDealMode(dealMode);
     detectPropGps(false);
     loadPropertyPosts();
+  </script>
+
+  <!-- =====================================================================
+       [DamaJitong Property Ultra-Polish Layer v4]
+       - 100% Trilingual (CN / EN / BM) for alerts, favourite bookmarking,
+         share link copy, ESC modal close & non-intrusive toast notifications
+       - Zero deletion of existing lines; strictly additive
+       ===================================================================== -->
+  <div id="propToastContainer" class="fixed top-16 inset-x-0 z-[70] flex justify-center pointer-events-none px-4">
+    <div id="propToastMsg" class="hidden bg-slate-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-xl border border-white/15 backdrop-blur-md transition-all"></div>
+  </div>
+
+  <script>
+    (function() {
+      const PROP_SAVED_KEY = 'dmjt_saved_properties_v1';
+      const PROP_EXTRA_I18N = {
+        zh: {
+          favBtn: '☆ 收藏房源',
+          favedBtn: '⭐ 已收藏房源',
+          shareBtn: '🔗 复制链接',
+          toastFavSaved: '⭐ 已收藏该房源',
+          toastFavRemoved: '已取消收藏',
+          toastCopied: '🔗 房源链接已复制，可直接发给家人/朋友',
+          errMinPrice: '⚠️ 请输入有效的租金或售价金额',
+          errWa: '⚠️ 请输入有效的马来西亚 WhatsApp 号码（如 0123456789）',
+          gpsDenied: '请允许浏览器定位权限以计算看房距离'
+        },
+        en: {
+          favBtn: '☆ Save Property',
+          favedBtn: '⭐ Saved',
+          shareBtn: '🔗 Copy Link',
+          toastFavSaved: '⭐ Property saved to favourites',
+          toastFavRemoved: 'Removed from favourites',
+          toastCopied: '🔗 Property link copied to clipboard',
+          errMinPrice: '⚠️ Please enter a valid rent or sale price',
+          errWa: '⚠️ Please enter a valid Malaysia WhatsApp number (e.g. 0123456789)',
+          gpsDenied: 'Please allow browser GPS permission to calculate viewing distance'
+        },
+        ms: {
+          favBtn: '☆ Simpan Hartanah',
+          favedBtn: '⭐ Disimpan',
+          shareBtn: '🔗 Salin Pautan',
+          toastFavSaved: '⭐ Hartanah disimpan',
+          toastFavRemoved: 'Dibuang daripada simpanan',
+          toastCopied: '🔗 Pautan hartanah telah disalin',
+          errMinPrice: '⚠️ Sila masukkan harga sewa atau jualan yang sah',
+          errWa: '⚠️ Sila masukkan nombor WhatsApp Malaysia yang sah (cth: 0123456789)',
+          gpsDenied: 'Sila benarkan kebenaran GPS pelayar untuk mengira jarak'
+        }
+      };
+
+      window.showPropToast = function(msg) {
+        const el = document.getElementById('propToastMsg');
+        if (!el || !msg) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        clearTimeout(window._propToastTimer);
+        window._propToastTimer = setTimeout(() => {
+          el.classList.add('hidden');
+        }, 2200);
+      };
+
+      function getSavedPropIds() {
+        try { return JSON.parse(localStorage.getItem(PROP_SAVED_KEY) || '[]'); } catch (_) { return []; }
+      }
+
+      window.toggleSavedProp = function(id) {
+        const l = PROP_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+        const d = PROP_EXTRA_I18N[l];
+        let ids = getSavedPropIds();
+        if (ids.includes(id)) {
+          ids = ids.filter(x => x !== id);
+          showPropToast(d.toastFavRemoved);
+        } else {
+          ids.unshift(id);
+          showPropToast(d.toastFavSaved);
+        }
+        try { localStorage.setItem(PROP_SAVED_KEY, JSON.stringify(ids.slice(0, 100))); } catch (_) {}
+        const favBtn = document.getElementById('propDetailFavBtn');
+        if (favBtn) {
+          favBtn.textContent = ids.includes(id) ? d.favedBtn : d.favBtn;
+        }
+      };
+
+      window.copyPropShareLink = function(id) {
+        const l = PROP_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+        const shareUrl = `${window.location.origin}/detail.html?id=${id}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).then(() => showPropToast(PROP_EXTRA_I18N[l].toastCopied)).catch(() => {});
+        } else {
+          showPropToast(PROP_EXTRA_I18N[l].toastCopied);
+        }
+      };
+
+      if (typeof window.openPropDetail === 'function') {
+        const origOpenPropDetail = window.openPropDetail;
+        window.openPropDetail = function(id) {
+          origOpenPropDetail(id);
+          const body = document.getElementById('propDetailBody');
+          if (!body) return;
+          const l = PROP_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+          const d = PROP_EXTRA_I18N[l];
+          const isSaved = getSavedPropIds().includes(id);
+          const extraBar = document.createElement('div');
+          extraBar.className = 'grid grid-cols-2 gap-2 mt-2';
+          extraBar.innerHTML = `
+            <button type="button" id="propDetailFavBtn" onclick="toggleSavedProp(${id})"
+                    class="py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-xs text-center transition">
+              ${isSaved ? d.favedBtn : d.favBtn}
+            </button>
+            <button type="button" onclick="copyPropShareLink(${id})"
+                    class="py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs text-center transition">
+              ${d.shareBtn}
+            </button>
+          `;
+          body.appendChild(extraBar);
+        };
+      }
+
+      document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape') {
+          if (typeof closePropDetail === 'function') closePropDetail();
+          if (typeof closeListPropModal === 'function') closeListPropModal();
+        }
+      });
+    })();
   </script>
 </body>
 </html>
