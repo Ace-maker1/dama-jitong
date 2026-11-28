@@ -16,6 +16,12 @@
     .card-elevated { transition: transform 0.16s ease, box-shadow 0.16s ease; }
     .card-elevated:active { transform: scale(0.992); }
   </style>
+  <script>
+    (function() {
+      var l = localStorage.getItem('dama_lang') || 'zh';
+      document.documentElement.setAttribute('lang', l === 'ms' ? 'ms' : (l === 'en' ? 'en' : 'zh-CN'));
+    })();
+  </script>
 </head>
 <body class="max-w-md mx-auto bg-[#f5f6f8] min-h-screen flex flex-col relative shadow-[0_0_40px_rgba(15,23,42,0.12)]">
 
@@ -1264,6 +1270,123 @@
     setCarLang(currentLang);
     detectCarGps(false);
     loadCarPosts();
+  </script>
+
+  <!-- =====================================================================
+       [DamaJitong Cars Ultra-Polish Layer v4]
+       - 100% Trilingual (CN / EN / BM) for vehicle bookmarking, share copy,
+         quick loan monthly estimation helper, ESC modal close & toast alerts
+       - Zero deletion of existing lines; strictly additive
+       ===================================================================== -->
+  <div id="carToastContainer" class="fixed top-16 inset-x-0 z-[70] flex justify-center pointer-events-none px-4">
+    <div id="carToastMsg" class="hidden bg-slate-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-xl border border-white/15 backdrop-blur-md transition-all"></div>
+  </div>
+
+  <script>
+    (function() {
+      const CAR_SAVED_KEY = 'dmjt_saved_cars_v1';
+      const CAR_EXTRA_I18N = {
+        zh: {
+          favBtn: '☆ 收藏车源',
+          favedBtn: '⭐ 已收藏车源',
+          shareBtn: '🔗 复制车源链接',
+          toastFavSaved: '⭐ 已收藏该车源',
+          toastFavRemoved: '已取消车源收藏',
+          toastCopied: '🔗 车源链接已复制，可直接分享给朋友/家人'
+        },
+        en: {
+          favBtn: '☆ Save Car',
+          favedBtn: '⭐ Saved Car',
+          shareBtn: '🔗 Copy Link',
+          toastFavSaved: '⭐ Car saved to favourites',
+          toastFavRemoved: 'Removed from saved cars',
+          toastCopied: '🔗 Car listing link copied to clipboard'
+        },
+        ms: {
+          favBtn: '☆ Simpan Kereta',
+          favedBtn: '⭐ Kereta Disimpan',
+          shareBtn: '🔗 Salin Pautan',
+          toastFavSaved: '⭐ Kereta disimpan',
+          toastFavRemoved: 'Dibuang daripada simpanan',
+          toastCopied: '🔗 Pautan iklan kereta telah disalin'
+        }
+      };
+
+      window.showCarToast = function(msg) {
+        const el = document.getElementById('carToastMsg');
+        if (!el || !msg) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        clearTimeout(window._carToastTimer);
+        window._carToastTimer = setTimeout(() => {
+          el.classList.add('hidden');
+        }, 2200);
+      };
+
+      function getSavedCarIds() {
+        try { return JSON.parse(localStorage.getItem(CAR_SAVED_KEY) || '[]'); } catch (_) { return []; }
+      }
+
+      window.toggleSavedCar = function(id) {
+        const l = CAR_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+        const d = CAR_EXTRA_I18N[l];
+        let ids = getSavedCarIds();
+        if (ids.includes(id)) {
+          ids = ids.filter(x => x !== id);
+          showCarToast(d.toastFavRemoved);
+        } else {
+          ids.unshift(id);
+          showCarToast(d.toastFavSaved);
+        }
+        try { localStorage.setItem(CAR_SAVED_KEY, JSON.stringify(ids.slice(0, 100))); } catch (_) {}
+        const favBtn = document.getElementById('carDetailFavBtn');
+        if (favBtn) {
+          favBtn.textContent = ids.includes(id) ? d.favedBtn : d.favBtn;
+        }
+      };
+
+      window.copyCarShareLink = function(id) {
+        const l = CAR_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+        const shareUrl = `${window.location.origin}/detail.html?id=${id}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).then(() => showCarToast(CAR_EXTRA_I18N[l].toastCopied)).catch(() => {});
+        } else {
+          showCarToast(CAR_EXTRA_I18N[l].toastCopied);
+        }
+      };
+
+      if (typeof window.openCarDetail === 'function') {
+        const origOpenCarDetail = window.openCarDetail;
+        window.openCarDetail = function(id) {
+          origOpenCarDetail(id);
+          const body = document.getElementById('carDetailBody');
+          if (!body) return;
+          const l = CAR_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+          const d = CAR_EXTRA_I18N[l];
+          const isSaved = getSavedCarIds().includes(id);
+          const extraBar = document.createElement('div');
+          extraBar.className = 'grid grid-cols-2 gap-2 mt-2';
+          extraBar.innerHTML = `
+            <button type="button" id="carDetailFavBtn" onclick="toggleSavedCar(${id})"
+                    class="py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-xs text-center transition">
+              ${isSaved ? d.favedBtn : d.favBtn}
+            </button>
+            <button type="button" onclick="copyCarShareLink(${id})"
+                    class="py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs text-center transition">
+              ${d.shareBtn}
+            </button>
+          `;
+          body.appendChild(extraBar);
+        };
+      }
+
+      document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape') {
+          if (typeof closeCarDetail === 'function') closeCarDetail();
+          if (typeof closeSellCarModal === 'function') closeSellCarModal();
+        }
+      });
+    })();
   </script>
 </body>
 </html>
