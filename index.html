@@ -55,11 +55,12 @@
             <span class="text-[9px] bg-white/25 glass-pill px-1.5 py-0.5 rounded-md font-extrabold tracking-wider">MY PRO</span>
           </div>
           <div class="flex items-center gap-1 mt-0.5 flex-wrap">
-            <select id="cityFilter" onchange="onCityDropdownChange()" class="bg-transparent text-white text-[11px] font-semibold focus:outline-none cursor-pointer -ml-1 max-w-[140px]">
+            <select id="cityFilter" onchange="onCityDropdownChange()" class="bg-transparent text-white text-[11px] font-semibold focus:outline-none cursor-pointer -ml-1 max-w-[130px]">
             </select>
-            <button onclick="autoDetectState(true)" id="autoStateBtn" title="实时精准定位所在位置" class="text-[10px] bg-white/20 hover:bg-white/30 glass-pill px-2 py-0.5 rounded-full font-bold shrink-0 transition">📍定位</button>
+            <button onclick="autoDetectState(true)" id="autoStateBtn" title="重新获取高精度 GPS" class="text-[10px] bg-white/20 hover:bg-white/30 glass-pill px-2 py-0.5 rounded-full font-bold shrink-0 transition">📍定位</button>
+            <button onclick="openLocationCalibrateModal()" id="calibrateLocBtn" title="手动校准当前所在街区/地标" class="text-[10px] bg-amber-300/25 hover:bg-amber-300/40 text-amber-100 glass-pill px-2 py-0.5 rounded-full font-bold shrink-0 transition">🎯校准</button>
           </div>
-          <div id="liveLocationBadge" class="hidden text-[10px] text-amber-100/95 font-semibold mt-0.5 truncate max-w-[205px]"></div>
+          <div id="liveLocationBadge" onclick="openLocationCalibrateModal()" title="点击手动校准位置" class="hidden cursor-pointer underline decoration-dotted text-[10px] text-amber-100/95 font-semibold mt-0.5 truncate max-w-[215px]"></div>
         </div>
       </div>
 
@@ -629,12 +630,16 @@
     let renderDisplayLimit = 80;
     let lastFilteredList = [];
 
-    // 恢复上次持久化的实时 GPS 缓存（确保刷新瞬间就有坐标与距离）
+    let isManualPinnedLocation = false;
+    let lastGpsAccuracyMeters = null;
+
+    // 恢复上次持久化的实时 GPS / 手动校准缓存
     try {
       const savedLoc = JSON.parse(localStorage.getItem(LAST_LIVE_LOC_KEY) || 'null');
       if (savedLoc && typeof savedLoc.lat === 'number' && typeof savedLoc.lng === 'number') {
         nearbyUserCoords = { lat: savedLoc.lat, lng: savedLoc.lng };
         liveAreaLabel = savedLoc.area || '';
+        isManualPinnedLocation = Boolean(savedLoc.manual);
       }
     } catch (_) {}
 
@@ -1184,23 +1189,218 @@
 
     function updateLiveLocationBadgeUI() {
       const badge = document.getElementById('liveLocationBadge');
-      if (!badge) return;
-      if (nearbyUserCoords && liveAreaLabel) {
-        badge.textContent = `📍 ${liveAreaLabel}`;
-        badge.classList.remove('hidden');
-      } else if (nearbyUserCoords) {
-        badge.textContent = `📍 ${nearbyUserCoords.lat.toFixed(4)}, ${nearbyUserCoords.lng.toFixed(4)}`;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
+      const calInfo = document.getElementById('calCurrentInfo');
+      const prefixIcon = isManualPinnedLocation ? '🎯' : '📍';
+      const accHint = (!isManualPinnedLocation && typeof lastGpsAccuracyMeters === 'number' && lastGpsAccuracyMeters > 1500)
+        ? ` (误差约${Math.round(lastGpsAccuracyMeters / 1000)}km·点此校准)`
+        : '';
+
+      if (badge) {
+        if (nearbyUserCoords && liveAreaLabel) {
+          badge.textContent = `${prefixIcon} ${liveAreaLabel}${accHint}`;
+          badge.classList.remove('hidden');
+        } else if (nearbyUserCoords) {
+          badge.textContent = `${prefixIcon} ${nearbyUserCoords.lat.toFixed(4)}, ${nearbyUserCoords.lng.toFixed(4)}${accHint}`;
+          badge.classList.remove('hidden');
+        } else {
+          badge.textContent = '⚠️ 未获取到精确定位 · 点此校准位置';
+          badge.classList.remove('hidden');
+        }
+      }
+
+      if (calInfo) {
+        if (nearbyUserCoords) {
+          calInfo.textContent = `当前锁定：${liveAreaLabel || '已获取坐标'} (${nearbyUserCoords.lat.toFixed(5)}, ${nearbyUserCoords.lng.toFixed(5)})`;
+        } else {
+          calInfo.textContent = '当前参考坐标：尚未锁定（请点下方重新获取或输入地标）';
+        }
       }
     }
 
+    function openLocationCalibrateModal() {
+      updateLiveLocationBadgeUI();
+      document.getElementById('locationCalibrateModal')?.classList.remove('hidden');
+    }
+
+    function closeLocationCalibrateModal() {
+      document.getElementById('locationCalibrateModal')?.classList.add('hidden');
+    }
+
+    function setManualAnchorCoords(lat, lng, label, stateVal = '') {
+      isManualPinnedLocation = true;
+      lastGpsAccuracyMeters = null;
+      nearbyUserCoords = { lat: Number(lat), lng: Number(lng) };
+      liveAreaLabel = label;
+
+      const resolvedState = stateVal || inferStateFromCoords(nearbyUserCoords.lat, nearbyUserCoords.lng)?.value || '';
+      if (resolvedState) {
+        const filterCityEl = document.getElementById('cityFilter');
+        const postCityEl = document.getElementById('postCity');
+        if (filterCityEl) {
+          filterCityEl.value = resolvedState;
+          syncQuickCityButtons(resolvedState);
+        }
+        if (postCityEl) postCityEl.value = resolvedState;
+      }
+
+      try {
+        localStorage.setItem(LAST_LIVE_LOC_KEY, JSON.stringify({
+          lat: nearbyUserCoords.lat,
+          lng: nearbyUserCoords.lng,
+          area: liveAreaLabel,
+          state: resolvedState,
+          manual: true,
+          ts: Date.now()
+        }));
+      } catch (_) {}
+
+      updateLiveLocationBadgeUI();
+      renderDisplayLimit = 80;
+      renderPosts(true);
+      closeLocationCalibrateModal();
+    }
+
+    function forceRefreshHighAccuracyGps() {
+      const btn = document.getElementById('calForceGpsBtn');
+      if (!navigator.geolocation) {
+        alert('当前浏览器不支持定位，请直接下方输入地标锁定。');
+        return;
+      }
+      isManualPinnedLocation = false;
+      if (btn) btn.innerText = '⏳ 正在向手机请求高精度 GPS...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          applyDetectedPosition(pos, true, true);
+          if (btn) btn.innerText = '✅ 已更新为手机最新 GPS';
+          setTimeout(() => {
+            if (btn) btn.innerText = '📡 重新获取手机高精度 GPS';
+            closeLocationCalibrateModal();
+          }, 700);
+        },
+        () => {
+          if (btn) btn.innerText = '📡 重新获取手机高精度 GPS';
+          alert('手机浏览器未能返回精准 GPS（请检查 iPhone 设置 -> 隐私 -> 定位服务 -> Safari/浏览器 -> 精确位置），或直接在下方输入地标手动锁定。');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    }
+
+    async function searchCalibratePlace() {
+      const inp = document.getElementById('calPlaceInput');
+      const box = document.getElementById('calPlaceResults');
+      const btn = document.getElementById('calSearchBtn');
+      const q = (inp?.value || '').trim();
+      if (!q) return;
+
+      if (btn) btn.innerText = '...';
+      if (box) box.innerHTML = '<div class="text-center py-2 text-xs text-gray-400">正在查找精准坐标...</div>';
+
+      let items = [];
+      try {
+        const res = await fetch(GEO_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'places_search',
+            textQuery: `${q}, Malaysia`,
+            languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+            regionCode: 'MY',
+            maxResultCount: 5
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const places = Array.isArray(data?.places) ? data.places : [];
+          items = places.map(pl => ({
+            name: pl.displayName?.text || q,
+            addr: pl.formattedAddress || 'Malaysia',
+            lat: pl.location?.latitude,
+            lng: pl.location?.longitude
+          })).filter(x => typeof x.lat === 'number' && typeof x.lng === 'number');
+        }
+      } catch (_) {}
+
+      if (items.length === 0) {
+        items = await fallbackNominatimPlaces(q, 'Malaysia', null);
+      }
+
+      if (btn) btn.innerText = '查找';
+      if (!box) return;
+
+      if (items.length === 0) {
+        box.innerHTML = '<div class="text-center py-2 text-xs text-gray-400">未找到该地名，请换个英文或马来文路名试试</div>';
+        return;
+      }
+
+      window._calCandidates = items;
+      box.innerHTML = items.map((it, idx) => `
+        <button type="button" onclick="pickCalibrateCandidate(${idx})"
+                class="w-full text-left p-2.5 rounded-xl bg-gray-50 hover:bg-red-50 border border-gray-200 transition">
+          <div class="font-bold text-xs text-gray-900 truncate">${it.name}</div>
+          <div class="text-[10px] text-gray-500 truncate">📍 ${it.addr}</div>
+        </button>
+      `).join('');
+    }
+
+    function pickCalibrateCandidate(idx) {
+      const it = (window._calCandidates || [])[idx];
+      if (!it) return;
+      const st = inferStateFromCoords(it.lat, it.lng)?.value || inferStateFromText(it.addr) || '';
+      setManualAnchorCoords(it.lat, it.lng, it.name, st);
+    }
+
     async function reverseGeocodeCoords(lat, lng) {
-      const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+      const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
       if (key === lastReverseGeoKey && liveAreaLabel) return liveAreaLabel;
       lastReverseGeoKey = key;
 
+      // 优先走 Google Geocoding 逆地理编码（马来西亚花园/路名更准）
+      try {
+        const resG = await fetch(GEO_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'reverse_geocode',
+            lat,
+            lng,
+            language: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN')
+          })
+        });
+        if (resG.ok) {
+          const dataG = await resG.json();
+          const first = Array.isArray(dataG?.results) ? dataG.results[0] : null;
+          if (first && Array.isArray(first.address_components)) {
+            const comps = first.address_components;
+            const findComp = (types) => comps.find(c => types.some(tp => c.types.includes(tp)))?.long_name || '';
+            const subArea = findComp(['sublocality_level_1', 'sublocality', 'neighborhood', 'locality', 'route']);
+            const stateText = findComp(['administrative_area_level_1']);
+            const detectedState = inferStateFromText(`${stateText} ${subArea} ${first.formatted_address || ''}`);
+            const stateDisplay = detectedState ? getRegionDisplayName(detectedState, currentLang) : stateText;
+            const parts = [];
+            if (subArea) parts.push(subArea);
+            if (stateDisplay && (!subArea || !subArea.toLowerCase().includes(stateDisplay.toLowerCase()))) {
+              parts.push(stateDisplay);
+            }
+            if (parts.length > 0) {
+              liveAreaLabel = parts.slice(0, 2).join(' · ');
+              try {
+                localStorage.setItem(LAST_LIVE_LOC_KEY, JSON.stringify({
+                  lat,
+                  lng,
+                  area: liveAreaLabel,
+                  state: detectedState || '',
+                  manual: isManualPinnedLocation,
+                  ts: Date.now()
+                }));
+              } catch (_) {}
+              updateLiveLocationBadgeUI();
+              return liveAreaLabel;
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 回退 OpenStreetMap Nominatim
       try {
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=16&addressdetails=1`;
         const res = await fetch(url, { headers: { 'Accept-Language': currentLang === 'ms' ? 'ms,en' : (currentLang === 'en' ? 'en,ms' : 'zh-CN,en') } });
@@ -1225,6 +1425,7 @@
             lng,
             area: liveAreaLabel,
             state: detectedState || '',
+            manual: isManualPinnedLocation,
             ts: Date.now()
           }));
         } catch (_) {}
@@ -1236,22 +1437,33 @@
       }
     }
 
-    function applyDetectedPosition(pos, syncDropdownIfAll = false) {
+    function applyDetectedPosition(pos, syncDropdownIfAll = false, forceOverrideManual = false) {
       if (!pos || !pos.coords) return;
+      if (isManualPinnedLocation && !forceOverrideManual) return;
+
       const uLat = Number(pos.coords.latitude);
       const uLng = Number(pos.coords.longitude);
+      const acc = typeof pos.coords.accuracy === 'number' ? pos.coords.accuracy : null;
       if (Number.isNaN(uLat) || Number.isNaN(uLng)) return;
 
+      // 如果已有高精度坐标，忽略误差大于 5km 的粗糙 IP 漂移回调
+      if (nearbyUserCoords && typeof acc === 'number' && acc > 5000 && typeof lastGpsAccuracyMeters === 'number' && lastGpsAccuracyMeters <= 1500) {
+        return;
+      }
+
+      lastGpsAccuracyMeters = acc;
       nearbyUserCoords = { lat: uLat, lng: uLng };
       const matchedState = inferStateFromCoords(uLat, uLng);
       if (matchedState) {
-        liveAreaLabel = getRegionDisplayName(matchedState.value, currentLang);
+        if (!liveAreaLabel) {
+          liveAreaLabel = getRegionDisplayName(matchedState.value, currentLang);
+        }
         const postCityEl = document.getElementById('postCity');
         if (postCityEl && (!postCityEl.dataset.userTouched || postCityEl.value === '槟城')) {
           postCityEl.value = matchedState.value;
         }
         const filterCityEl = document.getElementById('cityFilter');
-        if (filterCityEl && syncDropdownIfAll && filterCityEl.value === '全马') {
+        if (filterCityEl && (forceOverrideManual || (syncDropdownIfAll && filterCityEl.value === '全马'))) {
           filterCityEl.value = matchedState.value;
           syncQuickCityButtons(matchedState.value);
         }
@@ -1263,6 +1475,7 @@
           lng: uLng,
           area: liveAreaLabel,
           state: matchedState ? matchedState.value : '',
+          manual: false,
           ts: Date.now()
         }));
       } catch (_) {}
@@ -1280,11 +1493,14 @@
     }
 
     function startContinuousLocationTracking(syncDropdownIfAll = false) {
-      if (!navigator.geolocation) return;
+      if (!navigator.geolocation) {
+        updateLiveLocationBadgeUI();
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
-        (pos) => applyDetectedPosition(pos, syncDropdownIfAll),
-        () => {},
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 }
+        (pos) => applyDetectedPosition(pos, syncDropdownIfAll, false),
+        () => { updateLiveLocationBadgeUI(); },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
 
       if (gpsWatchId !== null && typeof navigator.geolocation.clearWatch === 'function') {
@@ -1294,9 +1510,9 @@
       if (typeof navigator.geolocation.watchPosition === 'function') {
         try {
           gpsWatchId = navigator.geolocation.watchPosition(
-            (pos) => applyDetectedPosition(pos, false),
+            (pos) => applyDetectedPosition(pos, false, false),
             () => {},
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
           );
         } catch (_) {}
       }
@@ -3830,5 +4046,50 @@
       if (el) el.classList.add('hidden');
     }
   </script>
+  <!-- 精准定位手动校准弹窗（解决 iOS/室内 GPS 漂移） -->
+  <div id="locationCalibrateModal" onclick="closeLocationCalibrateModal()" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center p-3">
+    <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="font-black text-base text-gray-900">🎯 校准我的当前位置</h3>
+        <button type="button" onclick="closeLocationCalibrateModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+      <p class="text-xs text-gray-500 leading-relaxed">iOS 浏览器或室内若 GPS 漂移，可重新获取定位或直接输入你所在的花园/地标/路名（如 <span class="font-semibold text-gray-700">Tanjung Tokong、Gurney、Bukit Mertajam、Sungai Bakap</span>），锁定后全站距离与附近搜索将 100% 以此为准：</p>
+
+      <div id="calCurrentInfo" class="bg-emerald-50/80 border border-emerald-200 rounded-xl px-3 py-2 text-[11px] text-emerald-900 font-semibold">
+        当前参考坐标：尚未锁定
+      </div>
+
+      <button type="button" onclick="forceRefreshHighAccuracyGps()" id="calForceGpsBtn"
+              class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition">
+        📡 重新获取手机高精度 GPS
+      </button>
+
+      <div class="border-t border-gray-100 pt-3 space-y-2">
+        <label class="block text-xs font-bold text-gray-700">或输入你所在的地标 / 花园 / 路名手动锁定：</label>
+        <div class="flex gap-1.5">
+          <input type="text" id="calPlaceInput" placeholder="例如：Tanjung Tokong / 大山脚 / Sunway"
+                 class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-red-500 focus:outline-none">
+          <button type="button" onclick="searchCalibratePlace()" id="calSearchBtn"
+                  class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shrink-0">
+            查找
+          </button>
+        </div>
+        <div id="calPlaceResults" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+      </div>
+
+      <div class="pt-1">
+        <div class="text-[11px] font-bold text-gray-500 mb-1.5">常用区域一键钉死：</div>
+        <div class="flex flex-wrap gap-1.5 text-[11px]">
+          <button type="button" onclick="setManualAnchorCoords(5.4375, 100.3095, 'Gurney · 槟岛', '槟城')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">槟岛 Gurney</button>
+          <button type="button" onclick="setManualAnchorCoords(5.4586, 100.3080, 'Tanjung Tokong · 槟岛', '槟城')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">Tanjung Tokong</button>
+          <button type="button" onclick="setManualAnchorCoords(5.3296, 100.2819, 'Bayan Lepas · 槟岛', '槟城')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">Bayan Lepas</button>
+          <button type="button" onclick="setManualAnchorCoords(5.3630, 100.4667, 'Bukit Mertajam 大山脚', '槟城')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">大山脚 BM</button>
+          <button type="button" onclick="setManualAnchorCoords(5.2225, 100.4962, 'Sungai Bakap 双溪峇甲', '槟城')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">双溪峇甲</button>
+          <button type="button" onclick="setManualAnchorCoords(3.1466, 101.7113, 'Bukit Bintang · KL', '吉隆坡')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">吉隆坡 KLCC</button>
+          <button type="button" onclick="setManualAnchorCoords(1.5597, 103.7810, 'Mount Austin · JB', '柔佛')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">新山 Austin</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
