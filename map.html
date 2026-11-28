@@ -324,7 +324,10 @@
         status247: '🟢 24小时营业', statusOpenUntil: (t) => `🟢 营业中 (至 ${t})`, statusOpen: '🟢 营业中',
         statusClosed: (t) => t ? `🔴 已打烊 (${t} 开门)` : '🔴 已打烊', statusCheck: '🟡 建议确认营业时间',
         fallbackTitle: '💡 未直接命中，直接用外部地图搜或点选地点：',
-        fallbackHint: '可直接点选下方外部导航搜该店，或选择附近城市/点图：'
+        fallbackHint: '可直接点选下方外部导航搜该店，或选择附近城市/点图：',
+        remainDest: (d) => `距终点 ${d}`, remainDestInit: '距终点 --', nextThen: '然后', savedTag: '已收藏',
+        destSetTitle: '目的地已定位', destSetSub: '开启定位或点击左上角“我的位置”即可查看路线与距离',
+        destPopupOpen: '营业中', destPopupClosed: '已打烊'
       },
       en: {
         gpsLabel: 'My Current Location (GPS)', originDefault: 'Your location', modeDriving: '🚗 Drive', modeTransit: '🚇 Transit', modeWalking: '🚶 Walk',
@@ -340,7 +343,10 @@
         status247: '🟢 Open 24 Hours', statusOpenUntil: (t) => `🟢 Open (till ${t})`, statusOpen: '🟢 Open Now',
         statusClosed: (t) => t ? `🔴 Closed (Opens ${t})` : '🔴 Closed', statusCheck: '🟡 Check Hours',
         fallbackTitle: '💡 No exact match. Search on external map or pick below:',
-        fallbackHint: 'Search directly in Google Maps / Waze or pick a nearby location:'
+        fallbackHint: 'Search directly in Google Maps / Waze or pick a nearby location:',
+        remainDest: (d) => `${d} to dest`, remainDestInit: '-- to dest', nextThen: 'Then', savedTag: 'Saved',
+        destSetTitle: 'Destination Set', destSetSub: 'Enable GPS or tap "Your location" above to calculate route',
+        destPopupOpen: 'Open', destPopupClosed: 'Closed'
       },
       ms: {
         gpsLabel: 'Lokasi Semasa Saya (GPS)', originDefault: 'Lokasi anda', modeDriving: '🚗 Pandu', modeTransit: '🚇 Bas/MRT', modeWalking: '🚶 Jalan',
@@ -356,7 +362,10 @@
         status247: '🟢 Buka 24 Jam', statusOpenUntil: (t) => `🟢 Dibuka (hingga ${t})`, statusOpen: '🟢 Dibuka',
         statusClosed: (t) => t ? `🔴 Tutup (Buka ${t})` : '🔴 Tutup', statusCheck: '🟡 Semak Masa',
         fallbackTitle: '💡 Tiada padanan tepat. Cari di peta luar atau pilih di bawah:',
-        fallbackHint: 'Buka terus di Google Maps / Waze atau pilih lokasi berdekatan:'
+        fallbackHint: 'Buka terus di Google Maps / Waze atau pilih lokasi berdekatan:',
+        remainDest: (d) => `Baki ${d}`, remainDestInit: 'Baki --', nextThen: 'Kemudian', savedTag: 'Disimpan',
+        destSetTitle: 'Destinasi Ditetapkan', destSetSub: 'Aktifkan GPS atau tekan "Lokasi anda" di atas untuk laluan',
+        destPopupOpen: 'Buka', destPopupClosed: 'Tutup'
       }
     };
 
@@ -857,6 +866,8 @@
       document.getElementById('stopNavBtn').innerText = t.stopNav;
       document.getElementById('voiceToggleBtn').innerText = voiceEnabled ? t.voiceOn : t.voiceOff;
       document.getElementById('recenterBtn').innerText = cameraLocked ? t.lockedText : t.freeText;
+      if (document.getElementById('liveDestRemainBadge') && !isNavigating) document.getElementById('liveDestRemainBadge').innerText = t.remainDestInit;
+      if (document.getElementById('liveExtGmapBtn')) document.getElementById('liveExtGmapBtn').innerText = currentLang === 'en' ? '🗺️ Google Maps' : (currentLang === 'ms' ? '🗺️ Peta Luar' : '🗺️ 原生导航');
       document.getElementById('wazeSubTag').innerText = t.wazeSub;
       document.getElementById('gmapSubTag').innerText = t.gmapSub;
       document.getElementById('callTitleTag').innerText = t.callTitle;
@@ -974,6 +985,19 @@
       );
     }
 
+    (function initFromCachedHomeLoc() {
+      try {
+        const cachedLoc = JSON.parse(localStorage.getItem('dama_last_live_loc_v1') || 'null');
+        if (cachedLoc && typeof cachedLoc.lat === 'number' && typeof cachedLoc.lng === 'number') {
+          const label = cachedLoc.area || i18n[currentLang].gpsLabel;
+          startCoords = { lat: cachedLoc.lat, lng: cachedLoc.lng, name: label };
+          document.getElementById('startInput').value = label;
+          document.getElementById('originPillText').innerText = cachedLoc.area || i18n[currentLang].originDefault;
+          updateLiveUserDot(cachedLoc.lat, cachedLoc.lng, null);
+          if (!endCoords) map.setView([cachedLoc.lat, cachedLoc.lng], 15);
+        }
+      } catch (_) {}
+    })();
     locateMe(true, true);
 
     function updateLiveUserDot(lat, lng, heading = null) {
@@ -1052,7 +1076,7 @@
       let html = '';
       favs.slice(0, 2).forEach(f => {
         const displayFav = localizeKnownPlaceName(f.name, currentLang);
-        html += `<div onclick="pickSuggestion('${displayFav.replace(/'/g, "\\'")}', ${f.lat}, ${f.lng})" class="px-3.5 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs shrink-0">⭐</span><span class="text-xs font-bold text-gray-800 truncate">${f.label} · ${displayFav}</span></div><span class="text-[10px] text-amber-600 shrink-0">已收藏</span></div>`;
+        html += `<div onclick="pickSuggestion('${displayFav.replace(/'/g, "\\'")}', ${f.lat}, ${f.lng})" class="px-3.5 py-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs shrink-0">⭐</span><span class="text-xs font-bold text-gray-800 truncate">${f.label} · ${displayFav}</span></div><span class="text-[10px] text-amber-600 shrink-0">${i18n[currentLang].savedTag}</span></div>`;
       });
       cityMatches.forEach(c => {
         const displayName = c[currentLang] || c.en;
@@ -1307,7 +1331,7 @@
 
       document.getElementById('fallbackTitle').innerText = t.fallbackTitle;
       document.getElementById('fallbackHint').innerText = cleanTerm
-        ? (currentLang === 'zh' ? `站内未直接命中“${cleanTerm}”，可直接点下方用 Google / Waze 搜该店，或点选附近地点：` : `Not found directly for "${cleanTerm}". Open Google / Waze or pick below:`)
+        ? (currentLang === 'zh' ? `站内未直接命中“${cleanTerm}”，可直接点下方用 Google / Waze 搜该店，或点选附近地点：` : (currentLang === 'ms' ? `Tiada padanan terus untuk "${cleanTerm}". Buka Google / Waze atau pilih di bawah:` : `Not found directly for "${cleanTerm}". Open Google / Waze or pick below:`))
         : t.fallbackHint;
 
       const extButtons = cleanTerm
@@ -1735,10 +1759,8 @@
 
         document.getElementById('destDisplayTitle').innerText = dest;
         document.getElementById('routeDistBadge').innerText = '';
-        document.getElementById('routeTimeBadge').innerText = currentLang === 'zh' ? '目的地已定位' : 'Destination Set';
-        document.getElementById('routeSubInfo').innerText = currentLang === 'zh'
-          ? '开启定位或点击左上角“我的位置”即可查看路线与距离'
-          : 'Enable GPS or tap "Your location" above to calculate route';
+        document.getElementById('routeTimeBadge').innerText = i18n[currentLang].destSetTitle;
+        document.getElementById('routeSubInfo').innerText = i18n[currentLang].destSetSub;
         document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
         document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
         openResultPanel();
@@ -1861,13 +1883,13 @@
       const nextSt = currentSteps[currentStepIdx + 1];
       const nextHintEl = document.getElementById('liveNextStepHint');
       if (nextHintEl) {
-        nextHintEl.innerText = nextSt ? `然后 ${nextSt.icon} ${nextSt.text}` : '';
+        nextHintEl.innerText = nextSt ? `${i18n[currentLang].nextThen} ${nextSt.icon} ${nextSt.text}` : '';
       }
 
       const remBadge = document.getElementById('liveDestRemainBadge');
       if (remBadge && endCoords && curLat !== null && curLng !== null) {
         const remM = map.distance([curLat, curLng], [endCoords.lat, endCoords.lng]);
-        remBadge.innerText = `距终点 ${formatMetersOrKm(remM)}`;
+        remBadge.innerText = i18n[currentLang].remainDest(formatMetersOrKm(remM));
       }
     }
 
