@@ -438,7 +438,7 @@
         <div class="flex items-center space-x-3">
           <span class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center text-sm shadow-2xs">🏆</span>
           <div>
-            <div class="text-sm font-black text-amber-950">我的探索积分与全马排行榜</div>
+            <div id="profileRankTitle" class="text-sm font-black text-amber-950">我的探索积分与全马排行榜</div>
             <div id="profilePointsSub" class="text-[11px] text-amber-800">当前累计：0 分 · 到店打卡自动 +1 分</div>
           </div>
         </div>
@@ -583,12 +583,12 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">清真 / 餐饮属性（未核实可不选，避免误标）</label>
+          <label id="labelHalal" class="block text-xs font-bold text-gray-700 mb-1">清真 / 餐饮属性（未核实可不选，避免误标）</label>
           <select id="postHalalStatus" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 text-sm">
-            <option value="">未标注 / 依门店现场为准</option>
-            <option value="halal">🟢 JAKIM 认证清真 (Halal Certified)</option>
-            <option value="friendly">🟡 无猪肉·穆斯林友好 (Pork-Free / Muslim-Friendly)</option>
-            <option value="non-halal">🔴 非清真 (Non-Halal)</option>
+            <option value="" id="optHalalNone">未标注 / 依门店现场为准</option>
+            <option value="halal" id="optHalalYes">🟢 JAKIM 认证清真 (Halal Certified)</option>
+            <option value="friendly" id="optHalalFriendly">🟡 无猪肉·穆斯林友好 (Pork-Free / Muslim-Friendly)</option>
+            <option value="non-halal" id="optHalalNo">🔴 非清真 (Non-Halal)</option>
           </select>
         </div>
 
@@ -2498,6 +2498,9 @@
         profileNotice1: '• 本平台为全马用户提供免费的信息发布与对接服务，点击帖子可直接唤起 WhatsApp 联系发布者。',
         profileNotice2: '• 安全提醒：线下看房或二手面交请核实对方身份，切勿在未见面前提前转账定金。',
         modalPostHeader: '发布大马本地信息',
+        labelHalal: '清真 / 餐饮属性（未核实可不选，避免误标）', optHalalNone: '未标注 / 依门店现场为准', optHalalYes: '🟢 JAKIM 认证清真 (Halal Certified)', optHalalFriendly: '🟡 无猪肉·穆斯林友好 (Pork-Free / Muslim-Friendly)', optHalalNo: '🔴 非清真 (Non-Halal)', profileRankTitle: '我的探索积分与全马排行榜',
+        lbModalTitle: '🏆 全马真实出行探索榜', lbModalSub: '搜店导航 → 真实抵达目的地 150m 内自动 +1 积分（防原地/重复刷分）', lbMyPtsTitle: '我的探索积分', lbNickPh: '设置我的榜单昵称（如：槟城老司机）', lbSaveNick: '保存昵称', lbListHeading: '🏅 全马实时探索排名', lbVisitedTitle: '📍 我已真实抵达点亮的足迹',
+        lbRulesHTML: '<div class="font-extrabold text-gray-900">🎁 榜单名次奖励规则：</div><div>• <b>第 1 名</b>：全马首页黄金置顶券 7 天 + 专属探路先锋徽章</div><div>• <b>第 2 – 3 名</b>：热门州属置顶券 3 天 + 本地商户合作礼券</div><div>• <b>第 4 – 10 名</b>：优先刷新曝光权益 + 探索积分加成</div>',
         labelPhoto: '上传实拍照片（最多 6 张，首张为封面）',
         photoHint: '添加照片',
         labelCat: '信息分类 *',
@@ -2530,7 +2533,7 @@
       },
       en: {
         brandTitle: 'DamaJitong',
-        autoLocBtn: '📍GPS', calibrateBtn: '🎯Pin', locUnset: '⚠️ Lokasi belum tepat · Tekan untuk laras', hotRankLabel: 'Carta', hotPtsUnit: 'mata', hotNearbyAll: '✨ Semua Dekat', hotNearbyAllQ: 'berdekatan', hotFood: '🍜 Makan Dekat', hotFoodQ: 'makan', hotMart: '🛒 Kedai/myNEWS', hotMartQ: 'kedai serbaneka', hotClinic: '🏥 Klinik/Farmasi', hotClinicQ: 'klinik farmasi', hotSchool: '🎓 Sekolah', hotSchoolQ: 'sekolah', calibrateBtn: '🎯Pin', locUnset: '⚠️ Location unset · Tap to calibrate', hotRankLabel: 'Rank', hotPtsUnit: 'pts', hotNearbyAll: '✨ All Nearby', hotNearbyAllQ: 'nearby', hotFood: '🍜 Food Nearby', hotFoodQ: 'food', hotMart: '🛒 Mart/myNEWS', hotMartQ: 'convenience store', hotClinic: '🏥 Clinic/Pharmacy', hotClinicQ: 'clinic pharmacy', hotSchool: '🎓 School', hotSchoolQ: 'school',
+        autoLocBtn: '📍GPS', calibrateBtn: '🎯Pin', locUnset: '⚠️ Location unset · Tap to calibrate', hotRankLabel: 'Rank', hotPtsUnit: 'pts', hotNearbyAll: '✨ All Nearby', hotNearbyAllQ: 'nearby', hotFood: '🍜 Food Nearby', hotFoodQ: 'food', hotMart: '🛒 Mart/myNEWS', hotMartQ: 'convenience store', hotClinic: '🏥 Clinic/Pharmacy', hotClinicQ: 'clinic pharmacy', hotSchool: '🎓 School', hotSchoolQ: 'school',
         heroHeadline: 'Malaysia Local Life · Rentals, Jobs & Merchants',
         heroSub: '0% Commission · Direct Navigation · Instant WhatsApp',
         searchPlaceholder: 'Search rentals, jobs, preloved, merchants...',
@@ -2678,6 +2681,9 @@
         profileNotice1: '• Free local listing platform across Malaysia. Tap any listing to contact the poster directly via WhatsApp.',
         profileNotice2: '• Safety Reminder: Always inspect items or properties in person before transferring any deposit.',
         modalPostHeader: 'Post a Local Listing',
+        labelHalal: 'Halal / Dining Status (Optional)', optHalalNone: 'Unspecified / Check at Store', optHalalYes: '🟢 JAKIM Halal Certified', optHalalFriendly: '🟡 Pork-Free / Muslim-Friendly', optHalalNo: '🔴 Non-Halal', profileRankTitle: 'Explorer Points & Leaderboard',
+        lbModalTitle: '🏆 Malaysia Explorer Leaderboard', lbModalSub: 'Navigate & arrive within 150m to earn +1 pt (anti-cheat verified)', lbMyPtsTitle: 'My Explorer Points', lbNickPh: 'Set leaderboard nickname (e.g. Penang Explorer)', lbSaveNick: 'Save', lbListHeading: '🏅 Live Malaysia Rankings', lbVisitedTitle: '📍 My Verified Visited Places',
+        lbRulesHTML: '<div class="font-extrabold text-gray-900">🎁 Leaderboard Rewards:</div><div>• <b>Rank #1</b>: 7-Day Prime Nationwide Pin + Pioneer Badge</div><div>• <b>Rank #2 – #3</b>: 3-Day State Pin + Partner Vouchers</div><div>• <b>Rank #4 – #10</b>: Priority Boost + Bonus Multiplier</div>',
         labelPhoto: 'Upload Photos (Up to 6, 1st is Cover)',
         photoHint: 'Add Photo',
         labelCat: 'Category *',
@@ -2858,6 +2864,9 @@
         profileNotice1: '• Platform iklan percuma seluruh Malaysia. Tekan iklan untuk terus berhubung melalui WhatsApp.',
         profileNotice2: '• Peringatan Keselamatan: Sila berjumpa secara bersemuka sebelum membayar sebarang deposit.',
         modalPostHeader: 'Muat Naik Iklan Baru',
+        labelHalal: 'Status Halal / Makanan (Pilihan)', optHalalNone: 'Tidak Dinyatakan / Rujuk Kedai', optHalalYes: '🟢 Disahkan Halal JAKIM', optHalalFriendly: '🟡 Bebas Babi / Mesra Muslim', optHalalNo: '🔴 Tidak Halal (Non-Halal)', profileRankTitle: 'Mata Peneroka & Carta Kedudukan',
+        lbModalTitle: '🏆 Carta Peneroka Sebenar Malaysia', lbModalSub: 'Navigasi & tiba dalam 150m untuk +1 mata (anti-penipuan)', lbMyPtsTitle: 'Mata Peneroka Saya', lbNickPh: 'Tetapkan nama samaran (cth: Raja Jalanan)', lbSaveNick: 'Simpan', lbListHeading: '🏅 Kedudukan Peneroka Terkini', lbVisitedTitle: '📍 Lokasi Sebenar Yang Dilawati',
+        lbRulesHTML: '<div class="font-extrabold text-gray-900">🎁 Ganjaran Kedudukan Carta:</div><div>• <b>Tempat #1</b>: Pin Utama Seluruh Malaysia 7 Hari + Lencana Perintis</div><div>• <b>Tempat #2 – #3</b>: Pin Negeri 3 Hari + Baucar Rakan Niaga</div><div>• <b>Tempat #4 – #10</b>: Keutamaan Paparan + Bonus Mata</div>',
         labelPhoto: 'Muat Naik Gambar (Maksimum 6 Gambar)',
         photoHint: 'Tambah Gambar',
         labelCat: 'Kategori *',
@@ -3183,6 +3192,20 @@
 
       document.getElementById('modalPostHeader').innerText = t.modalPostHeader;
       document.getElementById('labelPhoto').innerText = t.labelPhoto;
+      if (document.getElementById('labelHalal')) document.getElementById('labelHalal').innerText = t.labelHalal;
+      if (document.getElementById('optHalalNone')) document.getElementById('optHalalNone').innerText = t.optHalalNone;
+      if (document.getElementById('optHalalYes')) document.getElementById('optHalalYes').innerText = t.optHalalYes;
+      if (document.getElementById('optHalalFriendly')) document.getElementById('optHalalFriendly').innerText = t.optHalalFriendly;
+      if (document.getElementById('optHalalNo')) document.getElementById('optHalalNo').innerText = t.optHalalNo;
+      if (document.getElementById('profileRankTitle')) document.getElementById('profileRankTitle').innerText = t.profileRankTitle;
+      if (document.getElementById('lbModalTitle')) document.getElementById('lbModalTitle').innerText = t.lbModalTitle;
+      if (document.getElementById('lbModalSub')) document.getElementById('lbModalSub').innerText = t.lbModalSub;
+      if (document.getElementById('lbMyPtsTitle')) document.getElementById('lbMyPtsTitle').innerText = t.lbMyPtsTitle;
+      if (document.getElementById('explorerNicknameInput')) document.getElementById('explorerNicknameInput').placeholder = t.lbNickPh;
+      if (document.getElementById('lbSaveNickBtn')) document.getElementById('lbSaveNickBtn').innerText = t.lbSaveNick;
+      if (document.getElementById('lbListHeading')) document.getElementById('lbListHeading').innerText = t.lbListHeading;
+      if (document.getElementById('lbVisitedTitle')) document.getElementById('lbVisitedTitle').innerText = t.lbVisitedTitle;
+      if (document.getElementById('lbRulesBox') && t.lbRulesHTML) document.getElementById('lbRulesBox').innerHTML = t.lbRulesHTML;
       if (document.getElementById('photoHintText')) document.getElementById('photoHintText').innerText = t.photoHint;
       document.getElementById('labelCat').innerText = t.labelCat;
       document.getElementById('formCatHouse').innerText = `🏠 ${t.catHouse}`;
@@ -4220,18 +4243,37 @@
       const nickInput = document.getElementById('explorerNicknameInput');
       if (nickInput && !nickInput.value && savedNick) nickInput.value = savedNick;
 
-      document.getElementById('myExplorerPoints').innerText = `${myPts} 分`;
-      document.getElementById('myExplorerSub').innerText = `已点亮 ${myCnt} 个真实地点 · 到达目的地 150m 内自动 +1 分`;
+      const tLb = I18N[currentLang] || I18N.zh;
+      document.getElementById('myExplorerPoints').innerText = `${myPts} ${tLb.hotPtsUnit}`;
+      document.getElementById('myExplorerSub').innerText = currentLang === 'en'
+        ? `${myCnt} verified places visited · +1 pt within 150m of destination`
+        : (currentLang === 'ms' ? `${myCnt} lokasi sebenar dilawati · +1 mata dalam 150m` : `已点亮 ${myCnt} 个真实地点 · 到达目的地 150m 内自动 +1 分`);
 
-      const displayMeName = savedNick ? `${savedNick}（我）` : '我（当前设备）';
-      const mockBoard = [
+      const displayMeName = savedNick
+        ? `${savedNick} (${currentLang === 'en' ? 'Me' : (currentLang === 'ms' ? 'Saya' : '我')})`
+        : (currentLang === 'en' ? 'Me (This Device)' : (currentLang === 'ms' ? 'Saya (Peranti Ini)' : '我（当前设备）'));
+      const mockBoard = currentLang === 'en' ? [
+        { name: 'Penang Explorer Pro', pts: Math.max(48, myPts + 12), reward: '👑 7-Day Prime Pin' },
+        { name: 'KL Foodie Hunter', pts: Math.max(36, myPts + 6), reward: '🥈 3-Day State Pin' },
+        { name: 'JB Daily Check-in', pts: Math.max(29, myPts + 3), reward: '🥉 3-Day State Pin' },
+        { name: 'Ipoh Local Guide', pts: 21, reward: '🎁 Priority Boost' },
+        { name: 'Selangor Runner', pts: 15, reward: '🎁 Priority Boost' },
+        { name: displayMeName, pts: myPts, reward: myPts > 0 ? '✨ Active' : '🚀 Ready', isMe: true }
+      ] : (currentLang === 'ms' ? [
+        { name: 'Perintis Penang', pts: Math.max(48, myPts + 12), reward: '👑 Pin Utama 7 Hari' },
+        { name: 'Kaki Makan KL', pts: Math.max(36, myPts + 6), reward: '🥈 Pin Negeri 3 Hari' },
+        { name: 'Juara Check-in JB', pts: Math.max(29, myPts + 3), reward: '🥉 Pin Negeri 3 Hari' },
+        { name: 'Info Ipoh', pts: 21, reward: '🎁 Keutamaan' },
+        { name: 'Peneroka Selangor', pts: 15, reward: '🎁 Keutamaan' },
+        { name: displayMeName, pts: myPts, reward: myPts > 0 ? '✨ Aktif' : '🚀 Sedia', isMe: true }
+      ] : [
         { name: '槟城探路先锋', pts: Math.max(48, myPts + 12), reward: '👑 首页置顶7天' },
         { name: '吉隆坡美食达人', pts: Math.max(36, myPts + 6), reward: '🥈 州属置顶3天' },
         { name: '新山日常打卡王', pts: Math.max(29, myPts + 3), reward: '🥉 州属置顶3天' },
         { name: '怡保生活通', pts: 21, reward: '🎁 优先曝光' },
         { name: '雪兰莪跑腿侠', pts: 15, reward: '🎁 优先曝光' },
         { name: displayMeName, pts: myPts, reward: myPts > 0 ? '✨ 累计中' : '🚀 待出发', isMe: true }
-      ];
+      ]);
       mockBoard.sort((a, b) => b.pts - a.pts);
 
       document.getElementById('leaderboardRows').innerHTML = mockBoard.map((row, i) => `
@@ -4242,7 +4284,7 @@
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">${row.reward}</span>
-            <span class="text-xs font-black text-emerald-700">${row.pts} 分</span>
+            <span class="text-xs font-black text-emerald-700">${row.pts} ${tLb.hotPtsUnit}</span>
           </div>
         </div>
       `).join('');
@@ -4472,8 +4514,8 @@
     <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-3 max-h-[88vh] overflow-y-auto">
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="font-black text-base text-gray-900">🏆 全马真实出行探索榜</h3>
-          <p class="text-[11px] text-gray-500">搜店导航 → 真实抵达目的地 150m 内自动 +1 积分（防原地/重复刷分）</p>
+          <h3 id="lbModalTitle" class="font-black text-base text-gray-900">🏆 全马真实出行探索榜</h3>
+          <p id="lbModalSub" class="text-[11px] text-gray-500">搜店导航 → 真实抵达目的地 150m 内自动 +1 积分（防原地/重复刷分）</p>
         </div>
         <button type="button" onclick="closeLeaderboardModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
       </div>
@@ -4481,7 +4523,7 @@
       <div id="myExplorerCard" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 space-y-2">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-xs font-extrabold text-amber-950">我的探索积分</div>
+            <div id="lbMyPtsTitle" class="text-xs font-extrabold text-amber-950">我的探索积分</div>
             <div id="myExplorerSub" class="text-[11px] text-amber-800 mt-0.5">已点亮 0 个真实地点 · 每日最多计 8 分</div>
           </div>
           <div id="myExplorerPoints" class="text-xl font-black text-red-600">0 分</div>
@@ -4489,21 +4531,21 @@
         <div class="flex items-center gap-1.5 pt-1 border-t border-amber-200/70">
           <input id="explorerNicknameInput" type="text" maxlength="16" placeholder="设置我的榜单昵称（如：槟城老司机）"
                  class="flex-1 bg-white border border-amber-200 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-red-500" />
-          <button type="button" onclick="saveExplorerNickname()" class="bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shrink-0">保存昵称</button>
+          <button id="lbSaveNickBtn" type="button" onclick="saveExplorerNickname()" class="bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shrink-0">保存昵称</button>
         </div>
       </div>
 
-      <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200/80 space-y-1.5 text-[11px] text-gray-700">
+      <div id="lbRulesBox" class="bg-gray-50 rounded-2xl p-3 border border-gray-200/80 space-y-1.5 text-[11px] text-gray-700">
         <div class="font-extrabold text-gray-900">🎁 榜单名次奖励规则：</div>
         <div>• <b>第 1 名</b>：全马首页黄金置顶券 7 天 + 专属探路先锋徽章</div>
         <div>• <b>第 2 – 3 名</b>：热门州属置顶券 3 天 + 本地商户合作礼券</div>
         <div>• <b>第 4 – 10 名</b>：优先刷新曝光权益 + 探索积分加成</div>
       </div>
 
-      <div class="text-xs font-extrabold text-gray-800 pt-1">🏅 全马实时探索排名</div>
+      <div id="lbListHeading" class="text-xs font-extrabold text-gray-800 pt-1">🏅 全马实时探索排名</div>
       <div id="leaderboardRows" class="space-y-1.5"></div>
       <div id="myVisitedHistoryBox" class="hidden pt-2 border-t border-gray-100 space-y-1.5">
-        <div class="text-xs font-extrabold text-gray-800">📍 我已真实抵达点亮的足迹</div>
+        <div id="lbVisitedTitle" class="text-xs font-extrabold text-gray-800">📍 我已真实抵达点亮的足迹</div>
         <div id="myVisitedHistoryList" class="space-y-1 text-[11px] text-gray-600"></div>
       </div>
     </div>
