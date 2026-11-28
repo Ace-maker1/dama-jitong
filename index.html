@@ -732,6 +732,8 @@
       '汽车维修': { zh: '汽车维修', en: 'Auto Care', ms: 'Bengkel Kereta' },
       '汽车服务': { zh: '汽车维修', en: 'Auto Care', ms: 'Bengkel Kereta' },
       '签证办理': { zh: '签证办理', en: 'Visa Services', ms: 'Perkhidmatan Visa' },
+      '学校教育': { zh: '学校教育', en: 'Education & School', ms: 'Sekolah & Pendidikan' },
+      '超市便利': { zh: '超市便利', en: 'Grocery & Mart', ms: 'Pasar & Kedai' },
       '收录商户': { zh: '收录商户', en: 'Directory', ms: 'Direktori' }
     };
 
@@ -743,6 +745,8 @@
       clinic: '便民医疗',
       food: '本地美食',
       beauty: '美容美发',
+      education: '学校教育',
+      mart: '超市便利',
       general: '生活服务'
     };
 
@@ -785,6 +789,14 @@
 
       if (/(salon|saloon|hair|barber|beauty|spa|facial|nail|eyelash|massage|理发|美发|剪发|烫染|美容|美甲|美睫|护肤|按摩)/.test(cleaned)) {
         return 'beauty';
+      }
+
+      if (/(\bschool\b|\bsekolah\b|\bsjk\b|\bsmk\b|\bsk\b|tadika|taska|kindergarten|preschool|montessori|academy|tuition|college|university|universiti|学校|小学|中学|独中|国际学校|幼儿园|托儿所|补习|学院|大学)/.test(cleaned)) {
+        return 'education';
+      }
+
+      if (/(mynews|7-eleven|7\s*eleven|七十一|kk\s*super\s*mart|99\s*speedmart|speedmart|good\s*express|lotus'?s|aeon|jaya\s*grocer|village\s*grocer|supermarket|convenience\s*store|convenience|grocery|pasar\s*mini|kedai\s*runcit|mart\b|超市|便利店|杂货店|百货|迷你市场)/.test(cleaned)) {
+        return 'mart';
       }
 
       return 'general';
@@ -1654,11 +1666,14 @@
 
         const isAllNearbyQuery = /^(附近|周围|周边|附近全部|附近商店|附近店面|附近开着的|nearby|berdekatan)$/i.test(coreQuery);
         const isGenericDiningQuery = /^(吃饭|吃的|找吃的|去吃饭|肚子饿|美食|餐厅|餐馆|food|makan|restaurant)$/i.test(coreQuery);
+        const isGenericMartQuery = /^(超市|便利店|杂货店|迷你市场|小超市|买东西|买水|买饮料|mynews|7-eleven|7 eleven|99 speedmart|speedmart|kk|supermarket|convenience store|convenience|grocery)$/i.test(coreQuery);
         const normalizedPlacesQuery = isAllNearbyQuery
           ? 'restaurant convenience store supermarket hospital pharmacy school 附近 商家'
           : (isGenericDiningQuery
               ? 'restaurant food cafe kopitiam 餐厅 美食'
-              : coreQuery);
+              : (isGenericMartQuery
+                  ? 'convenience store supermarket mynews 99 speedmart 7-eleven 超市 便利店'
+                  : coreQuery));
         const fullTextQuery = activeCoords
           ? normalizedPlacesQuery
           : `${normalizedPlacesQuery} ${areaText}`;
@@ -1668,15 +1683,18 @@
         try {
           const useNearbyAll = Boolean(activeCoords && isAllNearbyQuery);
           const useNearbyStrict = Boolean(activeCoords && isGenericDiningQuery);
-          const reqBody = (useNearbyAll || useNearbyStrict) ? {
+          const useNearbyMart = Boolean(activeCoords && isGenericMartQuery);
+          const reqBody = (useNearbyAll || useNearbyStrict || useNearbyMart) ? {
             action: 'places_nearby',
             lat: activeCoords.lat,
             lng: activeCoords.lng,
-            radius: useNearbyAll ? 2000.0 : 1500.0,
+            radius: useNearbyMart ? 2500.0 : 2000.0,
             maxResultCount: useNearbyAll ? 15 : 10,
             includedTypes: useNearbyAll
               ? ['restaurant', 'cafe', 'convenience_store', 'supermarket', 'grocery_store', 'hospital', 'pharmacy', 'school']
-              : ['restaurant', 'cafe', 'meal_takeaway', 'bakery'],
+              : (useNearbyMart
+                  ? ['convenience_store', 'supermarket', 'grocery_store']
+                  : ['restaurant', 'cafe', 'meal_takeaway', 'bakery']),
             languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
             regionCode: 'MY'
           } : {
@@ -1861,6 +1879,50 @@
             `;
           }).join('');
         }
+        // 若下方主动态列表当前为 0 条，同步把这些附近实时门店铺进下方列表，下滑也能直接看
+        if (localMatchCount === 0 && window._discoveredPlacesCache.length > 0) {
+          const mainFeedEl = document.getElementById('postList');
+          const countBadgeEl = document.getElementById('postCountBadge');
+          if (countBadgeEl) countBadgeEl.innerText = `${window._discoveredPlacesCache.length} ${t.countUnit}`;
+          if (mainFeedEl) {
+            mainFeedEl.innerHTML = window._discoveredPlacesCache.map(item => {
+              const indTag = inferIndustryTag(`${item.name} ${item.addr} ${coreQuery}`);
+              const vis = getCategoryVisual('本地优惠', { title: `${indTag} ${item.name}`, description: item.addr });
+              const distHtml = typeof item.distKm === 'number'
+                ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-1.5 py-0.5 rounded">📍 ${formatShortDist(item.distKm)}</span>`
+                : '';
+              const openHtml = item.openNow === true
+                ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">${currentLang === 'en' ? 'Open' : (currentLang === 'ms' ? 'Buka' : '营业中')}</span>`
+                : '';
+              return `
+                <div onclick="handleDiscoverySelect(${item.idx})" class="card-elevated bg-white rounded-2xl p-3.5 shadow-xs hover:shadow-md border border-amber-200/80 cursor-pointer">
+                  <div class="flex justify-between gap-3">
+                    <div class="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <div class="flex items-center space-x-1.5 mb-1.5 flex-wrap gap-y-1">
+                          <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">${indTag}</span>
+                          <span class="text-[11px] text-gray-500 truncate">📍 ${getRegionDisplayName(item.city, currentLang)}</span>
+                          ${distHtml}
+                          ${openHtml}
+                        </div>
+                        <h3 class="font-bold text-gray-900 text-[15px] leading-snug line-clamp-2 mb-1">${item.name}</h3>
+                        <p class="text-[11px] text-gray-500 truncate">${item.addr}</p>
+                      </div>
+                      <div class="flex items-center justify-between gap-2 mt-2">
+                        <span class="text-emerald-700 font-extrabold text-xs">🧭 点击自动收录并开启导航</span>
+                      </div>
+                    </div>
+                    <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-gray-100 shadow-xs bg-gradient-to-br ${vis.bg} flex flex-col items-center justify-center text-white">
+                      <span class="text-xl mb-0.5">${vis.icon}</span>
+                      <span class="text-[9px] font-bold bg-black/25 px-1.5 py-0.5 rounded-full">${vis.label}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+
         // 同步刷新顶部即时搜索下拉浮层（如果用户仍聚焦在搜索框）
         const curInputVal = (document.getElementById('searchInput')?.value || '').trim();
         if (curInputVal && document.activeElement === document.getElementById('searchInput')) {
@@ -1913,18 +1975,16 @@
         };
 
         try {
-          await Promise.race([
-            supabaseClient.from('posts').insert([payload]).select('*').then(({ data, error }) => {
-              if (error) {
-                console.error('Auto-save insert error:', error);
-              } else if (data && data[0]) {
-                allPosts.unshift(data[0]);
-              }
-            }),
-            new Promise(resolve => setTimeout(resolve, 3500))
-          ]);
+          const { data, error } = await supabaseClient.from('posts').insert([payload]).select('*');
+          if (error) {
+            console.error('Auto-save insert error:', error);
+            allPosts.unshift({ id: Date.now(), created_at: new Date().toISOString(), ...payload });
+          } else if (data && data[0]) {
+            allPosts.unshift(data[0]);
+          }
         } catch (err) {
           console.error('Auto-save failed:', err);
+          allPosts.unshift({ id: Date.now(), created_at: new Date().toISOString(), ...payload });
         }
       }
 
@@ -2048,6 +2108,9 @@
       ['招聘', '工作', '兼职', '薪资', 'kerja', 'kosong', 'jawatan', 'job', 'hiring', 'part time'],
       ['二手', '闲置', '转让', 'terpakai', 'preloved', 'used', 'second hand'],
       ['吃饭', '吃的', '午餐', '晚餐', '早餐', '宵夜', '美食', '餐厅', '茶室', '小炒', '海鲜', '咖啡', 'makan', 'food', 'restaurant', 'cafe', 'kopitiam', 'nasi', 'mee', 'dim sum'],
+      ['学校', '小学', '中学', '独中', '国际学校', '幼儿园', '补习', '学院', '大学', 'school', 'sekolah', 'sjk', 'smk', 'tadika', 'kindergarten', 'tuition', 'college', 'university'],
+      ['超市', '便利店', '杂货店', '迷你市场', 'mynews', '7-eleven', '7 eleven', '七十一', '99 speedmart', 'speedmart', 'kk super mart', 'good express', 'supermarket', 'convenience store', 'convenience', 'grocery', 'kedai runcit', 'pasar mini', 'mart'],
+      ['医院', '诊所', '药房', '药店', 'hospital', 'clinic', 'klinik', 'pharmacy', 'farmasi', 'watsons', 'guardian', 'caring'],
       ['签证', 'visa', 'mm2h', '第二家园', '工作准证', '学生签', 'passport', 'pasport', '续签', '移民', 'permit']
     ];
 
@@ -3577,6 +3640,20 @@
           bg: 'from-pink-500 to-rose-600',
           icon: '💇',
           label: currentLang === 'en' ? 'Beauty' : (currentLang === 'ms' ? 'Kecantikan' : '美容美发')
+        };
+      }
+      if (mType === 'education') {
+        return {
+          bg: 'from-sky-500 to-blue-600',
+          icon: '🎓',
+          label: currentLang === 'en' ? 'School' : (currentLang === 'ms' ? 'Sekolah' : '学校教育')
+        };
+      }
+      if (mType === 'mart') {
+        return {
+          bg: 'from-teal-600 to-cyan-700',
+          icon: '🛒',
+          label: currentLang === 'en' ? 'Mart' : (currentLang === 'ms' ? 'Pasar Mini' : '超市便利')
         };
       }
 
