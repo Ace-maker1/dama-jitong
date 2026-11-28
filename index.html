@@ -81,16 +81,28 @@
 
   <!-- 悬浮胶囊搜索框 + 三项快捷入口条（浏览记录 / 我的收藏 / 我的帖子） -->
   <div class="relative z-20 -mt-5 mx-3 bg-white rounded-2xl shadow-[0_6px_20px_rgba(15,23,42,0.06)] border border-gray-100/90 p-3">
-    <form onsubmit="handleSearchSubmit(event)" class="relative mb-2 flex items-center gap-1.5">
-      <div class="relative flex-1">
-        <input type="search" id="searchInput" enterkeyhint="search" onfocus="showSearchHistoryBar()" oninput="onSearchInput()" placeholder="找房子、找工作、找二手、搜商家..."
-               class="w-full bg-gray-100/90 text-gray-800 text-xs rounded-full pl-9 pr-8 py-2.5 focus:bg-white focus:ring-2 focus:ring-red-500/30 focus:outline-none transition font-medium">
-        <span class="absolute left-3.5 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
-        <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
-      </div>
-      <button type="submit" id="searchSubmitBtn" class="bg-gradient-to-r from-red-600 to-orange-600 hover:opacity-95 text-white text-xs font-bold px-4 py-2.5 rounded-full shrink-0 shadow-xs transition">搜索</button>
-    </form>
+    <div id="searchBoxWrapper" class="relative">
+      <form onsubmit="handleSearchSubmit(event)" class="relative mb-2 flex items-center gap-1.5">
+        <div class="relative flex-1">
+          <input type="search" id="searchInput" autocomplete="off" enterkeyhint="search" onfocus="onSearchFocus()" oninput="onSearchInput()" placeholder="找房子、找工作、找二手、搜商家..."
+                 class="w-full bg-gray-100/90 text-gray-800 text-xs rounded-full pl-9 pr-8 py-2.5 focus:bg-white focus:ring-2 focus:ring-red-500/30 focus:outline-none transition font-medium">
+          <span class="absolute left-3.5 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
+          <button type="button" id="clearSearchBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2 text-gray-400 hover:text-gray-700 text-xs font-bold px-1">✕</button>
+        </div>
+        <button type="submit" id="searchSubmitBtn" class="bg-gradient-to-r from-red-600 to-orange-600 hover:opacity-95 text-white text-xs font-bold px-4 py-2.5 rounded-full shrink-0 shadow-xs transition">搜索</button>
+      </form>
+      <!-- 实时搜索联想下拉浮层（直接显示商家/帖子名 + 精准距离徽章 + 营业/分类 + 一键导航） -->
+      <div id="instantSearchDropdown" class="hidden absolute left-0 right-0 top-[44px] z-40 bg-white rounded-2xl shadow-[0_14px_36px_rgba(15,23,42,0.18)] border border-gray-200/90 overflow-hidden max-h-[66vh] overflow-y-auto divide-y divide-gray-100"></div>
+    </div>
     <div id="searchHistoryBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-1.5 border-b border-gray-100"></div>
+    <div id="quickHotSearchBar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-1.5 border-b border-gray-100 text-[10px]">
+      <span class="text-gray-400 font-semibold shrink-0">🔥 附近热搜：</span>
+      <button type="button" onclick="applySearchHistoryTerm('附近吃饭')" class="px-2 py-0.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-bold shrink-0 transition">🍜 附近吃饭</button>
+      <button type="button" onclick="applySearchHistoryTerm('茶室咖啡')" class="px-2 py-0.5 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200/80 font-bold shrink-0 transition">☕ 茶室咖啡</button>
+      <button type="button" onclick="applySearchHistoryTerm('诊所药房')" class="px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 font-bold shrink-0 transition">🏥 诊所药房</button>
+      <button type="button" onclick="applySearchHistoryTerm('洗车修车')" class="px-2 py-0.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 font-bold shrink-0 transition">🔧 洗车修车</button>
+      <button type="button" onclick="applySearchHistoryTerm('租房')" class="px-2 py-0.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200/80 font-bold shrink-0 transition">🏠 租房</button>
+    </div>
 
     <div class="grid grid-cols-3 divide-x divide-gray-100 text-center text-xs font-bold text-gray-700 pt-0.5">
       <button type="button" onclick="switchTab('history')" class="flex items-center justify-center gap-1.5 py-1 hover:text-red-600 transition">
@@ -1572,9 +1584,10 @@
       try {
         const biasLat = nearbyUserCoords?.lat ?? regionObj?.lat ?? 5.4141;
         const biasLng = nearbyUserCoords?.lng ?? regionObj?.lng ?? 100.3288;
-        const viewbox = `${(biasLng - 0.12).toFixed(4)},${(biasLat + 0.10).toFixed(4)},${(biasLng + 0.12).toFixed(4)},${(biasLat - 0.10).toFixed(4)}`;
-        const q = `${coreQuery} ${liveAreaLabel || areaText} Malaysia`.trim();
-        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=my&limit=6&viewbox=${encodeURIComponent(viewbox)}&q=${encodeURIComponent(q)}`;
+        const viewbox = `${(biasLng - 0.025).toFixed(4)},${(biasLat + 0.025).toFixed(4)},${(biasLng + 0.025).toFixed(4)},${(biasLat - 0.025).toFixed(4)}`;
+        const nomQuery = /^(吃饭|吃的|美食|餐厅|餐馆|food|makan)$/i.test(coreQuery) ? 'restaurant cafe kopitiam' : coreQuery;
+        const q = `${nomQuery} ${liveAreaLabel || areaText}`.trim();
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=my&bounded=1&limit=8&viewbox=${encodeURIComponent(viewbox)}&q=${encodeURIComponent(q)}`;
         const res = await fetch(url);
         if (!res.ok) return [];
         const rows = await res.json();
@@ -1593,13 +1606,20 @@
       }
     }
 
-    function scheduleSmartDiscovery(rawKeyword, cityVal, localMatchCount, immediate = false) {
+    function formatShortDist(km) {
+      if (typeof km !== 'number' || Number.isNaN(km)) return '';
+      if (km < 1) return `${Math.max(Math.round(km * 1000), 10)} m`;
+      return `${km.toFixed(1)} km`;
+    }
+
+    function scheduleSmartDiscovery(rawKeyword, cityVal, localMatchCount, immediate = false, nearLocalCount = localMatchCount) {
       const sec = document.getElementById('smartDiscoverySection');
       const listEl = document.getElementById('discoveryList');
       clearTimeout(discoveryTimer);
 
       const coreQuery = cleanSearchIntent(rawKeyword);
-      if (!coreQuery || coreQuery.length < 1 || localMatchCount >= 5) {
+      const effectiveNearCount = nearbyUserCoords ? nearLocalCount : localMatchCount;
+      if (!coreQuery || coreQuery.length < 1 || effectiveNearCount >= 4) {
         if (sec) sec.classList.add('hidden');
         return;
       }
@@ -1626,27 +1646,48 @@
         const regionObj = MY_REGIONS.find(r => r.value === effectiveCity) || null;
         const areaText = liveAreaLabel || ((effectiveCity && effectiveCity !== '全马')
           ? getRegionDisplayName(effectiveCity, 'en')
-          : 'Penang, Malaysia');
-        const fullTextQuery = `${coreQuery} near ${areaText}`;
+          : 'Malaysia');
+
+        const isGenericDiningQuery = /^(吃饭|吃的|找吃的|去吃饭|肚子饿|美食|餐厅|餐馆|food|makan|restaurant)$/i.test(coreQuery);
+        const normalizedPlacesQuery = isGenericDiningQuery
+          ? 'restaurant food cafe kopitiam 餐厅 美食'
+          : coreQuery;
+        const fullTextQuery = activeCoords
+          ? normalizedPlacesQuery
+          : `${normalizedPlacesQuery} ${areaText}`;
 
         let normalizedList = [];
 
         try {
+          // 如果是泛搜“吃饭/美食”且已拿到坐标，直接调 Google Nearby Strict 1.5km 圈，把楼下几十米的店全捞出来
+          const useNearbyStrict = Boolean(activeCoords && isGenericDiningQuery);
+          const reqBody = useNearbyStrict ? {
+            action: 'places_nearby',
+            lat: activeCoords.lat,
+            lng: activeCoords.lng,
+            radius: 1500.0,
+            maxResultCount: 10,
+            includedTypes: ['restaurant', 'cafe', 'meal_takeaway', 'bakery'],
+            languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+            regionCode: 'MY'
+          } : {
+            action: 'places_search',
+            textQuery: fullTextQuery,
+            languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+            regionCode: 'MY',
+            maxResultCount: 10,
+            rankByDistance: true,
+            ...(activeCoords ? {
+              lat: activeCoords.lat,
+              lng: activeCoords.lng,
+              radius: 2500.0
+            } : {})
+          };
+
           const res = await fetch(GEO_PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'places_search',
-              textQuery: fullTextQuery,
-              languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
-              regionCode: 'MY',
-              maxResultCount: 6,
-              ...(activeCoords ? {
-                lat: activeCoords.lat,
-                lng: activeCoords.lng,
-                radius: 12000.0
-              } : {})
-            })
+            body: JSON.stringify(reqBody)
           });
 
           if (res.ok) {
@@ -1677,6 +1718,54 @@
             });
           }
         } catch (_) {}
+
+        if (seq !== discoverySeq) return;
+
+        if (normalizedList.length === 0 && activeCoords) {
+          try {
+            const resFallback = await fetch(GEO_PROXY_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'places_search',
+                textQuery: `${normalizedPlacesQuery} ${areaText}`,
+                languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+                regionCode: 'MY',
+                maxResultCount: 10,
+                rankByDistance: true,
+                lat: activeCoords.lat,
+                lng: activeCoords.lng,
+                radius: 3500.0
+              })
+            });
+            if (resFallback.ok) {
+              const dataFb = await resFallback.json();
+              const placesFb = Array.isArray(dataFb?.places) ? dataFb.places : [];
+              normalizedList = placesFb.map(pl => {
+                const pLat = pl.location?.latitude;
+                const pLng = pl.location?.longitude;
+                const name = pl.displayName?.text || coreQuery;
+                const addr = pl.formattedAddress || areaText;
+                const rawPhone = pl.internationalPhoneNumber || pl.nationalPhoneNumber || '';
+                const phoneDigits = String(rawPhone).replace(/[^0-9]/g, '');
+                const cleanWa = phoneDigits.startsWith('0')
+                  ? ('60' + phoneDigits.slice(1))
+                  : (phoneDigits.startsWith('60') ? phoneDigits : '');
+                const itemState = (typeof pLat === 'number' && typeof pLng === 'number')
+                  ? (inferStateFromCoords(pLat, pLng)?.value || inferStateFromText(addr) || effectiveCity)
+                  : (inferStateFromText(addr) || effectiveCity);
+                return {
+                  name,
+                  addr,
+                  phone: cleanWa,
+                  lat: typeof pLat === 'number' ? pLat : activeCoords.lat,
+                  lng: typeof pLng === 'number' ? pLng : activeCoords.lng,
+                  city: itemState
+                };
+              });
+            }
+          } catch (_) {}
+        }
 
         if (seq !== discoverySeq) return;
 
@@ -1719,13 +1808,18 @@
 
         if (listEl) {
           listEl.innerHTML = window._discoveredPlacesCache.map(item => {
-            const distText = typeof item.distKm === 'number' ? ` · ${item.distKm.toFixed(1)} km` : '';
+            const distBadge = typeof item.distKm === 'number'
+              ? `<span class="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-700 bg-emerald-100/90 border border-emerald-200 px-1.5 py-0.5 rounded-md shrink-0">📍 ${formatShortDist(item.distKm)}</span>`
+              : '';
             const gmapQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.addr)}`;
             return `
               <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
                 <div onclick="handleDiscoverySelect(${item.idx})" class="min-w-0 flex-1 cursor-pointer">
-                  <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
-                  <div class="text-[11px] text-gray-500 truncate mt-0.5">📍 ${item.addr}${distText}</div>
+                  <div class="flex items-center gap-1.5">
+                    <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
+                    ${distBadge}
+                  </div>
+                  <div class="text-[11px] text-gray-500 truncate mt-0.5">${item.addr}</div>
                   <div class="text-[10px] text-amber-700 font-semibold mt-1">${t.discoveryActionHint}</div>
                 </div>
                 <div class="flex flex-col gap-1 shrink-0">
@@ -1741,6 +1835,11 @@
               </div>
             `;
           }).join('');
+        }
+        // 同步刷新顶部即时搜索下拉浮层（如果用户仍聚焦在搜索框）
+        const curInputVal = (document.getElementById('searchInput')?.value || '').trim();
+        if (curInputVal && document.activeElement === document.getElementById('searchInput')) {
+          renderInstantSearchDropdown(curInputVal);
         }
       }, immediate ? 20 : 220);
     }
@@ -1790,14 +1889,14 @@
 
         try {
           await Promise.race([
-            supabaseClient.from('posts').insert([payload]).then(({ data, error }) => {
+            supabaseClient.from('posts').insert([payload]).select('*').then(({ data, error }) => {
               if (error) {
                 console.error('Auto-save insert error:', error);
               } else if (data && data[0]) {
                 allPosts.unshift(data[0]);
               }
             }),
-            new Promise(resolve => setTimeout(resolve, 1500))
+            new Promise(resolve => setTimeout(resolve, 3500))
           ]);
         } catch (err) {
           console.error('Auto-save failed:', err);
@@ -1923,7 +2022,7 @@
       ['租房', '房子', '房间', '套房', 'condo', '公寓', 'rumah', 'sewa', 'bilik', 'rent', 'room'],
       ['招聘', '工作', '兼职', '薪资', 'kerja', 'kosong', 'jawatan', 'job', 'hiring', 'part time'],
       ['二手', '闲置', '转让', 'terpakai', 'preloved', 'used', 'second hand'],
-      ['美食', '探店', '优惠', '商家', 'makan', 'food', 'promo', 'kedai', 'kopitiam', 'clinic', 'workshop'],
+      ['吃饭', '吃的', '午餐', '晚餐', '早餐', '宵夜', '美食', '餐厅', '茶室', '小炒', '海鲜', '咖啡', 'makan', 'food', 'restaurant', 'cafe', 'kopitiam', 'nasi', 'mee', 'dim sum'],
       ['签证', 'visa', 'mm2h', '第二家园', '工作准证', '学生签', 'passport', 'pasport', '续签', '移民', 'permit']
     ];
 
@@ -2029,6 +2128,108 @@
       renderPosts();
     }
 
+    function closeInstantSearchDropdown() {
+      const dd = document.getElementById('instantSearchDropdown');
+      if (dd) dd.classList.add('hidden');
+    }
+
+    function onSearchFocus() {
+      const val = (document.getElementById('searchInput')?.value || '').trim();
+      if (!val) {
+        closeInstantSearchDropdown();
+        showSearchHistoryBar();
+      } else {
+        document.getElementById('searchHistoryBar')?.classList.add('hidden');
+        renderInstantSearchDropdown(val);
+      }
+    }
+
+    function renderInstantSearchDropdown(rawKw) {
+      const dd = document.getElementById('instantSearchDropdown');
+      if (!dd) return;
+      const kw = String(rawKw || '').trim();
+      if (!kw) {
+        dd.classList.add('hidden');
+        return;
+      }
+
+      const t = I18N[currentLang];
+      const localTop = (lastFilteredList || []).slice(0, 5);
+      const livePlaces = (window._discoveredPlacesCache || []).slice(0, 5);
+
+      if (localTop.length === 0 && livePlaces.length === 0) {
+        dd.innerHTML = `
+          <div class="px-3.5 py-3 text-xs text-amber-700 font-semibold flex items-center justify-between">
+            <span>🔍 正在匹配“${kw}”附近结果...</span>
+            <button type="button" onclick="closeInstantSearchDropdown()" class="text-gray-400 text-xs px-1">✕</button>
+          </div>
+        `;
+        dd.classList.remove('hidden');
+        return;
+      }
+
+      const localHeader = currentLang === 'en' ? '📌 Directory Matches (Sorted by Distance)' : (currentLang === 'ms' ? '📌 Padanan Direktori (Ikut Jarak)' : '📌 平台已收录（按距离由近到远）');
+      const liveHeader = currentLang === 'en' ? '✨ Nearby Live Places (Tap to Navigate & Save)' : (currentLang === 'ms' ? '✨ Lokasi Berdekatan (Tekan untuk Pandu)' : '✨ 附近实时门店（直显距离 · 点选导航并收录）');
+
+      let sectionsHTML = '';
+
+      if (localTop.length > 0) {
+        sectionsHTML += `<div class="bg-gray-50/90 px-3 py-1.5 text-[10px] font-extrabold text-gray-500 flex items-center justify-between"><span>${localHeader}</span><button type="button" onclick="closeInstantSearchDropdown()" class="text-gray-400 hover:text-gray-700 px-1">✕</button></div>`;
+        sectionsHTML += localTop.map(p => {
+          const rawLocTitle = (currentLang === 'en' ? p.title_en : (currentLang === 'ms' ? p.title_ms : p.title_zh)) || p.title;
+          const title = localizeCardTitle(rawLocTitle, currentLang, p);
+          const distStr = typeof p._distKm === 'number' ? formatShortDist(p._distKm) : '';
+          const distBadge = distStr
+            ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shrink-0">📍 ${distStr}</span>`
+            : `<span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">${getRegionDisplayName(p.city, currentLang)}</span>`;
+          const priceStr = (currentLang === 'en' ? p.price_en : (currentLang === 'ms' ? p.price_ms : p.price_zh)) || p.price || '';
+          return `
+            <button type="button" onclick="closeInstantSearchDropdown(); openDetailModal(${p.id});"
+                    class="w-full text-left px-3.5 py-2.5 hover:bg-red-50/50 transition flex items-center justify-between gap-2.5">
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-xs text-gray-900 truncate">${title}</div>
+                <div class="text-[10px] text-gray-500 truncate mt-0.5">${t.cats[p.category] || p.category} · <span class="text-red-600 font-bold">${priceStr}</span></div>
+              </div>
+              ${distBadge}
+            </button>
+          `;
+        }).join('');
+      }
+
+      if (livePlaces.length > 0) {
+        sectionsHTML += `<div class="bg-amber-50/90 px-3 py-1.5 text-[10px] font-extrabold text-amber-800 flex items-center justify-between"><span>${liveHeader}</span>${localTop.length === 0 ? '<button type="button" onclick="closeInstantSearchDropdown()" class="text-amber-700 px-1">✕</button>' : ''}</div>`;
+        sectionsHTML += livePlaces.map(item => {
+          const distStr = typeof item.distKm === 'number' ? formatShortDist(item.distKm) : '';
+          const distBadge = distStr
+            ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md shrink-0">📍 ${distStr}</span>`
+            : '';
+          return `
+            <button type="button" onclick="closeInstantSearchDropdown(); handleDiscoverySelect(${item.idx});"
+                    class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50/70 transition flex items-center justify-between gap-2.5">
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
+                <div class="text-[10px] text-gray-500 truncate mt-0.5">${item.addr}</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${distBadge}
+                <span class="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md">🧭</span>
+              </div>
+            </button>
+          `;
+        }).join('');
+      }
+
+      dd.innerHTML = sectionsHTML;
+      dd.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', (ev) => {
+      const wrap = document.getElementById('searchBoxWrapper');
+      if (wrap && !wrap.contains(ev.target)) {
+        closeInstantSearchDropdown();
+      }
+    });
+
     function handleSearchSubmit(e) {
       if (e) e.preventDefault();
       ensureMainTabVisible();
@@ -2038,6 +2239,7 @@
       if (kw) recordSearchHistory(kw);
       if (inp) inp.blur();
       document.getElementById('searchHistoryBar')?.classList.add('hidden');
+      closeInstantSearchDropdown();
       renderPosts(true);
       const disc = document.getElementById('smartDiscoverySection');
       if (disc && !disc.classList.contains('hidden')) {
@@ -2051,17 +2253,22 @@
       const val = document.getElementById('searchInput').value;
       document.getElementById('clearSearchBtn').classList.toggle('hidden', !val.trim());
       if (!val.trim()) {
+        closeInstantSearchDropdown();
         showSearchHistoryBar();
       } else {
         document.getElementById('searchHistoryBar')?.classList.add('hidden');
       }
       renderPosts(false);
+      if (val.trim()) {
+        renderInstantSearchDropdown(val.trim());
+      }
     }
 
     function clearSearchInput() {
       renderDisplayLimit = 80;
       document.getElementById('searchInput').value = '';
       document.getElementById('clearSearchBtn').classList.add('hidden');
+      closeInstantSearchDropdown();
       renderPosts();
     }
 
@@ -3194,7 +3401,7 @@
         post.price;
 
       const distBadgeHTML = typeof post._distKm === 'number'
-        ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-1.5 py-0.5 rounded">📍 ${post._distKm.toFixed(1)} km</span>`
+        ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-1.5 py-0.5 rounded">📍 ${formatShortDist(post._distKm)}</span>`
         : '';
 
       const freshBadgeHTML = !post.is_pinned
@@ -3680,15 +3887,17 @@
       lastFilteredList = filtered;
       document.getElementById('postCountBadge').innerText = `${filtered.length} ${t.countUnit}`;
 
+      const nearLocalCount = filtered.filter(x => typeof x._distKm === 'number' && x._distKm <= 3.0).length;
+
       if (filtered.length === 0) {
         if (loadMoreWrap) loadMoreWrap.classList.add('hidden');
         listEl.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-sm shadow-sm">${t.emptyList}</div>`;
-        scheduleSmartDiscovery(rawKeyword, city, 0, immediateDiscovery);
+        scheduleSmartDiscovery(rawKeyword, city, 0, immediateDiscovery, 0);
         return;
       }
 
       paintVisibleSlice();
-      scheduleSmartDiscovery(rawKeyword, city, filtered.length, immediateDiscovery);
+      scheduleSmartDiscovery(rawKeyword, city, filtered.length, immediateDiscovery, nearLocalCount);
     }
 
     function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
