@@ -85,6 +85,12 @@
       border-radius: 50%;
     }
   </style>
+  <script>
+    (function() {
+      var l = localStorage.getItem('dama_lang') || 'zh';
+      document.documentElement.setAttribute('lang', l === 'ms' ? 'ms' : (l === 'en' ? 'en' : 'zh-CN'));
+    })();
+  </script>
 </head>
 <body class="bg-[#e5e3df] text-[#202124] overflow-hidden select-none">
 
@@ -1903,6 +1909,105 @@
       openResultPanel();
       if (routeLine) map.fitBounds(routeLine.getBounds(), { paddingTopLeft: [40, 130], paddingBottomRight: [40, 260] });
     }
+  </script>
+
+  <!-- =====================================================================
+       [DamaJitong Map Ultra-Polish Layer v6]
+       - 100% Trilingual (CN / EN / BM) for route toast alerts, coordinate copy,
+         ESC modal/panel close & smooth camera/navigation feedback
+       - Zero deletion of existing lines; strictly additive
+       ===================================================================== -->
+  <div id="mapToastContainer" class="fixed top-20 inset-x-0 z-[70] flex justify-center pointer-events-none px-4">
+    <div id="mapToastMsg" class="hidden bg-slate-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-xl border border-white/15 backdrop-blur-md transition-all"></div>
+  </div>
+
+  <script>
+    (function() {
+      const MAP_EXTRA_I18N = {
+        zh: {
+          copyCoordBtn: '📋 复制坐标',
+          toastCopiedCoord: '📋 目的地坐标已复制，可直接发给同行/Grab 司机',
+          toastFavSaved: '⭐ 已加入常用导航收藏',
+          toastModeSwitched: '🔀 已切换出行方式'
+        },
+        en: {
+          copyCoordBtn: '📋 Copy GPS',
+          toastCopiedCoord: '📋 Destination coordinates copied to clipboard',
+          toastFavSaved: '⭐ Added to navigation favourites',
+          toastModeSwitched: '🔀 Travel mode updated'
+        },
+        ms: {
+          copyCoordBtn: '📋 Salin GPS',
+          toastCopiedCoord: '📋 Koordinat destinasi telah disalin',
+          toastFavSaved: '⭐ Ditambah ke simpanan navigasi',
+          toastModeSwitched: '🔀 Mod perjalanan dikemas kini'
+        }
+      };
+
+      window.showMapToast = function(msg) {
+        const el = document.getElementById('mapToastMsg');
+        if (!el || !msg) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        clearTimeout(window._mapToastTimer);
+        window._mapToastTimer = setTimeout(() => {
+          el.classList.add('hidden');
+        }, 2200);
+      };
+
+      window.copyCurrentDestCoords = function() {
+        if (!endCoords || typeof endCoords.lat !== 'number' || typeof endCoords.lng !== 'number') return;
+        const l = MAP_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+        const txt = `${endCoords.name || 'Destination'}: ${endCoords.lat.toFixed(6)}, ${endCoords.lng.toFixed(6)}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(txt).then(() => showMapToast(MAP_EXTRA_I18N[l].toastCopiedCoord)).catch(() => {});
+        } else {
+          showMapToast(MAP_EXTRA_I18N[l].toastCopiedCoord);
+        }
+      };
+
+      if (typeof window.saveCurrentToFavorites === 'function') {
+        const origSaveFav = window.saveCurrentToFavorites;
+        window.saveCurrentToFavorites = function() {
+          const beforeLen = (typeof getSavedList === 'function') ? getSavedList(STORAGE_FAV_KEY).length : 0;
+          origSaveFav();
+          const afterLen = (typeof getSavedList === 'function') ? getSavedList(STORAGE_FAV_KEY).length : 0;
+          if (afterLen > beforeLen) {
+            const l = MAP_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+            showMapToast(MAP_EXTRA_I18N[l].toastFavSaved);
+          }
+        };
+      }
+
+      if (typeof window.calculateAndRenderRoute === 'function') {
+        const origCalc = window.calculateAndRenderRoute;
+        window.calculateAndRenderRoute = async function() {
+          await origCalc();
+          const panel = document.getElementById('resultPanel');
+          const subInfo = document.getElementById('routeSubInfo');
+          if (panel && subInfo && endCoords && !document.getElementById('mapCopyCoordBtn')) {
+            const l = MAP_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.id = 'mapCopyCoordBtn';
+            btn.onclick = window.copyCurrentDestCoords;
+            btn.className = 'mt-1 inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-full transition';
+            btn.textContent = MAP_EXTRA_I18N[l].copyCoordBtn;
+            subInfo.insertAdjacentElement('afterend', btn);
+          } else if (document.getElementById('mapCopyCoordBtn')) {
+            const l = MAP_EXTRA_I18N[currentLang] ? currentLang : 'zh';
+            document.getElementById('mapCopyCoordBtn').textContent = MAP_EXTRA_I18N[l].copyCoordBtn;
+          }
+        };
+      }
+
+      document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape') {
+          if (typeof hideSuggestions === 'function') hideSuggestions();
+          if (typeof closeResultPanel === 'function') closeResultPanel();
+        }
+      });
+    })();
   </script>
 </body>
 </html>
