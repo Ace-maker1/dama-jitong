@@ -36,23 +36,74 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing textQuery' });
       }
 
+      const maxCount = Math.min(Math.max(Number(payload.maxResultCount) || 10, 1), 15);
       const body = {
         textQuery,
         languageCode: payload.languageCode || 'zh-CN',
         regionCode: payload.regionCode || 'MY',
-        maxResultCount: Math.min(Math.max(Number(payload.maxResultCount) || 6, 1), 10)
+        maxResultCount: maxCount
       };
 
       if (typeof payload.lat === 'number' && typeof payload.lng === 'number') {
+        const radiusMeters = Math.min(Math.max(Number(payload.radius) || 2500.0, 300.0), 50000.0);
         body.locationBias = {
           circle: {
             center: { latitude: payload.lat, longitude: payload.lng },
-            radius: Number(payload.radius) || 15000.0
+            radius: radiusMeters
           }
         };
+        if (payload.rankByDistance !== false) {
+          body.rankPreference = 'DISTANCE';
+        }
       }
 
       const googleRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.internationalPhoneNumber,places.nationalPhoneNumber,places.currentOpeningHours'
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await googleRes.json();
+      return res.status(googleRes.status).json(data);
+    }
+
+    if (action === 'places_nearby') {
+      const apiKey = process.env.GOOGLE_PLACES_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Missing GOOGLE_PLACES_KEY' });
+      }
+
+      const lat = Number(payload.lat);
+      const lng = Number(payload.lng);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        return res.status(400).json({ error: 'Invalid lat/lng' });
+      }
+
+      const radiusMeters = Math.min(Math.max(Number(payload.radius) || 1500.0, 200.0), 10000.0);
+      const maxCount = Math.min(Math.max(Number(payload.maxResultCount) || 10, 1), 20);
+      const includedTypes = Array.isArray(payload.includedTypes) && payload.includedTypes.length > 0
+        ? payload.includedTypes
+        : ['restaurant', 'cafe', 'meal_takeaway', 'bakery'];
+
+      const body = {
+        includedTypes,
+        maxResultCount: maxCount,
+        rankPreference: 'DISTANCE',
+        languageCode: payload.languageCode || 'zh-CN',
+        regionCode: payload.regionCode || 'MY',
+        locationRestriction: {
+          circle: {
+            center: { latitude: lat, longitude: lng },
+            radius: radiusMeters
+          }
+        }
+      };
+
+      const googleRes = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
