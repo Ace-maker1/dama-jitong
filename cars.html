@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>大马吉通 · 买卖车专场 (Direct Owner & Verified Cars Malaysia)</title>
+  <link rel="icon" type="image/png" sizes="1024x1024" href="/icon.png?v=4">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="/icon.png?v=4">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #eef0f4; -webkit-tap-highlight-color: transparent; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .glass-pill { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .card-elevated { transition: transform 0.16s ease, box-shadow 0.16s ease; }
+    .card-elevated:active { transform: scale(0.992); }
+  </style>
+</head>
+<body class="max-w-md mx-auto bg-[#f5f6f8] min-h-screen flex flex-col relative shadow-[0_0_40px_rgba(15,23,42,0.12)]">
+
+  <!-- 顶部导航横幅 -->
+  <header class="relative bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 text-white pt-3.5 pb-7 px-4 shadow-md overflow-hidden rounded-b-[26px]">
+    <svg class="absolute right-0 bottom-0 w-44 h-36 opacity-10 pointer-events-none" viewBox="0 0 200 160" fill="none">
+      <circle cx="155" cy="40" r="65" fill="white"/>
+      <path d="M20 120 L55 80 H145 L180 120 V145 H20 Z" fill="white"/>
+    </svg>
+
+    <div class="relative z-10 flex items-center justify-between gap-2 mb-2.5">
+      <div class="flex items-center gap-2 min-w-0">
+        <a href="/" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold shrink-0 transition">←</a>
+        <img src="/icon.png?v=4" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-9 h-9 rounded-xl object-cover border border-white/50 bg-[#F8F6F0] shrink-0">
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 id="carPageTitle" class="font-black text-[16px] tracking-tight truncate">大马吉通 · 买卖车</h1>
+            <span class="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded font-black shrink-0">ZERO FAKE</span>
+          </div>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <select id="carCityFilter" onchange="renderCars()" class="bg-transparent text-sky-200 text-[11px] font-semibold focus:outline-none cursor-pointer -ml-1 max-w-[130px]">
+              <option value="全马" class="text-gray-900">📍 全马各州</option>
+              <option value="槟城" class="text-gray-900">📍 槟城·威省 Penang</option>
+              <option value="吉隆坡" class="text-gray-900">📍 吉隆坡 KL</option>
+              <option value="雪兰莪" class="text-gray-900">📍 雪兰莪 Selangor</option>
+              <option value="柔佛" class="text-gray-900">📍 柔佛·新山 Johor</option>
+              <option value="霹雳" class="text-gray-900">📍 霹雳·怡保 Perak</option>
+              <option value="马六甲" class="text-gray-900">📍 马六甲 Melaka</option>
+              <option value="森美兰" class="text-gray-900">📍 森美兰 N.Sembilan</option>
+              <option value="吉打" class="text-gray-900">📍 吉打 Kedah</option>
+              <option value="彭亨" class="text-gray-900">📍 彭亨 Pahang</option>
+              <option value="沙巴" class="text-gray-900">📍 沙巴 Sabah</option>
+              <option value="砂拉越" class="text-gray-900">📍 砂拉越 Sarawak</option>
+            </select>
+            <button type="button" onclick="detectCarGps(true)" id="carGpsBtn" class="text-[10px] bg-white/15 hover:bg-white/25 px-2 py-0.5 rounded-full font-bold shrink-0">📍定位</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 三语切换 -->
+      <div class="flex items-center bg-black/30 glass-pill rounded-full p-0.5 text-[11px] font-bold shrink-0 border border-white/15">
+        <button onclick="setCarLang('zh')" id="cLang-zh" class="px-2 py-0.5 rounded-full bg-white text-blue-950 transition">CN</button>
+        <button onclick="setCarLang('en')" id="cLang-en" class="px-2 py-0.5 rounded-full text-white/85 transition">EN</button>
+        <button onclick="setCarLang('ms')" id="cLang-ms" class="px-2 py-0.5 rounded-full text-white/85 transition">BM</button>
+      </div>
+    </div>
+
+    <div class="relative z-10 flex items-center justify-between gap-2">
+      <div>
+        <div id="carHeroHeadline" class="font-extrabold text-sm text-white">拒绝头期钓鱼假价 · 实车实价看车直聊</div>
+        <div id="carHeroSub" class="text-[11px] text-sky-200/90 mt-0.5">车主直卖过滤 · 车况承诺标签 · 一键导航看车</div>
+      </div>
+      <button type="button" onclick="openSellCarModal()" id="topSellCarBtn" class="bg-gradient-to-r from-amber-400 to-orange-500 hover:opacity-95 text-slate-950 font-black text-xs px-3.5 py-2 rounded-full shadow-md shrink-0">
+        + 免费卖车
+      </button>
+    </div>
+  </header>
+
+  <!-- 搜索与核心优势开关卡片 -->
+  <section class="relative z-20 -mt-4 mx-3 bg-white rounded-2xl shadow-[0_6px_20px_rgba(15,23,42,0.07)] border border-gray-100 p-3 space-y-2.5">
+    <div class="flex items-center gap-1.5">
+      <div class="relative flex-1">
+        <input type="search" id="carSearchInput" oninput="renderCars()" placeholder="搜车型/品牌：如 Myvi, X50, Hilux, 七人车, 省油..."
+               class="w-full bg-gray-100/90 text-gray-800 text-xs rounded-full pl-8 pr-7 py-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition font-medium">
+        <span class="absolute left-3 top-2.5 text-gray-400 text-xs pointer-events-none">🔍</span>
+        <button type="button" id="clearCarSearchBtn" onclick="document.getElementById('carSearchInput').value=''; renderCars();" class="hidden absolute right-2.5 top-2 text-gray-400 text-xs font-bold">✕</button>
+      </div>
+      <button type="button" onclick="resetCarFilters()" id="resetCarBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-3 py-2.5 rounded-full shrink-0">重置</button>
+    </div>
+
+    <!-- 针对 Mudah 痛点的快捷过滤开关 -->
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
+      <button type="button" onclick="toggleQuickTag('ownerOnly')" id="pill-ownerOnly" class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold shrink-0 transition">
+        👤 仅看车主直卖
+      </button>
+      <button type="button" onclick="toggleQuickTag('noAccident')" id="pill-noAccident" class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-bold shrink-0 transition">
+        🛡️ 无大撞/无泡水
+      </button>
+      <button type="button" onclick="toggleQuickTag('fullLoan')" id="pill-fullLoan" class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold shrink-0 transition">
+        🏦 支持全额贷款
+      </button>
+      <button type="button" onclick="toggleQuickTag('puspakom')" id="pill-puspakom" class="px-2.5 py-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200 font-bold shrink-0 transition">
+        ✅ 可Puspakom验车
+      </button>
+    </div>
+
+    <!-- 车型图标快速筛选条 -->
+    <div id="bodyTypeBar" class="grid grid-cols-6 gap-1 text-center pt-0.5">
+      <button type="button" onclick="selectBodyType('')" data-body="" class="body-btn py-1.5 rounded-xl bg-blue-600 text-white font-bold text-[10px]">全部</button>
+      <button type="button" onclick="selectBodyType('Sedan')" data-body="Sedan" class="body-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">轿车</button>
+      <button type="button" onclick="selectBodyType('SUV')" data-body="SUV" class="body-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">SUV</button>
+      <button type="button" onclick="selectBodyType('MPV')" data-body="MPV" class="body-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">七人车</button>
+      <button type="button" onclick="selectBodyType('Pickup')" data-body="Pickup" class="body-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">皮卡</button>
+      <button type="button" onclick="selectBodyType('Hatchback')" data-body="Hatchback" class="body-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]">掀背车</button>
+    </div>
+  </section>
+
+  <!-- 专业多维过滤器（品牌 + 全车总价 + 出厂年份 + 公里数 + 变速箱 + 排序） -->
+  <section class="mx-3 mt-2.5 bg-white rounded-2xl p-3 shadow-xs border border-gray-100 space-y-2 text-xs">
+    <div class="grid grid-cols-3 gap-1.5">
+      <select id="carBrandFilter" onchange="renderCars()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">全部品牌</option>
+        <option value="Perodua">Perodua</option>
+        <option value="Proton">Proton</option>
+        <option value="Toyota">Toyota</option>
+        <option value="Honda">Honda</option>
+        <option value="Nissan">Nissan</option>
+        <option value="Mazda">Mazda</option>
+        <option value="BMW">BMW</option>
+        <option value="Mercedes">Mercedes-Benz</option>
+        <option value="Hyundai">Hyundai / Kia</option>
+        <option value="Mitsubishi">Mitsubishi</option>
+        <option value="BYD">BYD / EV电车</option>
+        <option value="Other">其他品牌</option>
+      </select>
+
+      <select id="carPriceFilter" onchange="renderCars()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">全车总价 RM</option>
+        <option value="0-20000">RM 20k 以下</option>
+        <option value="20000-45000">RM 20k - 45k</option>
+        <option value="45000-80000">RM 45k - 80k</option>
+        <option value="80000-150000">RM 80k - 150k</option>
+        <option value="150000-9999999">RM 150k 以上</option>
+      </select>
+
+      <select id="carYearFilter" onchange="renderCars()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">出厂年份</option>
+        <option value="2023-2026">2023 - 2026</option>
+        <option value="2020-2022">2020 - 2022</option>
+        <option value="2016-2019">2016 - 2019</option>
+        <option value="2010-2015">2010 - 2015</option>
+        <option value="1990-2009">2009 及更早</option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-3 gap-1.5">
+      <select id="carMileageFilter" onchange="renderCars()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">公里数 Mileage</option>
+        <option value="30000">30,000 km 内</option>
+        <option value="60000">60,000 km 内</option>
+        <option value="100000">100,000 km 内</option>
+        <option value="150000">150,000 km 内</option>
+      </select>
+
+      <select id="carTransFilter" onchange="renderCars()" class="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-[11px] font-semibold">
+        <option value="">变速箱</option>
+        <option value="Auto">Auto 自动挡</option>
+        <option value="Manual">Manual 手动挡</option>
+      </select>
+
+      <select id="carSortBy" onchange="renderCars()" class="bg-blue-50/70 border border-blue-200 text-blue-950 rounded-xl px-2 py-1.5 text-[11px] font-bold">
+        <option value="default">排序：推荐+最新</option>
+        <option value="nearest">距离看车点最近</option>
+        <option value="price_asc">总价从低到高</option>
+        <option value="price_desc">总价从高到低</option>
+        <option value="year_desc">年份从新到旧</option>
+        <option value="mileage_asc">公里数从少到多</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- 车辆列表标题栏 -->
+  <div class="mx-4 mt-3.5 mb-2 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-1.5 h-4 bg-blue-600 rounded-full"></span>
+      <h2 id="carListHeading" class="font-black text-gray-800 text-sm">精选认证与车主直卖车源</h2>
+      <span id="carCountBadge" class="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold">0 辆</span>
+    </div>
+    <span id="carGpsStatusText" class="text-[10px] text-emerald-700 font-semibold"></span>
+  </div>
+
+  <!-- 车源列表容器 -->
+  <main id="carListContainer" class="px-3 pb-24 space-y-3 flex-1">
+    <div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-xs shadow-xs">正在加载全马实时车源...</div>
+  </main>
+
+  <!-- 底部快捷导航 -->
+  <nav class="fixed bottom-0 max-w-md w-full bg-white/95 glass-pill border-t border-gray-200 grid grid-cols-3 items-center py-2 z-30 text-center">
+    <a href="/" class="flex flex-col items-center text-gray-500 hover:text-red-600">
+      <span class="text-base">🏠</span>
+      <span class="text-[10px] font-bold mt-0.5">返回首页</span>
+    </a>
+    <button type="button" onclick="openSellCarModal()" class="flex flex-col items-center -mt-5">
+      <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xl font-black shadow-lg border-4 border-white">+</div>
+      <span class="text-[10px] font-extrabold text-blue-700 mt-0.5">发布卖车</span>
+    </button>
+    <a href="/map.html" class="flex flex-col items-center text-gray-500 hover:text-emerald-600">
+      <span class="text-base">🧭</span>
+      <span class="text-[10px] font-bold mt-0.5">导航看车</span>
+    </a>
+  </nav>
+
+  <!-- 车辆详情弹窗（多图轮播 + 车况参数表 + 月供估算 + 一键导航看车 + WhatsApp 问车） -->
+  <div id="carDetailModal" onclick="closeCarDetail()" class="fixed inset-0 bg-black/65 z-50 hidden flex items-end sm:items-center justify-center">
+    <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 max-h-[92vh] overflow-y-auto relative">
+      <button onclick="closeCarDetail()" class="absolute right-3.5 top-3.5 w-8 h-8 rounded-full bg-black/65 text-white flex items-center justify-center font-bold z-20">✕</button>
+      <div id="carDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- 发布卖车表单弹窗（防钓鱼总价强制校验 + 车况承诺勾选 + 多图上传） -->
+  <div id="sellCarModal" onclick="closeSellCarModal()" class="fixed inset-0 bg-black/65 z-50 hidden flex items-end sm:items-center justify-center">
+    <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="font-black text-base text-gray-900">🚗 发布买卖车信息</h3>
+          <p class="text-[11px] text-gray-500">请填写全车实价（禁止填写头期冒充车价，违者下架）</p>
+        </div>
+        <button type="button" onclick="closeSellCarModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <form id="sellCarForm" onsubmit="submitCarListing(event)" class="space-y-3 text-xs">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-gray-700">实拍车辆照片（最多 6 张，建议含外观+内饰+里程表）</label>
+            <span id="carPhotoCount" class="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">0 / 6</span>
+          </div>
+          <div id="carPhotoGrid" class="grid grid-cols-3 gap-2"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">卖家身份 *</label>
+            <select id="fSellerType" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="owner">👤 个人车主直卖 (Direct Owner)</option>
+              <option value="dealer">🏢 认证二手车行 (Dealer)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">看车所在州属 *</label>
+            <select id="fCarCity" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="槟城">槟城·威省 Penang</option>
+              <option value="吉隆坡">吉隆坡 KL</option>
+              <option value="雪兰莪">雪兰莪 Selangor</option>
+              <option value="柔佛">柔佛·新山 Johor</option>
+              <option value="霹雳">霹雳·怡保 Perak</option>
+              <option value="马六甲">马六甲 Melaka</option>
+              <option value="森美兰">森美兰 N.Sembilan</option>
+              <option value="吉打">吉打 Kedah</option>
+              <option value="彭亨">彭亨 Pahang</option>
+              <option value="沙巴">沙巴 Sabah</option>
+              <option value="砂拉越">砂拉越 Sarawak</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">汽车品牌 *</label>
+            <select id="fBrand" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="Perodua">Perodua</option>
+              <option value="Proton">Proton</option>
+              <option value="Toyota">Toyota</option>
+              <option value="Honda">Honda</option>
+              <option value="Nissan">Nissan</option>
+              <option value="Mazda">Mazda</option>
+              <option value="BMW">BMW</option>
+              <option value="Mercedes">Mercedes-Benz</option>
+              <option value="Hyundai">Hyundai / Kia</option>
+              <option value="Mitsubishi">Mitsubishi</option>
+              <option value="BYD">BYD / EV电车</option>
+              <option value="Other">其他品牌</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">车型结构 *</label>
+            <select id="fBodyType" required class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="Sedan">轿车 Sedan</option>
+              <option value="Hatchback">掀背车 Hatchback</option>
+              <option value="SUV">休旅车 SUV</option>
+              <option value="MPV">七人车 MPV</option>
+              <option value="Pickup">皮卡 Pickup (4x4)</option>
+              <option value="Other">跑车 / 商用 / 其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">具体车款与版本 *</label>
+          <input type="text" id="fModelTitle" required placeholder="例如：Perodua Myvi 1.5 AV (Full Spec) 一手女车主"
+                 class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">出厂年份 *</label>
+            <input type="number" id="fYear" required min="1985" max="2026" placeholder="2021"
+                   class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">行驶公里数 *</label>
+            <input type="number" id="fMileage" required min="0" max="999999" placeholder="45000"
+                   class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">变速箱 *</label>
+            <select id="fTrans" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5 font-semibold">
+              <option value="Auto">Auto 自动</option>
+              <option value="Manual">Manual 手动</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-red-700 mb-1">全车实价 (RM) * <span class="font-normal text-[10px]">(非头期)</span></label>
+            <input type="number" id="fFullPrice" required min="2500" placeholder="例如：38800"
+                   class="w-full border border-red-200 bg-red-50/30 rounded-xl p-2.5 font-bold text-red-700">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">WhatsApp 联系电话 *</label>
+            <input type="text" id="fWhatsapp" required placeholder="0123456789"
+                   class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+          </div>
+        </div>
+
+        <!-- 车况承诺勾选（针对 Mudah 信息不透明痛点） -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-2.5 space-y-1.5">
+          <div class="font-bold text-gray-700 text-[11px]">🛡️ 车况承诺标签（可多选，提升成交率）：</div>
+          <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkNoAccident" checked class="rounded text-blue-600"> 无重大事故/无泡水</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkPuspakom" checked class="rounded text-blue-600"> 支持 Puspakom 验车</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkFullLoan" class="rounded text-blue-600"> 可安排银行贷款</label>
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="chkServiceRec" class="rounded text-blue-600"> 附原厂保养记录</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-gray-700">看车地点 / 车行地址（支持导航）</label>
+            <button type="button" onclick="captureCarGps()" id="fCarGpsBtn" class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">📍 抓当前定位</button>
+          </div>
+          <input type="text" id="fCarAddr" placeholder="例如：Tanjung Tokong / Bukit Mertajam 车行或约看地点"
+                 class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5">
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">车况补充说明</label>
+          <textarea id="fCarDesc" rows="2" placeholder="说明引擎波箱状态、冷气、轮胎新旧、是否可议价..."
+                    class="w-full border border-gray-200 bg-gray-50 rounded-xl p-2.5"></textarea>
+        </div>
+
+        <button type="submit" id="carSubmitBtn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-black py-3 rounded-xl shadow-md hover:opacity-95 transition">
+          立即免费发布车源
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://uhgukdqggvyaepkvlugg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_mJ6eEsaqtRcuikGbQiUEPQ_-tLIRrHU';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentLang = localStorage.getItem('dama_lang') || 'zh';
+    let allCarPosts = [];
+    let selectedBodyType = '';
+    let quickFlags = { ownerOnly: false, noAccident: false, fullLoan: false, puspakom: false };
+    let userGpsCoords = null;
+    let carPhotoItems = [];
+    let capturedCarCoords = null;
+
+    try {
+      const savedLoc = JSON.parse(localStorage.getItem('dama_last_live_loc_v1') || 'null');
+      if (savedLoc && typeof savedLoc.lat === 'number' && typeof savedLoc.lng === 'number') {
+        userGpsCoords = { lat: savedLoc.lat, lng: savedLoc.lng };
+      }
+    } catch (_) {}
+
+    function setCarLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('dama_lang', lang);
+      ['zh', 'en', 'ms'].forEach(l => {
+        const b = document.getElementById(`cLang-${l}`);
+        if (b) b.className = l === lang ? 'px-2 py-0.5 rounded-full bg-white text-blue-950 transition' : 'px-2 py-0.5 rounded-full text-white/85 transition';
+      });
+      const titles = {
+        zh: ['大马吉通 · 买卖车', '拒绝头期钓鱼假价 · 实车实价看车直聊', '车主直卖过滤 · 车况承诺标签 · 一键导航看车', '+ 免费卖车', '精选认证与车主直卖车源'],
+        en: ['DamaJitong · Cars', 'No Fake Downpayment Prices · Direct Owner & Verified Cars', 'Owner Filter · Inspection Badges · 1-Tap Navigation', '+ Sell Car', 'Verified & Direct Owner Cars'],
+        ms: ['DamaJitong · Kereta', 'Tiada Harga Deposit Palsu · Terus Pemilik & Sah', 'Tapis Pemilik · Jaminan Kondisi · Navigasi Terus', '+ Jual Kereta', 'Kereta Terus Pemilik & Disahkan']
+      };
+      const t = titles[lang] || titles.zh;
+      document.getElementById('carPageTitle').innerText = t[0];
+      document.getElementById('carHeroHeadline').innerText = t[1];
+      document.getElementById('carHeroSub').innerText = t[2];
+      document.getElementById('topSellCarBtn').innerText = t[3];
+      document.getElementById('carListHeading').innerText = t[4];
+      renderCars();
+    }
+
+    function detectCarGps(showAlert = false) {
+      if (!navigator.geolocation) return;
+      const btn = document.getElementById('carGpsBtn');
+      if (btn) btn.innerText = '⏳...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userGpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (btn) btn.innerText = '✅已定位';
+          document.getElementById('carGpsStatusText').innerText = '📍 已按当前位置计算看车距离';
+          renderCars();
+        },
+        () => {
+          if (btn) btn.innerText = '📍定位';
+          if (showAlert) alert('请允许浏览器定位权限以计算看车距离。');
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function calcKm(lat1, lng1, lat2, lng2) {
+      if ([lat1, lng1, lat2, lng2].some(v => typeof v !== 'number' || Number.isNaN(v))) return null;
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function parseCarStructuredMeta(post) {
+      const rawDesc = `${post.description || ''} ${post.desc_zh || ''}`;
+      let meta = {};
+      const carMatch = rawDesc.match(/\[\[CAR:(\{[\s\S]*?\})\]\]/);
+      if (carMatch) {
+        try { meta = JSON.parse(carMatch[1]); } catch (_) {}
+      }
+
+      const blob = `${post.title || ''} ${rawDesc}`;
+      const priceNum = Number(meta.price) || Number(String(post.price || '').replace(/,/g, '').match(/(\d+(?:\.\d+)?)/)?.[1] || 0);
+      const yearNum = Number(meta.year) || Number(blob.match(/\b(199\d|20[0-2]\d)\b/)?.[1] || 0);
+      const mileageNum = Number(meta.mileage) || (() => {
+        const m = blob.replace(/,/g, '').match(/(\d+(?:\.\d+)?)\s*(?:k\s*km|km|公里)/i);
+        if (!m) return 0;
+        const v = Number(m[1]);
+        return v < 500 ? v * 1000 : v;
+      })();
+
+      let brand = meta.brand || '';
+      if (!brand) {
+        const bList = ['Perodua', 'Proton', 'Toyota', 'Honda', 'Nissan', 'Mazda', 'BMW', 'Mercedes', 'Hyundai', 'Kia', 'Mitsubishi', 'BYD'];
+        brand = bList.find(b => new RegExp(`\\b${b}\\b`, 'i').test(blob)) || 'Other';
+      }
+
+      let bodyType = meta.bodyType || '';
+      if (!bodyType) {
+        if (/suv|x50|x70|cx-5|cr-v|hr-v|ativa|aruz|fortuner/i.test(blob)) bodyType = 'SUV';
+        else if (/mpv|alza|vellfire|alphard|starex|innova|exora|七人车/i.test(blob)) bodyType = 'MPV';
+        else if (/pickup|4x4|hilux|triton|ranger|navara|d-max|皮卡/i.test(blob)) bodyType = 'Pickup';
+        else if (/hatchback|myvi|axia|jazz|yaris|swift|golf|掀背/i.test(blob)) bodyType = 'Hatchback';
+        else bodyType = 'Sedan';
+      }
+
+      let coords = null;
+      const mapM = rawDesc.match(/\[\[MAP:([^,\]]*),([^\]]*)\|/);
+      if (mapM && !Number.isNaN(parseFloat(mapM[1])) && !Number.isNaN(parseFloat(mapM[2]))) {
+        coords = { lat: parseFloat(mapM[1]), lng: parseFloat(mapM[2]) };
+      }
+
+      const imgs = [];
+      if (post.image_url) imgs.push(post.image_url);
+      const imgM = rawDesc.match(/\[\[IMGS:(\[[\s\S]*?\])\]\]/);
+      if (imgM) {
+        try {
+          const arr = JSON.parse(imgM[1]);
+          if (Array.isArray(arr)) arr.forEach(u => { if (u && !imgs.includes(u)) imgs.push(u); });
+        } catch (_) {}
+      }
+
+      const cleanDesc = rawDesc
+        .replace(/\[\[CAR:\{[\s\S]*?\}\]\]/g, '')
+        .replace(/\[\[IMGS:[\s\S]*?\]\]/g, '')
+        .replace(/\[\[MAP:[^\]]+\]\]/g, '')
+        .trim();
+
+      return {
+        sellerType: meta.sellerType || (/direct owner|车主直卖|一手车主/i.test(blob) ? 'owner' : 'dealer'),
+        brand,
+        bodyType,
+        year: yearNum,
+        mileage: mileageNum,
+        trans: meta.trans || (/manual|手动/i.test(blob) ? 'Manual' : 'Auto'),
+        price: priceNum,
+        noAccident: meta.noAccident !== undefined ? Boolean(meta.noAccident) : /无大撞|无泡水|accident free/i.test(blob),
+        puspakom: meta.puspakom !== undefined ? Boolean(meta.puspakom) : /puspakom/i.test(blob),
+        fullLoan: meta.fullLoan !== undefined ? Boolean(meta.fullLoan) : /full loan|全额贷款|bank loan/i.test(blob),
+        serviceRec: meta.serviceRec !== undefined ? Boolean(meta.serviceRec) : /保养记录|service record/i.test(blob),
+        coords,
+        imgs,
+        cleanDesc
+      };
+    }
+
+    function isVehiclePost(post) {
+      const blob = `${post.title || ''} ${post.description || ''}`;
+      if (/\[\[CAR:\{/.test(blob)) return true;
+      const mTypeHint = /(汽车维修|洗车|轮胎|汽车冷气|喷漆|钣金|bengkel|tyre|car wash|auto repair)/i.test(blob);
+      if (mTypeHint) return false;
+      return /(二手车|新车|买车|卖车|车主直卖|perodua|proton|myvi|axia|bezza|saga|x50|x70|vios|city|civic|hilux|kereta|used car)/i.test(blob);
+    }
+
+    async function loadCarPosts() {
+      const { data, error } = await supabaseClient
+        .from('posts')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(1000);
+
+      if (error) {
+        document.getElementById('carListContainer').innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-red-500 text-xs">加载失败：${error.message}</div>`;
+        return;
+      }
+
+      allCarPosts = (data || []).filter(isVehiclePost).map(p => ({
+        ...p,
+        _car: parseCarStructuredMeta(p)
+      }));
+
+      renderCars();
+    }
+
+    function toggleQuickTag(key) {
+      quickFlags[key] = !quickFlags[key];
+      const btn = document.getElementById(`pill-${key}`);
+      if (btn) {
+        if (quickFlags[key]) btn.classList.add('ring-2', 'ring-offset-1', 'ring-blue-600');
+        else btn.classList.remove('ring-2', 'ring-offset-1', 'ring-blue-600');
+      }
+      renderCars();
+    }
+
+    function selectBodyType(bType) {
+      selectedBodyType = bType;
+      document.querySelectorAll('.body-btn').forEach(btn => {
+        const active = btn.dataset.body === bType;
+        btn.className = active
+          ? 'body-btn py-1.5 rounded-xl bg-blue-600 text-white font-bold text-[10px]'
+          : 'body-btn py-1.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-[10px]';
+      });
+      renderCars();
+    }
+
+    function resetCarFilters() {
+      document.getElementById('carSearchInput').value = '';
+      document.getElementById('carCityFilter').value = '全马';
+      document.getElementById('carBrandFilter').value = '';
+      document.getElementById('carPriceFilter').value = '';
+      document.getElementById('carYearFilter').value = '';
+      document.getElementById('carMileageFilter').value = '';
+      document.getElementById('carTransFilter').value = '';
+      document.getElementById('carSortBy').value = 'default';
+      quickFlags = { ownerOnly: false, noAccident: false, fullLoan: false, puspakom: false };
+      ['ownerOnly', 'noAccident', 'fullLoan', 'puspakom'].forEach(k => document.getElementById(`pill-${k}`)?.classList.remove('ring-2', 'ring-offset-1', 'ring-blue-600'));
+      selectBodyType('');
+    }
+
+    function renderCars() {
+      const kw = (document.getElementById('carSearchInput').value || '').trim().toLowerCase();
+      document.getElementById('clearCarSearchBtn').classList.toggle('hidden', !kw);
+
+      const city = document.getElementById('carCityFilter').value;
+      const brand = document.getElementById('carBrandFilter').value;
+      const priceRange = document.getElementById('carPriceFilter').value;
+      const yearRange = document.getElementById('carYearFilter').value;
+      const maxMileage = Number(document.getElementById('carMileageFilter').value || 0);
+      const trans = document.getElementById('carTransFilter').value;
+      const sortBy = document.getElementById('carSortBy').value;
+
+      const filtered = allCarPosts.filter(p => {
+        const c = p._car;
+        p._distKm = (userGpsCoords && c.coords) ? calcKm(userGpsCoords.lat, userGpsCoords.lng, c.coords.lat, c.coords.lng) : null;
+
+        if (city !== '全马' && p.city !== city) return false;
+        if (selectedBodyType && c.bodyType !== selectedBodyType) return false;
+        if (brand && c.brand.toLowerCase() !== brand.toLowerCase()) return false;
+        if (trans && c.trans !== trans) return false;
+
+        if (quickFlags.ownerOnly && c.sellerType !== 'owner') return false;
+        if (quickFlags.noAccident && !c.noAccident) return false;
+        if (quickFlags.fullLoan && !c.fullLoan) return false;
+        if (quickFlags.puspakom && !c.puspakom) return false;
+
+        if (priceRange && c.price > 0) {
+          const [minP, maxP] = priceRange.split('-').map(Number);
+          if (c.price < minP || c.price > maxP) return false;
+        }
+        if (yearRange && c.year > 0) {
+          const [minY, maxY] = yearRange.split('-').map(Number);
+          if (c.year < minY || c.year > maxY) return false;
+        }
+        if (maxMileage > 0 && c.mileage > 0 && c.mileage > maxMileage) return false;
+
+        if (kw) {
+          const blob = `${p.title || ''} ${c.brand} ${c.bodyType} ${c.year} ${c.cleanDesc} ${p.city || ''}`.toLowerCase();
+          const kwExpanded = kw === '七人车' ? 'mpv' : (kw === '皮卡' ? 'pickup' : (kw === '省油' ? 'perodua' : kw));
+          if (!blob.includes(kw) && !blob.includes(kwExpanded)) return false;
+        }
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        const ca = a._car, cb = b._car;
+        if (sortBy === 'nearest') return (a._distKm ?? 9999) - (b._distKm ?? 9999);
+        if (sortBy === 'price_asc') return (ca.price || 9999999) - (cb.price || 9999999);
+        if (sortBy === 'price_desc') return (cb.price || -1) - (ca.price || -1);
+        if (sortBy === 'year_desc') return (cb.year || 0) - (ca.year || 0);
+        if (sortBy === 'mileage_asc') return (ca.mileage || 9999999) - (cb.mileage || 9999999);
+        const pinDiff = (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0);
+        if (pinDiff !== 0) return pinDiff;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      document.getElementById('carCountBadge').innerText = `${filtered.length} 辆`;
+      const container = document.getElementById('carListContainer');
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center shadow-xs border border-gray-100 space-y-2">
+            <div class="text-2xl">🚗</div>
+            <div class="font-bold text-gray-800 text-sm">当前筛选条件下暂无匹配车源</div>
+            <div class="text-xs text-gray-500">你可以放宽年份/预算条件，或点击下方免费发布你的爱车！</div>
+            <button type="button" onclick="openSellCarModal()" class="mt-2 bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-full">+ 立即发布卖车</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const c = p._car;
+        const estMonthly = c.price > 0 ? Math.round((c.price * 0.9 * (1 + 0.032 * 7)) / 84) : null;
+        const distBadge = typeof p._distKm === 'number'
+          ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">📍 ${p._distKm < 1 ? Math.round(p._distKm * 1000) + 'm' : p._distKm.toFixed(1) + 'km'}</span>`
+          : '';
+        const sellerBadge = c.sellerType === 'owner'
+          ? `<span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">👤 车主直卖</span>`
+          : `<span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">🏢 认证车行</span>`;
+
+        const imgBlock = c.imgs.length > 0
+          ? `<div class="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
+               <img src="${c.imgs[0]}" loading="lazy" class="w-full h-full object-cover" />
+               <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                 ${p.is_pinned ? '<span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded">置顶</span>' : ''}
+                 ${sellerBadge}
+               </div>
+               ${c.imgs.length > 1 ? `<span class="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">📷 ${c.imgs.length}图</span>` : ''}
+             </div>`
+          : `<div class="px-3.5 pt-3 flex items-center gap-1.5">${p.is_pinned ? '<span class="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded">置顶</span>' : ''}${sellerBadge}</div>`;
+
+        return `
+          <div onclick="openCarDetail(${p.id})" class="card-elevated bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md border ${p.is_pinned ? 'border-amber-300' : 'border-gray-100'} cursor-pointer">
+            ${imgBlock}
+            <div class="p-3.5 space-y-2">
+              <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+                <span class="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded">${c.brand} · ${c.bodyType}</span>
+                ${c.year ? `<span class="bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded">📅 ${c.year}年</span>` : ''}
+                ${c.mileage ? `<span class="bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded">🛣️ ${Math.round(c.mileage / 1000)}k km</span>` : ''}
+                <span class="bg-gray-100 text-gray-600 font-semibold px-1.5 py-0.5 rounded">${c.trans}</span>
+                ${distBadge}
+              </div>
+
+              <h3 class="font-black text-gray-900 text-[15px] leading-snug line-clamp-2">${p.title}</h3>
+
+              <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+                ${c.noAccident ? '<span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold">🛡️ 无大撞/泡水</span>' : ''}
+                ${c.puspakom ? '<span class="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded font-semibold">✅ 可验车</span>' : ''}
+                ${c.fullLoan ? '<span class="text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded font-semibold">🏦 可贷款</span>' : ''}
+              </div>
+
+              <div class="flex items-end justify-between pt-2 border-t border-gray-100">
+                <div>
+                  <div class="text-[10px] text-gray-400">全车实价 (Full Price)</div>
+                  <div class="text-red-600 font-black text-lg leading-tight">${c.price > 0 ? 'RM ' + c.price.toLocaleString() : p.price}</div>
+                </div>
+                <div class="text-right">
+                  ${estMonthly ? `<div class="text-[10px] text-gray-500">参考月供约 <b class="text-gray-800">RM ${estMonthly}/月</b></div>` : ''}
+                  <div class="text-[10px] text-gray-400 mt-0.5">📍 ${p.city || '全马'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openCarDetail(id) {
+      const p = allCarPosts.find(x => x.id === id);
+      if (!p) return;
+      const c = p._car;
+      const estMonthly = c.price > 0 ? Math.round((c.price * 0.9 * (1 + 0.032 * 7)) / 84) : null;
+      const waDigits = String(p.whatsapp || '').replace(/[^0-9]/g, '');
+      const cleanWa = waDigits.startsWith('01') ? ('60' + waDigits.slice(1)) : waDigits;
+      const waMsg = `你好，我在【大马吉通·买卖车】看到你的 ${c.year || ''} ${p.title}（标价 RM ${c.price || p.price}），请问车还在吗？可以约看车吗？`;
+      const waUrl = cleanWa.startsWith('60') ? `https://wa.me/${cleanWa}?text=${encodeURIComponent(waMsg)}` : '#';
+      const navUrl = c.coords
+        ? `/map.html?dest=${encodeURIComponent(p.title)}&lat=${c.coords.lat}&lng=${c.coords.lng}`
+        : `/map.html?dest=${encodeURIComponent(p.title + ' ' + (p.city || 'Malaysia'))}`;
+
+      const photosHtml = c.imgs.length > 0
+        ? `<div class="space-y-2 mb-3">
+             <img id="carDetailHeroImg" src="${c.imgs[0]}" class="w-full aspect-[4/3] object-cover rounded-2xl border border-gray-200" />
+             ${c.imgs.length > 1 ? `<div class="flex gap-1.5 overflow-x-auto no-scrollbar">${c.imgs.map(u => `<img src="${u}" onclick="document.getElementById('carDetailHeroImg').src='${u}'" class="w-14 h-14 rounded-xl object-cover border border-gray-200 cursor-pointer shrink-0">`).join('')}</div>` : ''}
+           </div>`
+        : '';
+
+      document.getElementById('carDetailBody').innerHTML = `
+        ${photosHtml}
+        <div class="flex items-center gap-1.5 flex-wrap mb-1.5">
+          <span class="text-[10px] font-extrabold ${c.sellerType === 'owner' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} px-2 py-0.5 rounded">${c.sellerType === 'owner' ? '👤 个人车主直卖' : '🏢 认证车行'}</span>
+          <span class="text-xs text-gray-500">📍 ${p.city || '全马'}</span>
+        </div>
+        <h3 class="font-black text-gray-900 text-base leading-snug mb-2">${p.title}</h3>
+        <div class="bg-red-50/70 border border-red-200 rounded-2xl p-3 flex items-center justify-between mb-3">
+          <div>
+            <div class="text-[10px] text-red-700 font-bold">全车实价（非头期钓鱼价）</div>
+            <div class="text-red-600 font-black text-xl">${c.price > 0 ? 'RM ' + c.price.toLocaleString() : p.price}</div>
+          </div>
+          ${estMonthly ? `<div class="text-right text-[11px] text-gray-600">银行参考月供<br><b class="text-gray-900 text-sm">~RM ${estMonthly}/月</b></div>` : ''}
+        </div>
+
+        <div class="grid grid-cols-4 gap-1.5 text-center bg-gray-50 rounded-2xl p-2.5 border border-gray-200/80 mb-3 text-[11px]">
+          <div><div class="text-gray-400 text-[10px]">品牌</div><div class="font-extrabold text-gray-800">${c.brand}</div></div>
+          <div><div class="text-gray-400 text-[10px]">年份</div><div class="font-extrabold text-gray-800">${c.year || '--'}</div></div>
+          <div><div class="text-gray-400 text-[10px]">公里数</div><div class="font-extrabold text-gray-800">${c.mileage ? Math.round(c.mileage / 1000) + 'k km' : '--'}</div></div>
+          <div><div class="text-gray-400 text-[10px]">变速箱</div><div class="font-extrabold text-gray-800">${c.trans}</div></div>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 mb-3 text-[11px]">
+          ${c.noAccident ? '<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold">🛡️ 无大撞/无泡水</span>' : ''}
+          ${c.puspakom ? '<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-lg font-bold">✅ 支持 Puspakom 验车</span>' : ''}
+          ${c.fullLoan ? '<span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-lg font-bold">🏦 支持银行贷款</span>' : ''}
+          ${c.serviceRec ? '<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-lg font-bold">📒 附原厂保养记录</span>' : ''}
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl p-3 text-xs text-gray-700 whitespace-pre-line leading-relaxed mb-3">${c.cleanDesc || '卖家未填写额外补充描述。'}</div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <a href="${navUrl}" class="py-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs text-center">🧭 导航去看车</a>
+          <a href="${waUrl}" target="_blank" class="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs text-center shadow-xs">💬 WhatsApp 约看车</a>
+        </div>
+      `;
+      document.getElementById('carDetailModal').classList.remove('hidden');
+    }
+
+    function closeCarDetail() {
+      document.getElementById('carDetailModal').classList.add('hidden');
+    }
+
+    function renderCarPhotoGrid() {
+      const grid = document.getElementById('carPhotoGrid');
+      document.getElementById('carPhotoCount').innerText = `${carPhotoItems.length} / 6`;
+      const cards = carPhotoItems.map((it, idx) => `
+        <div class="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
+          <img src="${it.dataUrl}" class="w-full h-full object-cover" />
+          <button type="button" onclick="carPhotoItems.splice(${idx},1); renderCarPhotoGrid();" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 text-white text-[10px] font-bold">✕</button>
+        </div>
+      `).join('');
+      const addSlot = carPhotoItems.length < 6
+        ? `<label class="aspect-square border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100">
+             <span class="text-xl">📷</span>
+             <span class="text-[10px] text-gray-500 mt-0.5">添加实拍</span>
+             <input type="file" accept="image/*" multiple onchange="onCarFilesPicked(event)" class="hidden" />
+           </label>`
+        : '';
+      grid.innerHTML = cards + addSlot;
+    }
+
+    function onCarFilesPicked(ev) {
+      const files = Array.from(ev.target.files || []).slice(0, 6 - carPhotoItems.length);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          carPhotoItems.push({ file, dataUrl: e.target.result });
+          renderCarPhotoGrid();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function openSellCarModal() {
+      renderCarPhotoGrid();
+      document.getElementById('sellCarModal').classList.remove('hidden');
+    }
+
+    function closeSellCarModal() {
+      document.getElementById('sellCarModal').classList.add('hidden');
+    }
+
+    function captureCarGps() {
+      if (!navigator.geolocation) return;
+      const btn = document.getElementById('fCarGpsBtn');
+      btn.innerText = '⏳...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          capturedCarCoords = { lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)) };
+          btn.innerText = '✅ 已锁定坐标';
+        },
+        () => { btn.innerText = '📍 抓当前定位'; },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function compressCarImg(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if (w > 1080) { h = Math.round((h * 1080) / w); w = 1080; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.8);
+          };
+        };
+      });
+    }
+
+    async function submitCarListing(e) {
+      e.preventDefault();
+      const fullPrice = Number(document.getElementById('fFullPrice').value || 0);
+      if (fullPrice < 2500) {
+        alert('⚠️ 为杜绝头期钓鱼假价，全车实价不得低于 RM 2,500，请填写完整车价！');
+        return;
+      }
+
+      let wa = document.getElementById('fWhatsapp').value.replace(/[^0-9]/g, '');
+      if (wa.startsWith('01')) wa = '60' + wa.slice(1);
+      if (!wa.startsWith('601') || wa.length < 10) {
+        alert('⚠️ 请输入有效的马来西亚 WhatsApp 手机号（如 0123456789）');
+        return;
+      }
+
+      const btn = document.getElementById('carSubmitBtn');
+      btn.disabled = true;
+      btn.innerText = '正在上传车辆照片与发布...';
+
+      const uploadedUrls = [];
+      for (const item of carPhotoItems) {
+        try {
+          const blob = await compressCarImg(item.file);
+          const fn = `car_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.jpg`;
+          const { error: upErr } = await supabaseClient.storage.from('images').upload(fn, blob, { contentType: 'image/jpeg' });
+          if (!upErr) {
+            const { data: uData } = supabaseClient.storage.from('images').getPublicUrl(fn);
+            if (uData?.publicUrl) uploadedUrls.push(uData.publicUrl);
+          }
+        } catch (_) {}
+      }
+
+      const year = Number(document.getElementById('fYear').value);
+      const mileage = Number(document.getElementById('fMileage').value);
+      const brand = document.getElementById('fBrand').value;
+      const bodyType = document.getElementById('fBodyType').value;
+      const trans = document.getElementById('fTrans').value;
+      const sellerType = document.getElementById('fSellerType').value;
+      const city = document.getElementById('fCarCity').value;
+      const modelTitle = document.getElementById('fModelTitle').value.trim();
+      const addr = document.getElementById('fCarAddr').value.trim();
+      const userDesc = document.getElementById('fCarDesc').value.trim();
+
+      const carMeta = {
+        sellerType, brand, bodyType, year, mileage, trans, price: fullPrice,
+        noAccident: document.getElementById('chkNoAccident').checked,
+        puspakom: document.getElementById('chkPuspakom').checked,
+        fullLoan: document.getElementById('chkFullLoan').checked,
+        serviceRec: document.getElementById('chkServiceRec').checked
+      };
+
+      const lines = [];
+      if (addr) lines.push(`📍 看车地点：${addr}`);
+      if (userDesc) lines.push(userDesc);
+      lines.push(`[[CAR:${JSON.stringify(carMeta)}]]`);
+      const effCoords = capturedCarCoords || userGpsCoords;
+      if (effCoords) lines.push(`[[MAP:${effCoords.lat},${effCoords.lng}|${(addr || city).replace(/\|/g, ' ')}]]`);
+      if (uploadedUrls.length > 1) lines.push(`[[IMGS:${JSON.stringify(uploadedUrls)}]]`);
+
+      const fullTitle = `${year} ${modelTitle}`;
+      const priceText = `RM ${fullPrice.toLocaleString()}`;
+      const packedDesc = lines.join('\n');
+
+      const { error } = await supabaseClient.from('posts').insert([{
+        category: '二手闲置',
+        city,
+        title: fullTitle,
+        title_zh: fullTitle,
+        title_en: fullTitle,
+        title_ms: fullTitle,
+        price: priceText,
+        price_zh: priceText,
+        price_en: priceText,
+        price_ms: priceText,
+        whatsapp: wa,
+        description: packedDesc,
+        desc_zh: packedDesc,
+        desc_en: packedDesc,
+        desc_ms: packedDesc,
+        image_url: uploadedUrls[0] || null,
+        is_pinned: false
+      }]);
+
+      btn.disabled = false;
+      btn.innerText = '立即免费发布车源';
+
+      if (error) {
+        alert('发布失败：' + error.message);
+        return;
+      }
+
+      carPhotoItems = [];
+      capturedCarCoords = null;
+      document.getElementById('sellCarForm').reset();
+      closeSellCarModal();
+      await loadCarPosts();
+    }
+
+    setCarLang(currentLang);
+    detectCarGps(false);
+    loadCarPosts();
+  </script>
+</body>
+</html>
