@@ -2168,7 +2168,7 @@
       const kw = String(rawKw || '').trim();
       if (!kw || kw.length < 1) return safeText;
       try {
-        const escaped = kw.replace(/[.*+?^${}()|[\]\]/g, '\$&');
+        const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         return safeText.replace(new RegExp(`(${escaped})`, 'gi'), '<span class="text-red-600 font-black underline decoration-red-300">$1</span>');
       } catch (_) {
         return safeText;
