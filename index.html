@@ -639,6 +639,9 @@
     let activeHalalFilter = '';
     let discoveryTimer = null;
     let discoverySeq = 0;
+    let autoCompleteTimer = null;
+    let autoCompleteSeq = 0;
+    const autoCompleteCache = new Map();
     let renderDisplayLimit = 80;
     let lastFilteredList = [];
 
@@ -1706,11 +1709,16 @@
               const itemState = (typeof pLat === 'number' && typeof pLng === 'number')
                 ? (inferStateFromCoords(pLat, pLng)?.value || inferStateFromText(addr) || effectiveCity)
                 : (inferStateFromText(addr) || effectiveCity);
+              const openNow = typeof pl.currentOpeningHours?.openNow === 'boolean' ? pl.currentOpeningHours.openNow : null;
+              const rating = typeof pl.rating === 'number' ? pl.rating : null;
 
               return {
+                placeId: pl.id || '',
                 name,
                 addr,
                 phone: cleanWa,
+                openNow,
+                rating,
                 lat: typeof pLat === 'number' ? pLat : (activeCoords?.lat || 5.4141),
                 lng: typeof pLng === 'number' ? pLng : (activeCoords?.lng || 100.3288),
                 city: itemState
@@ -1788,9 +1796,12 @@
             : null;
           return {
             idx,
+            placeId: item.placeId || '',
             name: item.name,
             addr: item.addr,
             phone: item.phone || '',
+            openNow: typeof item.openNow === 'boolean' ? item.openNow : null,
+            rating: typeof item.rating === 'number' ? item.rating : null,
             lat: item.lat,
             lng: item.lng,
             city: item.city || (effectiveCity && effectiveCity !== '全马' ? effectiveCity : '全马'),
@@ -1811,13 +1822,21 @@
             const distBadge = typeof item.distKm === 'number'
               ? `<span class="inline-flex items-center gap-0.5 text-[10px] font-black text-emerald-700 bg-emerald-100/90 border border-emerald-200 px-1.5 py-0.5 rounded-md shrink-0">📍 ${formatShortDist(item.distKm)}</span>`
               : '';
+            const openBadge = item.openNow === true
+              ? `<span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded shrink-0">${currentLang === 'en' ? 'Open' : (currentLang === 'ms' ? 'Buka' : '营业中')}</span>`
+              : (item.openNow === false ? `<span class="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">${currentLang === 'en' ? 'Closed' : (currentLang === 'ms' ? 'Tutup' : '已打烊')}</span>` : '');
+            const ratingBadge = typeof item.rating === 'number'
+              ? `<span class="text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.2 rounded shrink-0">⭐ ${item.rating.toFixed(1)}</span>`
+              : '';
             const gmapQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.addr)}`;
             return `
               <div class="bg-amber-50/60 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2.5">
                 <div onclick="handleDiscoverySelect(${item.idx})" class="min-w-0 flex-1 cursor-pointer">
-                  <div class="flex items-center gap-1.5">
-                    <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <div class="font-bold text-xs text-gray-900 truncate max-w-[175px]">${item.name}</div>
                     ${distBadge}
+                    ${openBadge}
+                    ${ratingBadge}
                   </div>
                   <div class="text-[11px] text-gray-500 truncate mt-0.5">${item.addr}</div>
                   <div class="text-[10px] text-amber-700 font-semibold mt-1">${t.discoveryActionHint}</div>
@@ -2144,6 +2163,153 @@
       }
     }
 
+    function highlightQueryText(text, rawKw) {
+      const safeText = String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const kw = String(rawKw || '').trim();
+      if (!kw || kw.length < 1) return safeText;
+      try {
+        const escaped = kw.replace(/[.*+?^${}()|[\]\]/g, '\$&');
+        return safeText.replace(new RegExp(`(${escaped})`, 'gi'), '<span class="text-red-600 font-black underline decoration-red-300">$1</span>');
+      } catch (_) {
+        return safeText;
+      }
+    }
+
+    function scheduleGoogleAutocomplete(rawKw) {
+      clearTimeout(autoCompleteTimer);
+      const kw = String(rawKw || '').trim();
+      if (!kw || kw.length < 1) return;
+
+      const latKey = nearbyUserCoords ? nearbyUserCoords.lat.toFixed(3) : 'none';
+      const lngKey = nearbyUserCoords ? nearbyUserCoords.lng.toFixed(3) : 'none';
+      const cacheKey = `${currentLang}::${latKey},${lngKey}::${kw.toLowerCase()}`;
+
+      if (autoCompleteCache.has(cacheKey)) {
+        window._googleAutoSuggestions = autoCompleteCache.get(cacheKey);
+        if (document.activeElement === document.getElementById('searchInput')) {
+          renderInstantSearchDropdown(kw);
+        }
+        return;
+      }
+
+      const seq = ++autoCompleteSeq;
+      autoCompleteTimer = setTimeout(async () => {
+        if (seq !== autoCompleteSeq) return;
+        try {
+          const res = await fetch(GEO_PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'autocomplete',
+              input: kw,
+              languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+              ...(nearbyUserCoords ? {
+                lat: nearbyUserCoords.lat,
+                lng: nearbyUserCoords.lng,
+                radius: 15000.0
+              } : {})
+            })
+          });
+          if (!res.ok || seq !== autoCompleteSeq) return;
+          const data = await res.json();
+          const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
+          const parsed = suggestions
+            .map(s => s.placePrediction)
+            .filter(Boolean)
+            .map((pred, idx) => {
+              const mainText = pred.structuredFormat?.mainText?.text || pred.text?.text || '';
+              const secText = pred.structuredFormat?.secondaryText?.text || '';
+              const distMeters = typeof pred.distanceMeters === 'number' ? pred.distanceMeters : null;
+              return {
+                idx,
+                placeId: pred.placeId || '',
+                mainText,
+                secText,
+                distKm: distMeters !== null ? (distMeters / 1000) : null
+              };
+            })
+            .filter(x => x.mainText);
+
+          parsed.sort((a, b) => {
+            const da = typeof a.distKm === 'number' ? a.distKm : 9999;
+            const db = typeof b.distKm === 'number' ? b.distKm : 9999;
+            return da - db;
+          });
+
+          const reIndexed = parsed.map((x, i) => ({ ...x, idx: i }));
+          autoCompleteCache.set(cacheKey, reIndexed);
+          window._googleAutoSuggestions = reIndexed;
+
+          const curVal = (document.getElementById('searchInput')?.value || '').trim();
+          if (curVal && document.activeElement === document.getElementById('searchInput')) {
+            renderInstantSearchDropdown(curVal);
+          }
+        } catch (_) {}
+      }, 280);
+    }
+
+    async function handleAutocompleteSelect(idx) {
+      const list = window._googleAutoSuggestions || [];
+      const item = list[idx];
+      if (!item) return;
+
+      closeInstantSearchDropdown();
+      const inp = document.getElementById('searchInput');
+      if (inp) {
+        inp.value = item.mainText;
+        document.getElementById('clearSearchBtn')?.classList.remove('hidden');
+      }
+      recordSearchHistory(item.mainText);
+
+      // 若有 placeId，直接向 Google 拉取精确经纬度 + 电话，自动沉淀入库并跳导航
+      if (item.placeId) {
+        try {
+          const res = await fetch(GEO_PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'place_details',
+              placeId: item.placeId,
+              languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN')
+            })
+          });
+          if (res.ok) {
+            const pl = await res.json();
+            const pLat = pl.location?.latitude;
+            const pLng = pl.location?.longitude;
+            if (typeof pLat === 'number' && typeof pLng === 'number') {
+              const name = pl.displayName?.text || item.mainText;
+              const addr = pl.formattedAddress || item.secText || 'Malaysia';
+              const rawPhone = pl.internationalPhoneNumber || pl.nationalPhoneNumber || '';
+              const phoneDigits = String(rawPhone).replace(/[^0-9]/g, '');
+              const cleanWa = phoneDigits.startsWith('0')
+                ? ('60' + phoneDigits.slice(1))
+                : (phoneDigits.startsWith('60') ? phoneDigits : '');
+              const st = inferStateFromCoords(pLat, pLng)?.value || inferStateFromText(addr) || '全马';
+              const distKm = nearbyUserCoords ? calcDistanceKm(nearbyUserCoords.lat, nearbyUserCoords.lng, pLat, pLng) : item.distKm;
+
+              window._discoveredPlacesCache = [{
+                idx: 0,
+                placeId: item.placeId,
+                name,
+                addr,
+                phone: cleanWa,
+                lat: pLat,
+                lng: pLng,
+                city: st,
+                distKm
+              }];
+              await handleDiscoverySelect(0);
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
+      ensureMainTabVisible();
+      renderPosts(true);
+    }
+
     function renderInstantSearchDropdown(rawKw) {
       const dd = document.getElementById('instantSearchDropdown');
       if (!dd) return;
@@ -2154,13 +2320,14 @@
       }
 
       const t = I18N[currentLang];
-      const localTop = (lastFilteredList || []).slice(0, 5);
-      const livePlaces = (window._discoveredPlacesCache || []).slice(0, 5);
+      const autoSuggs = (window._googleAutoSuggestions || []).slice(0, 5);
+      const localTop = (lastFilteredList || []).slice(0, 4);
+      const livePlaces = (window._discoveredPlacesCache || []).slice(0, 4);
 
-      if (localTop.length === 0 && livePlaces.length === 0) {
+      if (autoSuggs.length === 0 && localTop.length === 0 && livePlaces.length === 0) {
         dd.innerHTML = `
           <div class="px-3.5 py-3 text-xs text-amber-700 font-semibold flex items-center justify-between">
-            <span>🔍 正在匹配“${kw}”附近结果...</span>
+            <span>🔍 Google 实时联想匹配“${kw}”中...</span>
             <button type="button" onclick="closeInstantSearchDropdown()" class="text-gray-400 text-xs px-1">✕</button>
           </div>
         `;
@@ -2168,13 +2335,37 @@
         return;
       }
 
+      const autoHeader = currentLang === 'en' ? '⚡ Google Live Suggestions (Tap for Instant Route)' : (currentLang === 'ms' ? '⚡ Cadangan Langsung Google (Tekan Terus Pandu)' : '⚡ Google 实时联想（直显距离 · 点选秒导航）');
       const localHeader = currentLang === 'en' ? '📌 Directory Matches (Sorted by Distance)' : (currentLang === 'ms' ? '📌 Padanan Direktori (Ikut Jarak)' : '📌 平台已收录（按距离由近到远）');
-      const liveHeader = currentLang === 'en' ? '✨ Nearby Live Places (Tap to Navigate & Save)' : (currentLang === 'ms' ? '✨ Lokasi Berdekatan (Tekan untuk Pandu)' : '✨ 附近实时门店（直显距离 · 点选导航并收录）');
+      const liveHeader = currentLang === 'en' ? '✨ Nearby Live Places' : (currentLang === 'ms' ? '✨ Lokasi Berdekatan' : '✨ 附近实时门店');
 
       let sectionsHTML = '';
 
+      if (autoSuggs.length > 0) {
+        sectionsHTML += `<div class="bg-blue-50/90 px-3 py-1.5 text-[10px] font-extrabold text-blue-800 flex items-center justify-between"><span>${autoHeader}</span><button type="button" onclick="closeInstantSearchDropdown()" class="text-blue-700 hover:text-blue-950 px-1">✕</button></div>`;
+        sectionsHTML += autoSuggs.map(s => {
+          const distStr = typeof s.distKm === 'number' ? formatShortDist(s.distKm) : '';
+          const distBadge = distStr
+            ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md shrink-0">📍 ${distStr}</span>`
+            : '';
+          return `
+            <button type="button" onclick="handleAutocompleteSelect(${s.idx})"
+                    class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/60 transition flex items-center justify-between gap-2.5">
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-xs text-gray-900 truncate">🔍 ${highlightQueryText(s.mainText, kw)}</div>
+                ${s.secText ? `<div class="text-[10px] text-gray-500 truncate mt-0.5">${s.secText}</div>` : ''}
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${distBadge}
+                <span class="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-md">🧭</span>
+              </div>
+            </button>
+          `;
+        }).join('');
+      }
+
       if (localTop.length > 0) {
-        sectionsHTML += `<div class="bg-gray-50/90 px-3 py-1.5 text-[10px] font-extrabold text-gray-500 flex items-center justify-between"><span>${localHeader}</span><button type="button" onclick="closeInstantSearchDropdown()" class="text-gray-400 hover:text-gray-700 px-1">✕</button></div>`;
+        sectionsHTML += `<div class="bg-gray-50/90 px-3 py-1.5 text-[10px] font-extrabold text-gray-500 flex items-center justify-between"><span>${localHeader}</span>${autoSuggs.length === 0 ? '<button type="button" onclick="closeInstantSearchDropdown()" class="text-gray-400 hover:text-gray-700 px-1">✕</button>' : ''}</div>`;
         sectionsHTML += localTop.map(p => {
           const rawLocTitle = (currentLang === 'en' ? p.title_en : (currentLang === 'ms' ? p.title_ms : p.title_zh)) || p.title;
           const title = localizeCardTitle(rawLocTitle, currentLang, p);
@@ -2187,7 +2378,7 @@
             <button type="button" onclick="closeInstantSearchDropdown(); openDetailModal(${p.id});"
                     class="w-full text-left px-3.5 py-2.5 hover:bg-red-50/50 transition flex items-center justify-between gap-2.5">
               <div class="min-w-0 flex-1">
-                <div class="font-bold text-xs text-gray-900 truncate">${title}</div>
+                <div class="font-bold text-xs text-gray-900 truncate">${highlightQueryText(title, kw)}</div>
                 <div class="text-[10px] text-gray-500 truncate mt-0.5">${t.cats[p.category] || p.category} · <span class="text-red-600 font-bold">${priceStr}</span></div>
               </div>
               ${distBadge}
@@ -2196,18 +2387,24 @@
         }).join('');
       }
 
-      if (livePlaces.length > 0) {
+      if (livePlaces.length > 0 && autoSuggs.length === 0) {
         sectionsHTML += `<div class="bg-amber-50/90 px-3 py-1.5 text-[10px] font-extrabold text-amber-800 flex items-center justify-between"><span>${liveHeader}</span>${localTop.length === 0 ? '<button type="button" onclick="closeInstantSearchDropdown()" class="text-amber-700 px-1">✕</button>' : ''}</div>`;
         sectionsHTML += livePlaces.map(item => {
           const distStr = typeof item.distKm === 'number' ? formatShortDist(item.distKm) : '';
           const distBadge = distStr
             ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md shrink-0">📍 ${distStr}</span>`
             : '';
+          const openTag = item.openNow === true
+            ? `<span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">营业中</span>`
+            : (item.openNow === false ? `<span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1 rounded">已打烊</span>` : '');
           return `
             <button type="button" onclick="closeInstantSearchDropdown(); handleDiscoverySelect(${item.idx});"
                     class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50/70 transition flex items-center justify-between gap-2.5">
               <div class="min-w-0 flex-1">
-                <div class="font-bold text-xs text-gray-900 truncate">${item.name}</div>
+                <div class="flex items-center gap-1">
+                  <span class="font-bold text-xs text-gray-900 truncate">${highlightQueryText(item.name, kw)}</span>
+                  ${openTag}
+                </div>
                 <div class="text-[10px] text-gray-500 truncate mt-0.5">${item.addr}</div>
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
@@ -2251,16 +2448,19 @@
       ensureMainTabVisible();
       renderDisplayLimit = 80;
       const val = document.getElementById('searchInput').value;
-      document.getElementById('clearSearchBtn').classList.toggle('hidden', !val.trim());
-      if (!val.trim()) {
+      const trimmed = val.trim();
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', !trimmed);
+      if (!trimmed) {
+        window._googleAutoSuggestions = [];
         closeInstantSearchDropdown();
         showSearchHistoryBar();
       } else {
         document.getElementById('searchHistoryBar')?.classList.add('hidden');
       }
       renderPosts(false);
-      if (val.trim()) {
-        renderInstantSearchDropdown(val.trim());
+      if (trimmed) {
+        renderInstantSearchDropdown(trimmed);
+        scheduleGoogleAutocomplete(trimmed);
       }
     }
 
