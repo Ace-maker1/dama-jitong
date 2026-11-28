@@ -51,19 +51,20 @@
       100% { transform: scale(2.6); opacity: 0; }
     }
     .gmap-blue-dot {
-      width: 20px; height: 20px;
+      width: 24px; height: 24px;
       background: #1a73e8;
       border: 3px solid #ffffff;
       border-radius: 50%;
-      box-shadow: 0 1px 6px rgba(26,115,232,0.75);
+      box-shadow: 0 2px 8px rgba(26,115,232,0.8);
       position: relative;
       display: flex; align-items: center; justify-content: center;
-      color: #fff; font-size: 10px;
+      color: #fff; font-size: 11px; font-weight: 900;
+      transition: transform 0.25s ease-out;
     }
     .gmap-blue-dot::after {
       content: '';
       position: absolute;
-      inset: -9px;
+      inset: -10px;
       border-radius: 50%;
       background: rgba(26,115,232,0.28);
       animation: gmap-pulse 1.8s infinite;
@@ -87,10 +88,8 @@
 </head>
 <body class="bg-[#e5e3df] text-[#202124] overflow-hidden select-none">
 
-  <!-- 全屏 Google 风格地图画布 -->
   <div id="map"></div>
 
-  <!-- 实时导航模式：顶部深色指引卡片 -->
   <div id="liveNavBanner" class="hidden fixed top-3 inset-x-3 max-w-xl mx-auto z-40 bg-[#0f5338] text-white rounded-2xl p-3.5 shadow-2xl border border-emerald-400/30">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
@@ -98,11 +97,13 @@
           ⬆️
         </div>
         <div class="min-w-0">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 flex-wrap">
             <span id="liveStepDist" class="text-sm font-black text-emerald-300">--</span>
             <span id="liveStepProgress" class="text-[10px] bg-black/25 text-emerald-100 px-2 py-0.5 rounded-full">1 / 1</span>
+            <span id="liveDestRemainBadge" class="text-[10px] bg-amber-400/25 text-amber-200 px-2 py-0.5 rounded-full font-bold">距终点 --</span>
           </div>
           <div id="liveStepText" class="text-sm font-bold leading-snug mt-0.5 line-clamp-2">--</div>
+          <div id="liveNextStepHint" class="text-[10px] text-emerald-200/90 mt-0.5 truncate"></div>
         </div>
       </div>
       <button onclick="stopLiveNav()" id="stopNavBtn" class="bg-[#ea4335] hover:bg-red-600 active:scale-95 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow shrink-0">
@@ -110,23 +111,25 @@
       </button>
     </div>
 
-    <div class="flex items-center justify-between pt-2.5 mt-2.5 border-t border-white/15 text-[11px]">
-      <div class="flex items-center gap-1.5">
+    <div class="flex items-center justify-between pt-2.5 mt-2.5 border-t border-white/15 text-[11px] gap-2">
+      <div class="flex items-center gap-1.5 flex-wrap">
         <button id="voiceToggleBtn" onclick="toggleVoice()" class="bg-black/25 hover:bg-black/35 text-white px-2.5 py-1 rounded-lg font-medium">
           🔊 语音开启
         </button>
         <button id="recenterBtn" onclick="recenterCamera()" class="bg-white/20 text-white px-2.5 py-1 rounded-lg font-medium">
           🎯 锁定视角
         </button>
+        <a id="liveExtGmapBtn" href="#" target="_blank" class="bg-blue-500/90 hover:bg-blue-500 text-white px-2.5 py-1 rounded-lg font-bold">
+          🗺️ 原生导航
+        </a>
       </div>
-      <div class="flex items-center gap-1.5">
-        <button onclick="manualStep(-1)" class="bg-black/25 px-2.5 py-1 rounded-lg text-emerald-100">◀ 上一步</button>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="manualStep(-1)" class="bg-black/25 px-2 py-1 rounded-lg text-emerald-100">◀</button>
         <button onclick="manualStep(1)" class="bg-white text-[#0f5338] px-2.5 py-1 rounded-lg font-bold">下一步 ▶</button>
       </div>
     </div>
   </div>
 
-  <!-- 顶部悬浮搜索区 -->
   <div id="topFloatingUI" class="fixed top-3 inset-x-3 max-w-xl mx-auto z-30 space-y-2 pointer-events-none">
     <div class="bg-white rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.18)] border border-gray-200/80 px-2.5 py-1.5 flex items-center gap-1.5 pointer-events-auto">
       <a href="/" id="backHomeBtn" title="返回首页" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-700 font-bold shrink-0 transition">
@@ -156,13 +159,16 @@
         <span class="w-2 h-2 rounded-full bg-[#1a73e8]"></span>
         <span id="originPillText" class="max-w-[110px] truncate">我的位置</span>
       </button>
+      <button id="chipNearbyAll" onclick="quickNearby('附近')" class="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-bold shrink-0">✨ 搜附近</button>
       <button id="chipAirport" onclick="quickNearby('机场')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">✈️ 机场</button>
       <button onclick="quickNearby('KFC')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🍗 KFC</button>
       <button id="chipMcd" onclick="quickNearby('McDonald\'s')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🍔 麦当劳</button>
       <button id="chipPetrol" onclick="quickNearby('Petronas')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">⛽ 加油站</button>
       <button onclick="quickNearby('7-Eleven')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🏪 7-11</button>
+      <button onclick="quickNearby('myNEWS')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🛒 myNEWS</button>
       <button id="chipWatsons" onclick="quickNearby('Watsons')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">💊 屈臣氏</button>
       <button id="chipHospital" onclick="quickNearby('Hospital')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🏥 医院</button>
+      <button onclick="quickNearby('学校')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🎓 学校</button>
       <button onclick="quickNearby('MR DIY')" class="bg-white hover:bg-gray-50 text-[#3c4043] shadow-[0_1px_5px_rgba(0,0,0,0.14)] px-3 py-1.5 rounded-full text-xs font-medium shrink-0">🛠️ MR.DIY</button>
     </div>
 
@@ -211,7 +217,6 @@
     </div>
   </div>
 
-  <!-- 右侧悬浮按钮组 -->
   <div id="rightFloatingControls" class="fixed right-3 bottom-28 z-20 flex flex-col gap-2.5">
     <button onclick="toggleMapLayer()" id="layerToggleBtn" title="切换卫星图/标准地图"
             class="w-11 h-11 rounded-full bg-white hover:bg-gray-50 active:scale-95 shadow-[0_2px_10px_rgba(0,0,0,0.2)] border border-gray-200/80 flex flex-col items-center justify-center text-[#3c4043] transition">
@@ -301,6 +306,8 @@
   <script>
     const GEO_PROXY_ENDPOINT = '/api/geo-proxy';
     const GEO_CACHE_KEY = 'dmjt_google_place_cache_v2';
+    const PENDING_CHECKIN_KEY = 'dmjt_pending_checkin_v1';
+    const EXPLORER_STATS_KEY = 'dmjt_explorer_stats_v1';
 
     const i18n = {
       zh: {
@@ -374,6 +381,8 @@
     let wakeLock = null;
     let activeSearchSeq = 0;
     let isSatellite = false;
+    let lastUserHeading = null;
+    let arrivalAwardedForTask = false;
 
     const STORAGE_FAV_KEY = 'dmjt_nav_favorites_v1';
     const STORAGE_HIST_KEY = 'dmjt_nav_history_v1';
@@ -387,6 +396,57 @@
         c[key] = val;
         localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(c));
       } catch (e) {}
+    }
+
+    function formatMetersOrKm(meters) {
+      if (typeof meters !== 'number' || Number.isNaN(meters)) return '--';
+      if (meters < 1000) return `${Math.max(Math.round(meters), 5)} m`;
+      return `${(meters / 1000).toFixed(1)} km`;
+    }
+
+    function registerArrivalMission(destObj, originObj) {
+      if (!destObj || typeof destObj.lat !== 'number' || typeof destObj.lng !== 'number') return;
+      const distMeters = originObj ? map.distance([originObj.lat, originObj.lng], [destObj.lat, destObj.lng]) : 500;
+      if (distMeters < 150) return;
+      arrivalAwardedForTask = false;
+      try {
+        localStorage.setItem(PENDING_CHECKIN_KEY, JSON.stringify({
+          placeName: destObj.name || '目的地',
+          lat: destObj.lat,
+          lng: destObj.lng,
+          startDistMeters: Math.round(distMeters),
+          createdAt: Date.now()
+        }));
+      } catch (_) {}
+    }
+
+    function checkAndAwardArrival(curLat, curLng) {
+      if (arrivalAwardedForTask) return;
+      let task = null;
+      try { task = JSON.parse(localStorage.getItem(PENDING_CHECKIN_KEY) || 'null'); } catch (_) {}
+      if (!task || typeof task.lat !== 'number' || typeof task.lng !== 'number') return;
+      if (Date.now() - (task.createdAt || 0) > 6 * 3600 * 1000) {
+        localStorage.removeItem(PENDING_CHECKIN_KEY);
+        return;
+      }
+      const dMeters = map.distance([curLat, curLng], [task.lat, task.lng]);
+      if (dMeters <= 150) {
+        arrivalAwardedForTask = true;
+        localStorage.removeItem(PENDING_CHECKIN_KEY);
+        try {
+          const stats = JSON.parse(localStorage.getItem(EXPLORER_STATS_KEY) || '{"points":0,"visited":[]}');
+          const today = new Date().toISOString().slice(0, 10);
+          const dayKey = `${today}::${task.placeName}::${task.lat.toFixed(3)},${task.lng.toFixed(3)}`;
+          const visited = Array.isArray(stats.visited) ? stats.visited : [];
+          if (!visited.includes(dayKey)) {
+            stats.points = Number(stats.points || 0) + 1;
+            stats.visited = [dayKey, ...visited].slice(0, 100);
+            localStorage.setItem(EXPLORER_STATS_KEY, JSON.stringify(stats));
+            speakText(`已抵达${task.placeName}，获得1点探索积分`);
+            alert(`🎉 真实到达打卡成功！\n\n您已抵达「${task.placeName}」150米范围内，获得 +1 探索积分（当前累计：${stats.points} 分）！`);
+          }
+        } catch (_) {}
+      }
     }
 
     (async function syncLiveFuelPrice() {
@@ -447,6 +507,7 @@
     ];
 
     const AUTOCOMPLETE_DICT = [
+      { icon: '✨', zh: '附近全部营业场所（餐馆/超市/医院/学校）', en: 'All Open Places Nearby', ms: 'Semua Tempat Buka Berdekatan', query: '附近', keys: ['附近', '周围', '周边', 'nearby', 'berdekatan'] },
       { icon: '✈️', zh: '飞机场 (最近国际机场)', en: 'Nearest International Airport', ms: 'Lapangan Terbang Terdekat', query: '机场', keys: ['飞', '机场', '飞机场', 'air', 'airport', 'lapangan', 'terbang'] },
       { icon: '✈️', zh: '怡保机场 (IPH)', en: 'Ipoh Airport (IPH)', ms: 'Lapangan Terbang Ipoh (IPH)', query: '怡保机场', lat: 4.5679, lng: 101.0921, addr: '31350 Ipoh, Perak', is24: true, keys: ['ipoh air', 'iph', '怡保机'] },
       { icon: '✈️', zh: '槟城国际机场 (PEN)', en: 'Penang International Airport (PEN)', ms: 'Lapangan Terbang Antarabangsa Pulau Pinang', query: '槟城机场', lat: 5.2932, lng: 100.2658, addr: '11900 Bayan Lepas, Pulau Pinang', is24: true, keys: ['槟城机', 'penang air', 'pen'] },
@@ -462,15 +523,17 @@
       { icon: '☕', zh: 'ZUS Coffee 咖啡', en: 'ZUS Coffee', ms: 'ZUS Coffee', query: 'ZUS Coffee', keys: ['z', 'zu', 'zus', '咖', '咖啡'] },
       { icon: '🍦', zh: 'MIXUE 蜜雪冰城', en: 'MIXUE Ice Cream & Tea', ms: 'MIXUE', query: 'Mixue', keys: ['mi', 'mix', 'mixue', '蜜', '蜜雪'] },
       { icon: '🏪', zh: '7-Eleven 24小时便利店', en: '7-Eleven (24 Hours)', ms: '7-Eleven (24 Jam)', query: '7-Eleven', keys: ['7', '7-', '711', '7-11', '7e', '便', '便利店'] },
+      { icon: '🛒', zh: 'myNEWS 便利店', en: 'myNEWS Convenience Store', ms: 'myNEWS', query: 'myNEWS', keys: ['mynews', 'my news', '便利店', '超市'] },
       { icon: '🏪', zh: 'KK Super Mart 24小时超市', en: 'KK Super Mart', ms: 'KK Super Mart', query: 'KK Super Mart', keys: ['kk', '超', '超市'] },
       { icon: '🛒', zh: '99 Speedmart 迷你市场', en: '99 Speedmart', ms: '99 Speedmart', query: '99 Speedmart', keys: ['9', '99', 'speedmart'] },
       { icon: '⛽', zh: 'Petronas 国油加油站', en: 'Petronas Petrol Station', ms: 'Stesen Minyak Petronas', query: 'Petronas', keys: ['p', 'pe', 'pet', 'petronas', '加', '加油站', '油', '油站', 'stesen'] },
       { icon: '⛽', zh: 'Shell 蚬壳加油站', en: 'Shell Petrol Station', ms: 'Stesen Minyak Shell', query: 'Shell', keys: ['sh', 'she', 'shell', '加油站', '油站'] },
-      { icon: '💊', zh: 'Watsons 屈臣氏药妆', en: 'Watsons Pharmacy', ms: 'Farmasi Watsons', query: 'Watsons', keys: ['w', 'wa', 'wat', 'watsons', '屈', '屈臣氏', '药'] },
-      { icon: '💊', zh: 'Guardian 佳宁药妆', en: 'Guardian Pharmacy', ms: 'Farmasi Guardian', query: 'Guardian', keys: ['g', 'gu', 'gua', 'guardian', '佳', '药'] },
+      { icon: '💊', zh: 'Watsons 屈臣氏药妆', en: 'Watsons Pharmacy', ms: 'Farmasi Watsons', query: 'Watsons', keys: ['w', 'wa', 'wat', 'watsons', '屈', '屈臣氏', '药', '药房'] },
+      { icon: '💊', zh: 'Guardian 佳宁药妆', en: 'Guardian Pharmacy', ms: 'Farmasi Guardian', query: 'Guardian', keys: ['g', 'gu', 'gua', 'guardian', '佳', '药', '药房'] },
       { icon: '🛠️', zh: 'MR.DIY 五金家居店', en: 'MR.DIY Hardware Store', ms: 'Kedai MR.DIY', query: 'MR DIY', keys: ['mr', 'diy', 'mrdiy', '五', '五金'] },
       { icon: '🏥', zh: 'Hospital 医院 / 急诊', en: 'Nearest Hospital', ms: 'Hospital Terdekat', query: 'Hospital', keys: ['h', 'ho', 'hos', 'hospital', '医', '医院'] },
       { icon: '🩺', zh: 'Klinik 诊所', en: 'Nearest Clinic (Klinik)', ms: 'Klinik Terdekat', query: 'Klinik', keys: ['kl', 'kli', 'klinik', '诊', '诊所'] },
+      { icon: '🎓', zh: 'School 学校 / 学院', en: 'Nearest School / College', ms: 'Sekolah / Kolej Terdekat', query: 'School', keys: ['学', '学校', '小学', '中学', 'school', 'sekolah'] },
       { icon: '🏦', zh: 'Maybank 马来亚银行', en: 'Maybank Branch / ATM', ms: 'Cawangan Maybank', query: 'Maybank', keys: ['ma', 'may', 'maybank', '银', '银行', 'atm'] },
       { icon: '🏦', zh: 'CIMB Bank 联昌银行', en: 'CIMB Bank Branch / ATM', ms: 'Cawangan CIMB', query: 'CIMB', keys: ['c', 'ci', 'cimb', '银', '银行'] },
       { icon: '🏦', zh: 'Public Bank 大众银行', en: 'Public Bank Branch / ATM', ms: 'Cawangan Public Bank', query: 'Public Bank', keys: ['pu', 'pub', 'public', '大', '大众银行', '银行'] },
@@ -532,9 +595,48 @@
       return await res.json();
     }
 
-    async function searchGooglePlaces(queryText, refLat, refLng, maxResults = 6) {
+    async function searchAllNearbyOpenPlaces(refLat, refLng) {
+      const data = await callGeoProxy({
+        action: 'places_nearby',
+        lat: refLat,
+        lng: refLng,
+        radius: 2000.0,
+        maxResultCount: 15,
+        includedTypes: ['restaurant', 'cafe', 'convenience_store', 'supermarket', 'grocery_store', 'hospital', 'pharmacy', 'school'],
+        languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
+        regionCode: 'MY'
+      }, 4500);
+
+      if (!data || !Array.isArray(data.places)) return [];
+      return data.places.map((pl) => {
+        const lat = pl.location?.latitude;
+        const lng = pl.location?.longitude;
+        if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+        const name = pl.displayName?.text || '附近场所';
+        const fullAddr = pl.formattedAddress || 'Malaysia';
+        const straightKm = map.distance([refLat, refLng], [lat, lng]) / 1000;
+        const openNow = pl.currentOpeningHours?.openNow;
+        let status = evaluateOpeningStatus({ name }, name);
+        if (typeof openNow === 'boolean') {
+          status = openNow
+            ? { state: 'open', text: i18n[currentLang].statusOpen, badgeClass: 'bg-emerald-100 text-emerald-700' }
+            : { state: 'closed', text: i18n[currentLang].statusClosed(''), badgeClass: 'bg-rose-100 text-rose-700' };
+        }
+        return {
+          lat, lng, name, fullAddr, straightKm,
+          status,
+          phone: pl.nationalPhoneNumber || ''
+        };
+      }).filter(Boolean);
+    }
+
+    async function searchGooglePlaces(queryText, refLat, refLng, maxResults = 8) {
       const q = (queryText || '').trim();
       if (!q) return [];
+      if (/^(附近|周围|周边|nearby|berdekatan|附近全部营业场所|all open places nearby|semua tempat buka berdekatan)$/i.test(q)) {
+        return await searchAllNearbyOpenPlaces(refLat, refLng);
+      }
+
       const cacheKey = `gplaces::${q.toLowerCase()}::${maxResults}`;
       const cached = getGeoCache()[cacheKey];
       if (Array.isArray(cached) && cached.length > 0) {
@@ -552,7 +654,8 @@
         maxResultCount: maxResults,
         lat: refLat,
         lng: refLng,
-        radius: 30000.0
+        radius: 15000.0,
+        rankByDistance: true
       }, 4000);
 
       if (!data) return [];
@@ -782,7 +885,9 @@
       'mcdonalds': "McDonald's", 'mcdonald': "McDonald's", 'mcd': "McDonald's", '麦当劳': "McDonald's",
       '肯德基': 'KFC', '星巴克': 'Starbucks', '蜜雪冰城': 'Mixue', '屈臣氏': 'Watsons',
       '加油站': 'Petronas', '油站': 'Petronas', 'stesen minyak': 'Petronas',
-      '711': '7-Eleven', '7-11': '7-Eleven', '便利店': '7-Eleven',
+      '711': '7-Eleven', '7-11': '7-Eleven', '便利店': 'convenience store supermarket mynews 99 speedmart 7-eleven',
+      '超市': 'convenience store supermarket mynews 99 speedmart 7-eleven',
+      '学校': 'school sekolah college university',
       '医院': 'Hospital', '诊所': 'Klinik', '银行': 'Maybank', '商场': 'Mall',
       '双子塔': 'Petronas Twin Towers Kuala Lumpur', '吉隆坡双子塔': 'Petronas Twin Towers Kuala Lumpur',
       '茨厂街': 'Petaling Street Kuala Lumpur', '武吉免登': 'Bukit Bintang Kuala Lumpur',
@@ -845,7 +950,9 @@
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          updateLiveUserDot(lat, lng);
+          const heading = typeof pos.coords.heading === 'number' && !Number.isNaN(pos.coords.heading) ? pos.coords.heading : null;
+          updateLiveUserDot(lat, lng, heading);
+          checkAndAwardArrival(lat, lng);
           if (setAsStart) {
             const label = i18n[currentLang].gpsLabel;
             startCoords = { lat, lng, name: label };
@@ -866,10 +973,24 @@
 
     locateMe(true, true);
 
-    function updateLiveUserDot(lat, lng) {
-      const icon = L.divIcon({ className: '', html: '<div class="gmap-blue-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] });
-      if (userLiveMarker) userLiveMarker.setLatLng([lat, lng]);
-      else userLiveMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+    function updateLiveUserDot(lat, lng, heading = null) {
+      if (typeof heading === 'number' && !Number.isNaN(heading) && heading >= 0) {
+        lastUserHeading = heading;
+      }
+      const rotStyle = typeof lastUserHeading === 'number' ? `transform: rotate(${Math.round(lastUserHeading)}deg);` : '';
+      const arrowGlyph = typeof lastUserHeading === 'number' ? '▲' : '';
+      const icon = L.divIcon({
+        className: '',
+        html: `<div class="gmap-blue-dot" style="${rotStyle}">${arrowGlyph}</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      if (userLiveMarker) {
+        userLiveMarker.setLatLng([lat, lng]);
+        userLiveMarker.setIcon(icon);
+      } else {
+        userLiveMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+      }
     }
 
     function hideSuggestions() {
@@ -959,8 +1080,8 @@
             if (document.getElementById('endInput').value.trim() !== q) return;
             if (gPlaces.length > 0) {
               const gHtml = gPlaces.map(gp => {
-                const km = (map.distance([refLat, refLng], [gp.lat, gp.lng]) / 1000).toFixed(1);
-                return `<div onclick="pickSuggestion('${gp.name.replace(/'/g, "\\'")}', ${gp.lat}, ${gp.lng}, '${gp.fullAddr.replace(/'/g, "\\'")}', '${(gp.status?.text || '').replace(/'/g, "\\'")}', '${gp.status?.badgeClass || ''}', '${(gp.phone || '').replace(/'/g, "\\'")}')" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-blue-50 text-[#1a73e8] flex items-center justify-center text-xs shrink-0">📍</span><div class="min-w-0"><div class="text-xs font-bold text-gray-800 truncate">${gp.name}</div><div class="text-[10px] text-gray-400 truncate">${gp.fullAddr}</div></div></div><span class="text-[10px] font-bold text-[#1a73e8] shrink-0">${km} km</span></div>`;
+                const distStr = formatMetersOrKm(map.distance([refLat, refLng], [gp.lat, gp.lng]));
+                return `<div onclick="pickSuggestion('${gp.name.replace(/'/g, "\\'")}', ${gp.lat}, ${gp.lng}, '${gp.fullAddr.replace(/'/g, "\\'")}', '${(gp.status?.text || '').replace(/'/g, "\\'")}', '${gp.status?.badgeClass || ''}', '${(gp.phone || '').replace(/'/g, "\\'")}')" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-blue-50 text-[#1a73e8] flex items-center justify-center text-xs shrink-0">📍</span><div class="min-w-0"><div class="text-xs font-bold text-gray-800 truncate">${gp.name}</div><div class="text-[10px] text-gray-400 truncate">${gp.fullAddr}</div></div></div><span class="text-[10px] font-bold text-[#1a73e8] shrink-0">${distStr}</span></div>`;
               }).join('');
               box.innerHTML = html + gHtml;
               box.classList.remove('hidden');
@@ -981,8 +1102,8 @@
                 const [lng, lat] = f.geometry.coordinates;
                 const title = p.name || normQ;
                 const sub = [p.street, p.district || p.city, p.state].filter(Boolean).join(', ');
-                const km = (map.distance([refLat, refLng], [lat, lng]) / 1000).toFixed(1);
-                return `<div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-red-50 text-[#ea4335] flex items-center justify-center text-xs shrink-0">📍</span><div class="min-w-0"><div class="text-xs font-bold text-gray-800 truncate">${title}</div><div class="text-[10px] text-gray-400 truncate">${sub || 'Malaysia'}</div></div></div><span class="text-[10px] font-bold text-gray-500 shrink-0">${km} km</span></div>`;
+                const distStr = formatMetersOrKm(map.distance([refLat, refLng], [lat, lng]));
+                return `<div onclick="pickSuggestion('${title.replace(/'/g, "\\'")}', ${lat}, ${lng}, '${sub.replace(/'/g, "\\'")}')" class="px-3.5 py-2.5 hover:bg-blue-50 cursor-pointer flex items-center justify-between gap-2"><div class="flex items-center gap-2.5 min-w-0"><span class="w-7 h-7 rounded-full bg-red-50 text-[#ea4335] flex items-center justify-center text-xs shrink-0">📍</span><div class="min-w-0"><div class="text-xs font-bold text-gray-800 truncate">${title}</div><div class="text-[10px] text-gray-400 truncate">${sub || 'Malaysia'}</div></div></div><span class="text-[10px] font-bold text-gray-500 shrink-0">${distStr}</span></div>`;
               }).join('');
             if (remoteHtml) { box.innerHTML = html + remoteHtml; box.classList.remove('hidden'); }
           } catch (e) {}
@@ -1038,17 +1159,23 @@
       const primaryPart = cleanedRaw.split(',')[0].trim() || cleanedRaw;
       let candidates = [];
 
+      if (/^(附近|周围|周边|nearby|berdekatan|附近全部营业场所|all open places nearby|semua tempat buka berdekatan)$/i.test(cleanedRaw)) {
+        candidates = await searchAllNearbyOpenPlaces(refLat, refLng);
+      }
+
       const isGenericAirport = /^(机场|飞机场|国际机场|airport|international airport|lapangan terbang)$/i.test(cleanedRaw);
-      const matchedAirports = MY_AIRPORTS.filter(ap => isGenericAirport || ap.keywords.some(kw => {
-        if (kw.length <= 4) return rawLower === kw || primaryPart.toLowerCase() === kw;
-        return rawLower.includes(kw) || primaryPart.toLowerCase().includes(kw);
-      }));
-      if (matchedAirports.length > 0) {
-        candidates = matchedAirports.map(ap => ({
-          lat: ap.lat, lng: ap.lng, name: ap[currentLang] || ap.en, fullAddr: ap.fullAddr,
-          straightKm: map.distance([refLat, refLng], [ap.lat, ap.lng]) / 1000,
-          status: { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' }, phone: ap.phone
+      if (candidates.length === 0) {
+        const matchedAirports = MY_AIRPORTS.filter(ap => isGenericAirport || ap.keywords.some(kw => {
+          if (kw.length <= 4) return rawLower === kw || primaryPart.toLowerCase() === kw;
+          return rawLower.includes(kw) || primaryPart.toLowerCase().includes(kw);
         }));
+        if (matchedAirports.length > 0) {
+          candidates = matchedAirports.map(ap => ({
+            lat: ap.lat, lng: ap.lng, name: ap[currentLang] || ap.en, fullAddr: ap.fullAddr,
+            straightKm: map.distance([refLat, refLng], [ap.lat, ap.lng]) / 1000,
+            status: { state: 'open', text: i18n[currentLang].status247, badgeClass: 'bg-emerald-100 text-emerald-700' }, phone: ap.phone
+          }));
+        }
       }
 
       if (candidates.length === 0) {
@@ -1077,7 +1204,7 @@
 
       if (candidates.length === 0) {
         const normQuery = await normalizeSearchQuery(cleanedRaw);
-        const gMatches = await searchGooglePlaces(normQuery, refLat, refLng, 8);
+        const gMatches = await searchGooglePlaces(normQuery, refLat, refLng, 10);
         if (gMatches.length > 0) {
           candidates = gMatches;
         } else {
@@ -1133,13 +1260,13 @@
 
       const deduped = [];
       candidates.sort((a, b) => a.straightKm - b.straightKm).forEach(item => {
-        if (!deduped.some(d => map.distance([d.lat, d.lng], [item.lat, item.lng]) < 80)) deduped.push(item);
+        if (!deduped.some(d => map.distance([d.lat, d.lng], [item.lat, item.lng]) < 60)) deduped.push(item);
       });
-      const preSorted = deduped.slice(0, 8);
+      const preSorted = deduped.slice(0, 10);
 
       const calcModeMins = (km, baseSecs) => {
-        if (currentMode === 'walking') return Math.max(3, Math.round(km * 12));
-        const driveMins = baseSecs != null ? Math.max(2, Math.round(baseSecs / 60)) : Math.max(3, Math.round(km * 1.6));
+        if (currentMode === 'walking') return Math.max(2, Math.round(km * 12));
+        const driveMins = baseSecs != null ? Math.max(1, Math.round(baseSecs / 60)) : Math.max(2, Math.round(km * 1.6));
         return currentMode === 'transit' ? Math.max(8, Math.round(driveMins * 1.45 + 10)) : driveMins;
       };
 
@@ -1232,7 +1359,7 @@
       const type = step.maneuver?.type || '';
       const mod = step.maneuver?.modifier || '';
       const road = step.name || (currentLang === 'zh' ? '前方道路' : (currentLang === 'ms' ? 'jalan hadapan' : 'road ahead'));
-      const dist = step.distance >= 1000 ? `${(step.distance / 1000).toFixed(1)} km` : `${Math.max(10, Math.round(step.distance))} m`;
+      const dist = formatMetersOrKm(step.distance);
       let icon = '⬆️';
       if (type === 'depart') icon = '🚀';
       else if (type === 'arrive') icon = '🏁';
@@ -1279,7 +1406,7 @@
       clearPreviousRouteUI();
 
       if (!endText && !endCoords) {
-        alert(currentLang === 'zh' ? '请先输入目的地或点击快捷分类（如 机场 / 麦当劳）！' : 'Please enter destination or tap a category!');
+        alert(currentLang === 'zh' ? '请先输入目的地或点击快捷分类（如 附近 / 机场 / 麦当劳）！' : 'Please enter destination or tap a category!');
         return;
       }
 
@@ -1315,7 +1442,7 @@
             const dot = L.circleMarker([m.lat, m.lng], {
               radius: 7, fillColor: m.status?.state === 'closed' ? '#ea4335' : '#fbbc04',
               color: '#fff', weight: 2, fillOpacity: 0.95
-            }).bindPopup(`<b>${m.name}</b><br>${m.status?.text || ''}<br>${m.distKm.toFixed(1)} km`);
+            }).bindPopup(`<b>${m.name}</b><br>${m.status?.text || ''}<br>${formatMetersOrKm(m.distKm * 1000)}`);
             nearbyMarkersLayer.addLayer(dot);
           });
 
@@ -1346,7 +1473,7 @@
                   </div>
                 </div>
                 <div class="text-right shrink-0">
-                  <div class="text-xs font-black text-[#1a73e8]">${m.distKm.toFixed(1)} km</div>
+                  <div class="text-xs font-black text-[#1a73e8]">${formatMetersOrKm(m.distKm * 1000)}</div>
                   <div class="text-[10px] text-gray-400">${t.approxMin(m.durationMin)}</div>
                 </div>
               </div>
@@ -1396,8 +1523,11 @@
         } catch (e) {}
       }
 
-      document.getElementById('wazeDeepLink').href = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
-      document.getElementById('googleMapsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${endCoords.lat},${endCoords.lng}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
+      const gmapUrl = `https://www.google.com/maps/dir/?api=1&destination=${endCoords.lat},${endCoords.lng}&travelmode=${currentMode === 'walking' ? 'walking' : (currentMode === 'transit' ? 'transit' : 'driving')}`;
+      const wazeUrl = `https://waze.com/ul?ll=${endCoords.lat},${endCoords.lng}&navigate=yes`;
+      document.getElementById('wazeDeepLink').href = wazeUrl;
+      document.getElementById('googleMapsLink').href = gmapUrl;
+      document.getElementById('liveExtGmapBtn').href = gmapUrl;
 
       if (routeLine) map.removeLayer(routeLine);
       if (routeOutline) map.removeLayer(routeOutline);
@@ -1665,12 +1795,13 @@
 
     async function startLiveNav() {
       if (!currentSteps.length) return;
+      registerArrivalMission(endCoords, startCoords);
       isNavigating = true; cameraLocked = true; currentStepIdx = 0;
       document.getElementById('liveNavBanner').classList.remove('hidden');
       document.getElementById('topFloatingUI').classList.add('hidden');
       document.getElementById('resultPanel').classList.add('hidden');
       document.getElementById('rightFloatingControls').style.bottom = '2rem';
-      updateBannerStep(currentSteps[0]);
+      updateBannerStep(currentSteps[0], startCoords?.lat, startCoords?.lng);
       speakText(`${i18n[currentLang].startVoiceMsg}${currentSteps[0].text}`);
       if (startCoords) {
         updateLiveUserDot(startCoords.lat, startCoords.lng);
@@ -1684,17 +1815,25 @@
           (pos) => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            updateLiveUserDot(lat, lng);
+            const heading = typeof pos.coords.heading === 'number' && !Number.isNaN(pos.coords.heading) ? pos.coords.heading : null;
+            updateLiveUserDot(lat, lng, heading);
+            checkAndAwardArrival(lat, lng);
             if (cameraLocked) map.setView([lat, lng], 18, { animate: true });
+
+            let advanced = false;
             for (let i = currentStepIdx + 1; i < currentSteps.length; i++) {
               const loc = currentSteps[i].location;
               if (!loc) continue;
-              if (map.distance([lat, lng], [loc[1], loc[0]]) < 65) {
+              if (map.distance([lat, lng], [loc[1], loc[0]]) < 55) {
                 currentStepIdx = i;
-                updateBannerStep(currentSteps[i]);
+                updateBannerStep(currentSteps[i], lat, lng);
                 speakText(currentSteps[i].text);
+                advanced = true;
                 break;
               }
+            }
+            if (!advanced) {
+              updateBannerStep(currentSteps[currentStepIdx], lat, lng);
             }
           },
           (err) => console.warn('GPS tracking:', err),
@@ -1703,11 +1842,30 @@
       }
     }
 
-    function updateBannerStep(step) {
+    function updateBannerStep(step, curLat = null, curLng = null) {
       document.getElementById('liveTurnIcon').innerText = step.icon;
-      document.getElementById('liveStepDist').innerText = step.dist;
+      let liveDistLabel = step.dist;
+      if (curLat !== null && curLng !== null && step.location) {
+        const dM = map.distance([curLat, curLng], [step.location[1], step.location[0]]);
+        if (step.dist !== '已到达' && step.dist !== 'Arrived' && step.dist !== 'Tiba') {
+          liveDistLabel = formatMetersOrKm(dM);
+        }
+      }
+      document.getElementById('liveStepDist').innerText = liveDistLabel;
       document.getElementById('liveStepText').innerText = step.text;
       document.getElementById('liveStepProgress').innerText = `${currentStepIdx + 1} / ${currentSteps.length}`;
+
+      const nextSt = currentSteps[currentStepIdx + 1];
+      const nextHintEl = document.getElementById('liveNextStepHint');
+      if (nextHintEl) {
+        nextHintEl.innerText = nextSt ? `然后 ${nextSt.icon} ${nextSt.text}` : '';
+      }
+
+      const remBadge = document.getElementById('liveDestRemainBadge');
+      if (remBadge && endCoords && curLat !== null && curLng !== null) {
+        const remM = map.distance([curLat, curLng], [endCoords.lat, endCoords.lng]);
+        remBadge.innerText = `距终点 ${formatMetersOrKm(remM)}`;
+      }
     }
 
     function stopLiveNav() {
