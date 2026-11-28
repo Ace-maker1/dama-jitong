@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         body.locationBias = {
           circle: {
             center: { latitude: payload.lat, longitude: payload.lng },
-            radius: Number(payload.radius) || 30000.0
+            radius: Number(payload.radius) || 15000.0
           }
         };
       }
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     }
 
     if (action === 'geocode') {
-      const apiKey = process.env.GOOGLE_GEOCODING_KEY;
+      const apiKey = process.env.GOOGLE_GEOCODING_KEY || process.env.GOOGLE_PLACES_KEY;
       if (!apiKey) {
         return res.status(500).json({ error: 'Missing GOOGLE_GEOCODING_KEY' });
       }
@@ -78,7 +78,28 @@ export default async function handler(req, res) {
       }
 
       const region = encodeURIComponent(payload.region || 'my');
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}®ion=${region}&key=${encodeURIComponent(apiKey)}`;
+      const lang = encodeURIComponent(payload.language || 'zh-CN');
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&region=${region}&language=${lang}&key=${encodeURIComponent(apiKey)}`;
+
+      const googleRes = await fetch(url);
+      const data = await googleRes.json();
+      return res.status(googleRes.status).json(data);
+    }
+
+    if (action === 'reverse_geocode') {
+      const apiKey = process.env.GOOGLE_GEOCODING_KEY || process.env.GOOGLE_PLACES_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Missing GOOGLE_GEOCODING_KEY' });
+      }
+
+      const lat = Number(payload.lat);
+      const lng = Number(payload.lng);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        return res.status(400).json({ error: 'Invalid lat/lng' });
+      }
+
+      const lang = encodeURIComponent(payload.language || 'zh-CN');
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${encodeURIComponent(lat)},${encodeURIComponent(lng)}&language=${lang}&key=${encodeURIComponent(apiKey)}`;
 
       const googleRes = await fetch(url);
       const data = await googleRes.json();
