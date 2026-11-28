@@ -508,11 +508,23 @@
     }
 
     function isVehiclePost(post) {
-      const blob = `${post.title || ''} ${post.description || ''}`;
+      const title = String(post.title || '');
+      const desc = String(post.description || '');
+      const blob = `${title} ${desc}`;
+
+      // 1. 专属卖车发帖标记（100% 放行）
       if (/\[\[CAR:\{/.test(blob)) return true;
-      const mTypeHint = /(汽车维修|洗车|轮胎|汽车冷气|喷漆|钣金|bengkel|tyre|car wash|auto repair)/i.test(blob);
-      if (mTypeHint) return false;
-      return /(二手车|新车|买车|卖车|车主直卖|perodua|proton|myvi|axia|bezza|saga|x50|x70|vios|city|civic|hilux|kereta|used car)/i.test(blob);
+
+      // 2. 排除所有自动收录商户、本地生活商家、餐饮超市及修车行
+      if (/^【收录商户/.test(title.trim()) || post.category === '本地优惠' || post.category === '找房子' || post.category === '找工作') {
+        return false;
+      }
+      if (/(restaurant|restoran|cafe|kopitiam|grocer|supermarket|mart|mall|junction|广场|餐厅|美食|超市|便利店|诊所|药房|学校|维修|洗车|轮胎|冷气|喷漆|钣金|bengkel|tyre|car wash|auto repair)/i.test(blob)) {
+        return false;
+      }
+
+      // 3. 精准匹配常见汽车型号/卖车关键词（避免单个 "city" 误伤商场）
+      return /(二手车|新车|买车|卖车|车主直卖|used car|direct owner|perodua|proton|myvi|axia|bezza|alza|ativa|aruz|saga|persona|iriz|x50|x70|x90|vios|yaris|altis|camry|hilux|fortuner|vellfire|alphard|honda city|civic|accord|hr-v|cr-v|jazz|mazda|cx-5|navara|triton|ranger|kereta terpakai|jual kereta)/i.test(blob);
     }
 
     async function loadCarPosts() {
