@@ -357,7 +357,7 @@
         sqftAll: '面积 sqft', sqftSuffix: ' sqft 以上',
         furnAll: '家具配置 Furnishing', furnFull: '全套家具 Fully Furnished', furnPart: '部分家具 Partially Furnished', furnEmpty: '空屋 Unfurnished',
         sortDefault: '排序：推荐+最新', sortNearest: '距离看房点最近', sortPriceAsc: '价格从低到高', sortPriceDesc: '价格从高到低', sortSqftDesc: '面积从大到小',
-        listHeading: '精选屋主直租与认证房源', unitProp: '套',
+        listHeading: '精选屋主直租与认证房源', unitProp: '套', loadingProp: '正在加载全马实时房源...',
         emptyTitle: '当前筛选条件下暂无匹配房源', emptySub: '你可以放宽预算或房型条件，或点击下方免费发布房源！', emptyBtn: '+ 立即免费放盘',
         badgePinned: '置顶', badgeOwner: '👤 屋主直发', badgeAgent: '🏢 地产经纪', badgeRent: '出租 Rent', badgeSale: '出售 Sale',
         badgeRooms: (r) => `🛏️ ${r}房`, badgeSqft: (s) => `📐 ${s.toLocaleString()} sqft`,
@@ -396,7 +396,7 @@
         sqftAll: 'Size sqft', sqftSuffix: '+ sqft',
         furnAll: 'Furnishing', furnFull: 'Fully Furnished', furnPart: 'Partially Furnished', furnEmpty: 'Unfurnished',
         sortDefault: 'Sort: Featured + Latest', sortNearest: 'Nearest Viewing Point', sortPriceAsc: 'Price: Low to High', sortPriceDesc: 'Price: High to Low', sortSqftDesc: 'Size: Largest First',
-        listHeading: 'Direct Owner & Verified Properties', unitProp: 'units',
+        listHeading: 'Direct Owner & Verified Properties', unitProp: 'units', loadingProp: 'Loading property listings across Malaysia...',
         emptyTitle: 'No properties match current filters', emptySub: 'Try adjusting budget or property type, or post your listing free!', emptyBtn: '+ List Property Free',
         badgePinned: 'TOP', badgeOwner: '👤 Direct Owner', badgeAgent: '🏢 Property Agent', badgeRent: 'For Rent', badgeSale: 'For Sale',
         badgeRooms: (r) => `🛏️ ${r}R`, badgeSqft: (s) => `📐 ${s.toLocaleString()} sqft`,
@@ -435,7 +435,7 @@
         sqftAll: 'Keluasan sqft', sqftSuffix: '+ sqft',
         furnAll: 'Perabot', furnFull: 'Lengkap Perabot (Fully)', furnPart: 'Separuh Perabot (Partial)', furnEmpty: 'Kosong (Unfurnished)',
         sortDefault: 'Susunan: Pilihan + Terkini', sortNearest: 'Lokasi Paling Dekat', sortPriceAsc: 'Harga: Rendah ke Tinggi', sortPriceDesc: 'Harga: Tinggi ke Rendah', sortSqftDesc: 'Keluasan: Terbesar',
-        listHeading: 'Hartanah Terus Pemilik & Disahkan', unitProp: 'unit',
+        listHeading: 'Hartanah Terus Pemilik & Disahkan', unitProp: 'unit', loadingProp: 'Memuatkan senarai hartanah...',
         emptyTitle: 'Tiada hartanah sepadan dengan tapisan', emptySub: 'Cuba ubah bajet atau jenis hartanah, atau iklankan secara percuma!', emptyBtn: '+ Iklan Hartanah Percuma',
         badgePinned: 'PILIHAN', badgeOwner: '👤 Terus Pemilik', badgeAgent: '🏢 Ejen Hartanah', badgeRent: 'Disewa', badgeSale: 'Dijual',
         badgeRooms: (r) => `🛏️ ${r}Bilik`, badgeSqft: (s) => `📐 ${s.toLocaleString()} sqft`,
@@ -612,6 +612,8 @@
       document.getElementById('propSubmitBtn').innerText = t.btnSubmit;
       updatePropPriceLabel();
 
+      const loadEl = document.getElementById('propLoadingText');
+      if (loadEl && t.loadingProp) loadEl.innerText = t.loadingProp;
       renderPropPhotoGrid();
       renderProperties();
     }
@@ -1011,6 +1013,7 @@
     }
 
     function openListPropModal() {
+      setPropLang(currentLang);
       renderPropPhotoGrid();
       updatePropPriceLabel();
       document.getElementById('listPropModal').classList.remove('hidden');
