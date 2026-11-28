@@ -35,7 +35,7 @@
 <body class="max-w-md mx-auto bg-[#f5f6f8] min-h-screen flex flex-col relative shadow-[0_0_40px_rgba(15,23,42,0.12)]">
 
   <!-- 顶部沉浸式横幅 + 地区/三语 + 悬浮胶囊搜索框 -->
-  <header class="relative bg-gradient-to-br from-red-600 via-rose-600 to-orange-500 text-white pt-3.5 pb-8 px-4 shadow-md overflow-hidden rounded-b-[26px]">
+  <header id="homeHeader" class="relative bg-gradient-to-br from-red-600 via-rose-600 to-orange-500 text-white pt-3.5 pb-8 px-4 shadow-md overflow-hidden rounded-b-[26px]">
     <!-- 纯代码装饰矢量几何背景（零外链图片） -->
     <svg class="absolute right-0 bottom-0 w-48 h-40 opacity-15 pointer-events-none" viewBox="0 0 200 160" fill="none">
       <circle cx="155" cy="35" r="70" fill="white"/>
@@ -80,7 +80,7 @@
   </header>
 
   <!-- 悬浮胶囊搜索框 + 三项快捷入口条（浏览记录 / 我的收藏 / 我的帖子） -->
-  <div class="relative z-20 -mt-5 mx-3 bg-white rounded-2xl shadow-[0_6px_20px_rgba(15,23,42,0.06)] border border-gray-100/90 p-3">
+  <div id="homeSearchCard" class="relative z-20 -mt-5 mx-3 bg-white rounded-2xl shadow-[0_6px_20px_rgba(15,23,42,0.06)] border border-gray-100/90 p-3">
     <div id="searchBoxWrapper" class="relative">
       <form onsubmit="handleSearchSubmit(event)" class="relative mb-2 flex items-center gap-1.5">
         <div class="relative flex-1">
@@ -91,18 +91,16 @@
         </div>
         <button type="submit" id="searchSubmitBtn" class="bg-gradient-to-r from-red-600 to-orange-600 hover:opacity-95 text-white text-xs font-bold px-4 py-2.5 rounded-full shrink-0 shadow-xs transition">搜索</button>
       </form>
-      <!-- 实时搜索联想下拉浮层（直接显示商家/帖子名 + 精准距离徽章 + 营业/分类 + 一键导航） -->
-      <div id="instantSearchDropdown" class="hidden absolute left-0 right-0 top-[44px] z-40 bg-white rounded-2xl shadow-[0_14px_36px_rgba(15,23,42,0.18)] border border-gray-200/90 overflow-hidden max-h-[66vh] overflow-y-auto divide-y divide-gray-100"></div>
+
     </div>
     <div id="searchHistoryBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-1.5 border-b border-gray-100"></div>
     <div id="quickHotSearchBar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-1.5 border-b border-gray-100 text-[10px]">
-      <span class="text-gray-400 font-semibold shrink-0">🔥 附近热搜：</span>
+      <button type="button" onclick="openLeaderboardModal()" id="hotLeaderboardChip" class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-2xs font-black shrink-0 transition">🏆 探索榜 · 0分</button>
       <button type="button" onclick="applySearchHistoryTerm('附近')" class="px-2 py-0.5 rounded-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-extrabold shrink-0 transition">✨ 附近全部</button>
       <button type="button" onclick="applySearchHistoryTerm('附近吃饭')" class="px-2 py-0.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-bold shrink-0 transition">🍜 附近吃饭</button>
       <button type="button" onclick="applySearchHistoryTerm('便利店')" class="px-2 py-0.5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200/80 font-bold shrink-0 transition">🛒 便利店/myNEWS</button>
       <button type="button" onclick="applySearchHistoryTerm('诊所药房')" class="px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 font-bold shrink-0 transition">🏥 医院药房</button>
       <button type="button" onclick="applySearchHistoryTerm('学校')" class="px-2 py-0.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 font-bold shrink-0 transition">🎓 学校</button>
-      <button type="button" onclick="openLeaderboardModal()" class="px-2 py-0.5 rounded-full bg-amber-100/80 hover:bg-amber-200/80 text-amber-950 border border-amber-300 font-extrabold shrink-0 transition">🏆 探索榜</button>
     </div>
 
     <div class="grid grid-cols-3 divide-x divide-gray-100 text-center text-xs font-bold text-gray-700 pt-0.5">
@@ -436,6 +434,17 @@
     </div>
 
     <div class="bg-white mt-3 mx-3 rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100 overflow-hidden">
+      <button onclick="openLeaderboardModal()" class="w-full flex items-center justify-between px-4 py-3.5 bg-amber-50/60 hover:bg-amber-50 transition text-left">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center text-sm shadow-2xs">🏆</span>
+          <div>
+            <div class="text-sm font-black text-amber-950">我的探索积分与全马排行榜</div>
+            <div id="profilePointsSub" class="text-[11px] text-amber-800">当前累计：0 分 · 到店打卡自动 +1 分</div>
+          </div>
+        </div>
+        <span class="text-amber-600 font-bold text-lg">›</span>
+      </button>
+
       <button onclick="switchTab('myPosts')" class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition text-left">
         <div class="flex items-center space-x-3">
           <span class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm">📝</span>
@@ -1538,9 +1547,20 @@
       if (typeof navigator.geolocation.watchPosition === 'function') {
         try {
           gpsWatchId = navigator.geolocation.watchPosition(
-            (pos) => applyDetectedPosition(pos, false, false),
+            (pos) => {
+              if (isManualPinnedLocation || !pos?.coords) return;
+              const nLat = Number(pos.coords.latitude);
+              const nLng = Number(pos.coords.longitude);
+              if (Number.isNaN(nLat) || Number.isNaN(nLng)) return;
+              // 只有真实位移超过 120 米才刷新列表，防止原地 GPS 抖动导致页面频繁闪烁跳动
+              if (nearbyUserCoords) {
+                const movedKm = calcDistanceKm(nearbyUserCoords.lat, nearbyUserCoords.lng, nLat, nLng);
+                if (typeof movedKm === 'number' && movedKm < 0.12) return;
+              }
+              applyDetectedPosition(pos, false, false);
+            },
             () => {},
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
           );
         } catch (_) {}
       }
@@ -2222,279 +2242,14 @@
     }
 
     function onSearchFocus() {
+      closeInstantSearchDropdown();
       const val = (document.getElementById('searchInput')?.value || '').trim();
       if (!val) {
-        closeInstantSearchDropdown();
         showSearchHistoryBar();
       } else {
         document.getElementById('searchHistoryBar')?.classList.add('hidden');
-        renderInstantSearchDropdown(val);
       }
     }
-
-    function highlightQueryText(text, rawKw) {
-      const safeText = String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const kw = String(rawKw || '').trim();
-      if (!kw || kw.length < 1) return safeText;
-      try {
-        const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        return safeText.replace(new RegExp(`(${escaped})`, 'gi'), '<span class="text-red-600 font-black underline decoration-red-300">$1</span>');
-      } catch (_) {
-        return safeText;
-      }
-    }
-
-    function scheduleGoogleAutocomplete(rawKw) {
-      clearTimeout(autoCompleteTimer);
-      const kw = String(rawKw || '').trim();
-      if (!kw || kw.length < 1) return;
-
-      const latKey = nearbyUserCoords ? nearbyUserCoords.lat.toFixed(3) : 'none';
-      const lngKey = nearbyUserCoords ? nearbyUserCoords.lng.toFixed(3) : 'none';
-      const cacheKey = `${currentLang}::${latKey},${lngKey}::${kw.toLowerCase()}`;
-
-      if (autoCompleteCache.has(cacheKey)) {
-        window._googleAutoSuggestions = autoCompleteCache.get(cacheKey);
-        if (document.activeElement === document.getElementById('searchInput')) {
-          renderInstantSearchDropdown(kw);
-        }
-        return;
-      }
-
-      const seq = ++autoCompleteSeq;
-      autoCompleteTimer = setTimeout(async () => {
-        if (seq !== autoCompleteSeq) return;
-        try {
-          const res = await fetch(GEO_PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'autocomplete',
-              input: kw,
-              languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
-              ...(nearbyUserCoords ? {
-                lat: nearbyUserCoords.lat,
-                lng: nearbyUserCoords.lng,
-                radius: 15000.0
-              } : {})
-            })
-          });
-          if (!res.ok || seq !== autoCompleteSeq) return;
-          const data = await res.json();
-          const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
-          const parsed = suggestions
-            .map(s => s.placePrediction)
-            .filter(Boolean)
-            .map((pred, idx) => {
-              const mainText = pred.structuredFormat?.mainText?.text || pred.text?.text || '';
-              const secText = pred.structuredFormat?.secondaryText?.text || '';
-              const distMeters = typeof pred.distanceMeters === 'number' ? pred.distanceMeters : null;
-              return {
-                idx,
-                placeId: pred.placeId || '',
-                mainText,
-                secText,
-                distKm: distMeters !== null ? (distMeters / 1000) : null
-              };
-            })
-            .filter(x => x.mainText);
-
-          parsed.sort((a, b) => {
-            const da = typeof a.distKm === 'number' ? a.distKm : 9999;
-            const db = typeof b.distKm === 'number' ? b.distKm : 9999;
-            return da - db;
-          });
-
-          const reIndexed = parsed.map((x, i) => ({ ...x, idx: i }));
-          autoCompleteCache.set(cacheKey, reIndexed);
-          window._googleAutoSuggestions = reIndexed;
-
-          const curVal = (document.getElementById('searchInput')?.value || '').trim();
-          if (curVal && document.activeElement === document.getElementById('searchInput')) {
-            renderInstantSearchDropdown(curVal);
-          }
-        } catch (_) {}
-      }, 280);
-    }
-
-    async function handleAutocompleteSelect(idx) {
-      const list = window._googleAutoSuggestions || [];
-      const item = list[idx];
-      if (!item) return;
-
-      closeInstantSearchDropdown();
-      const inp = document.getElementById('searchInput');
-      if (inp) {
-        inp.value = item.mainText;
-        document.getElementById('clearSearchBtn')?.classList.remove('hidden');
-      }
-      recordSearchHistory(item.mainText);
-
-      // 若有 placeId，直接向 Google 拉取精确经纬度 + 电话，自动沉淀入库并跳导航
-      if (item.placeId) {
-        try {
-          const res = await fetch(GEO_PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'place_details',
-              placeId: item.placeId,
-              languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN')
-            })
-          });
-          if (res.ok) {
-            const pl = await res.json();
-            const pLat = pl.location?.latitude;
-            const pLng = pl.location?.longitude;
-            if (typeof pLat === 'number' && typeof pLng === 'number') {
-              const name = pl.displayName?.text || item.mainText;
-              const addr = pl.formattedAddress || item.secText || 'Malaysia';
-              const rawPhone = pl.internationalPhoneNumber || pl.nationalPhoneNumber || '';
-              const phoneDigits = String(rawPhone).replace(/[^0-9]/g, '');
-              const cleanWa = phoneDigits.startsWith('0')
-                ? ('60' + phoneDigits.slice(1))
-                : (phoneDigits.startsWith('60') ? phoneDigits : '');
-              const st = inferStateFromCoords(pLat, pLng)?.value || inferStateFromText(addr) || '全马';
-              const distKm = nearbyUserCoords ? calcDistanceKm(nearbyUserCoords.lat, nearbyUserCoords.lng, pLat, pLng) : item.distKm;
-
-              window._discoveredPlacesCache = [{
-                idx: 0,
-                placeId: item.placeId,
-                name,
-                addr,
-                phone: cleanWa,
-                lat: pLat,
-                lng: pLng,
-                city: st,
-                distKm
-              }];
-              await handleDiscoverySelect(0);
-              return;
-            }
-          }
-        } catch (_) {}
-      }
-
-      ensureMainTabVisible();
-      renderPosts(true);
-    }
-
-    function renderInstantSearchDropdown(rawKw) {
-      const dd = document.getElementById('instantSearchDropdown');
-      if (!dd) return;
-      const kw = String(rawKw || '').trim();
-      if (!kw) {
-        dd.classList.add('hidden');
-        return;
-      }
-
-      const t = I18N[currentLang];
-      const autoSuggs = (window._googleAutoSuggestions || []).slice(0, 5);
-      const localTop = (lastFilteredList || []).slice(0, 4);
-      const livePlaces = (window._discoveredPlacesCache || []).slice(0, 4);
-
-      if (autoSuggs.length === 0 && localTop.length === 0 && livePlaces.length === 0) {
-        dd.innerHTML = `
-          <div class="px-3.5 py-3 text-xs text-amber-700 font-semibold flex items-center justify-between">
-            <span>🔍 Google 实时联想匹配“${kw}”中...</span>
-            <button type="button" onclick="closeInstantSearchDropdown()" class="text-gray-400 text-xs px-1">✕</button>
-          </div>
-        `;
-        dd.classList.remove('hidden');
-        return;
-      }
-
-      const autoHeader = currentLang === 'en' ? '⚡ Google Live Suggestions (Tap for Instant Route)' : (currentLang === 'ms' ? '⚡ Cadangan Langsung Google (Tekan Terus Pandu)' : '⚡ Google 实时联想（直显距离 · 点选秒导航）');
-      const localHeader = currentLang === 'en' ? '📌 Directory Matches (Sorted by Distance)' : (currentLang === 'ms' ? '📌 Padanan Direktori (Ikut Jarak)' : '📌 平台已收录（按距离由近到远）');
-      const liveHeader = currentLang === 'en' ? '✨ Nearby Live Places' : (currentLang === 'ms' ? '✨ Lokasi Berdekatan' : '✨ 附近实时门店');
-
-      let sectionsHTML = '';
-
-      if (autoSuggs.length > 0) {
-        sectionsHTML += `<div class="bg-blue-50/90 px-3 py-1.5 text-[10px] font-extrabold text-blue-800 flex items-center justify-between"><span>${autoHeader}</span><button type="button" onclick="closeInstantSearchDropdown()" class="text-blue-700 hover:text-blue-950 px-1">✕</button></div>`;
-        sectionsHTML += autoSuggs.map(s => {
-          const distStr = typeof s.distKm === 'number' ? formatShortDist(s.distKm) : '';
-          const distBadge = distStr
-            ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md shrink-0">📍 ${distStr}</span>`
-            : '';
-          return `
-            <button type="button" onclick="handleAutocompleteSelect(${s.idx})"
-                    class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50/60 transition flex items-center justify-between gap-2.5">
-              <div class="min-w-0 flex-1">
-                <div class="font-bold text-xs text-gray-900 truncate">🔍 ${highlightQueryText(s.mainText, kw)}</div>
-                ${s.secText ? `<div class="text-[10px] text-gray-500 truncate mt-0.5">${s.secText}</div>` : ''}
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                ${distBadge}
-                <span class="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-md">🧭</span>
-              </div>
-            </button>
-          `;
-        }).join('');
-      }
-
-      if (localTop.length > 0) {
-        sectionsHTML += `<div class="bg-gray-50/90 px-3 py-1.5 text-[10px] font-extrabold text-gray-500 flex items-center justify-between"><span>${localHeader}</span>${autoSuggs.length === 0 ? '<button type="button" onclick="closeInstantSearchDropdown()" class="text-gray-400 hover:text-gray-700 px-1">✕</button>' : ''}</div>`;
-        sectionsHTML += localTop.map(p => {
-          const rawLocTitle = (currentLang === 'en' ? p.title_en : (currentLang === 'ms' ? p.title_ms : p.title_zh)) || p.title;
-          const title = localizeCardTitle(rawLocTitle, currentLang, p);
-          const distStr = typeof p._distKm === 'number' ? formatShortDist(p._distKm) : '';
-          const distBadge = distStr
-            ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md shrink-0">📍 ${distStr}</span>`
-            : `<span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">${getRegionDisplayName(p.city, currentLang)}</span>`;
-          const priceStr = (currentLang === 'en' ? p.price_en : (currentLang === 'ms' ? p.price_ms : p.price_zh)) || p.price || '';
-          return `
-            <button type="button" onclick="closeInstantSearchDropdown(); openDetailModal(${p.id});"
-                    class="w-full text-left px-3.5 py-2.5 hover:bg-red-50/50 transition flex items-center justify-between gap-2.5">
-              <div class="min-w-0 flex-1">
-                <div class="font-bold text-xs text-gray-900 truncate">${highlightQueryText(title, kw)}</div>
-                <div class="text-[10px] text-gray-500 truncate mt-0.5">${t.cats[p.category] || p.category} · <span class="text-red-600 font-bold">${priceStr}</span></div>
-              </div>
-              ${distBadge}
-            </button>
-          `;
-        }).join('');
-      }
-
-      if (livePlaces.length > 0 && autoSuggs.length === 0) {
-        sectionsHTML += `<div class="bg-amber-50/90 px-3 py-1.5 text-[10px] font-extrabold text-amber-800 flex items-center justify-between"><span>${liveHeader}</span>${localTop.length === 0 ? '<button type="button" onclick="closeInstantSearchDropdown()" class="text-amber-700 px-1">✕</button>' : ''}</div>`;
-        sectionsHTML += livePlaces.map(item => {
-          const distStr = typeof item.distKm === 'number' ? formatShortDist(item.distKm) : '';
-          const distBadge = distStr
-            ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md shrink-0">📍 ${distStr}</span>`
-            : '';
-          const openTag = item.openNow === true
-            ? `<span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">营业中</span>`
-            : (item.openNow === false ? `<span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1 rounded">已打烊</span>` : '');
-          return `
-            <button type="button" onclick="closeInstantSearchDropdown(); handleDiscoverySelect(${item.idx});"
-                    class="w-full text-left px-3.5 py-2.5 hover:bg-amber-50/70 transition flex items-center justify-between gap-2.5">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1">
-                  <span class="font-bold text-xs text-gray-900 truncate">${highlightQueryText(item.name, kw)}</span>
-                  ${openTag}
-                </div>
-                <div class="text-[10px] text-gray-500 truncate mt-0.5">${item.addr}</div>
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                ${distBadge}
-                <span class="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md">🧭</span>
-              </div>
-            </button>
-          `;
-        }).join('');
-      }
-
-      dd.innerHTML = sectionsHTML;
-      dd.classList.remove('hidden');
-    }
-
-    document.addEventListener('click', (ev) => {
-      const wrap = document.getElementById('searchBoxWrapper');
-      if (wrap && !wrap.contains(ev.target)) {
-        closeInstantSearchDropdown();
-      }
-    });
 
     function handleSearchSubmit(e) {
       if (e) e.preventDefault();
@@ -2514,22 +2269,16 @@
     }
 
     function onSearchInput() {
-      ensureMainTabVisible();
-      renderDisplayLimit = 80;
       const val = document.getElementById('searchInput').value;
       const trimmed = val.trim();
       document.getElementById('clearSearchBtn').classList.toggle('hidden', !trimmed);
+      closeInstantSearchDropdown();
       if (!trimmed) {
-        window._googleAutoSuggestions = [];
-        closeInstantSearchDropdown();
         showSearchHistoryBar();
+        renderDisplayLimit = 80;
+        renderPosts(false);
       } else {
         document.getElementById('searchHistoryBar')?.classList.add('hidden');
-      }
-      renderPosts(false);
-      if (trimmed) {
-        renderInstantSearchDropdown(trimmed);
-        scheduleGoogleAutocomplete(trimmed);
       }
     }
 
@@ -4401,6 +4150,11 @@
         document.getElementById(id)?.classList.add('text-gray-400');
       });
 
+      const isHome = (tab === 'main');
+      document.getElementById('homeHeader')?.classList.toggle('hidden', !isHome);
+      document.getElementById('homeSearchCard')?.classList.toggle('hidden', !isHome);
+      refreshExplorerPointsBadge();
+
       if (tab === 'main') {
         document.getElementById('mainTab').classList.remove('hidden');
         document.getElementById('navMain').classList.replace('text-gray-400', 'text-red-600');
@@ -4420,25 +4174,46 @@
       }
     }
 
+    function refreshExplorerPointsBadge() {
+      let myStats = { points: 0, visited: [] };
+      try { myStats = JSON.parse(localStorage.getItem('dmjt_explorer_stats_v1') || '{"points":0,"visited":[]}'); } catch (_) {}
+      const pts = Number(myStats.points || 0);
+      const cnt = Array.isArray(myStats.visited) ? myStats.visited.length : 0;
+      const chip = document.getElementById('hotLeaderboardChip');
+      if (chip) chip.innerText = `🏆 探索榜 · ${pts}分`;
+      const profSub = document.getElementById('profilePointsSub');
+      if (profSub) profSub.innerText = `当前累计：${pts} 分 · 已点亮 ${cnt} 个地点（到店打卡 +1 分）`;
+    }
+
+    function saveExplorerNickname() {
+      const val = (document.getElementById('explorerNicknameInput')?.value || '').trim();
+      localStorage.setItem('dmjt_explorer_nick_v1', val);
+      openLeaderboardModal();
+    }
+
     function openLeaderboardModal() {
       let myStats = { points: 0, visited: [] };
       try { myStats = JSON.parse(localStorage.getItem('dmjt_explorer_stats_v1') || '{"points":0,"visited":[]}'); } catch (_) {}
       const myPts = Number(myStats.points || 0);
-      const myCnt = Array.isArray(myStats.visited) ? myStats.visited.length : 0;
+      const visitedList = Array.isArray(myStats.visited) ? myStats.visited : [];
+      const myCnt = visitedList.length;
+      const savedNick = (localStorage.getItem('dmjt_explorer_nick_v1') || '').trim();
+
+      const nickInput = document.getElementById('explorerNicknameInput');
+      if (nickInput && !nickInput.value && savedNick) nickInput.value = savedNick;
 
       document.getElementById('myExplorerPoints').innerText = `${myPts} 分`;
       document.getElementById('myExplorerSub').innerText = `已点亮 ${myCnt} 个真实地点 · 到达目的地 150m 内自动 +1 分`;
 
+      const displayMeName = savedNick ? `${savedNick}（我）` : '我（当前设备）';
       const mockBoard = [
         { name: '槟城探路先锋', pts: Math.max(48, myPts + 12), reward: '👑 首页置顶7天' },
         { name: '吉隆坡美食达人', pts: Math.max(36, myPts + 6), reward: '🥈 州属置顶3天' },
         { name: '新山日常打卡王', pts: Math.max(29, myPts + 3), reward: '🥉 州属置顶3天' },
         { name: '怡保生活通', pts: 21, reward: '🎁 优先曝光' },
-        { name: '雪兰莪跑腿侠', pts: 15, reward: '🎁 优先曝光' }
+        { name: '雪兰莪跑腿侠', pts: 15, reward: '🎁 优先曝光' },
+        { name: displayMeName, pts: myPts, reward: myPts > 0 ? '✨ 累计中' : '🚀 待出发', isMe: true }
       ];
-      if (myPts > 0) {
-        mockBoard.push({ name: '我（当前设备）', pts: myPts, reward: '✨ 当前积分', isMe: true });
-      }
       mockBoard.sort((a, b) => b.pts - a.pts);
 
       document.getElementById('leaderboardRows').innerHTML = mockBoard.map((row, i) => `
@@ -4453,6 +4228,22 @@
           </div>
         </div>
       `).join('');
+
+      const histBox = document.getElementById('myVisitedHistoryBox');
+      const histList = document.getElementById('myVisitedHistoryList');
+      if (histBox && histList) {
+        if (visitedList.length > 0) {
+          histBox.classList.remove('hidden');
+          histList.innerHTML = visitedList.slice(0, 10).map(raw => {
+            const parts = String(raw).split('::');
+            const dt = parts[0] || '';
+            const place = parts[1] || raw;
+            return `<div class="flex items-center justify-between bg-emerald-50/70 border border-emerald-200/70 rounded-lg px-2.5 py-1.5"><span class="font-bold text-emerald-950 truncate">✅ ${place}</span><span class="text-[10px] text-emerald-700 shrink-0 ml-2">${dt} +1分</span></div>`;
+          }).join('');
+        } else {
+          histBox.classList.add('hidden');
+        }
+      }
 
       document.getElementById('explorerLeaderboardModal')?.classList.remove('hidden');
     }
@@ -4495,6 +4286,7 @@
 
     syncSubFilterVisibility('全部');
     setLang(currentLang);
+    refreshExplorerPointsBadge();
     updateLiveLocationBadgeUI();
     startContinuousLocationTracking(true);
     setTimeout(checkPendingArrivalOnHome, 1800);
@@ -4668,12 +4460,19 @@
         <button type="button" onclick="closeLeaderboardModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
       </div>
 
-      <div id="myExplorerCard" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between">
-        <div>
-          <div class="text-xs font-extrabold text-amber-950">我的探索积分</div>
-          <div id="myExplorerSub" class="text-[11px] text-amber-800 mt-0.5">已点亮 0 个真实地点 · 每日最多计 8 分</div>
+      <div id="myExplorerCard" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs font-extrabold text-amber-950">我的探索积分</div>
+            <div id="myExplorerSub" class="text-[11px] text-amber-800 mt-0.5">已点亮 0 个真实地点 · 每日最多计 8 分</div>
+          </div>
+          <div id="myExplorerPoints" class="text-xl font-black text-red-600">0 分</div>
         </div>
-        <div id="myExplorerPoints" class="text-xl font-black text-red-600">0 分</div>
+        <div class="flex items-center gap-1.5 pt-1 border-t border-amber-200/70">
+          <input id="explorerNicknameInput" type="text" maxlength="16" placeholder="设置我的榜单昵称（如：槟城老司机）"
+                 class="flex-1 bg-white border border-amber-200 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-red-500" />
+          <button type="button" onclick="saveExplorerNickname()" class="bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shrink-0">保存昵称</button>
+        </div>
       </div>
 
       <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200/80 space-y-1.5 text-[11px] text-gray-700">
@@ -4683,7 +4482,12 @@
         <div>• <b>第 4 – 10 名</b>：优先刷新曝光权益 + 探索积分加成</div>
       </div>
 
+      <div class="text-xs font-extrabold text-gray-800 pt-1">🏅 全马实时探索排名</div>
       <div id="leaderboardRows" class="space-y-1.5"></div>
+      <div id="myVisitedHistoryBox" class="hidden pt-2 border-t border-gray-100 space-y-1.5">
+        <div class="text-xs font-extrabold text-gray-800">📍 我已真实抵达点亮的足迹</div>
+        <div id="myVisitedHistoryList" class="space-y-1 text-[11px] text-gray-600"></div>
+      </div>
     </div>
   </div>
 </body>
