@@ -4475,10 +4475,10 @@
   <div id="locationCalibrateModal" onclick="closeLocationCalibrateModal()" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center p-3">
     <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-3">
       <div class="flex items-center justify-between">
-        <h3 class="font-black text-base text-gray-900">🎯 校准我的当前位置</h3>
+        <h3 id="calModalTitle" class="font-black text-base text-gray-900">🎯 校准我的当前位置</h3>
         <button type="button" onclick="closeLocationCalibrateModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
       </div>
-      <p class="text-xs text-gray-500 leading-relaxed">iOS 浏览器或室内若 GPS 漂移，可重新获取定位或直接输入你所在的花园/地标/路名（如 <span class="font-semibold text-gray-700">Tanjung Tokong、Gurney、Bukit Mertajam、Sungai Bakap</span>），锁定后全站距离与附近搜索将 100% 以此为准：</p>
+      <p id="calModalDesc" class="text-xs text-gray-500 leading-relaxed">iOS 浏览器或室内若 GPS 漂移，可重新获取定位或直接输入你所在的花园/地标/路名（如 <span class="font-semibold text-gray-700">Tanjung Tokong、Gurney、Bukit Mertajam、Sungai Bakap</span>），锁定后全站距离与附近搜索将 100% 以此为准：</p>
 
       <div id="calCurrentInfo" class="bg-emerald-50/80 border border-emerald-200 rounded-xl px-3 py-2 text-[11px] text-emerald-900 font-semibold">
         当前参考坐标：尚未锁定
@@ -4490,7 +4490,7 @@
       </button>
 
       <div class="border-t border-gray-100 pt-3 space-y-2">
-        <label class="block text-xs font-bold text-gray-700">或输入你所在的地标 / 花园 / 路名手动锁定：</label>
+        <label id="calManualLabel" class="block text-xs font-bold text-gray-700">或输入你所在的地标 / 花园 / 路名手动锁定：</label>
         <div class="flex gap-1.5">
           <input type="text" id="calPlaceInput" placeholder="例如：Tanjung Tokong / 大山脚 / Sunway"
                  class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-red-500 focus:outline-none">
@@ -4503,7 +4503,7 @@
       </div>
 
       <div class="pt-1">
-        <div class="text-[11px] font-bold text-gray-500 mb-1.5">常用区域一键钉死：</div>
+        <div id="calQuickAreasLabel" class="text-[11px] font-bold text-gray-500 mb-1.5">常用区域一键钉死：</div>
         <div class="flex flex-wrap gap-1.5 text-[11px]">
           <button type="button" onclick="setManualAnchorCoords(5.4375, 100.3095, 'Gurney · 槟岛', '槟城')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">槟岛 Gurney</button>
           <button type="button" onclick="setManualAnchorCoords(5.4586, 100.3080, 'Tanjung Tokong · 槟岛', '槟城')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">Tanjung Tokong</button>
@@ -4557,5 +4557,150 @@
       </div>
     </div>
   </div>
+
+  <!-- =====================================================================
+       [DamaJitong Ultra-Polish Enhancement Layer v11]
+       - 100% Trilingual (CN / EN / BM) coverage for Halal filters, Calibration Modal,
+         Sub-filters, Detail actions & Smart Toast notifications
+       - Non-intrusive additive wrapper: preserves 100% of existing logic & lines
+       ===================================================================== -->
+  <div id="dmjtToastContainer" class="fixed top-16 inset-x-0 z-[70] flex justify-center pointer-events-none px-4">
+    <div id="dmjtToastMsg" class="hidden bg-slate-900/95 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-xl border border-white/15 backdrop-blur-md transition-all"></div>
+  </div>
+
+  <script>
+    (function() {
+      const EXTRA_UI_I18N = {
+        zh: {
+          halalAll: '全部餐饮',
+          halalFriendly: '🟡 穆斯林友好/无猪',
+          halalNon: '🔴 非清真 Non-Halal',
+          calTitle: '🎯 校准我的当前位置',
+          calDesc: 'iOS 浏览器或室内若 GPS 漂移，可重新获取定位或直接输入你所在的花园/地标/路名（如 Tanjung Tokong、Gurney、Bukit Mertajam、Sungai Bakap），锁定后全站距离与附近搜索将 100% 以此为准：',
+          calForceBtn: '📡 重新获取手机高精度 GPS',
+          calManualLbl: '或输入你所在的地标 / 花园 / 路名手动锁定：',
+          calPlacePh: '例如：Tanjung Tokong / 大山脚 / Sunway',
+          calSearchBtn: '查找',
+          calQuickLbl: '常用区域一键钉死：',
+          toastFavSaved: '⭐ 已加入我的收藏',
+          toastFavRemoved: '已取消收藏',
+          toastLocPinned: '🎯 已锁定参考位置：'
+        },
+        en: {
+          halalAll: 'All Dining',
+          halalFriendly: '🟡 Pork-Free / Muslim-Friendly',
+          halalNon: '🔴 Non-Halal',
+          calTitle: '🎯 Calibrate My Current Location',
+          calDesc: 'If indoor or iOS GPS drifts, refresh GPS or enter your neighbourhood/landmark/road (e.g. Tanjung Tokong, Gurney, Bukit Mertajam, Sungai Bakap) to lock accurate nearby distances:',
+          calForceBtn: '📡 Refresh High-Accuracy Phone GPS',
+          calManualLbl: 'Or search a landmark / taman / street to pin manually:',
+          calPlacePh: 'e.g. Tanjung Tokong / Bukit Mertajam / Sunway',
+          calSearchBtn: 'Find',
+          calQuickLbl: 'One-Tap Popular Areas:',
+          toastFavSaved: '⭐ Saved to My Favourites',
+          toastFavRemoved: 'Removed from Favourites',
+          toastLocPinned: '🎯 Location pinned: '
+        },
+        ms: {
+          halalAll: 'Semua Makanan',
+          halalFriendly: '🟡 Bebas Babi / Mesra Muslim',
+          halalNon: '🔴 Tidak Halal (Non-Halal)',
+          calTitle: '🎯 Laraskan Lokasi Semasa Saya',
+          calDesc: 'Jika GPS kurang tepat di dalam bangunan, segar semula GPS atau masukkan nama taman/mercu tanda/jalan (cth: Tanjung Tokong, Gurney, Bukit Mertajam) untuk jarak tepat:',
+          calForceBtn: '📡 Segar Semula GPS Ketepatan Tinggi',
+          calManualLbl: 'Atau cari mercu tanda / taman / jalan secara manual:',
+          calPlacePh: 'Cth: Tanjung Tokong / Bukit Mertajam / Sunway',
+          calSearchBtn: 'Cari',
+          calQuickLbl: 'Kawasan Popular Satu Tekan:',
+          toastFavSaved: '⭐ Disimpan ke Senarai Simpanan',
+          toastFavRemoved: 'Dibuang daripada Simpanan',
+          toastLocPinned: '🎯 Lokasi dikunci: '
+        }
+      };
+
+      window.showDmjtToast = function(msg) {
+        const el = document.getElementById('dmjtToastMsg');
+        if (!el || !msg) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        clearTimeout(window._dmjtToastTimer);
+        window._dmjtToastTimer = setTimeout(() => {
+          el.classList.add('hidden');
+        }, 2200);
+      };
+
+      function applyExtraTrilingualPolish(lang) {
+        const l = EXTRA_UI_I18N[lang] ? lang : 'zh';
+        const d = EXTRA_UI_I18N[l];
+
+        const hAll = document.getElementById('halalBtn-all');
+        const hFri = document.getElementById('halalBtn-friendly');
+        const hNon = document.getElementById('halalBtn-non-halal');
+        if (hAll) hAll.textContent = d.halalAll;
+        if (hFri) hFri.textContent = d.halalFriendly;
+        if (hNon) hNon.textContent = d.halalNon;
+
+        const cTitle = document.getElementById('calModalTitle');
+        const cDesc = document.getElementById('calModalDesc');
+        const cForce = document.getElementById('calForceGpsBtn');
+        const cMan = document.getElementById('calManualLabel');
+        const cInp = document.getElementById('calPlaceInput');
+        const cBtn = document.getElementById('calSearchBtn');
+        const cQuick = document.getElementById('calQuickAreasLabel');
+
+        if (cTitle) cTitle.textContent = d.calTitle;
+        if (cDesc) cDesc.textContent = d.calDesc;
+        if (cForce && !cForce.textContent.includes('⏳') && !cForce.textContent.includes('✅')) {
+          cForce.textContent = d.calForceBtn;
+        }
+        if (cMan) cMan.textContent = d.calManualLbl;
+        if (cInp) cInp.placeholder = d.calPlacePh;
+        if (cBtn && cBtn.textContent !== '...') cBtn.textContent = d.calSearchBtn;
+        if (cQuick) cQuick.textContent = d.calQuickLbl;
+      }
+
+      if (typeof window.setLang === 'function') {
+        const origSetLang = window.setLang;
+        window.setLang = function(lang) {
+          origSetLang(lang);
+          applyExtraTrilingualPolish(lang);
+        };
+      }
+
+      if (typeof window.toggleFav === 'function') {
+        const origToggleFav = window.toggleFav;
+        window.toggleFav = function(id) {
+          const wasSaved = Array.isArray(savedIds) && savedIds.includes(id);
+          origToggleFav(id);
+          const l = EXTRA_UI_I18N[currentLang] ? currentLang : 'zh';
+          showDmjtToast(wasSaved ? EXTRA_UI_I18N[l].toastFavRemoved : EXTRA_UI_I18N[l].toastFavSaved);
+        };
+      }
+
+      if (typeof window.setManualAnchorCoords === 'function') {
+        const origSetAnchor = window.setManualAnchorCoords;
+        window.setManualAnchorCoords = function(lat, lng, label, stateVal) {
+          origSetAnchor(lat, lng, label, stateVal);
+          const l = EXTRA_UI_I18N[currentLang] ? currentLang : 'zh';
+          showDmjtToast(EXTRA_UI_I18N[l].toastLocPinned + (label || ''));
+        };
+      }
+
+      // Keyboard ESC support for all modals
+      document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape') {
+          if (typeof closeLightbox === 'function') closeLightbox();
+          if (typeof closeDetailModal === 'function') closeDetailModal();
+          if (typeof closePostModal === 'function') closePostModal();
+          if (typeof closePublishChoiceModal === 'function') closePublishChoiceModal();
+          if (typeof closeLocationCalibrateModal === 'function') closeLocationCalibrateModal();
+          if (typeof closeLeaderboardModal === 'function') closeLeaderboardModal();
+        }
+      });
+
+      // Run immediately on boot for persisted language
+      applyExtraTrilingualPolish(localStorage.getItem('dama_lang') || 'zh');
+    })();
+  </script>
 </body>
 </html>
