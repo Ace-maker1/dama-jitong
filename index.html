@@ -97,11 +97,12 @@
     <div id="searchHistoryBar" class="hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-1.5 border-b border-gray-100"></div>
     <div id="quickHotSearchBar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-1.5 border-b border-gray-100 text-[10px]">
       <span class="text-gray-400 font-semibold shrink-0">🔥 附近热搜：</span>
+      <button type="button" onclick="applySearchHistoryTerm('附近')" class="px-2 py-0.5 rounded-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-extrabold shrink-0 transition">✨ 附近全部</button>
       <button type="button" onclick="applySearchHistoryTerm('附近吃饭')" class="px-2 py-0.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-bold shrink-0 transition">🍜 附近吃饭</button>
-      <button type="button" onclick="applySearchHistoryTerm('茶室咖啡')" class="px-2 py-0.5 rounded-full bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200/80 font-bold shrink-0 transition">☕ 茶室咖啡</button>
-      <button type="button" onclick="applySearchHistoryTerm('诊所药房')" class="px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 font-bold shrink-0 transition">🏥 诊所药房</button>
-      <button type="button" onclick="applySearchHistoryTerm('洗车修车')" class="px-2 py-0.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 font-bold shrink-0 transition">🔧 洗车修车</button>
-      <button type="button" onclick="applySearchHistoryTerm('租房')" class="px-2 py-0.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200/80 font-bold shrink-0 transition">🏠 租房</button>
+      <button type="button" onclick="applySearchHistoryTerm('便利店')" class="px-2 py-0.5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200/80 font-bold shrink-0 transition">🛒 便利店/myNEWS</button>
+      <button type="button" onclick="applySearchHistoryTerm('诊所药房')" class="px-2 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 font-bold shrink-0 transition">🏥 医院药房</button>
+      <button type="button" onclick="applySearchHistoryTerm('学校')" class="px-2 py-0.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200/80 font-bold shrink-0 transition">🎓 学校</button>
+      <button type="button" onclick="openLeaderboardModal()" class="px-2 py-0.5 rounded-full bg-amber-100/80 hover:bg-amber-200/80 text-amber-950 border border-amber-300 font-extrabold shrink-0 transition">🏆 探索榜</button>
     </div>
 
     <div class="grid grid-cols-3 divide-x divide-gray-100 text-center text-xs font-bold text-gray-700 pt-0.5">
@@ -1651,10 +1652,13 @@
           ? getRegionDisplayName(effectiveCity, 'en')
           : 'Malaysia');
 
+        const isAllNearbyQuery = /^(附近|周围|周边|附近全部|附近商店|附近店面|附近开着的|nearby|berdekatan)$/i.test(coreQuery);
         const isGenericDiningQuery = /^(吃饭|吃的|找吃的|去吃饭|肚子饿|美食|餐厅|餐馆|food|makan|restaurant)$/i.test(coreQuery);
-        const normalizedPlacesQuery = isGenericDiningQuery
-          ? 'restaurant food cafe kopitiam 餐厅 美食'
-          : coreQuery;
+        const normalizedPlacesQuery = isAllNearbyQuery
+          ? 'restaurant convenience store supermarket hospital pharmacy school 附近 商家'
+          : (isGenericDiningQuery
+              ? 'restaurant food cafe kopitiam 餐厅 美食'
+              : coreQuery);
         const fullTextQuery = activeCoords
           ? normalizedPlacesQuery
           : `${normalizedPlacesQuery} ${areaText}`;
@@ -1662,15 +1666,17 @@
         let normalizedList = [];
 
         try {
-          // 如果是泛搜“吃饭/美食”且已拿到坐标，直接调 Google Nearby Strict 1.5km 圈，把楼下几十米的店全捞出来
+          const useNearbyAll = Boolean(activeCoords && isAllNearbyQuery);
           const useNearbyStrict = Boolean(activeCoords && isGenericDiningQuery);
-          const reqBody = useNearbyStrict ? {
+          const reqBody = (useNearbyAll || useNearbyStrict) ? {
             action: 'places_nearby',
             lat: activeCoords.lat,
             lng: activeCoords.lng,
-            radius: 1500.0,
-            maxResultCount: 10,
-            includedTypes: ['restaurant', 'cafe', 'meal_takeaway', 'bakery'],
+            radius: useNearbyAll ? 2000.0 : 1500.0,
+            maxResultCount: useNearbyAll ? 15 : 10,
+            includedTypes: useNearbyAll
+              ? ['restaurant', 'cafe', 'convenience_store', 'supermarket', 'grocery_store', 'hospital', 'pharmacy', 'school']
+              : ['restaurant', 'cafe', 'meal_takeaway', 'bakery'],
             languageCode: currentLang === 'ms' ? 'ms' : (currentLang === 'en' ? 'en' : 'zh-CN'),
             regionCode: 'MY'
           } : {
@@ -4337,10 +4343,84 @@
       }
     }
 
+    function openLeaderboardModal() {
+      let myStats = { points: 0, visited: [] };
+      try { myStats = JSON.parse(localStorage.getItem('dmjt_explorer_stats_v1') || '{"points":0,"visited":[]}'); } catch (_) {}
+      const myPts = Number(myStats.points || 0);
+      const myCnt = Array.isArray(myStats.visited) ? myStats.visited.length : 0;
+
+      document.getElementById('myExplorerPoints').innerText = `${myPts} 分`;
+      document.getElementById('myExplorerSub').innerText = `已点亮 ${myCnt} 个真实地点 · 到达目的地 150m 内自动 +1 分`;
+
+      const mockBoard = [
+        { name: '槟城探路先锋', pts: Math.max(48, myPts + 12), reward: '👑 首页置顶7天' },
+        { name: '吉隆坡美食达人', pts: Math.max(36, myPts + 6), reward: '🥈 州属置顶3天' },
+        { name: '新山日常打卡王', pts: Math.max(29, myPts + 3), reward: '🥉 州属置顶3天' },
+        { name: '怡保生活通', pts: 21, reward: '🎁 优先曝光' },
+        { name: '雪兰莪跑腿侠', pts: 15, reward: '🎁 优先曝光' }
+      ];
+      if (myPts > 0) {
+        mockBoard.push({ name: '我（当前设备）', pts: myPts, reward: '✨ 当前积分', isMe: true });
+      }
+      mockBoard.sort((a, b) => b.pts - a.pts);
+
+      document.getElementById('leaderboardRows').innerHTML = mockBoard.map((row, i) => `
+        <div class="flex items-center justify-between px-3 py-2 rounded-xl border ${row.isMe ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-5 text-center font-black text-xs ${i < 3 ? 'text-red-600' : 'text-gray-500'}">#${i + 1}</span>
+            <span class="text-xs font-bold text-gray-800 truncate">${row.name}</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">${row.reward}</span>
+            <span class="text-xs font-black text-emerald-700">${row.pts} 分</span>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('explorerLeaderboardModal')?.classList.remove('hidden');
+    }
+
+    function closeLeaderboardModal() {
+      document.getElementById('explorerLeaderboardModal')?.classList.add('hidden');
+    }
+
+    function checkPendingArrivalOnHome() {
+      let task = null;
+      try { task = JSON.parse(localStorage.getItem('dmjt_pending_checkin_v1') || 'null'); } catch (_) {}
+      if (!task || !nearbyUserCoords) return;
+      if (Date.now() - (task.createdAt || 0) > 6 * 3600 * 1000) {
+        localStorage.removeItem('dmjt_pending_checkin_v1');
+        return;
+      }
+      const R = 6371000;
+      const dLat = ((task.lat - nearbyUserCoords.lat) * Math.PI) / 180;
+      const dLng = ((task.lng - nearbyUserCoords.lng) * Math.PI) / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(nearbyUserCoords.lat * Math.PI / 180) * Math.cos(task.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      const distM = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (distM <= 150) {
+        localStorage.removeItem('dmjt_pending_checkin_v1');
+        try {
+          const stats = JSON.parse(localStorage.getItem('dmjt_explorer_stats_v1') || '{"points":0,"visited":[]}');
+          const today = new Date().toISOString().slice(0, 10);
+          const key = `${today}::${task.placeName}::${task.lat.toFixed(3)},${task.lng.toFixed(3)}`;
+          const visited = Array.isArray(stats.visited) ? stats.visited : [];
+          if (!visited.includes(key)) {
+            stats.points = Number(stats.points || 0) + 1;
+            stats.visited = [key, ...visited].slice(0, 100);
+            localStorage.setItem('dmjt_explorer_stats_v1', JSON.stringify(stats));
+            alert(`🎉 到达打卡成功！
+
+您已抵达「${task.placeName}」150米范围内，获得 +1 探索积分（当前累计：${stats.points} 分）！`);
+          }
+        } catch (_) {}
+      }
+    }
+
     syncSubFilterVisibility('全部');
     setLang(currentLang);
     updateLiveLocationBadgeUI();
     startContinuousLocationTracking(true);
+    setTimeout(checkPendingArrivalOnHome, 1800);
     fetchLiveRates();
     fetchLiveFuel();
     fetchPosts();
@@ -4498,6 +4578,35 @@
           <button type="button" onclick="setManualAnchorCoords(1.5597, 103.7810, 'Mount Austin · JB', '柔佛')" class="px-2.5 py-1 rounded-full bg-gray-100 hover:bg-red-50 text-gray-700 font-semibold">新山 Austin</button>
         </div>
       </div>
+    </div>
+  </div>
+  <!-- Waze 式真实出行到达积分 & 全马探索排行榜弹窗 -->
+  <div id="explorerLeaderboardModal" onclick="closeLeaderboardModal()" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center p-3">
+    <div onclick="event.stopPropagation()" class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-3 max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-black text-base text-gray-900">🏆 全马真实出行探索榜</h3>
+          <p class="text-[11px] text-gray-500">搜店导航 → 真实抵达目的地 150m 内自动 +1 积分（防原地/重复刷分）</p>
+        </div>
+        <button type="button" onclick="closeLeaderboardModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div id="myExplorerCard" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between">
+        <div>
+          <div class="text-xs font-extrabold text-amber-950">我的探索积分</div>
+          <div id="myExplorerSub" class="text-[11px] text-amber-800 mt-0.5">已点亮 0 个真实地点 · 每日最多计 8 分</div>
+        </div>
+        <div id="myExplorerPoints" class="text-xl font-black text-red-600">0 分</div>
+      </div>
+
+      <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200/80 space-y-1.5 text-[11px] text-gray-700">
+        <div class="font-extrabold text-gray-900">🎁 榜单名次奖励规则：</div>
+        <div>• <b>第 1 名</b>：全马首页黄金置顶券 7 天 + 专属探路先锋徽章</div>
+        <div>• <b>第 2 – 3 名</b>：热门州属置顶券 3 天 + 本地商户合作礼券</div>
+        <div>• <b>第 4 – 10 名</b>：优先刷新曝光权益 + 探索积分加成</div>
+      </div>
+
+      <div id="leaderboardRows" class="space-y-1.5"></div>
     </div>
   </div>
 </body>
