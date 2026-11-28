@@ -137,7 +137,7 @@
     <!-- 门户视觉核心区：双大横卡 + 10 宫格矢量图标导航 -->
     <section class="mx-3 mt-3 bg-white rounded-2xl p-3.5 shadow-xs border border-gray-100 space-y-3.5">
       <div class="grid grid-cols-2 gap-2.5">
-        <button type="button" onclick="selectPortalTile('找房子', '', 'rent')"
+        <button type="button" onclick="window.location.href='/property.html'"
                 class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-100/90 border border-blue-200/70 p-3.5 text-left hover:shadow-sm active:scale-[0.99] transition">
           <div class="relative z-10 pr-8">
             <div id="bigCardHouseTitle" class="font-black text-[15px] text-slate-900">房屋出租</div>
@@ -852,7 +852,9 @@
         const label = tile[currentLang] || tile.zh;
         const clickAction = tile.key === 'car'
           ? `window.location.href='/cars.html'`
-          : `selectPortalTile('${tile.cat}', '${tile.filterMode}', '${tile.key}')`;
+          : (tile.key === 'sale'
+              ? `window.location.href='/property.html?mode=sale'`
+              : `selectPortalTile('${tile.cat}', '${tile.filterMode}', '${tile.key}')`);
         return `
           <button type="button" onclick="${clickAction}"
                   class="flex flex-col items-center group focus:outline-none">
