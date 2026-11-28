@@ -32,7 +32,7 @@
         <img src="/icon.png?v=4" alt="大马吉通" onerror="this.onerror=null;this.src='/icon.png';" class="w-9 h-9 rounded-xl object-cover border border-white/50 bg-[#F8F6F0] shrink-0">
         <div class="min-w-0">
           <div class="flex items-center gap-1.5">
-            <h1 id="propPageTitle" class="font-black text-[16px] tracking-tight truncate">大马吉通 · 租房买房</h1>
+            <h1 id="propPageTitle" class="font-black text-[15px] tracking-tight truncate">大马吉通 · 租房买房</h1>
             <span class="text-[9px] bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded font-black shrink-0">ZERO AGENT TRAP</span>
           </div>
           <div class="flex items-center gap-1.5 mt-0.5">
@@ -353,7 +353,7 @@
         resetBtn: '重置',
         pillOwner: '👤 仅看屋主直租/直售', pillFurn: '🛋️ 全套家具 Furnished', pillTransit: '🚇 近 LRT/MRT/商圈', pillDep: '💰 押金透明/可商量',
         typeAll: '全部', typeCondo: 'Condo', typeTerrace: '排屋', typeSemiD: '半独立', typeRoom: '房间', typeComm: '商铺/办公',
-        priceAll: '租金/售价预算', roomsAll: '房间数 Rooms', roomsSuffix: ' 房', rooms4Plus: '4 房及以上',
+        priceAll: '租金/售价预算', price1: 'RM 1,500 以下', price2: 'RM 1,500 - 3,000', price3: 'RM 3,000 - 6,000', price4: 'RM 450k 以下(买)', price5: 'RM 450k - 1.2M', price6: 'RM 1.2M 以上', roomsAll: '房间数 Rooms', roomsSuffix: ' 房', rooms4Plus: '4 房及以上',
         sqftAll: '面积 sqft', sqftSuffix: ' sqft 以上',
         furnAll: '家具配置 Furnishing', furnFull: '全套家具 Fully Furnished', furnPart: '部分家具 Partially Furnished', furnEmpty: '空屋 Unfurnished',
         sortDefault: '排序：推荐+最新', sortNearest: '距离看房点最近', sortPriceAsc: '价格从低到高', sortPriceDesc: '价格从高到低', sortSqftDesc: '面积从大到小',
@@ -392,7 +392,7 @@
         resetBtn: 'Reset',
         pillOwner: '👤 Direct Owner Only', pillFurn: '🛋️ Fully Furnished', pillTransit: '🚇 Near LRT/MRT', pillDep: '💰 Clear Deposit',
         typeAll: 'All', typeCondo: 'Condo', typeTerrace: 'Terrace', typeSemiD: 'Semi-D', typeRoom: 'Room', typeComm: 'Commercial',
-        priceAll: 'Price / Rent RM', roomsAll: 'Rooms', roomsSuffix: ' Bed', rooms4Plus: '4+ Beds',
+        priceAll: 'Price / Rent RM', price1: 'Below RM 1,500', price2: 'RM 1,500 - 3,000', price3: 'RM 3,000 - 6,000', price4: 'Below RM 450k (Buy)', price5: 'RM 450k - 1.2M', price6: 'Above RM 1.2M', roomsAll: 'Rooms', roomsSuffix: ' Bed', rooms4Plus: '4+ Beds',
         sqftAll: 'Size sqft', sqftSuffix: '+ sqft',
         furnAll: 'Furnishing', furnFull: 'Fully Furnished', furnPart: 'Partially Furnished', furnEmpty: 'Unfurnished',
         sortDefault: 'Sort: Featured + Latest', sortNearest: 'Nearest Viewing Point', sortPriceAsc: 'Price: Low to High', sortPriceDesc: 'Price: High to Low', sortSqftDesc: 'Size: Largest First',
@@ -431,7 +431,7 @@
         resetBtn: 'Reset',
         pillOwner: '👤 Terus Pemilik Sahaja', pillFurn: '🛋️ Lengkap Perabot', pillTransit: '🚇 Dekat LRT/MRT', pillDep: '💰 Deposit Jelas',
         typeAll: 'Semua', typeCondo: 'Kondo', typeTerrace: 'Teres', typeSemiD: 'Semi-D', typeRoom: 'Bilik', typeComm: 'Komersial',
-        priceAll: 'Bajet Sewa / Beli RM', roomsAll: 'Bilik', roomsSuffix: ' Bilik', rooms4Plus: '4+ Bilik',
+        priceAll: 'Bajet Sewa / Beli RM', price1: 'Bawah RM 1,500', price2: 'RM 1,500 - 3,000', price3: 'RM 3,000 - 6,000', price4: 'Bawah RM 450k (Beli)', price5: 'RM 450k - 1.2M', price6: 'Atas RM 1.2M', roomsAll: 'Bilik', roomsSuffix: ' Bilik', rooms4Plus: '4+ Bilik',
         sqftAll: 'Keluasan sqft', sqftSuffix: '+ sqft',
         furnAll: 'Perabot', furnFull: 'Lengkap Perabot (Fully)', furnPart: 'Separuh Perabot (Partial)', furnEmpty: 'Kosong (Unfurnished)',
         sortDefault: 'Susunan: Pilihan + Terkini', sortNearest: 'Lokasi Paling Dekat', sortPriceAsc: 'Harga: Rendah ke Tinggi', sortPriceDesc: 'Harga: Tinggi ke Rendah', sortSqftDesc: 'Keluasan: Terbesar',
@@ -519,7 +519,7 @@
       if (userGpsCoords) document.getElementById('propGpsStatusText').innerText = t.gpsStatus;
       document.getElementById('propHeroHeadline').innerText = t.heroHeadline;
       document.getElementById('propHeroSub').innerText = t.heroSub;
-      document.getElementById('topListBtn').innerText = t.topListBtn;
+      document.getElementById('topListPropBtn').innerText = t.topListBtn;
 
       document.getElementById('dealBtn-rent').innerText = t.dealRent;
       document.getElementById('dealBtn-sale').innerText = t.dealSale;
@@ -545,6 +545,12 @@
         if (el && el.options[idx]) el.options[idx].text = txt;
       };
       setOpt('propPriceFilter', 0, t.priceAll);
+      setOpt('propPriceFilter', 1, t.price1);
+      setOpt('propPriceFilter', 2, t.price2);
+      setOpt('propPriceFilter', 3, t.price3);
+      setOpt('propPriceFilter', 4, t.price4);
+      setOpt('propPriceFilter', 5, t.price5);
+      setOpt('propPriceFilter', 6, t.price6);
       setOpt('propRoomsFilter', 0, t.roomsAll);
       setOpt('propRoomsFilter', 1, `1${t.roomsSuffix}`);
       setOpt('propRoomsFilter', 2, `2${t.roomsSuffix}`);
@@ -745,7 +751,7 @@
         .limit(1000);
 
       if (error) {
-        document.getElementById('propListContainer').innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-red-500 text-xs">${error.message}</div>`;
+        document.getElementById('propListContainer').innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-gray-400 text-xs shadow-xs">${PROP_I18N[currentLang].emptyTitle}</div>`;
         return;
       }
 
