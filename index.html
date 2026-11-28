@@ -31,6 +31,12 @@
   <!-- Google AdSense 自动广告与审核验证脚本 -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4770023285363817"
      crossorigin="anonymous"></script>
+<script>
+    (function() {
+      var l = localStorage.getItem('dama_lang') || 'zh';
+      document.documentElement.setAttribute('lang', l === 'ms' ? 'ms' : (l === 'en' ? 'en' : 'zh-CN'));
+    })();
+  </script>
 </head>
 <body class="max-w-md mx-auto bg-[#f5f6f8] min-h-screen flex flex-col relative shadow-[0_0_40px_rgba(15,23,42,0.12)]">
 
@@ -360,7 +366,7 @@
         <span class="w-1.5 h-4 bg-gradient-to-b from-red-600 to-orange-500 rounded-full shrink-0"></span>
         <h2 class="font-black text-gray-800 text-sm truncate" id="listHeaderTitle">全马最新动态</h2>
         <span id="postCountBadge" class="text-[11px] bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full font-bold shrink-0">0</span>
-        <span id="syncIndicatorBadge" class="hidden text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-semibold animate-pulse shrink-0">同步全库中...</span>
+        <span id="syncIndicatorBadge" class="hidden text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-semibold animate-pulse shrink-0"></span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button type="button" onclick="resetAllFilters()" id="resetFilterBtn" class="hidden text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full hover:bg-amber-200 transition">重置</button>
@@ -2452,7 +2458,7 @@
         catShop: '本地商家',
         latestSuffix: '最新动态',
         countUnit: '条',
-        freePostBtn: '📝 免费发帖',
+        syncBadge: '同步全库中...', freePostBtn: '📝 免费发帖',
         loading: '正在连接云端数据库加载最新动态...',
         emptyList: '当前筛选条件下暂无信息，上方已为你实时检索附近相关商家。',
         pinnedTag: '置顶',
@@ -2635,7 +2641,7 @@
         catShop: 'Local Biz',
         latestSuffix: ' Latest',
         countUnit: 'posts',
-        freePostBtn: '📝 Post Free Ad',
+        syncBadge: 'Syncing database...', freePostBtn: '📝 Post Free Ad',
         loading: 'Loading latest posts from cloud...',
         emptyList: 'No local matches yet — see live nearby picks above.',
         pinnedTag: 'TOP',
@@ -2818,7 +2824,7 @@
         catShop: 'Perniagaan',
         latestSuffix: ' Terkini',
         countUnit: 'iklan',
-        freePostBtn: '📝 Iklan Percuma',
+        syncBadge: 'Menyegerak data...', freePostBtn: '📝 Iklan Percuma',
         loading: 'Memuatkan iklan terkini...',
         emptyList: 'Tiada iklan sepadan — lihat cadangan berdekatan di atas.',
         pinnedTag: 'PILIHAN',
@@ -3157,6 +3163,7 @@
       document.getElementById('rateCnyLabel').innerText = t.rateCnyLabel;
       document.getElementById('rateSgdLabel').innerText = t.rateSgdLabel;
       document.getElementById('topFreePostBtn').innerText = t.freePostBtn;
+      if (document.getElementById('syncIndicatorBadge')) document.getElementById('syncIndicatorBadge').innerText = t.syncBadge;
 
       if (document.getElementById('filterPanelTitle')) document.getElementById('filterPanelTitle').innerText = t.filterPanelTitle;
       if (document.getElementById('clearSubFilterBtn')) document.getElementById('clearSubFilterBtn').innerText = t.clearSubFilterBtn;
